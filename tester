@@ -1,0 +1,72 @@
+#!/bin/sh
+# simple tester for ocperf
+
+set -x
+
+PERF=${PERF:-perf}
+
+checklist()
+{
+	# just see that it doesn't fail
+	EVENTMAP=$1.csv ./ocperf.py list > /dev/null
+
+	# see if all events are visible
+	R=$(EVENTMAP=$1.csv ./ocperf.py list | wc -l)
+	if [ $R != $[$BASELEN + $2] ]; then
+		echo $1 list mismatch $[$R - $BASELEN]
+		exit 1
+	fi
+}
+
+BASELEN=$($PERF list | wc -l)
+
+checklist hsw 310
+checklist wsm-sp 720
+checklist wsm-dp 720
+checklist snb-client 310
+checklist snb-ep 334
+checklist ivb-client 290
+checklist nhm-ex 563
+checklist nhm-ep 561
+checklist bnl 276
+checklist ivt 315
+
+set -e
+./ocperf.py stat -e uops_issued.cycles_all_threads /bin/true
+
+# xxx cover new syntax too
+checkmsr()
+{
+	DIRECT_MSR=1 EVENTMAP=$1.csv ./ocperf.py --print stat -e $2 /bin/true | grep "msr 1a6 ="
+}
+
+checkmsr wsm-dp OFFCORE_RESPONSE.ANY_DATA.ANY_CACHE_DRAM_0 
+checkmsr nhm-ex OFFCORE_RESPONSE_0.ANY_DATA.ANY_CACHE_DRAM
+checkmsr hsw OFFCORE_RESPONSE.COREWB.ANY_RESPONSE_0
+
+checkev()
+{
+	DIRECT_MSR=1 EVENTMAP=$1.csv ./ocperf.py stat -e $2 /bin/true | grep -- "-e $3"
+}
+checkev nhm-ep L1D.M_EVICT r451
+checkev nhm-ep L1D.M_EVICT:c4 r4000451
+checkev nhm-ex L1D.M_EVICT:c4 r4000451
+checkev wsm-dp L1D.M_EVICT:c4 r4000451
+checkev hsw DTLB_LOAD_MISSES.STLB_HIT_2M r4008 
+checkev ivb-client IDQ.DSB_CYCLES r1000879
+checkev snb-client IDQ.DSB_CYCLES r1000879
+checkev bnl snoop_stall_drv.self r407e
+checkev ivt uops_issued.core_stall_cycles r1a0010e
+
+checkmsr2()
+{
+	EVENTMAP=$1.csv DIRECT_MSR=1 ./ocperf.py --print stat -e $2 /bin/true | grep "$3"
+}
+
+checkmsr2 wsm-sp offcore_response.pf_rfo.remote_cache_hitm_1 "msr 1a7 = 820"
+checkmsr2 nhm-ex offcore_response_0.data_ifetch.any_location "msr 1a6 = ff77"
+# fixme hsw.csv is missing offcore events
+checkmsr2 ivt offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
+checkmsr2 snb-ep offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
+
+echo SUCCEEDED

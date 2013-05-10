@@ -1,0 +1,278 @@
+Event_Name,Code,UMask,Counter,Description,Counter_Mask,Invert,AnyThread,Edge_Detect,PEBS
+STORE_FORWARDS.ANY,0x2,0x83,"0,1","All store forwards",0,0,0,0,0
+STORE_FORWARDS.GOOD,0x2,0x81,"0,1","Good store forwards",0,0,0,0,0
+REISSUE.ANY,0x3,0x7F,"0,1","Micro-op reissues for any cause",0,0,0,0,0
+REISSUE.ANY.AR,0x3,0xFF,"0,1","Micro-op reissues for any cause (At Retirement)",0,0,0,0,0
+MISALIGN_MEM_REF.SPLIT,0x5,0xF,"0,1","Memory references that cross an 8-byte boundary.",0,0,0,0,0
+MISALIGN_MEM_REF.LD_SPLIT,0x5,0x9,"0,1","Load splits",0,0,0,0,0
+MISALIGN_MEM_REF.ST_SPLIT,0x5,0xA,"0,1","Store splits",0,0,0,0,0
+MISALIGN_MEM_REF.SPLIT.AR,0x5,0x8F,"0,1","Memory references that cross an 8-byte boundary (At Retirement)",0,0,0,0,0
+MISALIGN_MEM_REF.LD_SPLIT.AR,0x5,0x89,"0,1","Load splits (At Retirement)",0,0,0,0,0
+MISALIGN_MEM_REF.ST_SPLIT.AR,0x5,0x8A,"0,1","Store splits (Ar Retirement)",0,0,0,0,0
+MISALIGN_MEM_REF.RMW_SPLIT,0x5,0x8C,"0,1","ld-op-st splits",0,0,0,0,0
+MISALIGN_MEM_REF.BUBBLE,0x5,0x97,"0,1","Nonzero segbase 1 bubble",0,0,0,0,0
+MISALIGN_MEM_REF.LD_BUBBLE,0x5,0x91,"0,1","Nonzero segbase load 1 bubble",0,0,0,0,0
+MISALIGN_MEM_REF.ST_BUBBLE,0x5,0x92,"0,1","Nonzero segbase store 1 bubble",0,0,0,0,0
+MISALIGN_MEM_REF.RMW_BUBBLE,0x5,0x94,"0,1","Nonzero segbase ld-op-st 1 bubble",0,0,0,0,0
+SEGMENT_REG_LOADS.ANY,0x6,0x80,"0,1","Number of segment register loads.",0,0,0,0,0
+PREFETCH.PREFETCHT0,0x7,0x81,"0,1","Streaming SIMD Extensions (SSE) PrefetchT0 instructions executed.",0,0,0,0,0
+PREFETCH.PREFETCHT1,0x7,0x82,"0,1","Streaming SIMD Extensions (SSE) PrefetchT1 instructions executed.",0,0,0,0,0
+PREFETCH.PREFETCHT2,0x7,0x84,"0,1","Streaming SIMD Extensions (SSE) PrefetchT2 instructions executed.",0,0,0,0,0
+PREFETCH.SW_L2,0x7,0x86,"0,1","Streaming SIMD Extensions (SSE) PrefetchT1 and PrefetchT2 instructions executed",0,0,0,0,0
+PREFETCH.PREFETCHNTA,0x7,0x88,"0,1","Streaming SIMD Extensions (SSE) Prefetch NTA instructions executed",0,0,0,0,0
+PREFETCH.HW_PREFETCH,0x7,0x10,"0,1","L1 hardware prefetch request",0,0,0,0,0
+PREFETCH.SOFTWARE_PREFETCH,0x7,0xF,"0,1","Any Software prefetch",0,0,0,0,0
+PREFETCH.SOFTWARE_PREFETCH.AR,0x7,0x8F,"0,1","Any Software prefetch",0,0,0,0,0
+DATA_TLB_MISSES.DTLB_MISS,0x8,0x7,"0,1","Memory accesses that missed the DTLB.",0,0,0,0,0
+DATA_TLB_MISSES.DTLB_MISS_LD,0x8,0x5,"0,1","DTLB misses due to load operations.",0,0,0,0,0
+DATA_TLB_MISSES.L0_DTLB_MISS_LD,0x8,0x9,"0,1","L0 DTLB misses due to load operations.",0,0,0,0,0
+DATA_TLB_MISSES.DTLB_MISS_ST,0x8,0x6,"0,1","DTLB misses due to store operations.",0,0,0,0,0
+DATA_TLB_MISSES.L0_DTLB_MISS_ST,0x8,0xA,"0,1","L0 DTLB misses due to store operations",0,0,0,0,0
+DISPATCH_BLOCKED.ANY,0x9,0x20,"0,1","Memory cluster signals to block micro-op dispatch for any reason",0,0,0,0,0
+PAGE_WALKS.WALKS,0xC,0x3,"0,1","Number of page-walks executed.",0,0,0,0,0
+PAGE_WALKS.CYCLES,0xC,0x3,"0,1","Duration of page-walks in core cycles",0,0,0,0,0
+PAGE_WALKS.D_SIDE_WALKS,0xC,0x1,"0,1","Number of D-side only page walks",0,0,0,0,0
+PAGE_WALKS.D_SIDE_CYCLES,0xC,0x1,"0,1","Duration of D-side only page walks",0,0,0,0,0
+PAGE_WALKS.I_SIDE_WALKS,0xC,0x2,"0,1","Number of I-Side page walks",0,0,0,0,0
+PAGE_WALKS.I_SIDE_CYCLES,0xC,0x2,"0,1","Duration of I-Side page walks",0,0,0,0,0
+X87_COMP_OPS_EXE.ANY.S,0x10,0x1,"0,1","Floating point computational micro-ops executed.",0,0,0,0,0
+X87_COMP_OPS_EXE.ANY.AR,0x10,0x81,"0,1","Floating point computational micro-ops retired.",0,0,0,0,1
+X87_COMP_OPS_EXE.FXCH.S,0x10,0x2,"0,1","FXCH uops executed.",0,0,0,0,0
+X87_COMP_OPS_EXE.FXCH.AR,0x10,0x82,"0,1","FXCH uops retired.",0,0,0,0,1
+FP_ASSIST.S,0x11,0x1,"0,1","Floating point assists.",0,0,0,0,0
+FP_ASSIST.AR,0x11,0x81,"0,1","Floating point assists for retired operations.",0,0,0,0,0
+MUL.S,0x12,0x1,"0,1","Multiply operations executed.",0,0,0,0,0
+MUL.AR,0x12,0x81,"0,1","Multiply operations retired",0,0,0,0,0
+DIV.S,0x13,0x1,"0,1","Divide operations executed.",0,0,0,0,0
+DIV.AR,0x13,0x81,"0,1","Divide operations retired",0,0,0,0,0
+CYCLES_DIV_BUSY,0x14,0x1,"0,1","Cycles the divider is busy.",0,0,0,0,0
+L2_ADS.SELF,0x21,0x40,"0,1","Cycles L2 address bus is in use.",0,0,0,0,0
+L2_DBUS_BUSY.SELF,0x22,0x40,"0,1","Cycles the L2 cache data bus is busy.",0,0,0,0,0
+L2_DBUS_BUSY_RD.SELF,0x23,0x40,"0,1","Cycles the L2 transfers data to the core.",0,0,0,0,0
+L2_LINES_IN.SELF.ANY,0x24,0x70,"0,1","L2 cache misses.",0,0,0,0,0
+L2_LINES_IN.SELF.DEMAND,0x24,0x40,"0,1","L2 cache misses.",0,0,0,0,0
+L2_LINES_IN.SELF.PREFETCH,0x24,0x50,"0,1","L2 cache misses.",0,0,0,0,0
+L2_M_LINES_IN.SELF,0x25,0x40,"0,1","L2 cache line modifications.",0,0,0,0,0
+L2_LINES_OUT.SELF.ANY,0x26,0x70,"0,1","L2 cache lines evicted.",0,0,0,0,0
+L2_LINES_OUT.SELF.DEMAND,0x26,0x40,"0,1","L2 cache lines evicted.",0,0,0,0,0
+L2_LINES_OUT.SELF.PREFETCH,0x26,0x50,"0,1","L2 cache lines evicted.",0,0,0,0,0
+L2_M_LINES_OUT.SELF.ANY,0x27,0x70,"0,1","Modified lines evicted from the L2 cache",0,0,0,0,0
+L2_M_LINES_OUT.SELF.DEMAND,0x27,0x40,"0,1","Modified lines evicted from the L2 cache",0,0,0,0,0
+L2_M_LINES_OUT.SELF.PREFETCH,0x27,0x50,"0,1","Modified lines evicted from the L2 cache",0,0,0,0,0
+L2_IFETCH.SELF.E_STATE,0x28,0x44,"0,1","L2 cacheable instruction fetch requests",0,0,0,0,0
+L2_IFETCH.SELF.I_STATE,0x28,0x41,"0,1","L2 cacheable instruction fetch requests",0,0,0,0,0
+L2_IFETCH.SELF.M_STATE,0x28,0x48,"0,1","L2 cacheable instruction fetch requests",0,0,0,0,0
+L2_IFETCH.SELF.S_STATE,0x28,0x42,"0,1","L2 cacheable instruction fetch requests",0,0,0,0,0
+L2_IFETCH.SELF.MESI,0x28,0x4F,"0,1","L2 cacheable instruction fetch requests",0,0,0,0,0
+L2_LD.SELF.ANY.E_STATE,0x29,0x74,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.ANY.I_STATE,0x29,0x71,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.ANY.M_STATE,0x29,0x78,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.ANY.S_STATE,0x29,0x72,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.ANY.MESI,0x29,0x7F,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.DEMAND.E_STATE,0x29,0x44,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.DEMAND.I_STATE,0x29,0x41,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.DEMAND.M_STATE,0x29,0x48,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.DEMAND.S_STATE,0x29,0x42,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.DEMAND.MESI,0x29,0x4F,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.PREFETCH.E_STATE,0x29,0x54,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.PREFETCH.I_STATE,0x29,0x51,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.PREFETCH.M_STATE,0x29,0x58,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.PREFETCH.S_STATE,0x29,0x52,"0,1","L2 cache reads",0,0,0,0,0
+L2_LD.SELF.PREFETCH.MESI,0x29,0x5F,"0,1","L2 cache reads",0,0,0,0,0
+L2_ST.SELF.E_STATE,0x2A,0x44,"0,1","L2 store requests",0,0,0,0,0
+L2_ST.SELF.I_STATE,0x2A,0x41,"0,1","L2 store requests",0,0,0,0,0
+L2_ST.SELF.M_STATE,0x2A,0x48,"0,1","L2 store requests",0,0,0,0,0
+L2_ST.SELF.S_STATE,0x2A,0x42,"0,1","L2 store requests",0,0,0,0,0
+L2_ST.SELF.MESI,0x2A,0x4F,"0,1","L2 store requests",0,0,0,0,0
+L2_LOCK.SELF.E_STATE,0x2B,0x44,"0,1","L2 locked accesses",0,0,0,0,0
+L2_LOCK.SELF.I_STATE,0x2B,0x41,"0,1","L2 locked accesses",0,0,0,0,0
+L2_LOCK.SELF.M_STATE,0x2B,0x48,"0,1","L2 locked accesses",0,0,0,0,0
+L2_LOCK.SELF.S_STATE,0x2B,0x42,"0,1","L2 locked accesses",0,0,0,0,0
+L2_LOCK.SELF.MESI,0x2B,0x4F,"0,1","L2 locked accesses",0,0,0,0,0
+L2_DATA_RQSTS.SELF.E_STATE,0x2C,0x44,"0,1","All data requests from the L1 data cache",0,0,0,0,0
+L2_DATA_RQSTS.SELF.I_STATE,0x2C,0x41,"0,1","All data requests from the L1 data cache",0,0,0,0,0
+L2_DATA_RQSTS.SELF.M_STATE,0x2C,0x48,"0,1","All data requests from the L1 data cache",0,0,0,0,0
+L2_DATA_RQSTS.SELF.S_STATE,0x2C,0x42,"0,1","All data requests from the L1 data cache",0,0,0,0,0
+L2_DATA_RQSTS.SELF.MESI,0x2C,0x4F,"0,1","All data requests from the L1 data cache",0,0,0,0,0
+L2_LD_IFETCH.SELF.E_STATE,0x2D,0x44,"0,1","All read requests from L1 instruction and data caches",0,0,0,0,0
+L2_LD_IFETCH.SELF.I_STATE,0x2D,0x41,"0,1","All read requests from L1 instruction and data caches",0,0,0,0,0
+L2_LD_IFETCH.SELF.M_STATE,0x2D,0x48,"0,1","All read requests from L1 instruction and data caches",0,0,0,0,0
+L2_LD_IFETCH.SELF.S_STATE,0x2D,0x42,"0,1","All read requests from L1 instruction and data caches",0,0,0,0,0
+L2_LD_IFETCH.SELF.MESI,0x2D,0x4F,"0,1","All read requests from L1 instruction and data caches",0,0,0,0,0
+L2_RQSTS.SELF.ANY.E_STATE,0x2E,0x74,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.ANY.I_STATE,0x2E,0x71,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.ANY.M_STATE,0x2E,0x78,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.ANY.S_STATE,0x2E,0x72,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.ANY.MESI,0x2E,0x7F,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.DEMAND.E_STATE,0x2E,0x44,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.DEMAND.I_STATE,0x2E,0x41,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.DEMAND.M_STATE,0x2E,0x48,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.DEMAND.S_STATE,0x2E,0x42,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.DEMAND.MESI,0x2E,0x4F,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.PREFETCH.E_STATE,0x2E,0x54,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.PREFETCH.I_STATE,0x2E,0x51,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.PREFETCH.M_STATE,0x2E,0x58,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.PREFETCH.S_STATE,0x2E,0x52,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.PREFETCH.MESI,0x2E,0x5F,"0,1","L2 cache requests",0,0,0,0,0
+L2_RQSTS.SELF.DEMAND.I_STATE,0x2E,0x41,"0,1","L2 cache demand requests from this core that missed the L2",0,0,0,0,0
+L2_RQSTS.SELF.DEMAND.MESI,0x2E,0x4F,"0,1","L2 cache demand requests from this core",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.ANY.E_STATE,0x30,0x74,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.ANY.I_STATE,0x30,0x71,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.ANY.M_STATE,0x30,0x78,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.ANY.S_STATE,0x30,0x72,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.ANY.MESI,0x30,0x7F,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.DEMAND.E_STATE,0x30,0x44,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.DEMAND.I_STATE,0x30,0x41,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.DEMAND.M_STATE,0x30,0x48,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.DEMAND.S_STATE,0x30,0x42,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.DEMAND.MESI,0x30,0x4F,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.PREFETCH.E_STATE,0x30,0x54,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.PREFETCH.I_STATE,0x30,0x51,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.PREFETCH.M_STATE,0x30,0x58,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.PREFETCH.S_STATE,0x30,0x52,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_REJECT_BUSQ.SELF.PREFETCH.MESI,0x30,0x5F,"0,1","Rejected L2 cache requests",0,0,0,0,0
+L2_NO_REQ.SELF,0x32,0x40,"0,1","Cycles no L2 cache requests are pending",0,0,0,0,0
+EIST_TRANS,0x3A,0x0,"0,1","Number of Enhanced Intel SpeedStep(R) Technology (EIST) transitions",0,0,0,0,0
+THERMAL_TRIP,0x3B,0xC0,"0,1","Number of thermal trips",0,0,0,0,0
+CPU_CLK_UNHALTED.CORE_P,0x3C,0x0,"0,1","Core cycles when core is not halted",0,0,0,0,0
+CPU_CLK_UNHALTED.BUS,0x3C,0x1,"0,1","Bus cycles when core is not halted",0,0,0,0,0
+CPU_CLK_UNHALTED.CORE,0xA,0x0,33,"Core cycles when core is not halted",0,0,0,0,0
+CPU_CLK_UNHALTED.REF,0xA,0x0,34,"Reference cycles when core is not halted.",0,0,0,0,0
+L1D_CACHE.LD,0x40,0xA1,"0,1","L1 Cacheable Data Reads",0,0,0,0,0
+L1D_CACHE.ST,0x40,0xA2,"0,1","L1 Cacheable Data Writes",0,0,0,0,0
+L1D_CACHE.ALL_REF,0x40,0x83,"0,1","L1 Data reads and writes",0,0,0,0,0
+L1D_CACHE.ALL_CACHE_REF,0x40,0xA3,"0,1","L1 Data Cacheable reads and writes",0,0,0,0,0
+L1D_CACHE.REPL,0x40,0x8,"0,1","L1 Data line replacements",0,0,0,0,0
+L1D_CACHE.REPLM,0x40,0x48,"0,1","Modified cache lines allocated in the L1 data cache",0,0,0,0,0
+L1D_CACHE.EVICT,0x40,0x10,"0,1","Modified cache lines evicted from the L1 data cache",0,0,0,0,0
+BUS_REQUEST_OUTSTANDING.ALL_AGENTS,0x60,0xE0,"0,1","Outstanding cacheable data read bus requests duration.",0,0,0,0,0
+BUS_REQUEST_OUTSTANDING.SELF,0x60,0x40,"0,1","Outstanding cacheable data read bus requests duration.",0,0,0,0,0
+BUS_BNR_DRV.ALL_AGENTS,0x61,0x20,"0,1","Number of Bus Not Ready signals asserted.",0,0,0,0,0
+BUS_BNR_DRV.THIS_AGENT,0x61,0x0,"0,1","Number of Bus Not Ready signals asserted.",0,0,0,0,0
+BUS_DRDY_CLOCKS.ALL_AGENTS,0x62,0x20,"0,1","Bus cycles when data is sent on the bus.",0,0,0,0,0
+BUS_DRDY_CLOCKS.THIS_AGENT,0x62,0x0,"0,1","Bus cycles when data is sent on the bus.",0,0,0,0,0
+BUS_LOCK_CLOCKS.ALL_AGENTS,0x63,0xE0,"0,1","Bus cycles when a LOCK signal is asserted.",0,0,0,0,0
+BUS_LOCK_CLOCKS.SELF,0x63,0x40,"0,1","Bus cycles when a LOCK signal is asserted.",0,0,0,0,0
+BUS_DATA_RCV.SELF,0x64,0x40,"0,1","Bus cycles while processor receives data.",0,0,0,0,0
+BUS_TRANS_BRD.ALL_AGENTS,0x65,0xE0,"0,1","Burst read bus transactions.",0,0,0,0,0
+BUS_TRANS_BRD.SELF,0x65,0x40,"0,1","Burst read bus transactions.",0,0,0,0,0
+BUS_TRANS_RFO.ALL_AGENTS,0x66,0xE0,"0,1","RFO bus transactions.",0,0,0,0,0
+BUS_TRANS_RFO.SELF,0x66,0x40,"0,1","RFO bus transactions.",0,0,0,0,0
+BUS_TRANS_WB.ALL_AGENTS,0x67,0xE0,"0,1","Explicit writeback bus transactions.",0,0,0,0,0
+BUS_TRANS_WB.SELF,0x67,0x40,"0,1","Explicit writeback bus transactions.",0,0,0,0,0
+BUS_TRANS_IFETCH.ALL_AGENTS,0x68,0xE0,"0,1","Instruction-fetch bus transactions.",0,0,0,0,0
+BUS_TRANS_IFETCH.SELF,0x68,0x40,"0,1","Instruction-fetch bus transactions.",0,0,0,0,0
+BUS_TRANS_INVAL.ALL_AGENTS,0x69,0xE0,"0,1","Invalidate bus transactions.",0,0,0,0,0
+BUS_TRANS_INVAL.SELF,0x69,0x40,"0,1","Invalidate bus transactions.",0,0,0,0,0
+BUS_TRANS_PWR.ALL_AGENTS,0x6A,0xE0,"0,1","Partial write bus transaction.",0,0,0,0,0
+BUS_TRANS_PWR.SELF,0x6A,0x40,"0,1","Partial write bus transaction.",0,0,0,0,0
+BUS_TRANS_P.ALL_AGENTS,0x6B,0xE0,"0,1","Partial bus transactions.",0,0,0,0,0
+BUS_TRANS_P.SELF,0x6B,0x40,"0,1","Partial bus transactions.",0,0,0,0,0
+BUS_TRANS_IO.ALL_AGENTS,0x6C,0xE0,"0,1","IO bus transactions.",0,0,0,0,0
+BUS_TRANS_IO.SELF,0x6C,0x40,"0,1","IO bus transactions.",0,0,0,0,0
+BUS_TRANS_DEF.ALL_AGENTS,0x6D,0xE0,"0,1","Deferred bus transactions.",0,0,0,0,0
+BUS_TRANS_DEF.SELF,0x6D,0x40,"0,1","Deferred bus transactions.",0,0,0,0,0
+BUS_TRANS_BURST.ALL_AGENTS,0x6E,0xE0,"0,1","Burst (full cache-line) bus transactions.",0,0,0,0,0
+BUS_TRANS_BURST.SELF,0x6E,0x40,"0,1","Burst (full cache-line) bus transactions.",0,0,0,0,0
+BUS_TRANS_MEM.ALL_AGENTS,0x6F,0xE0,"0,1","Memory bus transactions.",0,0,0,0,0
+BUS_TRANS_MEM.SELF,0x6F,0x40,"0,1","Memory bus transactions.",0,0,0,0,0
+BUS_TRANS_ANY.ALL_AGENTS,0x70,0xE0,"0,1","All bus transactions.",0,0,0,0,0
+BUS_TRANS_ANY.SELF,0x70,0x40,"0,1","All bus transactions.",0,0,0,0,0
+EXT_SNOOP.THIS_AGENT.ANY,0x77,0xB,"0,1","External snoops.",0,0,0,0,0
+EXT_SNOOP.THIS_AGENT.CLEAN,0x77,0x1,"0,1","External snoops.",0,0,0,0,0
+EXT_SNOOP.THIS_AGENT.HIT,0x77,0x2,"0,1","External snoops.",0,0,0,0,0
+EXT_SNOOP.THIS_AGENT.HITM,0x77,0x8,"0,1","External snoops.",0,0,0,0,0
+EXT_SNOOP.ALL_AGENTS.ANY,0x77,0x2B,"0,1","External snoops.",0,0,0,0,0
+EXT_SNOOP.ALL_AGENTS.CLEAN,0x77,0x21,"0,1","External snoops.",0,0,0,0,0
+EXT_SNOOP.ALL_AGENTS.HIT,0x77,0x22,"0,1","External snoops.",0,0,0,0,0
+EXT_SNOOP.ALL_AGENTS.HITM,0x77,0x28,"0,1","External snoops.",0,0,0,0,0
+BUS_HIT_DRV.ALL_AGENTS,0x7A,0x20,"0,1","HIT signal asserted.",0,0,0,0,0
+BUS_HIT_DRV.THIS_AGENT,0x7A,0x0,"0,1","HIT signal asserted.",0,0,0,0,0
+BUS_HITM_DRV.ALL_AGENTS,0x7B,0x20,"0,1","HITM signal asserted.",0,0,0,0,0
+BUS_HITM_DRV.THIS_AGENT,0x7B,0x0,"0,1","HITM signal asserted.",0,0,0,0,0
+BUSQ_EMPTY.SELF,0x7D,0x40,"0,1","Bus queue is empty.",0,0,0,0,0
+SNOOP_STALL_DRV.ALL_AGENTS,0x7E,0xE0,"0,1","Bus stalled for snoops.",0,0,0,0,0
+SNOOP_STALL_DRV.SELF,0x7E,0x40,"0,1","Bus stalled for snoops.",0,0,0,0,0
+BUS_IO_WAIT.SELF,0x7F,0x40,"0,1","IO requests waiting in the bus queue.",0,0,0,0,0
+ICACHE.ACCESSES,0x80,0x3,"0,1","Instruction fetches.",0,0,0,0,0
+ICACHE.HIT,0x80,0x1,"0,1","Icache hit",0,0,0,0,0
+ICACHE.MISSES,0x80,0x2,"0,1","Icache miss",0,0,0,0,0
+ITLB.HIT,0x82,0x1,"0,1","ITLB hits.",0,0,0,0,0
+ITLB.FLUSH,0x82,0x4,"0,1","ITLB flushes.",0,0,0,0,0
+ITLB.MISSES,0x82,0x2,"0,1","ITLB misses.",0,0,0,0,1
+CYCLES_ICACHE_MEM_STALLED.ICACHE_MEM_STALLED,0x86,0x1,"0,1","Cycles during which instruction fetches are  stalled.",0,0,0,0,0
+DECODE_STALL.PFB_EMPTY,0x87,0x1,"0,1","Decode stall due to PFB empty",0,0,0,0,0
+DECODE_STALL.IQ_FULL,0x87,0x2,"0,1","Decode stall due to IQ full",0,0,0,0,0
+BR_INST_TYPE_RETIRED.COND,0x88,0x1,"0,1","All macro conditional branch instructions.",0,0,0,0,0
+BR_INST_TYPE_RETIRED.UNCOND,0x88,0x2,"0,1","All macro unconditional branch instructions, excluding calls and indirects",0,0,0,0,0
+BR_INST_TYPE_RETIRED.IND,0x88,0x4,"0,1","All indirect branches that are not calls.",0,0,0,0,0
+BR_INST_TYPE_RETIRED.RET,0x88,0x8,"0,1","All indirect branches that have a return mnemonic",0,0,0,0,0
+BR_INST_TYPE_RETIRED.DIR_CALL,0x88,0x10,"0,1","All non-indirect calls",0,0,0,0,0
+BR_INST_TYPE_RETIRED.IND_CALL,0x88,0x20,"0,1","All indirect calls, including both register and memory indirect.",0,0,0,0,0
+BR_INST_TYPE_RETIRED.COND_TAKEN,0x88,0x41,"0,1","Only taken macro conditional branch instructions",0,0,0,0,0
+BR_MISSP_TYPE_RETIRED.COND,0x89,0x1,"0,1","Mispredicted cond branch instructions retired",0,0,0,0,0
+BR_MISSP_TYPE_RETIRED.IND,0x89,0x2,"0,1","Mispredicted ind branches that are not calls",0,0,0,0,0
+BR_MISSP_TYPE_RETIRED.RETURN,0x89,0x4,"0,1","Mispredicted return branches",0,0,0,0,0
+BR_MISSP_TYPE_RETIRED.IND_CALL,0x89,0x8,"0,1","Mispredicted indirect calls, including both register and memory indirect. ",0,0,0,0,0
+BR_MISSP_TYPE_RETIRED.COND_TAKEN,0x89,0x11,"0,1","Mispredicted and taken cond branch instructions retired",0,0,0,0,0
+MACRO_INSTS.NON_CISC_DECODED,0xAA,0x1,"0,1","Non-CISC nacro instructions decoded",0,0,0,0,0
+MACRO_INSTS.CISC_DECODED,0xAA,0x2,"0,1","CISC macro instructions decoded",0,0,0,0,0
+MACRO_INSTS.ALL_DECODED,0xAA,0x3,"0,1","All Instructions decoded",0,0,0,0,0
+SIMD_UOPS_EXEC.S,0xB0,0x0,"0,1","SIMD micro-ops executed (excluding stores).",0,0,0,0,0
+SIMD_UOPS_EXEC.AR,0xB0,0x80,"0,1","SIMD micro-ops retired (excluding stores).",0,0,0,0,1
+SIMD_SAT_UOP_EXEC.S,0xB1,0x0,"0,1","SIMD saturated arithmetic micro-ops executed.",0,0,0,0,0
+SIMD_SAT_UOP_EXEC.AR,0xB1,0x80,"0,1","SIMD saturated arithmetic micro-ops retired.",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.MUL.S,0xB3,0x1,"0,1","SIMD packed multiply micro-ops executed",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.MUL.AR,0xB3,0x81,"0,1","SIMD packed multiply micro-ops retired",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.SHIFT.S,0xB3,0x2,"0,1","SIMD packed shift micro-ops executed",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.SHIFT.AR,0xB3,0x82,"0,1","SIMD packed shift micro-ops retired",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.PACK.S,0xB3,0x4,"0,1","SIMD packed micro-ops executed",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.PACK.AR,0xB3,0x84,"0,1","SIMD packed micro-ops retired",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.UNPACK.S,0xB3,0x8,"0,1","SIMD unpacked micro-ops executed",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.UNPACK.AR,0xB3,0x88,"0,1","SIMD unpacked micro-ops retired",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.LOGICAL.S,0xB3,0x10,"0,1","SIMD packed logical micro-ops executed",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.LOGICAL.AR,0xB3,0x90,"0,1","SIMD packed logical micro-ops retired",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.ARITHMETIC.S,0xB3,0x20,"0,1","SIMD packed arithmetic micro-ops executed",0,0,0,0,0
+SIMD_UOP_TYPE_EXEC.ARITHMETIC.AR,0xB3,0xA0,"0,1","SIMD packed arithmetic micro-ops retired",0,0,0,0,0
+INST_RETIRED.ANY_P,0xC0,0x0,"0,1","Instructions retired (precise event).",0,0,0,0,1
+INST_RETIRED.ANY,0xA,0x0,"FIXED COUNTER 1","Instructions retired.",0,0,0,0,0
+UOPS_RETIRED.ANY,0xC2,0x10,"0,1","Micro-ops retired.",0,0,0,0,0
+UOPS_RETIRED.STALLED_CYCLES,0xC2,0x10,"0,1","Cycles no micro-ops retired.",0,0,0,0,0
+UOPS_RETIRED.STALLS,0xC2,0x10,"0,1","Periods no micro-ops retired.",0,0,0,0,0
+UOPS.MS_CYCLES,0xA9,0x1,"0,1","This event counts the cycles where 1 or more uops are issued by the micro-sequencer (MS), including microcode assists and inserted flows, and written to the IQ. ",0,0,0,0,0
+MACHINE_CLEARS.SMC,0xC3,0x1,"0,1","Self-Modifying Code detected.",0,0,0,0,0
+BR_INST_RETIRED.ANY,0xC4,0x0,"0,1","Retired branch instructions.",0,0,0,0,0
+BR_INST_RETIRED.PRED_NOT_TAKEN,0xC4,0x1,"0,1","Retired branch instructions that were predicted not-taken.",0,0,0,0,0
+BR_INST_RETIRED.MISPRED_NOT_TAKEN,0xC4,0x2,"0,1","Retired branch instructions that were mispredicted not-taken.",0,0,0,0,0
+BR_INST_RETIRED.PRED_TAKEN,0xC4,0x4,"0,1","Retired branch instructions that were predicted taken.",0,0,0,0,0
+BR_INST_RETIRED.MISPRED_TAKEN,0xC4,0x8,"0,1","Retired branch instructions that were mispredicted taken.",0,0,0,0,0
+BR_INST_RETIRED.MISPRED,0xC4,0xA,"0,1","Retired mispredicted branch instructions.",0,0,0,0,0
+BR_INST_RETIRED.MISPRED.PS,0xC4,0xA,"0,1","Retired mispredicted branch instructions.",0,0,0,0,1
+BR_INST_RETIRED.TAKEN,0xC4,0xC,"0,1","Retired taken branch instructions.",0,0,0,0,0
+BR_INST_RETIRED.ANY1,0xC4,0xF,"0,1","Retired branch instructions.",0,0,0,0,0
+BR_INST_RETIRED.MISPRED,0xC5,0x0,"0,1","Retired mispredicted branch instructions (precise event).",0,0,0,0,1
+CYCLES_INT_MASKED.CYCLES_INT_MASKED,0xC6,0x1,"0,1","Cycles during which interrupts are disabled.",0,0,0,0,0
+CYCLES_INT_MASKED.CYCLES_INT_PENDING_AND_MASKED,0xC6,0x2,"0,1","Cycles during which interrupts are pending and disabled.",0,0,0,0,0
+SIMD_INST_RETIRED.PACKED_SINGLE,0xC7,0x1,"0,1","Retired Streaming SIMD Extensions (SSE) packed-single instructions.",0,0,0,0,0
+SIMD_INST_RETIRED.SCALAR_SINGLE,0xC7,0x2,"0,1","Retired Streaming SIMD Extensions (SSE) scalar-single instructions.",0,0,0,0,0
+SIMD_INST_RETIRED.SCALAR_DOUBLE,0xC7,0x8,"0,1","Retired Streaming SIMD Extensions 2 (SSE2) scalar-double instructions.",0,0,0,0,0
+SIMD_INST_RETIRED.VECTOR,0xC7,0x10,"0,1","Retired Streaming SIMD Extensions 2 (SSE2) vector instructions.",0,0,0,0,0
+HW_INT_RCV,0xC8,0x0,"0,1","Hardware interrupts received.",0,0,0,0,0
+SIMD_COMP_INST_RETIRED.PACKED_SINGLE,0xCA,0x1,"0,1","Retired computational Streaming SIMD Extensions (SSE) packed-single instructions.",0,0,0,0,0
+SIMD_COMP_INST_RETIRED.SCALAR_SINGLE,0xCA,0x2,"0,1","Retired computational Streaming SIMD Extensions (SSE) scalar-single instructions.",0,0,0,0,0
+SIMD_COMP_INST_RETIRED.SCALAR_DOUBLE,0xCA,0x8,"0,1","Retired computational Streaming SIMD Extensions 2 (SSE2) scalar-double instructions.",0,0,0,0,0
+MEM_LOAD_RETIRED.L2_HIT,0xCB,0x1,"0,1","Retired loads that hit the L2 cache (precise event).",0,0,0,0,0
+MEM_LOAD_RETIRED.L2_HIT.PS,0xCB,0x81,"0,1","Retired loads that hit the L2 cache (precise event).",0,0,0,0,1
+MEM_LOAD_RETIRED.L2_MISS,0xCB,0x2,"0,1","Retired loads that miss the L2 cache",0,0,0,0,0
+MEM_LOAD_RETIRED.L2_MISS.PS,0xCB,0x82,"0,1","Retired loads that miss the L2 cache (precise event).",0,0,0,0,1
+MEM_LOAD_RETIRED.DTLB_MISS,0xCB,0x4,"0,1","Retired loads that miss the DTLB (precise event).",0,0,0,0,0
+MEM_LOAD_RETIRED.DTLB_MISS.PS,0xCB,0x4,"0,1","Retired loads that miss the DTLB (precise event).",0,0,0,0,1
+SIMD_ASSIST,0xCD,0x0,"0,1","SIMD assists invoked.",0,0,0,0,0
+SIMD_INSTR_RETIRED,0xCE,0x0,"0,1","SIMD Instructions retired.",0,0,0,0,0
+SIMD_SAT_INSTR_RETIRED,0xCF,0x0,"0,1","Saturated arithmetic instructions retired.",0,0,0,0,0
+RESOURCE_STALLS.DIV_BUSY,0xDC,0x2,"0,1","Cycles issue is stalled due to div busy.",0,0,0,0,0
+BR_INST_DECODED,0xE0,0x1,"0,1","Branch instructions decoded",0,0,0,0,0
+BOGUS_BR,0xE4,0x1,"0,1","Bogus branches",0,0,0,0,0
+BACLEARS.ANY,0xE6,0x1,"0,1","BACLEARS asserted.",0,0,0,0,0
+REISSUE.OVERLAP_STORE,0x3,0x1,"0,1","Micro-op reissues on a store-load collision",0,0,0,0,0
+REISSUE.OVERLAP_STORE.AR,0x3,0x81,"0,1","Micro-op reissues on a store-load collision (At Retirement)",0,0,0,0,0

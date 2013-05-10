@@ -1,0 +1,289 @@
+Event_Name,Code,UMask,Counter,Counter_HT_Off,Description,MSR_Index,MSR_Value,Taken_Alone,Counter_Mask,Invert,AnyThread,Edge_Detect,PEBS
+INST_RETIRED.ANY,0x00,0x01,"FIXED COUNTER 1","FIXED COUNTER 1","Instructions retired from execution.",0,0,0,0,0,0,0,0
+CPU_CLK_UNHALTED.THREAD,0x00,0x02,"FIXED COUNTER 2","FIXED COUNTER 2","Core cycles when the core is not in halt state.",0,0,0,0,0,0,0,0
+CPU_CLK_UNHALTED.REF_TSC,0x00,0x03,"FIXED COUNTER 3","FIXED COUNTER 3","Reference cycles when the core is not in halt state.",0,0,0,0,0,0,0,0
+LD_BLOCKS.STORE_FORWARD,0x03,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Cases when loads get true Block-on-Store blocking code preventing store forwarding",0,0,0,0,0,0,0,0
+LD_BLOCKS.NO_SR,0x03,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","This event counts the number of times that split load operations are temporarily blocked because all resources for handling the split accesses are in use.",0,0,0,0,0,0,0,0
+MISALIGN_MEM_REF.LOADS,0x05,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Speculative cache line split load uops dispatched to L1 cache",0,0,0,0,0,0,0,0
+MISALIGN_MEM_REF.STORES,0x05,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Speculative cache line split STA uops dispatched to L1 cache",0,0,0,0,0,0,0,0
+LD_BLOCKS_PARTIAL.ADDRESS_ALIAS,0x07,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","False dependencies in MOB due to partial address comparison",0,0,0,0,0,0,0,0
+DTLB_LOAD_MISSES.LARGE_PAGE_WALK_COMPLETED,0x08,0x88,"0,1,2,3","0,1,2,3,4,5,6,7","Page walk for a large page completed for Demand load ",0,0,0,0,0,0,0,0
+INT_MISC.RECOVERY_CYCLES,0x0D,0x03,"0,1,2,3","0,1,2,3,4,5,6,7","Number of cycles waiting for the checkpoints in Resource Allocation Table (RAT) to be recovered after Nuke due to all other cases except JEClear (e.g. whenever a ucode assist is needed like SSE exception, memory disambiguation, etc...)",0,0,0,1,0,0,0,0
+INT_MISC.RECOVERY_STALLS_COUNT,0x0D,0x03,"0,1,2,3","0,1,2,3,4,5,6,7","Number of occurences waiting for the checkpoints in Resource Allocation Table (RAT) to be recovered after Nuke due to all other cases except JEClear (e.g. whenever a ucode assist is needed like SSE exception, memory disambiguation, etc...)",0,0,0,1,0,0,1,0
+UOPS_ISSUED.ANY,0x0E,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Uops that Resource Allocation Table (RAT) issues to Reservation Station (RS)",0,0,0,0,0,0,0,0
+UOPS_ISSUED.STALL_CYCLES,0x0E,0x01,"0,1,2,3","0,1,2,3","Cycles when Resource Allocation Table (RAT) does not issue Uops to Reservation Station (RS) for the thread",0,0,0,1,1,0,0,0
+UOPS_ISSUED.CORE_STALL_CYCLES,0x0E,0x01,"0,1,2,3","0,1,2,3","Cycles when Resource Allocation Table (RAT) does not issue Uops to Reservation Station (RS) for all threads",0,0,0,1,1,1,0,0
+UOPS_ISSUED.FLAGS_MERGE,0x0E,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Number of flags-merge uops being allocated. Such uops considered perf sensitive; added by GSR u-arch.",0,0,0,0,0,0,0,0
+UOPS_ISSUED.SLOW_LEA,0x0E,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","Number of slow LEA uops being allocated. A uop is generally considered SlowLea if it has 3 sources (e.g. 2 sources + immediate) regardless if as a result of LEA instruction or not.",0,0,0,0,0,0,0,0
+UOPS_ISSUED.SINGLE_MUL,0x0E,0x40,"0,1,2,3","0,1,2,3,4,5,6,7","Number of Multiply packed/scalar single precision uops allocated",0,0,0,0,0,0,0,0
+FP_COMP_OPS_EXE.X87,0x10,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Number of FP Computational Uops Executed this cycle. The number of FADD, FSUB, FCOM, FMULs, integer MULsand IMULs, FDIVs, FPREMs, FSQRTS, integer DIVs, and IDIVs. This event does not distinguish an FADD used in the middle of a transcendental flow from a s",0,0,0,0,0,0,0,0
+FP_COMP_OPS_EXE.SSE_PACKED_DOUBLE,0x10,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Number of SSE* or AVX-128 FP Computational packed double-precision uops issued this cycle",0,0,0,0,0,0,0,0
+FP_COMP_OPS_EXE.SSE_SCALAR_SINGLE,0x10,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","Number of SSE* or AVX-128 FP Computational scalar single-precision uops issued this cycle",0,0,0,0,0,0,0,0
+FP_COMP_OPS_EXE.SSE_PACKED_SINGLE,0x10,0x40,"0,1,2,3","0,1,2,3,4,5,6,7","Number of SSE* or AVX-128 FP Computational packed single-precision uops issued this cycle",0,0,0,0,0,0,0,0
+FP_COMP_OPS_EXE.SSE_SCALAR_DOUBLE,0x10,0x80,"0,1,2,3","0,1,2,3,4,5,6,7","Number of SSE* or AVX-128 FP Computational scalar double-precision uops issued this cycle",0,0,0,0,0,0,0,0
+SIMD_FP_256.PACKED_SINGLE,0x11,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","number of GSSE-256 Computational FP single precision uops issued this cycle",0,0,0,0,0,0,0,0
+SIMD_FP_256.PACKED_DOUBLE,0x11,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","number of AVX-256 Computational FP double precision uops issued this cycle",0,0,0,0,0,0,0,0
+ARITH.FPU_DIV_ACTIVE,0x14,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when divider is busy executing divide operations",0,0,0,0,0,0,0,0
+ARITH.FPU_DIV,0x14,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Divide operations executed",0,0,0,1,0,0,1,0
+L2_RQSTS.DEMAND_DATA_RD_HIT,0x24,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Demand Data Read requests that hit L2 cache",0,0,0,0,0,0,0,0
+L2_RQSTS.RFO_HIT,0x24,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","RFO requests that hit L2 cache",0,0,0,0,0,0,0,0
+L2_RQSTS.RFO_MISS,0x24,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","RFO requests that miss L2 cache",0,0,0,0,0,0,0,0
+L2_RQSTS.CODE_RD_HIT,0x24,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","L2 cache hits when fetching instructions, code reads.",0,0,0,0,0,0,0,0
+L2_RQSTS.CODE_RD_MISS,0x24,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","L2 cache misses when fetching instructions",0,0,0,0,0,0,0,0
+L2_RQSTS.PF_HIT,0x24,0x40,"0,1,2,3","0,1,2,3,4,5,6,7","Requests from the L2 hardware prefetchers that hit L2 cache",0,0,0,0,0,0,0,0
+L2_RQSTS.PF_MISS,0x24,0x80,"0,1,2,3","0,1,2,3,4,5,6,7","Requests from the L2 hardware prefetchers that miss L2 cache",0,0,0,0,0,0,0,0
+L2_RQSTS.ALL_DEMAND_DATA_RD,0x24,0x03,"0,1,2,3","0,1,2,3,4,5,6,7","Demand Data Read requests",0,0,0,0,0,0,0,0
+L2_RQSTS.ALL_RFO,0x24,0x0C,"0,1,2,3","0,1,2,3,4,5,6,7","RFO requests to L2 cache",0,0,0,0,0,0,0,0
+L2_RQSTS.ALL_CODE_RD,0x24,0x30,"0,1,2,3","0,1,2,3,4,5,6,7","L2 code requests",0,0,0,0,0,0,0,0
+L2_RQSTS.ALL_PF,0x24,0xC0,"0,1,2,3","0,1,2,3,4,5,6,7","Requests from L2 hardware prefetchers",0,0,0,0,0,0,0,0
+L2_STORE_LOCK_RQSTS.MISS,0x27,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","RFOs that miss cache lines",0,0,0,0,0,0,0,0
+L2_STORE_LOCK_RQSTS.HIT_M,0x27,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","RFOs that hit cache lines in M state",0,0,0,0,0,0,0,0
+L2_STORE_LOCK_RQSTS.ALL,0x27,0x0F,"0,1,2,3","0,1,2,3,4,5,6,7","RFOs that access cache lines in any state",0,0,0,0,0,0,0,0
+L2_L1D_WB_RQSTS.MISS,0x28,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Count the number of modified Lines evicted from L1 and missed L2. (Non-rejected WBs from the DCU.)",0,0,0,0,0,0,0,0
+L2_L1D_WB_RQSTS.HIT_E,0x28,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Not rejected writebacks from L1D to L2 cache lines in E state",0,0,0,0,0,0,0,0
+L2_L1D_WB_RQSTS.HIT_M,0x28,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Not rejected writebacks from L1D to L2 cache lines in M state",0,0,0,0,0,0,0,0
+L2_L1D_WB_RQSTS.ALL,0x28,0x0F,"0,1,2,3","0,1,2,3,4,5,6,7","Not rejected writebacks from L1D to L2 cache lines in any state.",0,0,0,0,0,0,0,0
+LONGEST_LAT_CACHE.MISS,0x2E,0x41,"0,1,2,3","0,1,2,3,4,5,6,7","Core-originated cacheable demand requests missed LLC",0,0,0,0,0,0,0,0
+LONGEST_LAT_CACHE.REFERENCE,0x2E,0x4F,"0,1,2,3","0,1,2,3,4,5,6,7","Core-originated cacheable demand requests that refer to LLC",0,0,0,0,0,0,0,0
+CPU_CLK_UNHALTED.THREAD_P,0x3C,0x00,"0,1,2,3","0,1,2,3,4,5,6,7","Thread cycles when thread is not in halt state",0,0,0,0,0,0,0,0
+CPU_CLK_THREAD_UNHALTED.REF_XCLK,0x3C,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cases when the core is unhalted at 100 Mhz",0,0,0,0,0,0,0,0
+L1D_PEND_MISS.PENDING,0x48,0x01,2,2,"L1D miss oustandings duration in cycles",0,0,0,0,0,0,0,0
+L1D_PEND_MISS.PENDING_CYCLES,0x48,0x01,2,2,"Cycles with L1D load Misses outstanding. ",0,0,0,1,0,0,0,0
+L1D_PEND_MISS.OCCURENCES,0x48,0x01,2,2,"This event counts the number of L1D misses outstanding, using an edge detect to count transitions.",0,0,0,1,0,0,1,0
+DTLB_STORE_MISSES.MISS_CAUSES_A_WALK,0x49,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Store misses in all DTLB levels that cause page walks",0,0,0,0,0,0,0,0
+DTLB_STORE_MISSES.WALK_COMPLETED,0x49,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Store misses in all DTLB levels that cause completed page walks",0,0,0,0,0,0,0,0
+DTLB_STORE_MISSES.WALK_DURATION,0x49,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when PMH is busy with page walks",0,0,0,0,0,0,0,0
+DTLB_STORE_MISSES.STLB_HIT,0x49,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Store operations that miss the first TLB level but hit the second and do not cause page walks",0,0,0,0,0,0,0,0
+LOAD_HIT_PRE.SW_PF,0x4C,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Not software-prefetch load dispatches that hit FB allocated for software prefetch",0,0,0,0,0,0,0,0
+LOAD_HIT_PRE.HW_PF,0x4C,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Not software-prefetch load dispatches that hit FB allocated for hardware prefetch",0,0,0,0,0,0,0,0
+L1D.REPLACEMENT,0x51,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","L1D data line replacements",0,0,0,0,0,0,0,0
+MOVE_ELIMINATION.INT_NOT_ELIMINATED,0x58,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Number of integer Move Elimination candidate uops that were not eliminated.",0,0,0,0,0,0,0,0
+MOVE_ELIMINATION.SIMD_NOT_ELIMINATED,0x58,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Number of SIMD Move Elimination candidate uops that were not eliminated.",0,0,0,0,0,0,0,0
+MOVE_ELIMINATION.INT_ELIMINATED,0x58,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Number of integer Move Elimination candidate uops that were eliminated.",0,0,0,0,0,0,0,0
+MOVE_ELIMINATION.SIMD_ELIMINATED,0x58,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Number of SIMD Move Elimination candidate uops that were eliminated.",0,0,0,0,0,0,0,0
+CPL_CYCLES.RING0,0x5C,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Unhalted core cycles when the thread is in ring 0",0,0,0,0,0,0,0,0
+CPL_CYCLES.RING123,0x5C,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Unhalted core cycles when thread is in rings 1, 2, or 3",0,0,0,0,0,0,0,0
+CPL_CYCLES.RING0_TRANS,0x5C,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Number of intervals between processor halts while thread is in ring 0",0,0,0,1,0,0,1,0
+RS_EVENTS.EMPTY_CYCLES,0x5E,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when Reservation Station (RS) is empty for the thread",0,0,0,0,0,0,0,0
+DTLB_LOAD_MISSES.STLB_HIT,0x5F,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Load operations that miss the first DTLB level but hit the second and do not cause page walks",0,0,0,0,0,0,0,0
+OFFCORE_REQUESTS_OUTSTANDING.DEMAND_DATA_RD,0x60,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Offcore outstanding Demand Data Read transactions in uncore queue.",0,0,0,0,0,0,0,0
+OFFCORE_REQUESTS_OUTSTANDING.DEMAND_CODE_RD,0x60,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Offcore outstanding code reads transactions in SuperQueue (SQ), queue to uncore, every cycle",0,0,0,0,0,0,0,0
+OFFCORE_REQUESTS_OUTSTANDING.DEMAND_RFO,0x60,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Offcore outstanding RFO store transactions in SuperQueue (SQ), queue to uncore",0,0,0,0,0,0,0,0
+OFFCORE_REQUESTS_OUTSTANDING.ALL_DATA_RD,0x60,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Offcore outstanding cacheable Core Data Read transactions in SuperQueue (SQ), queue to uncore",0,0,0,0,0,0,0,0
+OFFCORE_REQUESTS_OUTSTANDING.CYCLES_WITH_DEMAND_DATA_RD,0x60,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when offcore outstanding Demand Data Read transactions are present in SuperQueue (SQ), queue to uncore",0,0,0,1,0,0,0,0
+OFFCORE_REQUESTS_OUTSTANDING.CYCLES_WITH_DATA_RD,0x60,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when offcore outstanding cacheable Core Data Read transactions are present in SuperQueue (SQ), queue to uncore",0,0,0,1,0,0,0,0
+OFFCORE_REQUESTS_OUTSTANDING.CYCLES_WITH_DEMAND_RFO,0x60,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Offcore outstanding demand rfo reads transactions in SuperQueue (SQ), queue to uncore, every cycle",0,0,0,1,0,0,0,0
+LOCK_CYCLES.SPLIT_LOCK_UC_LOCK_DURATION,0x63,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when L1 and L2 are locked due to UC or split lock",0,0,0,0,0,0,0,0
+LOCK_CYCLES.CACHE_LOCK_DURATION,0x63,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when L1D is locked",0,0,0,0,0,0,0,0
+IDQ.EMPTY,0x79,0x02,"0,1,2,3","0,1,2,3","Instruction Decode Queue (IDQ) empty cycles",0,0,0,0,0,0,0,0
+IDQ.MITE_UOPS,0x79,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Uops delivered to Instruction Decode Queue (IDQ) from MITE path",0,0,0,0,0,0,0,0
+IDQ.DSB_UOPS,0x79,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Uops delivered to Instruction Decode Queue (IDQ) from the Decode Stream Buffer (DSB) path",0,0,0,0,0,0,0,0
+IDQ.MS_DSB_UOPS,0x79,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Uops initiated by Decode Stream Buffer (DSB) that are being delivered to Instruction Decode Queue (IDQ) while Microcode Sequenser (MS) is busy",0,0,0,0,0,0,0,0
+IDQ.MS_MITE_UOPS,0x79,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","Uops initiated by MITE and delivered to Instruction Decode Queue (IDQ) while Microcode Sequenser (MS) is busy",0,0,0,0,0,0,0,0
+IDQ.MS_UOPS,0x79,0x30,"0,1,2,3","0,1,2,3,4,5,6,7","Uops delivered to Instruction Decode Queue (IDQ) while Microcode Sequenser (MS) is busy",0,0,0,0,0,0,0,0
+IDQ.MS_CYCLES,0x79,0x30,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when uops are being delivered to Instruction Decode Queue (IDQ) while Microcode Sequenser (MS) is busy",0,0,0,1,0,0,0,0
+IDQ.MITE_CYCLES,0x79,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when uops are being delivered to Instruction Decode Queue (IDQ) from MITE path",0,0,0,1,0,0,0,0
+IDQ.DSB_CYCLES,0x79,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when uops are being delivered to Instruction Decode Queue (IDQ) from Decode Stream Buffer (DSB) path",0,0,0,1,0,0,0,0
+IDQ.MS_DSB_CYCLES,0x79,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when uops initiated by Decode Stream Buffer (DSB) are being delivered to Instruction Decode Queue (IDQ) while Microcode Sequenser (MS) is busy",0,0,0,1,0,0,0,0
+IDQ.MS_DSB_OCCUR,0x79,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Deliveries to Instruction Decode Queue (IDQ) initiated by Decode Stream Buffer (DSB) while Microcode Sequenser (MS) is busy",0,0,0,1,0,0,1,0
+IDQ.ALL_DSB_CYCLES_4_UOPS,0x79,0x18,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles Decode Stream Buffer (DSB) is delivering 4 Uops",0,0,0,4,0,0,0,0
+IDQ.ALL_DSB_CYCLES_ANY_UOPS,0x79,0x18,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles Decode Stream Buffer (DSB) is delivering any Uop",0,0,0,1,0,0,0,0
+IDQ.ALL_MITE_CYCLES_4_UOPS,0x79,0x24,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles MITE is delivering 4 Uops",0,0,0,4,0,0,0,0
+IDQ.ALL_MITE_CYCLES_ANY_UOPS,0x79,0x24,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles MITE is delivering any Uop",0,0,0,1,0,0,0,0
+IDQ.MITE_ALL_UOPS,0x79,0x3c,"0,1,2,3","0,1,2,3,4,5,6,7","Uops delivered to Instruction Decode Queue (IDQ) from MITE path",0,0,0,0,0,0,0,0
+ICACHE.MISSES,0x80,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Instruction cache, streaming buffer and victim cache misses",0,0,0,0,0,0,0,0
+ICACHE.IFETCH_STALL,0x80,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles where a code-fetch stalled due to L1 instruction-cache miss or an iTLB miss",0,0,0,0,0,0,0,0
+ITLB_MISSES.MISS_CAUSES_A_WALK,0x85,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Misses at all ITLB levels that cause page walks",0,0,0,0,0,0,0,0
+ITLB_MISSES.WALK_COMPLETED,0x85,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Misses in all ITLB levels that cause completed page walks",0,0,0,0,0,0,0,0
+ITLB_MISSES.WALK_DURATION,0x85,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when PMH is busy with page walks",0,0,0,0,0,0,0,0
+ITLB_MISSES.STLB_HIT,0x85,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Operations that miss the first ITLB level but hit the second and do not cause any page walks",0,0,0,0,0,0,0,0
+ILD_STALL.LCP,0x87,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Stalls caused by changing prefix length of the instruction.",0,0,0,0,0,0,0,0
+ILD_STALL.IQ_FULL,0x87,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Stall cycles because IQ is full",0,0,0,0,0,0,0,0
+BR_INST_EXEC.NONTAKEN_CONDITIONAL,0x88,0x41,"0,1,2,3","0,1,2,3,4,5,6,7","Not taken macro-conditional branches",0,0,0,0,0,0,0,0
+BR_INST_EXEC.TAKEN_CONDITIONAL,0x88,0x81,"0,1,2,3","0,1,2,3,4,5,6,7","Taken speculative and retired macro-conditional branches",0,0,0,0,0,0,0,0
+BR_INST_EXEC.TAKEN_DIRECT_JUMP,0x88,0x82,"0,1,2,3","0,1,2,3,4,5,6,7","Taken speculative and retired macro-conditional branch instructions excluding calls and indirects",0,0,0,0,0,0,0,0
+BR_INST_EXEC.TAKEN_INDIRECT_JUMP_NON_CALL_RET,0x88,0x84,"0,1,2,3","0,1,2,3,4,5,6,7","Taken speculative and retired indirect branches excluding calls and returns",0,0,0,0,0,0,0,0
+BR_INST_EXEC.TAKEN_INDIRECT_NEAR_RETURN,0x88,0x88,"0,1,2,3","0,1,2,3,4,5,6,7","Taken speculative and retired indirect branches with return mnemonic",0,0,0,0,0,0,0,0
+BR_INST_EXEC.TAKEN_DIRECT_NEAR_CALL,0x88,0x90,"0,1,2,3","0,1,2,3,4,5,6,7","Taken speculative and retired direct near calls",0,0,0,0,0,0,0,0
+BR_INST_EXEC.TAKEN_INDIRECT_NEAR_CALL,0x88,0xA0,"0,1,2,3","0,1,2,3,4,5,6,7","Taken speculative and retired indirect calls",0,0,0,0,0,0,0,0
+BR_INST_EXEC.ALL_CONDITIONAL,0x88,0xC1,"0,1,2,3","0,1,2,3,4,5,6,7","Speculative and retired macro-conditional branches",0,0,0,0,0,0,0,0
+BR_INST_EXEC.ALL_DIRECT_JMP,0x88,0xC2,"0,1,2,3","0,1,2,3,4,5,6,7","Speculative and retired macro-unconditional branches excluding calls and indirects",0,0,0,0,0,0,0,0
+BR_INST_EXEC.ALL_INDIRECT_JUMP_NON_CALL_RET,0x88,0xC4,"0,1,2,3","0,1,2,3,4,5,6,7","Speculative and retired indirect branches excluding calls and returns",0,0,0,0,0,0,0,0
+BR_INST_EXEC.ALL_INDIRECT_NEAR_RETURN,0x88,0xC8,"0,1,2,3","0,1,2,3,4,5,6,7","Speculative and retired indirect return branches.",0,0,0,0,0,0,0,0
+BR_INST_EXEC.ALL_DIRECT_NEAR_CALL,0x88,0xD0,"0,1,2,3","0,1,2,3,4,5,6,7","Speculative and retired direct near calls",0,0,0,0,0,0,0,0
+BR_INST_EXEC.ALL_BRANCHES,0x88,0xFF,"0,1,2,3","0,1,2,3,4,5,6,7","Speculative and retired  branches",0,0,0,0,0,0,0,0
+BR_MISP_EXEC.NONTAKEN_CONDITIONAL,0x89,0x41,"0,1,2,3","0,1,2,3,4,5,6,7","Not taken speculative and retired mispredicted macro conditional branches",0,0,0,0,0,0,0,0
+BR_MISP_EXEC.TAKEN_CONDITIONAL,0x89,0x81,"0,1,2,3","0,1,2,3,4,5,6,7","Taken speculative and retired mispredicted macro conditional branches",0,0,0,0,0,0,0,0
+BR_MISP_EXEC.TAKEN_INDIRECT_JUMP_NON_CALL_RET,0x89,0x84,"0,1,2,3","0,1,2,3,4,5,6,7","Taken speculative and retired mispredicted indirect branches excluding calls and returns",0,0,0,0,0,0,0,0
+BR_MISP_EXEC.TAKEN_RETURN_NEAR,0x89,0x88,"0,1,2,3","0,1,2,3,4,5,6,7","Taken speculative and retired mispredicted indirect branches with return mnemonic",0,0,0,0,0,0,0,0
+BR_MISP_EXEC.TAKEN_INDIRECT_NEAR_CALL,0x89,0xA0,"0,1,2,3","0,1,2,3,4,5,6,7","Taken speculative and retired mispredicted indirect calls",0,0,0,0,0,0,0,0
+BR_MISP_EXEC.ALL_CONDITIONAL,0x89,0xC1,"0,1,2,3","0,1,2,3,4,5,6,7","Speculative and retired mispredicted macro conditional branches",0,0,0,0,0,0,0,0
+BR_MISP_EXEC.ALL_INDIRECT_JUMP_NON_CALL_RET,0x89,0xC4,"0,1,2,3","0,1,2,3,4,5,6,7","Mispredicted indirect branches excluding calls and returns",0,0,0,0,0,0,0,0
+BR_MISP_EXEC.ALL_BRANCHES,0x89,0xFF,"0,1,2,3","0,1,2,3,4,5,6,7","Speculative and retired mispredicted macro conditional branches",0,0,0,0,0,0,0,0
+IDQ_UOPS_NOT_DELIVERED.CORE,0x9C,0x01,"0,1,2,3","0,1,2,3","Uops not delivered to Resource Allocation Table (RAT) per thread when backend of the machine is not stalled ",0,0,0,0,0,0,0,0
+IDQ_UOPS_NOT_DELIVERED.CYCLES_0_UOPS_DELIV.CORE,0x9C,0x01,"0,1,2,3","0,1,2,3","Cycles per thread when 4 or more uops are not delivered to Resource Allocation Table (RAT) when backend of the machine is not stalled ",0,0,0,4,0,0,0,0
+IDQ_UOPS_NOT_DELIVERED.CYCLES_LE_1_UOP_DELIV.CORE,0x9C,0x01,"0,1,2,3","0,1,2,3","Cycles per thread when 3 or more uops are not delivered to Resource Allocation Table (RAT) when backend of the machine is not stalled ",0,0,0,3,0,0,0,0
+IDQ_UOPS_NOT_DELIVERED.CYCLES_LE_2_UOP_DELIV.CORE,0x9C,0x01,"0,1,2,3","0,1,2,3","Cycles with less than 2 uops delivered by the front end.",0,0,0,2,0,0,0,0
+IDQ_UOPS_NOT_DELIVERED.CYCLES_LE_3_UOP_DELIV.CORE,0x9C,0x01,"0,1,2,3","0,1,2,3","Cycles with less than 3 uops delivered by the front end.",0,0,0,1,0,0,0,0
+IDQ_UOPS_NOT_DELIVERED.CYCLES_FE_WAS_OK,0x9C,0x01,"0,1,2,3","0,1,2,3","Counts cycles FE delivered 4 uops or Resource Allocation Table (RAT) was stalling FE.",0,0,0,1,1,0,0,0
+UOPS_DISPATCHED_PORT.PORT_0,0xA1,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per thread when uops are dispatched to port 0",0,0,0,0,0,0,0,0
+UOPS_DISPATCHED_PORT.PORT_1,0xA1,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per thread when uops are dispatched to port 1",0,0,0,0,0,0,0,0
+UOPS_DISPATCHED_PORT.PORT_4,0xA1,0x40,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per thread when uops are dispatched to port 4",0,0,0,0,0,0,0,0
+UOPS_DISPATCHED_PORT.PORT_5,0xA1,0x80,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per thread when uops are dispatched to port 5",0,0,0,0,0,0,0,0
+UOPS_DISPATCHED_PORT.PORT_0_CORE,0xA1,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per core when uops are dispatched to port 0",0,0,0,0,0,1,0,0
+UOPS_DISPATCHED_PORT.PORT_1_CORE,0xA1,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per core when uops are dispatched to port 1",0,0,0,0,0,1,0,0
+UOPS_DISPATCHED_PORT.PORT_4_CORE,0xA1,0x40,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per core when uops are dispatched to port 4",0,0,0,0,0,1,0,0
+UOPS_DISPATCHED_PORT.PORT_5_CORE,0xA1,0x80,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per core when uops are dispatched to port 5",0,0,0,0,0,1,0,0
+UOPS_DISPATCHED_PORT.PORT_2,0xA1,0x0C,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per thread when load or STA uops are dispatched to port 2",0,0,0,0,0,0,0,0
+UOPS_DISPATCHED_PORT.PORT_3,0xA1,0x30,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per thread when load or STA uops are dispatched to port 3",0,0,0,0,0,0,0,0
+UOPS_DISPATCHED_PORT.PORT_2_CORE,0xA1,0x0C,"0,1,2,3","0,1,2,3,4,5,6,7","Uops dispatched to port 2, loads and stores per core (speculative and retired)",0,0,0,0,0,1,0,0
+UOPS_DISPATCHED_PORT.PORT_3_CORE,0xA1,0x30,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles per core when load or STA uops are dispatched to port 3",0,0,0,0,0,1,0,0
+RESOURCE_STALLS.ANY,0xA2,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Resource-related stall cycles",0,0,0,0,0,0,0,0
+RESOURCE_STALLS.RS,0xA2,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles stalled due to no eligible RS entry available.",0,0,0,0,0,0,0,0
+RESOURCE_STALLS.SB,0xA2,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles stalled due to no store buffers available. (not including draining form sync).",0,0,0,0,0,0,0,0
+RESOURCE_STALLS.ROB,0xA2,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles stalled due to re-order buffer full.",0,0,0,0,0,0,0,0
+CYCLE_ACTIVITY.CYCLES_L2_PENDING,0xA3,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles with pending L2 cache miss loads.",0,0,0,1,0,0,0,0
+CYCLE_ACTIVITY.CYCLES_L1D_PENDING,0xA3,0x08,2,2,"Cycles with pending L1 cache miss loads.",0,0,0,8,0,0,0,0
+CYCLE_ACTIVITY.CYCLES_LDM_PENDING,0xA3,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles with pending memory loads.",0,0,0,2,0,0,0,0
+CYCLE_ACTIVITY.CYCLES_NO_EXECUTE,0xA3,0x04,"0,1,2,3","0,1,2,3","Total execution stalls",0,0,0,4,0,0,0,0
+CYCLE_ACTIVITY.STALLS_L2_PENDING,0xA3,0x05,"0,1,2,3","0,1,2,3,4,5,6,7","Execution stalls due to L2 cache misses.",0,0,0,5,0,0,0,0
+CYCLE_ACTIVITY.STALLS_LDM_PENDING,0xA3,0x06,"0,1,2,3","0,1,2,3,4,5,6,7","Execution stalls due to memory subsystem.",0,0,0,6,0,0,0,0
+CYCLE_ACTIVITY.STALLS_L1D_PENDING,0xA3,0x0C,2,2,"Execution stalls due to L1 data cache misses",0,0,0,12,0,0,0,0
+LSD.UOPS,0xA8,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Number of Uops delivered by the LSD. Read more on LSD under LSD_REPLAY.REPLAY",0,0,0,0,0,0,0,0
+LSD.CYCLES_ACTIVE,0xA8,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles Uops delivered by the LSD, but didn't come from the decoder",0,0,0,1,0,0,0,0
+DSB2MITE_SWITCHES.COUNT,0xAB,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Decode Stream Buffer (DSB)-to-MITE switches",0,0,0,0,0,0,0,0
+DSB2MITE_SWITCHES.PENALTY_CYCLES,0xAB,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Decode Stream Buffer (DSB)-to-MITE switch true penalty cycles",0,0,0,0,0,0,0,0
+DSB_FILL.EXCEED_DSB_LINES,0xAC,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles when Decode Stream Buffer (DSB) fill encounter more than 3 Decode Stream Buffer (DSB) lines",0,0,0,0,0,0,0,0
+ITLB.ITLB_FLUSH,0xAE,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Flushing of the Instruction TLB (ITLB) pages, includes 4k/2M/4M pages.",0,0,0,0,0,0,0,0
+OFFCORE_REQUESTS.DEMAND_DATA_RD,0xB0,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Demand Data Read requests sent to uncore",0,0,0,0,0,0,0,0
+OFFCORE_REQUESTS.DEMAND_CODE_RD,0xB0,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Cacheable and noncachaeble code read requests",0,0,0,0,0,0,0,0
+OFFCORE_REQUESTS.DEMAND_RFO,0xB0,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Demand RFO requests including regular RFOs, locks, ItoM",0,0,0,0,0,0,0,0
+OFFCORE_REQUESTS.ALL_DATA_RD,0xB0,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Demand and prefetch data reads",0,0,0,0,0,0,0,0
+UOPS_EXECUTED.THREAD,0xB1,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Counts the number of uops to be executed per-thread each cycle.",0,0,0,0,0,0,0,0
+UOPS_EXECUTED.CORE,0xB1,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Number of uops executed on the core.",0,0,0,0,0,0,0,0
+UOPS_EXECUTED.STALL_CYCLES,0xB1,0x01,"0,1,2,3","0,1,2,3","Counts number of cycles no uops were dispatched to be executed on this thread.",0,0,0,1,1,0,0,0
+TLB_FLUSH.DTLB_THREAD,0xBD,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","DTLB flush attempts of the thread-specific entries",0,0,0,0,0,0,0,0
+TLB_FLUSH.STLB_ANY,0xBD,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","STLB flush attempts",0,0,0,0,0,0,0,0
+INST_RETIRED.ANY_P,0xC0,0x00,"0,1,2,3","0,1,2,3,4,5,6,7","Number of instructions retired. General Counter   - architectural event",0,0,0,0,0,0,0,0
+INST_RETIRED.PREC_DIST,0xC0,0x01,1,1,"Precise instruction retired event with HW to reduce effect of PEBS shadow in IP distribution",0,0,0,0,0,0,0,1
+OTHER_ASSISTS.AVX_STORE,0xC1,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Number of GSSE memory assist for stores. GSSE microcode assist is being invoked whenever the hardware is unable to properly handle GSSE-256b operations.",0,0,0,0,0,0,0,1
+OTHER_ASSISTS.AVX_TO_SSE,0xC1,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Number of transitions from AVX-256 to legacy SSE when penalty applicable.",0,0,0,0,0,0,0,1
+OTHER_ASSISTS.SSE_TO_AVX,0xC1,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","Number of transitions from SSE to AVX-256 when penalty applicable.",0,0,0,0,0,0,0,1
+OTHER_ASSISTS.ANY_WB_ASSIST,0xC1,0x80,"0,1,2,3","0,1,2,3,4,5,6,7","Number of times any microcode assist is invoked by HW upon uop writeback.",0,0,0,0,0,0,0,1
+UOPS_RETIRED.ALL,0xC2,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Actually retired uops. ",0,0,0,0,0,0,0,1
+UOPS_RETIRED.RETIRE_SLOTS,0xC2,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Retirement slots used. ",0,0,0,0,0,0,0,1
+UOPS_RETIRED.STALL_CYCLES,0xC2,0x01,"0,1,2,3","0,1,2,3","Cycles without actually retired uops. ",0,0,0,1,1,0,0,1
+UOPS_RETIRED.TOTAL_CYCLES,0xC2,0x01,"0,1,2,3","0,1,2,3","Cycles with less than 10 actually retired uops. ",0,0,0,10,1,0,0,1
+UOPS_RETIRED.CORE_STALL_CYCLES,0xC2,0x01,"0,1,2,3","0,1,2,3","Cycles without actually retired uops. ",0,0,0,1,1,1,0,1
+MACHINE_CLEARS.MEMORY_ORDERING,0xC3,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Counts the number of machine clears due to memory order conflicts.",0,0,0,0,0,0,0,0
+MACHINE_CLEARS.SMC,0xC3,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Self-modifying code (SMC) detected.",0,0,0,0,0,0,0,0
+MACHINE_CLEARS.MASKMOV,0xC3,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","This event counts the number of executed Intel AVX masked load operations that refer to an illegal address range with the mask bits set to 0. ",0,0,0,0,0,0,0,0
+BR_INST_RETIRED.CONDITIONAL,0xC4,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Conditional branch instructions retired. ",0,0,0,0,0,0,0,1
+BR_INST_RETIRED.NEAR_CALL,0xC4,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Direct and indirect near call instructions retired. ",0,0,0,0,0,0,0,1
+BR_INST_RETIRED.ALL_BRANCHES,0xC4,0x00,"0,1,2,3","0,1,2,3,4,5,6,7","All (macro) branch instructions retired.",0,0,0,0,0,0,0,1
+BR_INST_RETIRED.NEAR_RETURN,0xC4,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Return instructions retired. ",0,0,0,0,0,0,0,1
+BR_INST_RETIRED.NOT_TAKEN,0xC4,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Not taken branch instructions retired. ",0,0,0,0,0,0,0,1
+BR_INST_RETIRED.NEAR_TAKEN,0xC4,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","Taken branch instructions retired. ",0,0,0,0,0,0,0,1
+BR_INST_RETIRED.FAR_BRANCH,0xC4,0x40,"0,1,2,3","0,1,2,3,4,5,6,7","Far branch instructions retired. ",0,0,0,0,0,0,0,1
+BR_INST_RETIRED.NEAR_CALL_R3,0xC4,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Direct and indirect macro near call instructions retired (captured in ring 3). ",0,0,0,0,0,0,0,1
+BR_MISP_RETIRED.CONDITIONAL,0xC5,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Mispredicted conditional branch instructions retired. ",0,0,0,0,0,0,0,1
+BR_MISP_RETIRED.ALL_BRANCHES,0xC5,0x00,"0,1,2,3","0,1,2,3,4,5,6,7","All mispredicted macro branch instructions retired.",0,0,0,0,0,0,0,1
+BR_MISP_RETIRED.NEAR_TAKEN,0xC5,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","number of near branch instructions retired that were mispredicted and taken. ",0,0,0,0,0,0,0,1
+FP_ASSIST.X87_OUTPUT,0xCA,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Number of X87 assists due to output value.",0,0,0,0,0,0,0,1
+FP_ASSIST.X87_INPUT,0xCA,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Number of X87 assists due to input value.",0,0,0,0,0,0,0,1
+FP_ASSIST.SIMD_OUTPUT,0xCA,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Number of SIMD FP assists due to Output values",0,0,0,0,0,0,0,1
+FP_ASSIST.SIMD_INPUT,0xCA,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","Number of SIMD FP assists due to input values",0,0,0,0,0,0,0,1
+FP_ASSIST.ANY,0xCA,0x1E,"0,1,2,3","0,1,2,3","Cycles with any input/output SSE or FP assist",0,0,0,1,0,0,0,1
+ROB_MISC_EVENTS.LBR_INSERTS,0xCC,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","Count cases of saving new LBR",0,0,0,0,0,0,0,0
+MEM_TRANS_RETIRED.PRECISE_STORE,0xCD,0x02,3,3,"Sample stores and collect precise store operation via PEBS record. PMC3 only. ",0,0,1,0,0,0,0,1
+MEM_TRANS_RETIRED.LOAD_LATENCY_GT_4,0xCD,0x01,3,3,"Loads with latency value being above 4",0x3F6,0x4,1,0,0,0,0,1
+MEM_TRANS_RETIRED.LOAD_LATENCY_GT_8,0xCD,0x01,3,3,"Loads with latency value being above 8",0x3F6,0x8,1,0,0,0,0,1
+MEM_TRANS_RETIRED.LOAD_LATENCY_GT_16,0xCD,0x01,3,3,"Loads with latency value being above 16",0x3F6,0x10,1,0,0,0,0,1
+MEM_TRANS_RETIRED.LOAD_LATENCY_GT_32,0xCD,0x01,3,3,"Loads with latency value being above 32",0x3F6,0x20,1,0,0,0,0,1
+MEM_TRANS_RETIRED.LOAD_LATENCY_GT_64,0xCD,0x01,3,3,"Loads with latency value being above 64",0x3F6,0x40,1,0,0,0,0,1
+MEM_TRANS_RETIRED.LOAD_LATENCY_GT_128,0xCD,0x01,3,3,"Loads with latency value being above 128",0x3F6,0x80,1,0,0,0,0,1
+MEM_TRANS_RETIRED.LOAD_LATENCY_GT_256,0xCD,0x01,3,3,"Loads with latency value being above 256",0x3F6,0x100,1,0,0,0,0,1
+MEM_TRANS_RETIRED.LOAD_LATENCY_GT_512,0xCD,0x01,3,3,"Loads with latency value being above 512",0x3F6,0x200,1,0,0,0,0,1
+MEM_UOPS_RETIRED.STLB_MISS_LOADS,0xD0,0x11,"0,1,2,3","0,1,2,3","Load uops with true STLB miss retired to architected path. ",0,0,0,0,0,0,0,1
+MEM_UOPS_RETIRED.STLB_MISS_STORES,0xD0,0x12,"0,1,2,3","0,1,2,3","Store uops with true STLB miss retired to architected path. ",0,0,0,0,0,0,0,1
+MEM_UOPS_RETIRED.LOCK_LOADS,0xD0,0x21,"0,1,2,3","0,1,2,3","Load uops with locked access retired to architected path. ",0,0,0,0,0,0,0,1
+MEM_UOPS_RETIRED.SPLIT_LOADS,0xD0,0x41,"0,1,2,3","0,1,2,3","Line-splitted load uops retired to architected path. ",0,0,0,0,0,0,0,1
+MEM_UOPS_RETIRED.SPLIT_STORES,0xD0,0x42,"0,1,2,3","0,1,2,3","Line-splitted store uops retired to architected path. ",0,0,0,0,0,0,0,1
+MEM_UOPS_RETIRED.ALL_LOADS,0xD0,0x81,"0,1,2,3","0,1,2,3","Load uops retired to architected path with filter on bits 0 and 1 applied. ",0,0,0,0,0,0,0,1
+MEM_UOPS_RETIRED.ALL_STORES,0xD0,0x82,"0,1,2,3","0,1,2,3","Store uops retired to architected path with filter on bits 0 and 1 applied. ",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_RETIRED.L1_HIT,0xD1,0x01,"0,1,2,3","0,1,2,3","Retired load uops with L1 cache hits as data sources. ",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_RETIRED.L2_HIT,0xD1,0x02,"0,1,2,3","0,1,2,3","Retired load uops with L2 cache hits as data sources. ",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_RETIRED.LLC_HIT,0xD1,0x04,"0,1,2,3","0,1,2,3","Retired load uops which data sources were data hits in LLC without snoops required. ",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_RETIRED.L1_MISS,0xD1,0x08,"0,1,2,3","0,1,2,3","Retired load uops which data sources following L1 data-cache miss",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_RETIRED.L2_MISS,0xD1,0x10,"0,1,2,3","0,1,2,3","Miss in mid-level (L2) cache. Excludes Unknown data-source.",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_RETIRED.LLC_MISS,0xD1,0x20,"0,1,2,3","0,1,2,3","Miss in last-level (L3) cache. Excludes Unknown data-source.",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_RETIRED.HIT_LFB,0xD1,0x40,"0,1,2,3","0,1,2,3","Retired load uops which data sources were load uops missed L1 but hit FB due to preceding miss to the same cache line with data not ready. ",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_MISS,0xD2,0x01,"0,1,2,3","0,1,2,3","Retired load uops which data sources were LLC hit and cross-core snoop missed in on-pkg core cache. ",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HIT,0xD2,0x02,"0,1,2,3","0,1,2,3","Retired load uops which data sources were LLC and cross-core snoop hits in on-pkg core cache. ",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HITM,0xD2,0x04,"0,1,2,3","0,1,2,3","Retired load uops which data sources were HitM responses from shared LLC. ",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_NONE,0xD2,0x08,"0,1,2,3","0,1,2,3","Retired load uops which data sources were hits in LLC without snoops required. ",0,0,0,0,0,0,0,1
+MEM_LOAD_UOPS_LLC_MISS_RETIRED.LOCAL_DRAM,0xD3,0x01,"0,1,2,3","0,1,2,3","Data from local DRAM either Snoop not needed or Snoop Miss (RspI)",0,0,0,0,0,0,0,1
+BACLEARS.ANY,0xE6,0x1F,"0,1,2,3","0,1,2,3,4,5,6,7","Counts the total number when the front end is resteered, mainly when the BPU cannot provide a correct prediction and this is corrected by other branch handling mechanisms at the front end.",0,0,0,0,0,0,0,0
+L2_TRANS.DEMAND_DATA_RD,0xF0,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Demand Data Read requests that access L2 cache",0,0,0,0,0,0,0,0
+L2_TRANS.RFO,0xF0,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","RFO requests that access L2 cache",0,0,0,0,0,0,0,0
+L2_TRANS.CODE_RD,0xF0,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","L2 cache accesses when fetching instructions",0,0,0,0,0,0,0,0
+L2_TRANS.ALL_PF,0xF0,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","L2 or LLC HW prefetches that access L2 cache",0,0,0,0,0,0,0,0
+L2_TRANS.L1D_WB,0xF0,0x10,"0,1,2,3","0,1,2,3,4,5,6,7","L1D writebacks that access L2 cache",0,0,0,0,0,0,0,0
+L2_TRANS.L2_FILL,0xF0,0x20,"0,1,2,3","0,1,2,3,4,5,6,7","L2 fill requests that access L2 cache",0,0,0,0,0,0,0,0
+L2_TRANS.L2_WB,0xF0,0x40,"0,1,2,3","0,1,2,3,4,5,6,7","L2 writebacks that access L2 cache",0,0,0,0,0,0,0,0
+L2_TRANS.ALL_REQUESTS,0xF0,0x80,"0,1,2,3","0,1,2,3,4,5,6,7","Transactions accessing L2 pipe",0,0,0,0,0,0,0,0
+L2_LINES_IN.I,0xF1,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","L2 cache lines in I state filling L2",0,0,0,0,0,0,0,0
+L2_LINES_IN.S,0xF1,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","L2 cache lines in S state filling L2",0,0,0,0,0,0,0,0
+L2_LINES_IN.E,0xF1,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","L2 cache lines in E state filling L2",0,0,0,0,0,0,0,0
+L2_LINES_IN.ALL,0xF1,0x07,"0,1,2,3","0,1,2,3,4,5,6,7","L2 cache lines filling L2",0,0,0,0,0,0,0,0
+L2_LINES_OUT.DEMAND_CLEAN,0xF2,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Clean L2 cache lines evicted by demand",0,0,0,0,0,0,0,0
+L2_LINES_OUT.DEMAND_DIRTY,0xF2,0x02,"0,1,2,3","0,1,2,3,4,5,6,7","Dirty L2 cache lines evicted by demand",0,0,0,0,0,0,0,0
+L2_LINES_OUT.PF_CLEAN,0xF2,0x04,"0,1,2,3","0,1,2,3,4,5,6,7","Clean L2 cache lines evicted by L2 prefetch",0,0,0,0,0,0,0,0
+L2_LINES_OUT.PF_DIRTY,0xF2,0x08,"0,1,2,3","0,1,2,3,4,5,6,7","Dirty L2 cache lines evicted by L2 prefetch",0,0,0,0,0,0,0,0
+L2_LINES_OUT.DIRTY_ALL,0xF2,0x0A,"0,1,2,3","0,1,2,3,4,5,6,7","Dirty L2 cache lines filling the L2",0,0,0,0,0,0,0,0
+UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC,0xB1,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles where at least 1 uop was executed per-thread",0,0,0,1,0,0,0,0
+UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC,0xB1,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles where at least 2 uops were executed per-thread",0,0,0,2,0,0,0,0
+UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC,0xB1,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles where at least 3 uops were executed per-thread",0,0,0,3,0,0,0,0
+UOPS_EXECUTED.CYCLES_GE_4_UOPS_EXEC,0xB1,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles where at least 4 uops were executed per-thread",0,0,0,4,0,0,0,0
+DTLB_LOAD_MISSES.MISS_CAUSES_A_WALK,0x08,0x81,"0,1,2,3","0,1,2,3,4,5,6,7","Demand load Miss in all translation lookaside buffer (TLB) levels causes an page walk of any page size.",0,0,0,0,0,0,0,0
+DTLB_LOAD_MISSES.WALK_COMPLETED,0x08,0x82,"0,1,2,3","0,1,2,3,4,5,6,7","Demand load Miss in all translation lookaside buffer (TLB) levels causes a page walk that completes of any page size.",0,0,0,0,0,0,0,0
+DTLB_LOAD_MISSES.WALK_DURATION,0x08,0x84,"0,1,2,3","0,1,2,3,4,5,6,7","Demand load cycles page miss handler (PMH) is busy with this walk.",0,0,0,0,0,0,0,0
+"RS_EVENTS.EMPTY_END ",0x5E,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Counts end of periods where the Reservation Station (RS) was empty. Could be useful to precisely locate Frontend Latency Bound issues.",0,0,0,1,1,0,1,0
+"MACHINE_CLEARS.COUNT ",0xC3,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Number of machine clears (nukes) of any type. ",0,0,0,1,0,0,1,0
+LSD.CYCLES_4_UOPS,0xA8,0x01,"0,1,2,3","0,1,2,3,4,5,6,7","Cycles 4 Uops delivered by the LSD, but didn't come from the decoder",0,,0,4,0,0,0,0
+OFFCORE_RESPONSE.ALL_CODE_RD.LLC_HIT.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand & prefetch code reads that hit in the LLC","0x1A6,0x1A7",0x3f803c0244,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_CODE_RD.LLC_HIT.NO_SNOOP_NEEDED,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand & prefetch code reads that hit in the LLC and sibling core snoops are not needed as either the core-valid bit is not set or the shared line is present in multiple cores","0x1A6,0x1A7",0x1003c0244,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_CODE_RD.LLC_MISS.DRAM,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand & prefetch code reads that miss the LLC  and the data returned from dram","0x1A6,0x1A7",0x300400244,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_DATA_RD.LLC_HIT.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand & prefetch data reads that hit in the LLC","0x1A6,0x1A7",0x3f803c0091,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_DATA_RD.LLC_HIT.HIT_OTHER_CORE_NO_FWD,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand & prefetch data reads that hit in the LLC and the snoops to sibling cores hit in either E/S state and the line is not forwarded","0x1A6,0x1A7",0x4003c0091,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_DATA_RD.LLC_HIT.HITM_OTHER_CORE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand & prefetch data reads that hit in the LLC and the snoop to one of the sibling cores hits the line in M state and the line is forwarded","0x1A6,0x1A7",0x10003c0091,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_DATA_RD.LLC_HIT.NO_SNOOP_NEEDED,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand & prefetch data reads that hit in the LLC and sibling core snoops are not needed as either the core-valid bit is not set or the shared line is present in multiple cores","0x1A6,0x1A7",0x1003c0091,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_DATA_RD.LLC_MISS.DRAM,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand & prefetch data reads that miss the LLC  and the data returned from dram","0x1A6,0x1A7",0x300400091,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_PF_RFO.LLC_HIT.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all prefetch RFOs that hit in the LLC","0x1A6,0x1A7",0x3f803c0120,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_PF_RFO.LLC_HIT.NO_SNOOP_NEEDED,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts prefetch RFOs that hit in the LLC and sibling core snoops are not needed as either the core-valid bit is not set or the shared line is present in multiple cores","0x1A6,0x1A7",0x1003c0120,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_READS.LLC_MISS.DRAM,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all data/code/rfo reads (demand & prefetch) that miss the LLC  and the data returned from dram","0x1A6,0x1A7",0x3004003f7,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_READS.LLC_REFERENCE.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all data/code/rfo references (demand & prefetch) made to LLC that either hit or miss the LLC ","0x1A6,0x1A7",0x103F7,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_RFO.LLC_HIT.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand & prefetch RFOs that hit in the LLC","0x1A6,0x1A7",0x3f803c0122,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_RFO.LLC_HIT.NO_SNOOP_NEEDED,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand & prefetch RFOs that hit in the LLC and sibling core snoops are not needed as either the core-valid bit is not set or the shared line is present in multiple cores","0x1A6,0x1A7",0x1003c0122,0,0,0,0,0,0
+OFFCORE_RESPONSE.COREWB.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all writebacks from the core to the LLC","0x1A6,0x1A7",0x10008,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_CODE_RD.LLC_HIT.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand code reads that hit in the LLC","0x1A6,0x1A7",0x3f803c0004,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_CODE_RD.LLC_HIT.NO_SNOOP_NEEDED,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand code reads that hit in the LLC and sibling core snoops are not needed as either the core-valid bit is not set or the shared line is present in multiple cores","0x1A6,0x1A7",0x1003c0004,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_CODE_RD.LLC_MISS.DRAM,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand code reads that miss the LLC and the data returned from dram","0x1A6,0x1A7",0x300400004,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_DATA_RD.LLC_HIT.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand data reads that hit in the LLC","0x1A6,0x1A7",0x3f803c0001,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_DATA_RD.LLC_HIT.HIT_OTHER_CORE_NO_FWD,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand data reads that hit in the LLC and the snoops to sibling cores hit in either E/S state and the line is not forwarded","0x1A6,0x1A7",0x4003c0001,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_DATA_RD.LLC_HIT.HITM_OTHER_CORE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand data reads that hit in the LLC and the snoop to one of the sibling cores hits the line in M state and the line is forwarded","0x1A6,0x1A7",0x10003c0001,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_DATA_RD.LLC_HIT.NO_SNOOP_NEEDED,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand data reads that hit in the LLC and sibling core snoops are not needed as either the core-valid bit is not set or the shared line is present in multiple cores","0x1A6,0x1A7",0x1003c0001,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_DATA_RD.LLC_MISS.DRAM,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand data reads that miss the LLC and the data returned from dram","0x1A6,0x1A7",0x300400001,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand data writes (RFOs) that hit in the LLC","0x1A6,0x1A7",0x3f803c0002,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.HITM_OTHER_CORE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand data writes (RFOs) that hit in the LLC and the snoop to one of the sibling cores hits the line in M state and the line is forwarded","0x1A6,0x1A7",0x10003c0002,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.NO_SNOOP_NEEDED,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts demand data writes (RFOs) that hit in the LLC and sibling core snoops are not needed as either the core-valid bit is not set or the shared line is present in multiple cores","0x1A6,0x1A7",0x1003c0002,0,0,0,0,0,0
+OFFCORE_RESPONSE.OTHER.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts miscellaneous accesses that include port i/o, MMIO and uncacheable memory accesses. It also includes L2 hints sent to LLC to keep a line from being evicted out of the core caches","0x1A6,0x1A7",0x18000,0,0,0,0,0,0
+OFFCORE_RESPONSE.SPLIT_LOCK_UC_LOCK.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts requests where the address of an atomic lock instruction spans a cache line boundary or the lock instruction is executed on uncacheable address ","0x1A6,0x1A7",0x10400,0,0,0,0,0,0
+OFFCORE_RESPONSE.STREAMING_STORES.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts non-temporal stores","0x1A6,0x1A7",0x10800,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_DATA_RD.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand data reads ","0x1A6,0x1A7",0x00010001,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_RFO.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand rfo's ","0x1A6,0x1A7",0x00010002,0,0,0,0,0,0
+OFFCORE_RESPONSE.DEMAND_CODE_RD.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand code reads","0x1A6,0x1A7",0x00010004,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_DATA_RD.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand & prefetch data reads","0x1A6,0x1A7",0x000105B3,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_RFO.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all demand & prefetch prefetch RFOs ","0x1A6,0x1A7",0x00010122,0,0,0,0,0,0
+OFFCORE_RESPONSE.ALL_READS.ANY_RESPONSE,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts all data/code/rfo references (demand & prefetch) ","0x1A6,0x1A7",0x000107F7,0,0,0,0,0,0
+OFFCORE_RESPONSE.DATA_IN_SOCKET.LLC_MISS.LOCAL_DRAM,"0xB7,0xBB",0x01,"0,1,2,3","0,1,2,3","Counts LLC replacements","0x1A6,0x1A7",0x6004001b3,0,0,0,0,0,0
