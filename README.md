@@ -67,28 +67,32 @@ make
 
 Read the documentation. 
 
-[rdpmc] (http://github.com/andikleen/pmu-tools/self/rdpmc.html) is the basic facility to access raw counters.
+[rdpmc] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/rdpmc.html) is the basic facility to access raw counters.
 
 ocperf can be used to generate raw perf numbers for your CPU to pass to rdpmc_open()
 	ocperf list | less
 <look for intended event>
 	DIRECT_MSR=1 ./ocperf.py stat -e eventname true
 <look for perf stat -e rXXXX in output>
+
 XXX is the needed event number in hex. Note that self does not support offcore or uncore events.
-Also the event numbers are CPU specific, so you may need a /proc/cpuinfo model check.
+
+Also the event numbers are CPU specific, so you may need a /proc/cpuinfo model check for portable programs (see the ocperf source for example)
+
+Example (replace EVENTNUMBER with your intended event from above or a perf event like PERF_COUNT_HW_CPU_CYCLES)
 
 	#include "rdpmc.h"
 
 	struct rdpmc_ctx ctx;
 	unsigned long long start, end;
 
-	if (rdpmc_open(XXX, &ctx) < 0) ... error ...
+	if (rdpmc_open(EVENTNUMBER, &ctx) < 0) ... error ...
 	start = rdpmc_read(&ctx);
 	... your workload ...
 	end = rdpmc_read(&ctx);
 
-[measure] (http://github.com/andikleen/pmu-tools/self/measure.html) supports event group profiling.
-[interrupts] (http://github.com/andikleen/pmu-tools/self/interrupts.html) provides functions for a common use
+[measure] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/measure.html) supports event group profiling.
+[interrupts] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/interrupts.html) provides functions for a common use
 case of filtering out context switches and interrupts from micro benchmarks. These only work 
 on Intel Ivy and Sandy Bridge CPUs.
 
@@ -97,6 +101,6 @@ Link the object files and include the header files in your program
 /sys/devices/cpu/rdpmc must be 1.
 
 rtest.c and test2.c provide examples. http://halobates.de/modern-pmus-yokohama.pdf provides some additional
-information on cycle counting.
+general information on cycle counting. The techniques used with simple-pmu described there can be used with self too.
 
 Andi Kleen
