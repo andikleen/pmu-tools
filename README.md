@@ -80,6 +80,7 @@ XXX is the needed event number in hex. Note that self does not support offcore o
 Also the event numbers are CPU specific, so you may need a /proc/cpuinfo model check for portable programs (see the ocperf source for example)
 
 Example (replace EVENTNUMBER with your intended event from above or a perf event like PERF_COUNT_HW_CPU_CYCLES)
+This is very simplified, for a real benchmark you almost certainly want some warmup, multiple iterations, possibly context switch filtering and some filler code to avoid cachee effects.
 
 	#include "rdpmc.h"
 
