@@ -17,6 +17,9 @@ This is automatically enabled for the respective events, and also
 available as a standalone program.
 - Some utility programs to access pci space or msrs on
 the command line
+- A utility program to program the PMU directly from user space
+(pmumon.py) for counting. This is mainly useful for testing
+and experimental purposes.
 
 Usage:
 
