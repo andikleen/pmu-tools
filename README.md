@@ -1,8 +1,7 @@
-
 pmu tools is a collection of tools for profile collection and performance
 analysis on Intel CPUs on top of Linux perf.
 
-Current features:
+# Current features:
 
 - A wrapper to "perf" that provides a full core event list for 
 common Intel CPUs. This allows to use all the Intel events,
@@ -24,11 +23,11 @@ and experimental purposes.
 Note for self-profiling on older kernels you can use
 [simple-pmu] http://halobates.de/simple-pmu
 
-Usage:
+# Usage:
 
 Check out the repository
 
-ocperf:
+## ocperf:
 
 Copy all the files to a directory (or run from the source)
 Run ocperf.py from that directory
@@ -57,7 +56,7 @@ tester provides a simple test suite.
 The latego.py, msr.py, pci.py modules can be also used as standalone programs
 to enable the offcore workaround, change MSRs or change PCI config space respectively.
 
-self: 
+## self: 
 
 Self is a simple library to support self-profiling of programs, that is programs
 that measure their own execution.
