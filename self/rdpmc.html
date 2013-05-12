@@ -1,0 +1,80 @@
+<h3>Ring 3 counting for CPU performance counters</h3>
+<ul>
+<p>This library allows accessing CPU performance counters from ring 3
+using the perf_events subsystem. This is useful to measure specific
+parts of programs (e.g. excluding initialization code)
+<p>Requires a Linux 3.3+ kernel
+</ul>
+<hr>
+<h2>rdpmc_open - initialize a simple ring 3 readable performance counter</h2>
+<i>int</i>
+<b>rdpmc_open</b>
+(<i>unsigned</i> <b>counter</b>,
+<i>struct rdpmc_ctx *</i> <b>ctx</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>counter</b>
+<dd>Raw event descriptor (UUEE UU unit mask EE event)
+<dt><b>ctx</b>
+<dd>Pointer to struct <i>rdpmc_ctx</i> that is initialized
+</dl>
+<h3>Description</h3>
+<blockquote>
+The counter will be set up to count CPU events excluding the kernel.
+Must be called for each thread using the counter.
+The caller must make sure counter is suitable for the running CPU.
+Only works in 3.3+ kernels.
+Must be closed with <b>rdpmc_close</b>
+</blockquote>
+<hr>
+<h2>rdpmc_open_attr - initialize a raw ring 3 readable performance counter</h2>
+<i>int</i>
+<b>rdpmc_open_attr</b>
+(<i>struct perf_event_attr *</i> <b>attr</b>,
+<i>struct rdpmc_ctx *</i> <b>ctx</b>,
+<i>struct rdpmc_ctx *</i> <b>leader_ctx</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>attr</b>
+<dd>perf struct <i>perf_event_attr</i> for the counter
+<dt><b>ctx</b>
+<dd>Pointer to struct <i>rdpmc_ctx</i> that is initialized.
+<dt><b>leader_ctx</b>
+<dd>context of group leader or NULL
+</dl>
+<h3>Description</h3>
+<blockquote>
+This allows more flexible setup with a custom <i>perf_event_attr</i>.
+For simple uses <b>rdpmc_open</b> should be used instead.
+Must be called for each thread using the counter.
+Must be closed with <b>rdpmc_close</b>
+</blockquote>
+<hr>
+<h2>rdpmc_close - </h2>
+<i>void</i>
+<b>rdpmc_close</b>
+(<i>struct rdpmc_ctx *</i> <b>ctx</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>ctx</b>
+<dd>Pointer to <i>rdpmc_ctx</i> context.
+</dl>
+<h3>Description</h3>
+<blockquote>
+Must be called by each thread for each context it initialized.
+</blockquote>
+<hr>
+<h2>rdpmc_read - </h2>
+<i>unsigned long long</i>
+<b>rdpmc_read</b>
+(<i>struct rdpmc_ctx *</i> <b>ctx</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>ctx</b>
+<dd>Pointer to initialized <i>rdpmc_ctx</i> structure.
+</dl>
+<h3>Description</h3>
+<blockquote>
+Read the current value of a running performance counter.
+</blockquote>
+<hr>

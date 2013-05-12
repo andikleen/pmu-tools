@@ -1,0 +1,91 @@
+<h3>Measuring of predefined counter groups in a process</h3>
+<ul>
+<p>Higher level interface to measure CPU performance counters in process
+context. The program calls the appropiate functions around 
+code that should be measured in individual thread.
+<p>The data is accumulated globally and printed
+</ul>
+<hr>
+<h2>measure_group_init - Initialize a measurement group</h2>
+<i>void</i>
+<b>measure_group_init</b>
+(<i>struct measure *</i> <b>g</b>,
+<i>char *</i> <b>name</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>g</b>
+<dd>measurement group (usually predefined)
+<dt><b>name</b>
+<dd>name of measurements or NULL
+</dl>
+<h3>Description</h3>
+<blockquote>
+Initialize a measurement group and allocate the counters.
+All measurements with the same name are printed together (so multiple
+names can be used to measure different parts of the program)
+Exits when the counters cannot be allocated.
+Has to be freed in the same thread with <b>measure_group_finish</b>
+Only one measurement group per thread can be active at a time.
+</blockquote>
+<hr>
+<h2>measure_group_start - Start measuring in a measurement group.</h2>
+<i>void</i>
+<b>measure_group_start</b>
+(<i></i> <b>void</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>void</b>
+<dd>no arguments
+</dl>
+<h3>Description</h3>
+<blockquote>
+<p>
+Start a measurement period for the current group in this thread.
+Multiple measurement periods are accumulated.
+</blockquote>
+<hr>
+<h2>measure_group_stop - Stop measuring a measurement group</h2>
+<i>void</i>
+<b>measure_group_stop</b>
+(<i></i> <b>void</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>void</b>
+<dd>no arguments
+</dl>
+<h3>Description</h3>
+<blockquote>
+<p>
+Stop the measurement for the current measurement group.
+</blockquote>
+<hr>
+<h2>measure_group_finish - Free the counter resources of a group Has to be called in the thread that executed measure_group_init()</h2>
+<i>void</i>
+<b>measure_group_finish</b>
+(<i></i> <b>void</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>void</b>
+<dd>no arguments
+</dl>
+<hr>
+<h2>measure_print_all - Print the accumulated data for all measurement groups</h2>
+<i>void</i>
+<b>measure_print_all</b>
+(<i>FILE *</i> <b>fh</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>fh</b>
+<dd>stdio file descriptor to output data
+</dl>
+<hr>
+<h2>measure_free_all - Free the accumulated data from past measurements</h2>
+<i>void</i>
+<b>measure_free_all</b>
+(<i></i> <b>void</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>void</b>
+<dd>no arguments
+</dl>
+<hr>

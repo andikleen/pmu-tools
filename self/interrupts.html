@@ -1,0 +1,30 @@
+<h2>interrupts_init - Initialize interrupt counter per thread Must be called for each application thread.</h2>
+<i>void</i>
+<b>interrupts_init</b>
+(<i></i> <b>void</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>void</b>
+<dd>no arguments
+</dl>
+<hr>
+<h2>interrupts_exit - Free interrupt counter per thread. Must be called for each application thread.</h2>
+<i>void</i>
+<b>interrupts_exit</b>
+(<i></i> <b>void</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>void</b>
+<dd>no arguments
+</dl>
+<hr>
+<h2>get_interrupts - get current interrupt counter. Get the current hardware interrupt count. When the number changed for a measurement period you had some sort of context switch. The sample for this period should be discarded. This returns absolute numbers.</h2>
+<i>unsigned long long</i>
+<b>get_interrupts</b>
+(<i></i> <b>void</b>)
+<h3>Arguments</h3>
+<dl>
+<dt><b>void</b>
+<dd>no arguments
+</dl>
+<hr>
