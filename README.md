@@ -107,4 +107,8 @@ Link the object files and include the header files in your program
 rtest.c and test2.c provide examples. http://halobates.de/modern-pmus-yokohama.pdf provides some additional
 general information on cycle counting. The techniques used with simple-pmu described there can be used with self too.
 
+# Licenses
+
+ocperf is under GPLv2, self is under the modified BSD license.
+
 Andi Kleen
