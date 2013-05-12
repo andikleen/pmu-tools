@@ -76,6 +76,8 @@ ocperf can be used to generate raw perf numbers for your CPU to pass to rdpmc_op
 	DIRECT_MSR=1 ./ocperf.py stat -e eventname true
 <look for perf stat -e rXXXX in output>
 
+![example] (http://halobates.de/pmutools-event.png)
+
 XXX is the needed event number in hex. Note that self does not support offcore or uncore events.
 
 Also the event numbers are CPU specific, so you may need a /proc/cpuinfo model check for portable programs (see the ocperf source for example)
