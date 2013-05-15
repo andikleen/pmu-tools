@@ -32,7 +32,7 @@ import re
 import shlex
 import copy
 
-import msr
+import msr as msrmod
 import latego
 
 # some mismapped to similar systems (HEDT->EP etc.)
@@ -82,11 +82,11 @@ version = PerfVersion()
 class MSR:
     reg = {}
 
-    def writemsr(self, msr, val, print_only = False):
-        print "msr %x = %x" % (msr, val, )
+    def writemsr(self, msrnum, val, print_only = False):
+        print "msr %x = %x" % (msrnum, val, )
         if print_only:
             return
-        msr.writemsr(msr, val)
+        msrmod.writemsr(msrnum, val)
 
     def checked_writemsr(self, msr, val, print_only = False):
         if msr in self.reg:
