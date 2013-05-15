@@ -5,6 +5,9 @@ set -x
 
 PERF=${PERF:-perf}
 
+# handle unknown event
+$PERF stat -e branch-misses true
+
 checklist()
 {
 	# just see that it doesn't fail

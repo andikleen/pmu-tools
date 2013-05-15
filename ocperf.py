@@ -294,6 +294,8 @@ class Emap:
 
     def getevent(self, e):
         ev = self.getevent_worker(e)
+        if ev == None:
+            return None
         e = ev.output()
         if e not in self.pevents:
             self.pevents[e] = ev
