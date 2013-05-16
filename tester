@@ -68,7 +68,7 @@ checkmsr2()
 
 checkmsr2 wsm-sp offcore_response.pf_rfo.remote_cache_hitm_1 "msr 1a7 = 820"
 checkmsr2 nhm-ex offcore_response_0.data_ifetch.any_location "msr 1a6 = ff77"
-# fixme hsw.csv is missing offcore events
+# xxx add hsw
 checkmsr2 ivt offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
 checkmsr2 snb-ep offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
 

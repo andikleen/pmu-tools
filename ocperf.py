@@ -217,6 +217,7 @@ def ffs(flag):
     return j
 
 class Emap:
+    "Read a event spreadsheet."
     events = {}
     codes = {}
     desc = {}
