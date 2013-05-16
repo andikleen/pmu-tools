@@ -12,6 +12,10 @@
 # more details.
 #
 # wrapper for perf for using named events and events with additional MSRs.
+# Features:
+# - map intel events to raw perf events
+# - enable disable workarounds for specific events
+# - handle offcore event on older kernels
 # For the later must run as root and only as a single instance per machine 
 # Normal events (mainly not OFFCORE) can be handled unprivileged 
 # For events you can specify additional intel names from the list
