@@ -64,6 +64,9 @@ fixed_counters = {
     "FIXED COUNTER 3": "ref-cycles"
 }
 
+def has_format(s):
+    return os.path.isfile("/sys/devices/cpu/format/" + s)
+
 class PerfVersion:
     def __init__(self):
         minor = 0
@@ -77,9 +80,9 @@ class PerfVersion:
             if re.match("[0-9]+", major) and int(major) > 3:
                 minor = 100 # infinity
 
-        self.offcore = (minor >= 4 and
-                        os.path.isfile("/sys/devices/cpu/format/offcore_rsp") and
-                        not os.getenv("DIRECT_MSR"))
+        self.direct = os.getenv("DIRECT_MSR") != None or minor < 4
+        self.offcore = has_format("offcore_rsp") and not self.direct
+        self.ldlat = has_format("ldlat") and not self.direct
 
 version = PerfVersion()
 
@@ -168,7 +171,7 @@ class Event:
             extra = re.sub(r"c[0-9]+", "", extra)
             val |= int(m.group(1)[1:]) << 24
 
-        if version.offcore:
+        if version.direct:
             self.ename = "cpu/event=0x%x,umask=0x%x%s/" % (val & 0xff, (val >> 8) & 0xff,
                                                            self.newextra, )
         else:
@@ -261,6 +264,9 @@ class Emap:
                 msrval = gethex('msr_value')
                 if version.offcore and msrnum in (0x1a6, 0x1a7):
                     e.newextra = ",offcore_rsp=0x%x" % (msrval, )
+                elif version.ldlat and msrnum in (0x3f6,):
+                    e.newextra = ",ldlat=0x%x" % (msrval, )
+                # add new msr here
                 else:
                     e.msrval = msrval
                     e.msr = msrnum
