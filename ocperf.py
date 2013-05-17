@@ -183,8 +183,8 @@ class Event:
             e = self.ename + extra
         else:
             e = self.ename
-            if ev.extra != "":
-                e += ":" + extra
+            if self.extra != "":
+                e += ":" + self.extra
         return e
 
 EVENTSEL_EVENT = 0x00ff
