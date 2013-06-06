@@ -24,6 +24,8 @@ and experimental purposes.
 - A library for self profiling with Linux since Linux 3.3
 Note for self-profiling on older kernels you can use
 [simple-pmu] http://halobates.de/simple-pmu
+- An example program for address profiling on Nehalem and later
+Intel CPUs (addr)
 
 # Usage:
 
