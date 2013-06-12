@@ -35,7 +35,7 @@ for i in range(0, 8):
             name = ""
             for j in emap.codes.keys():
                 if j & 0xff == evsel & 0xff:
-                    name += "%s " % (emap.codes[j].name)
+                    name += "%s[%x] " % (emap.codes[j].name, j)
             if name:
                 print "[no exact match] " + name
             else:
