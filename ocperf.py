@@ -35,6 +35,7 @@ import csv
 import re
 import shlex
 import copy
+from pmudef import *
 
 import msr as msrmod
 import latego
@@ -186,17 +187,6 @@ class Event:
             if self.extra != "":
                 e += ":" + self.extra
         return e
-
-EVENTSEL_EVENT = 0x00ff
-EVENTSEL_UMASK = 0xff00
-EVENTSEL_EDGE  = 1<<18
-EVENTSEL_PC    = 1<<19
-EVENTSEL_ANY   = 1<<21
-EVENTSEL_INV   = 1<<23
-EVENTSEL_CMASK = 0xff000000
-
-EVMASK = (EVENTSEL_EVENT|EVENTSEL_UMASK|EVENTSEL_EDGE|EVENTSEL_PC|EVENTSEL_ANY|
-          EVENTSEL_INV|EVENTSEL_CMASK)
 
 extra_flags = (
         (EVENTSEL_EDGE, "edge"),
