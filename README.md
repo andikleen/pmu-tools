@@ -26,6 +26,7 @@ Note for self-profiling on older kernels you can use
 [simple-pmu] http://halobates.de/simple-pmu
 - An example program for address profiling on Nehalem and later
 Intel CPUs (addr)
+- A program to print the currently running events (event-rmap)
 
 # Usage:
 
@@ -113,6 +114,10 @@ general information on cycle counting. The techniques used with simple-pmu descr
 
 addr is a basic frame work for self profiling of memory addresses accessed by the program.
 Requires a Linux 3.10+ kernel and a supported CPU.
+
+## event-rmap
+
+event-rmap [cpu] prints the currently running events.
 
 # Licenses
 
