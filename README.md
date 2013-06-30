@@ -71,7 +71,10 @@ Do cycle decomposition on a workload: estimate on which part of the
 CPU pipeline it bottlenecks. The bottlenecks are expressed as a tree
 with different levels (max 4).
 
-This only supports counting, that is it cannot tell you where in
+This follows the "Top Down" methology described in B.3.2 of
+the [Intel optimization manual] (http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf)
+
+toplev.py only supports counting, that is it cannot tell you where in
 the program the problem occurred.
 
 Requires an Intel Sandy, Ivy Bridge, Haswell CPU.
