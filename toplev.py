@@ -51,6 +51,7 @@ measure pid PID
 -v print everything
 -d use detailed model if available (only Ivy Bridge currently)
 -lLEVEL only use events upto max level (max 4)
+-x, CSV mode with separator ,
 
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplevel can be used.
@@ -124,6 +125,7 @@ multiplex = False
 print_all = False
 detailed_model = False
 max_level = 2
+csv_mode = None
 
 first = 1
 while first < len(sys.argv):
@@ -138,6 +140,8 @@ while first < len(sys.argv):
         detailed_model = True
     elif sys.argv[first].startswith("-l"):
         max_level = int(sys.argv[first][2:])
+    elif sys.argv[first].startswith("-x"):
+        csv_mode = sys.argv[first][2:]
     elif sys.argv[first] == '--':
         first += 1
         break
@@ -149,7 +153,8 @@ if len(sys.argv) - first <= 0:
     usage()
 
 class Output:
-    def __init__(self, logfile):
+    def __init__(self, logfile, csv):
+        self.csv = csv
         if logfile:
             self.logf = open(logfile, "w")
             self.terminal = False
@@ -157,37 +162,42 @@ class Output:
             self.logf = sys.stderr
             self.terminal = self.logf.isatty()
 
-    def s(self, s):
-        print >>self.logf, s
+    def s(self, hdr, s):
+        if self.csv:
+            print >>self.logf,"%s%s%s" % (hdr, self.csv, s)
+        else:
+            print >>self.logf, "%-35s\t%s" % (hdr + ":", s)
 
     def p(self, name, l):
 	if l:
 	    if l >= -0.05 and l < 1.05:
-	        self.s("%-35s\t%5s%%"  % (name + ":", "%2.2f" % (100.0 * l)))
+	        self.s(name, "%5s%%"  % ("%2.2f" % (100.0 * l)))
 	    else:
-		self.s("%-35s\tmismeasured" % (name + ":",))
+		self.s(name, "mismeasured")
         else:
-            self.s("%-35s\tnot available" % (name + ":",))
+            self.s(name, "not available")
 
     def nopercent(self, name, num):
         if num:
-            self.s("%-35s\t%5s"  % (name + ":", "%2.2f" % (num)))
+            self.s(name, "%5s"  % ("%2.2f" % (num)))
         else:
-            self.s("%-35s\tnot available"  % (name + ":",))
+            self.s(name, "not available")
 
     def int(self, name, num):
-        self.s("%-35s\t%5s"  % (name + ":", "%d" % (num)))
+        self.s(name, "%5s"  % ("%d" % (num)))
 
     def bold(self, s):
-        if not self.terminal:
+        if (not self.terminal) or self.csv:
             return s
         return '\033[1m' + s + '\033[0m'
 
-    def comment(self, c):
-        self.s(self.bold(c) + ":")
+    def desc(self, d):
+        if not self.csv:
+            print >>self.logf, "\t%s" % (d)
 
     def warning(self, s):
-        print >>sys.stderr, self.bold("warning:") + " " + s
+        if not self.csv:
+            print >>sys.stderr, self.bold("warning:") + " " + s
 
 
 known_cpus = (
@@ -432,7 +442,7 @@ class Runner:
 
     # fit events into available counters
     # simple first fit algorithm
-    def schedule(self, logfile):
+    def schedule(self, out):
         work = []
         evlist = set()
         # XXX sort by evnums too
@@ -451,14 +461,13 @@ class Runner:
         if work:
             self.add(work, evlist)
         self.execute()
-        out = Output(logfile)
         for obj in self.olist:
             if obj.res:
                 obj.compute(lambda e: obj.res[obj.evlist.index(e.replace("_PS",""))])
                 if obj.thresh or print_all:
                     out.p(obj.name, obj.val)
                 if obj.thresh:
-                    out.s("\t" + obj.desc[1:].replace("\n","\n\t"))
+                    out.desc(obj.desc[1:].replace("\n","\n\t"))
             else:
                 out.warning("%s not measured" % (obj.__class__.__name__,))
 
@@ -515,4 +524,5 @@ else:
 
 runner.fix_parents()
 runner.collect()
-runner.schedule(logfile)
+out = Output(logfile, csv_mode)
+runner.schedule(out)
