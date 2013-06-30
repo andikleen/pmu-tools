@@ -69,10 +69,6 @@ level 1 or running without -d is generally the most reliable.
 
 One of the events (even used by level 1) requires a recent enough
 kernel that understands its counter constraints.  3.10+ is safe.
-
-The tool cannot distinguish perf failing from the program failing.
-If the program returns an error code, and you still want to measure
-it wrap it with a sh -c.
 """
     sys.exit(1)
 
@@ -360,10 +356,12 @@ def measure(events, runner):
     if interval_mode:
         rest += " " + interval_mode + " " 
     rest += " ".join(map(shell_arg, sys.argv[first:]))
-    if not execute("perf stat " + feat.perf_output(plog) + rest):
-        print >>sys.stderr, "not measured because perf failed"
+    execute("perf stat " + feat.perf_output(plog) + rest):
+    try:
+        inf = open(plog, "r")
+    except IOError:
+        print "Cannot open result file %s" % (plog)
         return
-    inf = open(plog, "r")
     res = []
     rev = []
     prev_interval = 0.0

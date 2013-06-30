@@ -95,6 +95,8 @@ Usage:
 	-v print everything
 	-d use detailed model if available (only Ivy Bridge currently)
 	-lLEVEL only use events upto max level (max 4)
+	-x,     Enable CSV mode with separator ,
+	-Ixxx   Enable interval mode, measure every xxx ms
 
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplevel can be used.
@@ -116,10 +118,6 @@ level 1 or running without -d is generally the most reliable.
 
 One of the events (even used by level 1) requires a recent enough
 kernel that understands its counter constraints.  3.10+ is safe.
-
-The tool cannot distinguish perf failing from the program failing.
-If the program returns an error code, and you still want to measure
-it wrap it with a sh -c.
 
 ## self: 
 
