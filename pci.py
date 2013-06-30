@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# library and tool to access PCI config space
 import os
 import struct
 

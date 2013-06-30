@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# library and tool to access MSRs (model specific registers)
 import os
 import glob
 import struct
