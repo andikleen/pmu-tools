@@ -1,5 +1,7 @@
 #!/usr/bin/python
-# verify plog.* output by running event one by one
+# counterdiff.py < plog program ..      (or general perf arguments)
+# verify plog.* output from toplev by running event one by one
+# this can be used to estimate multiplexing measurement errors
 import sys, os
 
 def run(x):
@@ -10,7 +12,8 @@ for l in sys.stdin:
 	if l.find(",") < 0:
 		continue
 	n = l.strip().split(",")
-	run("perf stat --output l -x, -e %s ./loop" % (n[1]))
+        run("perf stat --output l -x, -e %s %s" %
+                    (n[1], " ".join(sys.argv[1:])))
 	f = open("l", "r")
 	for i in f:
 		if i.find(",") < 0:
