@@ -400,7 +400,8 @@ class Runner:
 	    if obj.level == 1:
                 obj.parent = None
 	    elif obj.parent.level >= obj.level:
-		all_parents = filter(lambda x: x.level < obj.level, self.olist)
+                my_list = self.olist[:self.olist.index(obj)]
+		all_parents = filter(lambda x: x.level < obj.level, my_list)
 		obj.parent = all_parents[-1]
 	        assert obj.parent.level < obj.level
 
