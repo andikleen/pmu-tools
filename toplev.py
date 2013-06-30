@@ -188,7 +188,6 @@ class Output:
         if not self.csv:
             print >>sys.stderr, self.bold("warning:") + " " + s
 
-
 known_cpus = (
     ("snb", (42, 45)),
     ("ivb", (58, )),
@@ -268,10 +267,9 @@ cpu = CPU()
 
 def execute(r):
     print r
-    if os.system(r) != 0:
-        print >>sys.stderr, "perf failed"
-        return False
-    return True
+    r = os.system(r)
+    if r != 0:
+        print >>sys.stderr, "perf failed", r
 
 def num_counters(ev):
     counter = 0
@@ -400,7 +398,6 @@ def finish(work, res, evlist):
         obj.res = map(lambda x: values[x], obj.evnum)
 
 def ev_append(ev, obj):
-    #print "got", ev
     if not ev in obj.evlist:
         obj.evlist.append(ev)
     return 1
