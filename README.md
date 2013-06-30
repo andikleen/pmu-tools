@@ -245,3 +245,4 @@ an easier answer to question Q2j in Vince Weaver's perf events FAQ.
 ocperf is under GPLv2, self and addr under the modified BSD license.
 
 Andi Kleen
+pmu-tools@halobates.de
