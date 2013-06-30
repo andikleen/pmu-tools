@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+# standalone simple pmu configuration tool
+# allows to count an even without using perf
+# will conflict with any parallel perf (and other profiler)
+# usage.
+# Author: Andi Kleen
 # 
 import os
 import glob
