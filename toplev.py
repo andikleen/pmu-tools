@@ -49,6 +49,7 @@ measure pid PID
 -d use detailed model if available (only Ivy Bridge currently)
 -lLEVEL only use events upto max level (max 4)
 -x, CSV mode with separator ,
+-Inum  Enable interval mode, printing output every num ms
 
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplevel can be used.
@@ -117,6 +118,7 @@ print_all = False
 detailed_model = False
 max_level = 2
 csv_mode = None
+interval_mode = None
 
 first = 1
 while first < len(sys.argv):
@@ -133,6 +135,8 @@ while first < len(sys.argv):
         max_level = int(sys.argv[first][2:])
     elif sys.argv[first].startswith("-x"):
         csv_mode = sys.argv[first][2:]
+    elif sys.argv[first].startswith("-I"):
+        interval_mode = sys.argv[first]
     elif sys.argv[first] == '--':
         first += 1
         break
@@ -325,8 +329,12 @@ def flat_to_group(res, events, rev):
     for egroup in events:
         g = []
         for j in egroup:
-            if rev[i] != j:
+            if i >= len(rev):
+                print "--- not enough results res %s events %s rev %s" % (res, events, rev)
+                return []
+            elif rev[i] != j:
                 print "--- got event %s expected %s" % (rev[i], j, )
+                return []
             g.append(res[i])
             i += 1
         resg.append(g)
@@ -358,7 +366,21 @@ def measure(events, runner):
     inf = open(plog, "r")
     res = []
     rev = []
+    prev_interval = 0.0
+    interval = -1.0
     for l in inf:
+        if interval_mode:
+            m = re.match(r"\s*([0-9.]+),(.*)", l)
+            if m:
+                interval = float(m.group(1))
+                l = m.group(2)
+                if interval != prev_interval:
+                    if res:
+                        print "Timestamp ",prev_interval
+                        gen_res(flat_to_group(res, events, rev), out, runner)
+                        res = []
+                        rev = []
+                    prev_interval = interval
         reg = r"[0-9.]+,(" + "|".join(ingroup_events) + r"|(r|raw )[0-9a-fx]+|cpu/[^/]+/)"
         if re.match(reg, l):
             count, event = l.split(",", 1) 
@@ -375,6 +397,8 @@ def measure(events, runner):
             print l,
     inf.close()
     os.remove(plog)
+    if interval_mode:
+        print "Timestamp ",interval
     gen_res(flat_to_group(res, events, rev), out, runner)
 
 # map events to their values
