@@ -128,6 +128,8 @@ kernel that understands its counter constraints.  3.10+ is safe.
 interval-plot.py can plot the output of perf stat -I1000 -x, or 
 or toplev.py -I1000 -x, 
 
+Below is the level 2 toplev measurement of a Linux kernel compile.
+
 ![plot-example] (http://halobates.de/interval.plot.l2.png)
 
 ## interval-normalize:
