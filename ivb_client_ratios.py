@@ -39,10 +39,6 @@ def SLOTS(EV):
     return PipelineWidth * CLKS(EV)
 def IPC(EV):
     return EV("INST_RETIRED.ANY") / CLKS(EV)
-def CPUutlilization(EV):
-    return EV("CPU_CLK_UNHALTED.REF_TSC") / XXX
-def TurboUtilization(EV):
-    return CLKS(EV) / EV("CPU_CLK_UNHALTED.REF_TSC")
 def UPI(EV):
     return EV("UOPS_RETIRED.RETIRE_SLOTS") / EV("INST_RETIRED.ANY")
 
@@ -464,6 +460,7 @@ Caching will improve the latency and increase performance."""
              self.thresh = False
          return self.val
 
+# FIXME broken
 class StoresBound:
     name = "Stores Bound"
     domain = "Clocks"
@@ -743,8 +740,8 @@ class Setup:
         o["L3Latency"] = n
         n = DRAMBound() ; r.run(n) ; n.parent = prev ; prev = n
         o["DRAMBound"] = n
-        n = StoresBound() ; r.run(n) ; n.parent = prev ; prev = n
-        o["StoresBound"] = n
+        #n = StoresBound() ; r.run(n) ; n.parent = prev ; prev = n
+        #o["StoresBound"] = n
         n = FalseSharing() ; r.run(n) ; n.parent = prev ; prev = n
         o["FalseSharing"] = n
         n = SplitStores() ; r.run(n) ; n.parent = prev ; prev = n
