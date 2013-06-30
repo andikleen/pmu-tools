@@ -24,9 +24,6 @@ import sys, os, re, itertools, textwrap, types, platform
 #sys.path.append("../pmu-tools")
 import ocperf
 
-extra_events = "cycles|instructions|faults|cs|migrations|cpu-clock|task-clock|" + \
-               "page-faults|context-switches|CPU-migrations"
-extra_events_l = set(extra_events.split("|"))
 ingroup_events = set(["cycles", "instructions", "ref-cycles"])
 
 def usage():
@@ -105,23 +102,17 @@ class PerfFeatures:
             return "2>%s " % (plog,)
 
     def event_group(self, evlist, max_counters):
-        el = filter(lambda e: e not in extra_events_l or e in ingroup_events, evlist)
-	e = ",".join(el)
+        need_counters = filter(lambda e: e not in ingroup_events, evlist)
+	e = ",".join(evlist)
         # when the group has to be multiplexed anyways don't use a group
         # perf doesn't support groups that need to be multiplexed internally too
-        if len(el) <= max_counters and self.group_support:
+        if len(need_counters) <= max_counters and self.group_support:
             e = "{%s}" % (e,)
-        extra = filter(lambda e: e in extra_events_l and e not in ingroup_events, evlist)
-        if extra:
-            if e:
-                e += ","
-            e += ",".join(extra)
         return e
  
 feat = PerfFeatures()
 
 logfile = None
-multiplex = False
 print_all = False
 detailed_model = False
 max_level = 2
@@ -358,7 +349,7 @@ def measure(events):
     res = []
     rev = []
     for l in inf:
-        reg = r"[0-9.]+,(" + extra_events + "|(r|raw )[0-9a-fx]+|cpu/[^/]+/)"
+        reg = r"[0-9.]+,(" + "|".join(ingroup_events) + "|(r|raw )[0-9a-fx]+|cpu/[^/]+/)"
         if re.match(reg, l):
             count, event = l.split(",", 1) 
             res.append(float(count))
@@ -393,9 +384,11 @@ def ev_append(ev, obj):
 
 class Runner:
     "Schedule measurements of event groups. Try to run multiple in parallel."
-    workll = []
-    evll = []
-    olist = []
+    def __init__(self, max_level):
+        self.workll = []
+        self.evll = []
+        self.olist = []
+        self.max_level = max_level
 
     def run(self, obj):
 	obj.thresh = 0.0
@@ -425,9 +418,13 @@ class Runner:
     def execute(self, out):
         for work, evlist in zip(self.workll, self.evll):
             print_header(work, evlist)
-            res = measure([evlist])
-            if res:
-                finish(work, res[0], evlist)
+        glist = []
+        for e in self.evll:
+            glist.append(e)
+        res = measure(glist)
+        if res:
+            for work, evll, r in zip(self.workll, self.evll, res):
+                finish(work, r, evll)
         self.print_res(out)
 
     # collect the events by pre-computing the equation
@@ -454,7 +451,7 @@ class Runner:
         for obj in solist:
             objev = obj.evnum
             newev = set(list(evlist) + objev)
-            needed = len(filter(lambda x: x not in extra_events_l, newev))
+            needed = len(filter(lambda x: x not in ingroup_events, newev))
             if cpu.counters < needed and work:
                 self.add(work, evlist)
                 work = []
@@ -479,20 +476,6 @@ class Runner:
             else:
                 out.warning("%s not measured" % (obj.__class__.__name__,))
 
-class RunnerMultiplex(Runner):
-    "Version of Runner that multiplexes all event groups for only a single run."
-    def execute(self, out):
-        for work, evlist in zip(self.workll, self.evll):
-            print_header(work, evlist)
-        glist = []
-        for e in self.evll:
-            glist.append(e)
-        res = measure(glist)
-        if res:
-            for work, evll, r in zip(self.workll, self.evll, res):
-                finish(work, r, evll)
-        self.print_res(out)
-
 def sysctl(name):
     try:
         f = open("/proc/sys/" + name.replace(".","/"), "r")
@@ -515,15 +498,8 @@ if cpu.cpu == None:
     print >>sys.stderr, "Unsupported CPU model %d" % (cpu.model,)
     sys.exit(1)
     
-if cpu.cpu == "ivb" and detailed_model and max_level > 1:
-    multiplex = True 
+runner = Runner(max_level)
 
-if multiplex:
-    runner = RunnerMultiplex()
-else:
-    runner = Runner()
-
-runner.max_level = max_level
 if cpu.cpu == "ivb" and detailed_model:
     import ivb_client_ratios
     ev = ivb_client_ratios.Setup(runner)
