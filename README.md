@@ -18,6 +18,7 @@ This is automatically enabled for the respective events, and also
 available as a standalone program.
 - A "toplev.py" tool to do cycle composition for a workload, that is 
 measure where in the CPU pipe line it bottle necks.
+- A plot tool to plot perf stat -Ixxx -x, or toplev.py -Ixxx -x, output
 - Some utility programs to access pci space or msrs on
 the command line
 - A utility program to program the PMU directly from user space
@@ -118,6 +119,13 @@ level 1 or running without -d is generally the most reliable.
 
 One of the events (even used by level 1) requires a recent enough
 kernel that understands its counter constraints.  3.10+ is safe.
+
+## interval-plot:
+
+interval-plot.py can plot the output of perf stat -I1000 -x, or 
+or toplev.py -I1000 -x, 
+
+![plot-example] (http://halobates.de/interval.plot.l2.png)
 
 ## self: 
 
