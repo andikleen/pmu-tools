@@ -1,10 +1,12 @@
 #!/usr/bin/python
 # generate dot diagram of top down tree from module
 import sys
-import ivb_client_ratios
-m = ivb_client_ratios
-#import simple_ratios
-#m = simple_ratios
+if len(sys.argv) > 1 and sys.argv[1] == "simple":
+    import simple_ratios
+    m = simple_ratios
+else:
+    import ivb_client_ratios
+    m = ivb_client_ratios
 
 class Runner:
     def __init__(self):
