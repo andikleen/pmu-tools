@@ -162,7 +162,12 @@ class Output:
         else:
             print >>self.logf, "%-35s\t%s" % (hdr + ":", s)
 
-    def p(self, name, l):
+    def p(self, name, l, timestamp):
+        if timestamp:
+            sep = " "
+            if self.csv:
+                sep = self.csv
+            print >>self.logf,"%6.9f%s" % (timestamp, sep),
 	if l:
             if check_ratio(l):
 	        self.s(name, "%5s%%"  % ("%2.2f" % (100.0 * l)))
@@ -342,11 +347,11 @@ def shell_arg(a):
     return a
 
 # print results
-def gen_res(res, out, runner):
+def gen_res(res, out, runner, timestamp):
     if res:
         for work, evll, r in zip(runner.workll, runner.evll, res):
             finish(work, r, evll)
-    runner.print_res(out)
+    runner.print_res(out, timestamp)
 
 # execute perf: list of event-groups -> list of results-for-group
 # and print result
@@ -365,7 +370,7 @@ def measure(events, runner):
     res = []
     rev = []
     prev_interval = 0.0
-    interval = -1.0
+    interval = None
     for l in inf:
         if interval_mode:
             m = re.match(r"\s*([0-9.]+),(.*)", l)
@@ -374,8 +379,7 @@ def measure(events, runner):
                 l = m.group(2)
                 if interval != prev_interval:
                     if res:
-                        print "Timestamp ",prev_interval
-                        gen_res(flat_to_group(res, events, rev), out, runner)
+                        gen_res(flat_to_group(res, events, rev), out, runner, prev_interval)
                         res = []
                         rev = []
                     prev_interval = interval
@@ -395,9 +399,7 @@ def measure(events, runner):
             print l,
     inf.close()
     os.remove(plog)
-    if interval_mode:
-        print "Timestamp ",interval
-    gen_res(flat_to_group(res, events, rev), out, runner)
+    gen_res(flat_to_group(res, events, rev), out, runner, interval)
 
 # map events to their values
 def finish(work, res, evlist):
@@ -491,12 +493,12 @@ class Runner:
             self.add(work, evlist)
         self.execute(out)
     
-    def print_res(self, out):
+    def print_res(self, out, timestamp):
         for obj in self.olist:
             if obj.res:
                 obj.compute(lambda e: obj.res[obj.evlist.index(e.replace("_PS",""))])
                 if obj.thresh or print_all:
-                    out.p(obj.name, obj.val)
+                    out.p(obj.name, obj.val, timestamp)
                 if obj.thresh and check_ratio(obj.val):
                     out.desc(obj.desc[1:].replace("\n","\n\t"))
                 else:
