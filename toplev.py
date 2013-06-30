@@ -120,7 +120,6 @@ class PerfFeatures:
 feat = PerfFeatures()
 
 logfile = None
-verbose = True
 multiplex = False
 print_all = False
 detailed_model = False
@@ -162,8 +161,11 @@ class Output:
         print >>self.logf, s
 
     def p(self, name, l):
-        if l:
-            self.s("%-35s\t%5s%%"  % (name + ":", "%2.2f" % (100.0 * l)))
+	if l:
+	    if l >= -0.05 and l < 1.05:
+	        self.s("%-35s\t%5s%%"  % (name + ":", "%2.2f" % (100.0 * l)))
+	    else:
+		self.s("%-35s\tmismeasured" % (name + ":",))
         else:
             self.s("%-35s\tnot available" % (name + ":",))
 
