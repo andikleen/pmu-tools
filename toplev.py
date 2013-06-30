@@ -356,7 +356,7 @@ def measure(events, runner):
     if interval_mode:
         rest += " " + interval_mode + " " 
     rest += " ".join(map(shell_arg, sys.argv[first:]))
-    execute("perf stat " + feat.perf_output(plog) + rest):
+    execute("perf stat " + feat.perf_output(plog) + rest)
     try:
         inf = open(plog, "r")
     except IOError:
