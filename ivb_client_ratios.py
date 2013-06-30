@@ -465,12 +465,14 @@ class StoresBound:
     name = "Stores Bound"
     domain = "Clocks"
     desc = """
-This metric represents how often CPU was stalled on due to store operations."""
+Ignore ratio."""
     level = 3
     def compute(self, EV):
          try:
-             self.val = EV("DSB2MITE_SWITCHES.PENALTY_CYCLES") / CLKS(EV)
-             self.thresh = self.val > 0.2 and self.parent.thresh
+             #self.val = EV("DSB2MITE_SWITCHES.PENALTY_CYCLES") / CLKS(EV)
+             #self.thresh = self.val > 0.2 and self.parent.thresh
+             self.val = 1.0
+             self.thresh = True
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
@@ -740,8 +742,8 @@ class Setup:
         o["L3Latency"] = n
         n = DRAMBound() ; r.run(n) ; n.parent = prev ; prev = n
         o["DRAMBound"] = n
-        #n = StoresBound() ; r.run(n) ; n.parent = prev ; prev = n
-        #o["StoresBound"] = n
+        n = StoresBound() ; r.run(n) ; n.parent = prev ; prev = n
+        o["StoresBound"] = n
         n = FalseSharing() ; r.run(n) ; n.parent = prev ; prev = n
         o["FalseSharing"] = n
         n = SplitStores() ; r.run(n) ; n.parent = prev ; prev = n
