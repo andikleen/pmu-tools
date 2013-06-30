@@ -124,9 +124,12 @@ make
 
 Read the documentation. 
 
-[rdpmc] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/rdpmc.html) is the basic facility to access raw counters.
+[rdpmc] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/rdpmc.html)
+is the basic facility to access raw counters.
 
-ocperf can be used to generate raw perf numbers for your CPU to pass to rdpmc_open()
+ocperf can be used to generate raw perf numbers for your CPU to pass
+to rdpmc_open()
+
 	ocperf list | less
 <look for intended event>
 	DIRECT_MSR=1 ./ocperf.py stat -e eventname true
@@ -134,12 +137,19 @@ ocperf can be used to generate raw perf numbers for your CPU to pass to rdpmc_op
 
 ![example] (http://halobates.de/pmutools-event.png)
 
-XXX is the needed event number in hex. Note that self does not support offcore or uncore events.
+XXX is the needed event number in hex. Note that self does not support
+offcore or uncore events.
 
-Also the event numbers are CPU specific, so you may need a /proc/cpuinfo model check for portable programs (see the ocperf source for example)
+Also the event numbers are CPU specific, so you may need a
+/proc/cpuinfo model check for portable programs (see the ocperf source
+for example)
 
-Example (replace EVENTNUMBER with your intended event from above or a perf event like PERF_COUNT_HW_CPU_CYCLES)
-This is very simplified, for a real benchmark you almost certainly want some warmup, multiple iterations, possibly context switch filtering and some filler code to avoid cachee effects.
+Example (replace EVENTNUMBER with your intended event from above or a
+perf event like PERF_COUNT_HW_CPU_CYCLES). 
+
+This is very simplified, for a real benchmark you almost certainly
+want some warmup, multiple iterations, possibly context switch
+filtering and some filler code to avoid cache effects.
 
 	#include "rdpmc.h"
 
@@ -151,17 +161,21 @@ This is very simplified, for a real benchmark you almost certainly want some war
 	... your workload ...
 	end = rdpmc_read(&ctx);
 
-[measure] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/measure.html) supports event group profiling.
-[interrupts] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/interrupts.html) provides functions for a common use
-case of filtering out context switches and interrupts from micro benchmarks. These only work 
-on Intel Ivy and Sandy Bridge CPUs.
+[measure] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/measure.html)
+supports event group profiling.  
+[interrupts] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/interrupts.html)
+provides functions for a common use case of filtering out context
+switches and interrupts from micro benchmarks. These only work on
+Intel Ivy and Sandy Bridge CPUs.
 
 Link the object files and include the header files in your program
 
 /sys/devices/cpu/rdpmc must be 1.
 
-rtest.c and test2.c provide examples. http://halobates.de/modern-pmus-yokohama.pdf provides some additional
-general information on cycle counting. The techniques used with simple-pmu described there can be used with self too.
+rtest.c and test2.c provide
+examples. http://halobates.de/modern-pmus-yokohama.pdf provides some
+additional general information on cycle counting. The techniques used
+with simple-pmu described there can be used with self too.
 
 ## pebs-grabber:
 
