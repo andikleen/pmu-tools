@@ -73,6 +73,7 @@ def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
 class PerfFeatures:
+    "Adapt to the quirks of various perf versions."
     group_support = False
     def __init__(self):
         self.output_supported = works("perf stat --output /dev/null true")
@@ -144,6 +145,7 @@ def check_ratio(l):
     return l >= -0.05 and l < 1.05
 
 class Output:
+    "Generate output human readable or as CSV."
     def __init__(self, logfile, csv):
         self.csv = csv
         if logfile:
@@ -172,15 +174,6 @@ class Output:
 		self.s(name, "mismeasured")
         else:
             self.s(name, "not available")
-
-    def nopercent(self, name, num):
-        if num:
-            self.s(name, "%5s"  % ("%2.2f" % (num)))
-        else:
-            self.s(name, "not available")
-
-    def int(self, name, num):
-        self.s(name, "%5s"  % ("%d" % (num)))
 
     def bold(self, s):
         if (not self.terminal) or self.csv:
@@ -517,8 +510,8 @@ if sysctl("kernel.nmi_watchdog") != 0:
     print >>sys.stderr,"Please disable nmi watchdog (echo 0 > /proc/sys/kernel/nmi_watchdog)"
     sys.exit(1)
 
-version = platform.release().split(".")
-if int(version[0]) < 3 or (int(version[0]) == 3 and int(version[1]) < 10):
+version = map(int, platform.release().split(".")[:2])
+if version[0] < 3 or (version[0] == 3 and version[1] < 10):
     print >>sys.stderr, "Older kernel than 3.10. Events may not be correctly scheduled."
 
 if cpu.cpu == None:
