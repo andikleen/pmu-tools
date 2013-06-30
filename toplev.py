@@ -152,6 +152,9 @@ while first < len(sys.argv):
 if len(sys.argv) - first <= 0:
     usage()
 
+def check_ratio(l):
+    return l >= -0.05 and l < 1.05
+
 class Output:
     def __init__(self, logfile, csv):
         self.csv = csv
@@ -170,7 +173,7 @@ class Output:
 
     def p(self, name, l):
 	if l:
-	    if l >= -0.05 and l < 1.05:
+            if check_ratio(l):
 	        self.s(name, "%5s%%"  % ("%2.2f" % (100.0 * l)))
 	    else:
 		self.s(name, "mismeasured")
@@ -419,12 +422,13 @@ class Runner:
         self.workll.append(work)
         self.evll.append(evlist)
 
-    def execute(self):
+    def execute(self, out):
         for work, evlist in zip(self.workll, self.evll):
             print_header(work, evlist)
             res = measure([evlist])
             if res:
                 finish(work, res[0], evlist)
+        self.print_res(out)
 
     # collect the events by pre-computing the equation
     # we disable the output, so it happens silently
@@ -460,20 +464,24 @@ class Runner:
             evlist = newev
         if work:
             self.add(work, evlist)
-        self.execute()
+        self.execute(out)
+    
+    def print_res(self, out):
         for obj in self.olist:
             if obj.res:
                 obj.compute(lambda e: obj.res[obj.evlist.index(e.replace("_PS",""))])
                 if obj.thresh or print_all:
                     out.p(obj.name, obj.val)
-                if obj.thresh:
+                if obj.thresh and check_ratio(obj.val):
                     out.desc(obj.desc[1:].replace("\n","\n\t"))
+                else:
+                    obj.thresh = 0 # hide children too
             else:
                 out.warning("%s not measured" % (obj.__class__.__name__,))
 
 class RunnerMultiplex(Runner):
     "Version of Runner that multiplexes all event groups for only a single run."
-    def execute(self):
+    def execute(self, out):
         for work, evlist in zip(self.workll, self.evll):
             print_header(work, evlist)
         glist = []
@@ -483,6 +491,7 @@ class RunnerMultiplex(Runner):
         if res:
             for work, evll, r in zip(self.workll, self.evll, res):
                 finish(work, r, evll)
+        self.print_res(out)
 
 def sysctl(name):
     try:
