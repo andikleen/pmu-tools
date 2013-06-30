@@ -25,7 +25,7 @@ the command line
 and experimental purposes.
 - A library for self profiling with Linux since Linux 3.3
 Note for self-profiling on older kernels you can use
-[simple-pmu] http://halobates.de/simple-pmu
+[simple-pmu] (http://halobates.de/simple-pmu)
 - An example program for address profiling on Nehalem and later
 Intel CPUs (addr)
 - A program to print the currently running events (event-rmap)
@@ -76,6 +76,9 @@ the program the problem occurred.
 Requires an Intel Sandy, Ivy Bridge, Haswell CPU.
 It works best on Ivy Bridge currently, the others only support
 a basic (but reliable) model.
+
+[IVB model] (http://halobates.de/ivb-hierarchy.svg)
+[Simple model] (http://halobates.de/simple-hierarchy.svg)
 
 Usage:
 
