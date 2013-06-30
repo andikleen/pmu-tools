@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # print currently running events on cpu (default 0)
 # event-rmap [cpu-num]
-# xxx no pebs, no extra modi for now
+# xxx no pebs, no extra modi for now, racy with multi plexing
 import sys
 import msr
 import ocperf
@@ -30,7 +30,21 @@ for i in range(0, 8):
         print "%d: %016x: " % (i, evsel),
         evsel &= EVMASK
         if evsel in emap.codes:
-            print emap.codes[evsel].name
+            ev = emap.codes[evsel]
+            if ev.msr:
+                try:
+                    extra = msr.readmsr(ev.msr)
+                except OSError:
+                    print "Cannot read extra MSR %x for %s" % (ev.msr, ev.name)
+                    continue
+                for j in emap.codes.keys():
+                    if j == evsel and extra == emap.codes[j].msrvalue:
+                        print j.name, "msr:%x" % (extra)
+                else:
+                    print "no exact match for %s, msr %x value %x" % (ev.name,
+                                                                      ev.msr, ev.msrvalue)
+            else:
+                print ev.name
         else:
             name = ""
             for j in emap.codes.keys():
