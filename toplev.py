@@ -15,10 +15,7 @@
 # CPU pipeline it bottlenecks.
 #
 # must find ocperf in python module path. add to paths below if needed.
-#
 # Handles a variety of perf versions, but older ones have various limitations.
-#
-# - cannot handle programs that exit with an error code (wrap in shell)
 
 import sys, os, re, itertools, textwrap, types, platform
 #sys.path.append("../pmu-tools")
