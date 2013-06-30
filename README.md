@@ -11,14 +11,14 @@ not just the builtin events of perf.
 - Support for Intel "offcore" events on older systems that
 do not have support for  this in the Intel. Offcore events
 allow to profile the location of a memory access outside the
-CPU's caches.
-- Implement a workaround for some issues with offcore events 
-on Sandy Bridge EP (Intel Xeon E5 first generation)
+CPU's caches. This also implements a workaround for some issues
+with offcore events on Sandy Bridge EP (Intel Xeon E5 first generation)
 This is automatically enabled for the respective events, and also
 available as a standalone program.
 - A "toplev.py" tool to do cycle composition for a workload, that is 
 measure where in the CPU pipe line it bottle necks.
 - A plot tool to plot perf stat -Ixxx -x, or toplev.py -Ixxx -x, output
+- A tool to normalize the output of perf stat -Ixxx -x, / toplev.py -IXXX -x,
 - Some utility programs to access pci space or msrs on
 the command line
 - A utility program to program the PMU directly from user space
@@ -129,6 +129,12 @@ interval-plot.py can plot the output of perf stat -I1000 -x, or
 or toplev.py -I1000 -x, 
 
 ![plot-example] (http://halobates.de/interval.plot.l2.png)
+
+## interval-normalize:
+
+This converts the output of perf stat -Ixxx -x, / toplev.py -Ixxx -x, 
+to a normalized output (one column for each event). This allows
+easier plotting and processing with other tools.
 
 ## self: 
 
