@@ -392,6 +392,18 @@ class Runner:
         obj.evlist = []
         self.olist.append(obj)
 
+    # xxx fix the input files
+    def fix_parents(self):
+	for obj in self.olist:
+	    if not obj.parent:
+	        continue
+	    if obj.level == 1:
+                obj.parent = None
+	    elif obj.parent.level >= obj.level:
+		all_parents = filter(lambda x: x.level < obj.level, self.olist)
+		obj.parent = all_parents[-1]
+	        assert obj.parent.level < obj.level
+
     def add(self, work, evlist):
         self.workll.append(work)
         self.evll.append(evlist)
@@ -496,5 +508,6 @@ else:
     import simple_ratios
     ev = simple_ratios.Setup(runner)
 
+runner.fix_parents()
 runner.collect()
 runner.schedule(logfile)
