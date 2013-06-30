@@ -21,7 +21,7 @@
 # - cannot handle programs that exit with an error code (wrap in shell)
 
 import sys, os, re, itertools, textwrap, types
-sys.path.append("../pmu-tools")
+#sys.path.append("../pmu-tools")
 import ocperf
 
 extra_events = "cycles|instructions|faults|cs|migrations|cpu-clock|task-clock|" + \
