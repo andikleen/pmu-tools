@@ -312,7 +312,7 @@ def raw_events(evlist):
     return map(lambda x: raw_event(x, emap), evlist)
 
 def pwrap(s):
-    print "\n".join(textwrap.wrap(s, 80))
+    print "\n".join(textwrap.wrap(s, 60))
 
 def print_header(work, evlist):
     evnames0 = map(lambda obj: obj.evlist, work)
