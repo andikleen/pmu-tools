@@ -20,7 +20,7 @@
 #
 # - cannot handle programs that exit with an error code (wrap in shell)
 
-import sys, os, re, itertools, textwrap, types
+import sys, os, re, itertools, textwrap, types, platform
 #sys.path.append("../pmu-tools")
 import ocperf
 
@@ -487,6 +487,10 @@ def sysctl(name):
 if sysctl("kernel.nmi_watchdog") != 0:
     print >>sys.stderr,"Please disable nmi watchdog (echo 0 > /proc/sys/kernel/nmi_watchdog)"
     sys.exit(1)
+
+version = platform.release().split(".")
+if int(version[0]) < 3 or (int(version[0]) == 3 and int(version[1]) < 10):
+    print >>sys.stderr, "Older kernel than 3.10. Events may not be correctly scheduled."
 
 if cpu.cpu == None:
     print >>sys.stderr, "Unsupported CPU model %d" % (cpu.model,)
