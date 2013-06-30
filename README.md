@@ -34,14 +34,12 @@ Intel CPUs (addr)
 
 # Usage:
 
-Check out the repository
+Check out the repository. Run the tools from the directory you
+checked out (but it does not need to be the current directory)
+They automatically search for other modules and data files
+in the same directory the script was located in.
 
 ## ocperf:
-
-Copy all the files to a directory (or run from the source)
-Run ocperf.py from that directory
-ocperf.py searches for the data files in the same directory
-as the binary
 
 ocperf.py list
 List all the events perf and ocperf supports on the current CPU
@@ -69,17 +67,23 @@ to enable the offcore workaround, change MSRs or change PCI config space respect
 
 Do cycle decomposition on a workload: estimate on which part of the
 CPU pipeline it bottlenecks. The bottlenecks are expressed as a tree
-with different levels (max 4).
+with different levels (max 4). Each bottleneck is only meaningful
+if the parent higher level crossed the threshold (it acts similar to a binary
+search). The tool automatically only prints meaningful ratios,
+unless -v is specified.
 
 This follows the "Top Down" methology described in B.3.2 of
 the [Intel optimization manual] (http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf)
 
 toplev.py only supports counting, that is it cannot tell you where in
-the program the problem occurred.
+the program the problem occurred, just what happened.
 
 Requires an Intel Sandy, Ivy Bridge, Haswell CPU.
+
 It works best on Ivy Bridge currently, the others only support
-a basic (but reliable) model.
+a basic (but reliable) model. By default the simple high level model
+is used. The detailed model is selected with -d, and the max level
+specified with -l (max 4, default 2).
 
 [IVB model] (http://halobates.de/ivb-hierarchy.svg)
 [Simple model] (http://halobates.de/simple-hierarchy.svg)
@@ -116,7 +120,7 @@ with non steady state workloads.
 are much less accurate and it works best with programs that primarily
 do the same thing over and over)
 
-In this case it's recommended to measure the program only after
+It's recommended to measure the program only after
 the startup phase by profiling globally or attaching later.
 level 1 or running without -d is generally the most reliable.
 
@@ -241,6 +245,10 @@ Requires a Linux 3.10+ kernel and a supported CPU.
 
 event-rmap [cpu] prints the currently running events. This provides
 an easier answer to question Q2j in Vince Weaver's perf events FAQ.
+
+# Support
+
+Please post to the linux-perf-users@vger.kernel.org mailing list.
 
 # Licenses
 
