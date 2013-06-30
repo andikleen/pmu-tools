@@ -78,6 +78,7 @@ It works best on Ivy Bridge currently, the others only support
 a basic (but reliable) model.
 
 Usage:
+
 	./toplev.py [-lX] [-v] [-d] [-o logfile] program
 	measure program
 	./toplev.py [-lX] [-v] [-d] [-o logfile] -a sleep X
@@ -86,6 +87,7 @@ Usage:
 	measure pid PID
 
 Options:
+
 	-o set output file
 	-v print everything
 	-d use detailed model if available (only Ivy Bridge currently)
@@ -215,7 +217,8 @@ Requires a Linux 3.10+ kernel and a supported CPU.
 
 ## event-rmap
 
-event-rmap [cpu] prints the currently running events.
+event-rmap [cpu] prints the currently running events. This provides
+an easier answer to question Q2j in Vince Weaver's perf events FAQ.
 
 # Licenses
 
