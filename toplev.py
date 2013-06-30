@@ -398,7 +398,8 @@ class Runner:
         obj.evlist = []
         self.olist.append(obj)
 
-    # xxx fix the input files
+    # dumbo topological sort
+    # xxx fix the input files to specify this directly
     def fix_parents(self):
 	for obj in self.olist:
 	    if not obj.parent:
