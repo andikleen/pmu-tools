@@ -337,10 +337,20 @@ def shell_arg(a):
         return "'%s'" % (a,)
     return a
 
+# print results
+def gen_res(res, out, runner):
+    if res:
+        for work, evll, r in zip(runner.workll, runner.evll, res):
+            finish(work, r, evll)
+    runner.print_res(out)
+
 # execute perf: list of event-groups -> list of results-for-group
-def measure(events):
+# and print result
+def measure(events, runner):
     plog = "plog.%d" % (os.getpid(),)
     rest = " -x, -e '" + ",".join(map(lambda e: feat.event_group(e, cpu.counters), events)) + "' "
+    if interval_mode:
+        rest += " " + interval_mode + " " 
     rest += " ".join(map(shell_arg, sys.argv[first:]))
     if not execute("perf stat " + feat.perf_output(plog) + rest):
         print >>sys.stderr, "not measured because perf failed"
@@ -349,7 +359,7 @@ def measure(events):
     res = []
     rev = []
     for l in inf:
-        reg = r"[0-9.]+,(" + "|".join(ingroup_events) + "|(r|raw )[0-9a-fx]+|cpu/[^/]+/)"
+        reg = r"[0-9.]+,(" + "|".join(ingroup_events) + r"|(r|raw )[0-9a-fx]+|cpu/[^/]+/)"
         if re.match(reg, l):
             count, event = l.split(",", 1) 
             res.append(float(count))
@@ -364,9 +374,8 @@ def measure(events):
         else:
             print l,
     inf.close()
-    r = flat_to_group(res, events, rev)
     os.remove(plog)
-    return r
+    gen_res(flat_to_group(res, events, rev), out, runner)
 
 # map events to their values
 def finish(work, res, evlist):
@@ -422,11 +431,7 @@ class Runner:
         glist = []
         for e in self.evll:
             glist.append(e)
-        res = measure(glist)
-        if res:
-            for work, evll, r in zip(self.workll, self.evll, res):
-                finish(work, r, evll)
-        self.print_res(out)
+        measure(glist, self)
 
     # collect the events by pre-computing the equation
     # we disable the output, so it happens silently
