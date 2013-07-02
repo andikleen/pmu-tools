@@ -460,17 +460,15 @@ Caching will improve the latency and increase performance."""
              self.thresh = False
          return self.val
 
-# FIXME broken
 class StoresBound:
     name = "Stores Bound"
     domain = "Clocks"
-    desc = """
-Ignore ratio."""
+    desc = ""
     level = 3
     def compute(self, EV):
          try:
-             #self.val = EV("DSB2MITE_SWITCHES.PENALTY_CYCLES") / CLKS(EV)
-             #self.thresh = self.val > 0.2 and self.parent.thresh
+             self.val = MemoryBound - (EV("CYCLE_ACTIVITY.STALLS_LDM_PENDING") / CLKS(EV))
+             self.thresh = self.val > 0.2 and self.parent.thresh
              self.val = 1.0
              self.thresh = True
          except ZeroDivisionError:
