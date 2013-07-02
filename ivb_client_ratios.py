@@ -467,7 +467,7 @@ class StoresBound:
     level = 3
     def compute(self, EV):
          try:
-             self.val = MemoryBound - (EV("CYCLE_ACTIVITY.STALLS_LDM_PENDING") / CLKS(EV))
+             self.val = self.MemoryBound.compute(EV) - (EV("CYCLE_ACTIVITY.STALLS_LDM_PENDING") / CLKS(EV))
              self.thresh = self.val > 0.2 and self.parent.thresh
              self.val = 1.0
              self.thresh = True
