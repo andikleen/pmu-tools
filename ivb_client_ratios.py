@@ -784,3 +784,4 @@ class Setup:
         o["PortsUtilization"].DividerActive = o["DividerActive"]
         o["BASE"].Retiring = o["Retiring"]
         o["BASE"].MicroSequencer = o["MicroSequencer"]
+	o["StoresBound"].MemoryBound = o["MemoryBound"]
