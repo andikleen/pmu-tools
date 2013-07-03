@@ -17,7 +17,7 @@
 # must find ocperf in python module path. add to paths below if needed.
 # Handles a variety of perf versions, but older ones have various limitations.
 
-import sys, os, re, itertools, textwrap, types, platform
+import sys, os, re, itertools, textwrap, types, platform, pty, subprocess
 #sys.path.append("../pmu-tools")
 import ocperf
 
@@ -77,24 +77,19 @@ class PerfFeatures:
     group_support = False
     def __init__(self):
         self.output_supported = works("perf stat --output /dev/null true")
-        if not self.output_supported:
-            self.logfd_supported = works("perf stat --log-fd 3 --output /dev/null true")
+        self.logfd_supported = works("perf stat --log-fd 3 3>/dev/null true")
         # some broken perf versions log on stdin
         if not self.output_supported and not self.logfd_supported:
-            self.output_on_stdin = works("perf stat true 0>&1 | grep -q Performance")
+	    print "perf binary is too old. please upgrade"
+	    sys.exit(1)
         if self.output_supported:
             self.group_support = works("perf stat --output /dev/null -e '{cycles,branches}' true")
 
     def perf_output(self, plog):
-        if self.output_supported:
+        if self.logfd_supported:
+            return "--log-fd X"
+        elif self.output_supported:
             return "--output %s " % (plog,)
-        elif self.logfd_supported:
-            return "--log-fd 3 3>%s " % (plog,)
-        elif self.output_on_stdin:
-            return ">%s 0>&1 " % (plog,)
-        else:
-            # gets confused by other errors
-            return "2>%s " % (plog,)
 
     def event_group(self, evlist, max_counters):
         need_counters = filter(lambda e: e not in ingroup_events, evlist)
@@ -265,11 +260,30 @@ class CPU:
 
 cpu = CPU()
 
-def execute(r):
-    print r
-    r = os.system(r)
-    if r != 0:
-        print >>sys.stderr, "perf failed", r
+class PerfRun:
+    def execute(self, logfile, r):
+	# XXX handle non logfd
+	self.logfile = None
+	if "--log-fd" in r:
+	    outp, inp = pty.openpty()
+	    n = r.index("--log-fd")
+	    r[n + 1] = "%d" % (inp)
+        print " ".join(r)
+	self.perf = subprocess.Popen(r)
+	if "--log-fd" not in r:
+	     self.perf.wait()
+	     self.perf = None
+	     self.logfile = logfile
+	     return open(logfile, "r")
+        else:
+	     os.close(inp)
+             return os.fdopen(outp, 'r')
+
+    def wait(self):
+	if self.perf:
+	    self.perf.wait()
+        if self.logfile:	
+            os.remove(self.logfile)
 
 def num_counters(ev):
     counter = 0
@@ -345,21 +359,28 @@ def gen_res(res, out, runner, timestamp):
 # and print result
 def measure(events, runner):
     plog = "plog.%d" % (os.getpid(),)
-    rest = " -x, -e '" + ",".join(map(lambda e: feat.event_group(e, cpu.counters), events)) + "' "
+    rest = ["-x,", "-e", ",".join(map(lambda e: feat.event_group(e, cpu.counters), events))]
     if interval_mode:
-        rest += " " + interval_mode + " " 
-    rest += " ".join(map(shell_arg, sys.argv[first:]))
-    execute("perf stat " + feat.perf_output(plog) + rest)
-    try:
-        inf = open(plog, "r")
-    except IOError:
-        print "Cannot open result file %s" % (plog)
-        return
+        rest += [interval_mode]
+    rest += sys.argv[first:]
+    prun = PerfRun()
+    #try:
+    inf = prun.execute(plog, ["perf", "stat"]  + feat.perf_output(plog).split(" ") + rest)
+    #except IOError:
+    #    print "Cannot open result file %s" % (plog)
+    #    return
     res = []
     rev = []
     prev_interval = 0.0
     interval = None
-    for l in inf:
+    while True:
+        try:
+            l = inf.readline()
+            if not l:
+	        break
+        except IOError:
+	     # handle pty EIO
+	     break
         if interval_mode:
             m = re.match(r"\s*([0-9.]+),(.*)", l)
             if m:
@@ -386,7 +407,7 @@ def measure(events, runner):
         else:
             print l,
     inf.close()
-    os.remove(plog)
+    prun.wait()
     gen_res(flat_to_group(res, events, rev), out, runner, interval)
 
 # map events to their values
