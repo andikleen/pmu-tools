@@ -371,7 +371,7 @@ class EmapNEW(Emap):
             'pebs': 'PEBS',
             'counter': 'Counter'
         }
-        if model == 58:
+        if model == 45:
             self.latego = True
         return self.read_spreadsheet(name, 'excel', ivb_spreadsheet)
 
@@ -459,8 +459,7 @@ def process_events(event, print_only):
             i = e.output()
             if e.msr:
                 msr.checked_writemsr(e.msr, e.msrval, print_only)
-            if emap.latego:
-                print "setting up latego %x" % (e.val & 0xffff)
+	    if emap.latego and (e.val & 0xffff) in latego.latego_events:
                 latego.setup_event(e.val & 0xffff, 1)
         nl.append(start + i + end)
     return str.join(',', nl)
