@@ -40,6 +40,8 @@ from pmudef import *
 import msr as msrmod
 import latego
 
+exedir = os.path.dirname(sys.argv[0])
+
 # some mismapped to similar systems (HEDT->EP etc.)
 cpu_mapping = {
     42: "snb-client.csv", # sandy bridge
@@ -111,13 +113,7 @@ def resolve_symlink(p):
     return os.path.join(os.path.dirname(l), p)
         
 def getconfig(name):
-    if hasattr(sys, 'frozen'):
-        p = sys.executable
-    else:
-        p = __file__
-    p = resolve_symlink(p)
-    dir = os.path.dirname(p)
-    return os.path.join(dir, name)
+    return os.path.join(exedir, name)
 
 class CPU:
     def cpumap(self):
