@@ -137,6 +137,8 @@ if len(sys.argv) - first <= 0:
     usage()
 
 def check_ratio(l):
+    if print_all:
+        return True
     return l >= -0.05 and l < 1.05
 
 class Output:
