@@ -163,10 +163,10 @@ class Event:
     def output(self, use_raw=False):
         val = self.val
         extra = self.extra
-        m = re.search(r"(c[0-9]+)", extra)
+        m = re.search(r"c(mask=)?([0-9]+)", extra)
         if m:
-            extra = re.sub(r"c[0-9]+", "", extra)
-            val |= int(m.group(1)[1:]) << 24
+            extra = re.sub(r"c(mask=)?[0-9]+", "", extra)
+            val |= int(m.group(2)) << 24
 
         if version.direct:
             self.ename = "cpu/event=0x%x,umask=0x%x%s/" % (val & 0xff, (val >> 8) & 0xff,
