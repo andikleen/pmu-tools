@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # generate dot diagram of top down tree from module
 import sys
+
 if len(sys.argv) > 1 and sys.argv[1] == "simple":
     import simple_ratios
     m = simple_ratios
@@ -16,8 +17,7 @@ class Runner:
     def finish(self):
         for n in self.olist:
             if n.parent:
-                print '"%s" -> "%s";' % (n.parent.__class__.__name__, 
-                                        n.__class__.__name__)
+                print '"%s" -> "%s";' % (n.parent.name, n.name)
             elif n.level == 1:
                 print '"%s";' % (n.name)
 
