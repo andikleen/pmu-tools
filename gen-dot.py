@@ -2,7 +2,12 @@
 # generate dot diagram of top down tree from module
 import sys
 
-if len(sys.argv) > 1 and sys.argv[1] == "simple":
+max_level = 5
+first = 1
+if sys.argv[1:] and sys.argv[1][:2] == "-l":
+    max_level = int(sys.argv[1][2:])
+    first += 1
+if len(sys.argv) > first and sys.argv[first] == "simple":
     import simple_ratios
     m = simple_ratios
 else:
@@ -13,7 +18,8 @@ class Runner:
     def __init__(self):
         self.olist = []
     def run(self, n):
-        self.olist.append(n)
+        if n.level <= max_level:
+            self.olist.append(n)
     def finish(self):
         for n in self.olist:
             if n.parent:
@@ -40,6 +46,7 @@ m.Setup(runner)
 print >>sys.stderr, runner.olist
 runner.fix_parents()
 print "digraph {"
+print "fontname=\"Courier\";"
 runner.finish()
 print "}"
 
