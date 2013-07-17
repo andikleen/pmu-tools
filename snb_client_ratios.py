@@ -1,6 +1,6 @@
 
 #
-# auto generated description IVB
+# auto generated description SNB
 #
 
 
@@ -653,86 +653,6 @@ from the microcode-sequencer."""
              self.thresh = False
          return self.val
 
-class FP_Arith:
-    name = "FP_Arith"
-    domain = "Uops"
-    desc = """
-This metric represents overall arithmetic floating-point (FP) uops fraction
-the CPU has executed."""
-    level = 3
-    def compute(self, EV):
-         try:
-             self.val = self.FP_x87.compute(EV) + self.FP_Scalar.compute(EV) + self.FP_Vector.compute(EV)
-             self.thresh = self.val > 0.2 and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class FP_x87:
-    name = "FP_x87"
-    domain = "Uops"
-    desc = """
-This metric represents floating-point (FP) x87 uops fraction the CPU has
-executed."""
-    level = 4
-    def compute(self, EV):
-         try:
-             self.val = EV("FP_COMP_OPS_EXE.X87") / EV("UOPS_EXECUTED.THREAD")
-             self.thresh = self.val > 0.1 and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class FP_Scalar:
-    name = "FP_Scalar"
-    domain = "Uops"
-    desc = """
-This metric represents arithmetic floating-point (FP) scalar uops fraction the
-CPU has executed."""
-    level = 4
-    def compute(self, EV):
-         try:
-             self.val = ( EV("FP_COMP_OPS_EXE.SSE_SCALAR_SINGLE") + EV("FP_COMP_OPS_EXE.SSE_SCALAR_DOUBLE") ) / EV("UOPS_EXECUTED.THREAD")
-             self.thresh = self.val > 0.1 and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class FP_Vector:
-    name = "FP_Vector"
-    domain = "Uops"
-    desc = """
-This metric represents arithmetic floating-point (FP) vector uops fraction the
-CPU has executed."""
-    level = 4
-    def compute(self, EV):
-         try:
-             self.val = ( EV("FP_COMP_OPS_EXE.SSE_PACKED_DOUBLE") + EV("FP_COMP_OPS_EXE.SSE_PACKED_SINGLE") + EV("SIMD_FP_256.PACKED_SINGLE") + EV("SIMD_FP_256.PACKED_DOUBLE") ) / EV("UOPS_EXECUTED.THREAD")
-             self.thresh = self.val > 0.2 and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class OTHER:
-    name = "OTHER"
-    domain = "Uops"
-    desc = """
-This metric represents non-floating-point (FP) uop fraction the CPU has
-executed."""
-    level = 3
-    def compute(self, EV):
-         try:
-             self.val = 1 - self.FP_Arith.compute(EV) - EV("IDQ.MS_UOPS") / EV("UOPS_EXECUTED.THREAD")
-             self.thresh = self.val > 0.3 and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
 class MicroSequencer:
     name = "MicroSequencer"
     domain = "Slots"
@@ -834,16 +754,6 @@ class Setup:
         o["Retiring"] = n
         n = BASE() ; r.run(n) ; n.parent = prev ; prev = n
         o["BASE"] = n
-        n = FP_Arith() ; r.run(n) ; n.parent = prev ; prev = n
-        o["FP_Arith"] = n
-        n = FP_x87() ; r.run(n) ; n.parent = prev ; prev = n
-        o["FP_x87"] = n
-        n = FP_Scalar() ; r.run(n) ; n.parent = prev ; prev = n
-        o["FP_Scalar"] = n
-        n = FP_Vector() ; r.run(n) ; n.parent = prev ; prev = n
-        o["FP_Vector"] = n
-        n = OTHER() ; r.run(n) ; n.parent = prev ; prev = n
-        o["OTHER"] = n
         n = MicroSequencer() ; r.run(n) ; n.parent = prev ; prev = n
         o["MicroSequencer"] = n
 
@@ -863,7 +773,3 @@ class Setup:
         o["PortsUtilization"].DividerActive = o["DividerActive"]
         o["BASE"].Retiring = o["Retiring"]
         o["BASE"].MicroSequencer = o["MicroSequencer"]
-        o["FP_Arith"].FP_x87 = o["FP_x87"]
-        o["FP_Arith"].FP_Scalar = o["FP_Scalar"]
-        o["FP_Arith"].FP_Vector = o["FP_Vector"]
-        o["OTHER"].FP_Arith = o["FP_Arith"]

@@ -186,10 +186,12 @@ class Output:
             print >>sys.stderr, self.bold("warning:") + " " + s
 
 known_cpus = (
-    ("snb", (42, 45)),
+    ("snb", (42, )),
+    ("jkt", (45, )),
     ("ivb", (58, )),
     ("ivt", (62, )),
-    ("hsw", (60, 63, 70, 71))
+    ("hsw", (60, 70, 71),
+    ("hsx", (63, )),
 )
 
 class CPU:
@@ -543,6 +545,15 @@ runner = Runner(max_level)
 if cpu.cpu == "ivb" and detailed_model:
     import ivb_client_ratios
     ev = ivb_client_ratios.Setup(runner)
+elif cpu.cpu == "ivt" and detailed_model:
+    import ivb_server_ratios
+    ev = ivb_server_ratios.Setup(runner)
+elif cpu.cpu == "snb" and detailed_model:
+    import snb_client_ratios
+    ev = snb_client_ratios.Setup(runner)
+elif cpu.cpu == "hsw" and detailed_model:
+    import hsw_client_ratios
+    ev = hsw_client_ratios.Setup(runner)
 else:
     import simple_ratios
     ev = simple_ratios.Setup(runner)

@@ -1,6 +1,6 @@
 
 #
-# auto generated description IVB
+# auto generated description IVT
 #
 
 
@@ -14,6 +14,10 @@ MEM_4KALIAS_COST = 5
 MEM_XSNP_HITM_COST = 60
 MEM_XSNP_HIT_COST = 43
 MEM_XSNP_NONE_COST = 29
+MEM_LOCAL_DRAM_COST = 200
+MEM_REMOTE_DRAM_COST = 310
+MEM_REMOTE_HITM_COST = 200
+MEM_REMOTE_FWD_COST = 180
 
 # Aux. formulas
 
@@ -449,6 +453,54 @@ with a sibiling core."""
              self.thresh = False
          return self.val
 
+class LocalDRAM:
+    name = "Local DRAM"
+    domain = "Clocks"
+    desc = """
+This metric represents how often CPU was likely stalled due to loads from
+local memory."""
+    level = 4
+    def compute(self, EV):
+         try:
+             self.val = MEM_LOCAL_DRAM_COST * EV("MEM_LOAD_UOPS_LLC_MISS_RETIRED.LOCAL_DRAM") / CLKS(EV)
+             self.thresh = self.val > 0.1 and self.parent.thresh
+         except ZeroDivisionError:
+             self.val = 0
+             self.thresh = False
+         return self.val
+
+class RemoteDRAM:
+    name = "Remote DRAM"
+    domain = "Clocks"
+    desc = """
+This metric represents how often CPU was likely stalled due to loads from
+remote memory."""
+    level = 4
+    def compute(self, EV):
+         try:
+             self.val = MEM_REMOTE_DRAM_COST * EV("MEM_LOAD_UOPS_LLC_MISS_RETIRED.REMOTE_DRAM") / CLKS(EV)
+             self.thresh = self.val > 0.1 and self.parent.thresh
+         except ZeroDivisionError:
+             self.val = 0
+             self.thresh = False
+         return self.val
+
+class RemoteCache:
+    name = "Remote Cache"
+    domain = "Clocks"
+    desc = """
+This metric represents how often CPU was likely stalled due to loads from
+remote cache in other sockets."""
+    level = 4
+    def compute(self, EV):
+         try:
+             self.val = ( MEM_REMOTE_HITM_COST * EV("MEM_LOAD_UOPS_LLC_MISS_RETIRED.REMOTE_HITM") + MEM_REMOTE_FWD_COST * EV("MEM_LOAD_UOPS_LLC_MISS_RETIRED.REMOTE_FWD") ) / CLKS(EV)
+             self.thresh = self.val > 0.1 and self.parent.thresh
+         except ZeroDivisionError:
+             self.val = 0
+             self.thresh = False
+         return self.val
+
 class StoresBound:
     name = "Stores Bound"
     domain = "Clocks"
@@ -808,6 +860,12 @@ class Setup:
         o["DataSharing"] = n
         n = L3Latency() ; r.run(n) ; n.parent = prev ; prev = n
         o["L3Latency"] = n
+        n = LocalDRAM() ; r.run(n) ; n.parent = prev ; prev = n
+        o["LocalDRAM"] = n
+        n = RemoteDRAM() ; r.run(n) ; n.parent = prev ; prev = n
+        o["RemoteDRAM"] = n
+        n = RemoteCache() ; r.run(n) ; n.parent = prev ; prev = n
+        o["RemoteCache"] = n
         n = StoresBound() ; r.run(n) ; n.parent = prev ; prev = n
         o["StoresBound"] = n
         n = FalseSharing() ; r.run(n) ; n.parent = prev ; prev = n
