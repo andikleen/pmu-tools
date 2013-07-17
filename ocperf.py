@@ -168,7 +168,7 @@ class Event:
             extra = re.sub(r"c(mask=)?[0-9]+", "", extra)
             val |= int(m.group(2)) << 24
 
-        if version.direct:
+        if version.direct and not use_raw:
             self.ename = "cpu/event=0x%x,umask=0x%x%s/" % (val & 0xff, (val >> 8) & 0xff,
                                                            self.newextra, )
         else:
