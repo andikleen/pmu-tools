@@ -31,8 +31,7 @@ CPU pipeline it bottlenecks. The bottlenecks are expressed as a tree
 with different levels (max 4).
 
 Requires an Intel Sandy, Ivy Bridge, Haswell CPU.
-It works best on Ivy Bridge currently, the others only support
-a basic (but reliable) model.
+It works best on Ivy Bridge currently.
 
 Usage:
 ./toplev.py [-lX] [-v] [-d] [-o logfile] program
@@ -160,7 +159,8 @@ class Output:
         if self.csv:
             print >>self.logf,"%s%s%s" % (hdr, self.csv, s)
         else:
-            hdr = "%-7s %s" % (area, hdr)
+            if area:
+                hdr = "%-7s %s" % (area, hdr)
             print >>self.logf, "%-42s\t%s" % (hdr + ":", s)
 
     def p(self, area, name, l, timestamp):
@@ -517,7 +517,8 @@ class Runner:
             if obj.res:
                 obj.compute(lambda e: obj.res[obj.evlist.index(e.replace("_PS",""))])
                 if obj.thresh or print_all:
-                    out.p(obj.area, obj.name, obj.val, timestamp)
+                    out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
+                          obj.name, obj.val, timestamp)
                 if obj.thresh and check_ratio(obj.val):
                     out.desc(obj.desc[1:].replace("\n","\n\t"))
                 else:
