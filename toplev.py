@@ -18,6 +18,7 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, types, platform, pty, subprocess
+import exceptions
 #sys.path.append("../pmu-tools")
 import ocperf
 
@@ -383,9 +384,11 @@ def measure(events, runner):
             l = inf.readline()
             if not l:
 	        break
-        except IOError:
+        except exceptions.IOError:
 	     # handle pty EIO
 	     break
+        except KeyboardInterrupt:
+            continue
         if interval_mode:
             m = re.match(r"\s*([0-9.]+),(.*)", l)
             if m:
