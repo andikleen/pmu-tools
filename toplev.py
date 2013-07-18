@@ -152,13 +152,14 @@ class Output:
             self.logf = sys.stderr
             self.terminal = self.logf.isatty()
 
-    def s(self, hdr, s):
+    def s(self, area, hdr, s):
         if self.csv:
             print >>self.logf,"%s%s%s" % (hdr, self.csv, s)
         else:
+            hdr = "%-7s %s" % (area, hdr)
             print >>self.logf, "%-42s\t%s" % (hdr + ":", s)
 
-    def p(self, name, l, timestamp):
+    def p(self, area, name, l, timestamp):
         if timestamp:
             sep = " "
             if self.csv:
@@ -166,11 +167,11 @@ class Output:
             print >>self.logf,"%6.9f%s" % (timestamp, sep),
 	if l:
             if check_ratio(l):
-	        self.s(name, "%5s%%"  % ("%2.2f" % (100.0 * l)))
+	        self.s(area, name, "%5s%%"  % ("%2.2f" % (100.0 * l)))
 	    else:
-		self.s(name, "mismeasured")
+		self.s(area, name, "mismeasured")
         else:
-            self.s(name, "not available")
+            self.s(area, name, "not available")
 
     def bold(self, s):
         if (not self.terminal) or self.csv:
@@ -510,7 +511,7 @@ class Runner:
             if obj.res:
                 obj.compute(lambda e: obj.res[obj.evlist.index(e.replace("_PS",""))])
                 if obj.thresh or print_all:
-                    out.p("%-7s %s" % (obj.area, obj.name), obj.val, timestamp)
+                    out.p(obj.area, obj.name, obj.val, timestamp)
                 if obj.thresh and check_ratio(obj.val):
                     out.desc(obj.desc[1:].replace("\n","\n\t"))
                 else:
