@@ -156,7 +156,7 @@ class Output:
         if self.csv:
             print >>self.logf,"%s%s%s" % (hdr, self.csv, s)
         else:
-            print >>self.logf, "%-35s\t%s" % (hdr + ":", s)
+            print >>self.logf, "%-42s\t%s" % (hdr + ":", s)
 
     def p(self, name, l, timestamp):
         if timestamp:
@@ -510,7 +510,7 @@ class Runner:
             if obj.res:
                 obj.compute(lambda e: obj.res[obj.evlist.index(e.replace("_PS",""))])
                 if obj.thresh or print_all:
-                    out.p(obj.name, obj.val, timestamp)
+                    out.p("%-7s %s" % (obj.area, obj.name), obj.val, timestamp)
                 if obj.thresh and check_ratio(obj.val):
                     out.desc(obj.desc[1:].replace("\n","\n\t"))
                 else:
