@@ -109,6 +109,7 @@ detailed_model = False
 max_level = 2
 csv_mode = None
 interval_mode = None
+force = False
 
 first = 1
 while first < len(sys.argv):
@@ -119,6 +120,8 @@ while first < len(sys.argv):
         logfile = sys.argv[first]
     elif sys.argv[first] == '-v':
         print_all = True
+    elif sys.argv[first] == '--force':
+        force = True
     elif sys.argv[first] == '-d':
         detailed_model = True
     elif sys.argv[first].startswith("-l"):
@@ -555,7 +558,7 @@ elif cpu.cpu == "ivt" and detailed_model:
 elif cpu.cpu == "snb" and detailed_model:
     import snb_client_ratios
     ev = snb_client_ratios.Setup(runner)
-elif cpu.cpu == "hsw" and detailed_model:
+elif cpu.cpu == "hsw" and detailed_model and force:
     import hsw_client_ratios
     ev = hsw_client_ratios.Setup(runner)
 else:
