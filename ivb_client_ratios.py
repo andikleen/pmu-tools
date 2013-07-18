@@ -49,6 +49,7 @@ def UPI(EV):
 class FrontendBound:
     name = "Frontend Bound"
     domain = "Slots"
+    area = "FE"
     desc = """
 This category reflects slots where the Frontend of the processor undersupplies
 its Backend."""
@@ -65,6 +66,7 @@ its Backend."""
 class FrontendLatency:
     name = "Frontend Latency"
     domain = "Slots"
+    area = "FE"
     desc = """
 This metric represents slots fraction CPU was stalled due to Frontend latency
 issues."""
@@ -81,6 +83,7 @@ issues."""
 class ICacheMisses:
     name = "ICache Misses"
     domain = "Clocks"
+    area = "FE"
     desc = """
 This metric represents cycles fraction CPU was stalled due to instruction
 cache misses."""
@@ -97,6 +100,7 @@ cache misses."""
 class ITLBmisses:
     name = "ITLB misses"
     domain = "Clocks"
+    area = "FE"
     desc = """
 This metric represents cycles fraction CPU was stalled due to instruction TLB
 misses."""
@@ -113,6 +117,7 @@ misses."""
 class BranchResteers:
     name = "Branch Resteers"
     domain = "Clocks"
+    area = "FE"
     desc = """
 This metric represents cycles fraction CPU was stalled due to Branch Resteers."""
     level = 3
@@ -128,6 +133,7 @@ This metric represents cycles fraction CPU was stalled due to Branch Resteers.""
 class DSBswitches:
     name = "DSB switches"
     domain = "Clocks"
+    area = "FE"
     desc = """
 This metric represents cycles fraction CPU was stalled due to switches from
 DSB to MITE pipelines."""
@@ -144,6 +150,7 @@ DSB to MITE pipelines."""
 class LCP:
     name = "LCP"
     domain = "Clocks"
+    area = "FE"
     desc = """
 This metric represents cycles fraction CPU was stalled due to Length Changing
 Prefixes (LCPs)."""
@@ -160,6 +167,7 @@ Prefixes (LCPs)."""
 class FrontendBandwidth:
     name = "Frontend Bandwidth"
     domain = "Slots"
+    area = "FE"
     desc = """
 This metric represents slots fraction CPU was stalled due to Frontend
 bandwidth issues."""
@@ -176,6 +184,7 @@ bandwidth issues."""
 class MITE:
     name = "MITE"
     domain = "Clocks"
+    area = "FE"
     desc = """
 This metric represents cycles fraction in which CPU was likely limited due to
 the MITE fetch pipeline."""
@@ -192,6 +201,7 @@ the MITE fetch pipeline."""
 class DSB:
     name = "DSB"
     domain = "Clocks"
+    area = "FE"
     desc = """
 This metric represents cycles fraction in which CPU was likely limited due to
 DSB (decoded uop cache) fetch pipeline."""
@@ -208,6 +218,7 @@ DSB (decoded uop cache) fetch pipeline."""
 class LSD:
     name = "LSD"
     domain = "Clocks"
+    area = "FE"
     desc = """
 This metric represents cycles fraction in which CPU was likely limited due to
 LSD (Loop Stream Detector) unit."""
@@ -224,6 +235,7 @@ LSD (Loop Stream Detector) unit."""
 class BadSpeculation:
     name = "Bad Speculation"
     domain = "Slots"
+    area = "BAD"
     desc = """
 This category reflects slots wasted due to incorrect speculations, which
 include slots used to allocate uops that do not eventually get retired and
@@ -242,6 +254,7 @@ speculation."""
 class BranchMispredicts:
     name = "Branch Mispredicts"
     domain = "Slots"
+    area = "BAD"
     desc = """
 This metric represents slots fraction CPU was impacted by Branch
 Missprediction."""
@@ -258,6 +271,7 @@ Missprediction."""
 class MachineClears:
     name = "Machine Clears"
     domain = "Slots"
+    area = "BAD"
     desc = """
 This metric represents slots fraction CPU was impacted by Machine Clears."""
     level = 2
@@ -273,6 +287,7 @@ This metric represents slots fraction CPU was impacted by Machine Clears."""
 class BackendBound:
     name = "Backend Bound"
     domain = "Slots"
+    area = "BE"
     desc = """
 This category reflects slots where no uops are being delivered due to a lack
 of required resources for accepting more uops in the Backend of the pipeline."""
@@ -289,6 +304,7 @@ of required resources for accepting more uops in the Backend of the pipeline."""
 class MemoryBound:
     name = "Memory Bound"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = """
 This metric represents how much Memory subsystem was a bottleneck."""
     level = 2
@@ -304,6 +320,7 @@ This metric represents how much Memory subsystem was a bottleneck."""
 class L1Bound:
     name = "L1 Bound"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = """
 This metric represents how often CPU was stalled without missing the L1 data
 cache."""
@@ -311,7 +328,7 @@ cache."""
     def compute(self, EV):
          try:
              self.val = ( EV("CYCLE_ACTIVITY.STALLS_LDM_PENDING") - EV("CYCLE_ACTIVITY.STALLS_L1D_PENDING") ) / CLKS(EV)
-             self.thresh = self.val > 0.07 and self.parent.thresh
+             self.thresh = (self.val > 0.07 and self.parent.thresh) or (self.DTLBOverhead.compute(EV) > 0)
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
@@ -320,6 +337,7 @@ cache."""
 class DTLBOverhead:
     name = "DTLB Overhead"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = ""
     level = 4
     def compute(self, EV):
@@ -334,6 +352,7 @@ class DTLBOverhead:
 class LoadsBlockedbyStoreForwarding:
     name = "Loads Blocked by Store Forwarding"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = ""
     level = 4
     def compute(self, EV):
@@ -348,6 +367,7 @@ class LoadsBlockedbyStoreForwarding:
 class SplitLoads:
     name = "Split Loads"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = ""
     level = 4
     def compute(self, EV):
@@ -362,6 +382,7 @@ class SplitLoads:
 class G4KAliasing:
     name = "4K Aliasing"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = ""
     level = 4
     def compute(self, EV):
@@ -376,6 +397,7 @@ class G4KAliasing:
 class L2Bound:
     name = "L2 Bound"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = """
 This metric represents how often CPU was stalled on L2 cache."""
     level = 3
@@ -391,6 +413,7 @@ This metric represents how often CPU was stalled on L2 cache."""
 class L3Bound:
     name = "L3 Bound"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = """
 This metric represents how often CPU was stalled on L3 cache or contended with
 a sibling Core."""
@@ -407,6 +430,7 @@ a sibling Core."""
 class ContestedAccesses:
     name = "Contested Accesses"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = ""
     level = 4
     def compute(self, EV):
@@ -421,6 +445,7 @@ class ContestedAccesses:
 class DataSharing:
     name = "Data Sharing"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = ""
     level = 4
     def compute(self, EV):
@@ -435,6 +460,7 @@ class DataSharing:
 class L3Latency:
     name = "L3 Latency"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = """
 This metric is a rough aggregate estimate of cycles fraction where CPU
 accessed L3 cache for all load requests, while there was no contention/sharing
@@ -452,6 +478,7 @@ with a sibiling core."""
 class StoresBound:
     name = "Stores Bound"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = """
 This metric represents how often CPU was stalled on due to store operations."""
     level = 3
@@ -467,6 +494,7 @@ This metric represents how often CPU was stalled on due to store operations."""
 class FalseSharing:
     name = "False Sharing"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = """
 This metric represents how often CPU was stalled on due to store operations."""
     level = 4
@@ -482,6 +510,7 @@ This metric represents how often CPU was stalled on due to store operations."""
 class SplitStores:
     name = "Split Stores"
     domain = "Stores"
+    area = "BE/Mem"
     desc = """
 This metric represents rate of split store accesses."""
     level = 4
@@ -497,6 +526,7 @@ This metric represents rate of split store accesses."""
 class DTLBStoreOverhead:
     name = "DTLB Store Overhead"
     domain = "Clocks"
+    area = "BE/Mem"
     desc = """
 This metric represents cycles fraction spent handling first-level data TLB
 store misses."""
@@ -513,6 +543,7 @@ store misses."""
 class CoreBound:
     name = "Core Bound"
     domain = "Clocks"
+    area = "BE/Core"
     desc = """
 This metric represents how much Core non-memory issues were a bottleneck."""
     level = 2
@@ -528,6 +559,7 @@ This metric represents how much Core non-memory issues were a bottleneck."""
 class DividerActive:
     name = "Divider Active"
     domain = "Clocks"
+    area = "BE/Core"
     desc = ""
     level = 3
     def compute(self, EV):
@@ -542,6 +574,7 @@ class DividerActive:
 class PortsUtilization:
     name = "Ports Utilization"
     domain = "Clocks"
+    area = "BE/Core"
     desc = """
 This metric represents cycles fraction application was stalled due to Core
 non-divider-related issues."""
@@ -558,6 +591,7 @@ non-divider-related issues."""
 class G0_Ports:
     name = "0_Ports"
     domain = "Clocks"
+    area = "BE/Core"
     desc = """
 This metric represents cycles fraction CPU executed no uops on any execution
 port."""
@@ -574,6 +608,7 @@ port."""
 class G1_Port:
     name = "1_Port"
     domain = "Clocks"
+    area = "BE/Core"
     desc = """
 This metric represents cycles fraction CPU executed total of 1 uop per cycle
 on all execution ports."""
@@ -590,6 +625,7 @@ on all execution ports."""
 class G2_Ports:
     name = "2_Ports"
     domain = "Clocks"
+    area = "BE/Core"
     desc = """
 This metric represents cycles fraction CPU executed total of 2 uops per cycle
 on all execution ports."""
@@ -606,6 +642,7 @@ on all execution ports."""
 class G3m_Ports:
     name = "3m_Ports"
     domain = "Clocks"
+    area = "BE/Core"
     desc = """
 This metric represents cycles fraction CPU executed total of 3 or more uops
 per cycle on all execution ports."""
@@ -622,6 +659,7 @@ per cycle on all execution ports."""
 class Retiring:
     name = "Retiring"
     domain = "Slots"
+    area = "RET"
     desc = """
 This category reflects slots utilized by good uops i. Note that a high
 Retiring value does not necessary mean there is no room for better
@@ -640,6 +678,7 @@ for programmer to consider vectorizing his code."""
 class BASE:
     name = "BASE"
     domain = "Slots"
+    area = "RET"
     desc = """
 This metric represents slots fraction CPU was retiring uops not originated
 from the microcode-sequencer."""
@@ -656,6 +695,7 @@ from the microcode-sequencer."""
 class FP_Arith:
     name = "FP_Arith"
     domain = "Uops"
+    area = "RET"
     desc = """
 This metric represents overall arithmetic floating-point (FP) uops fraction
 the CPU has executed."""
@@ -672,6 +712,7 @@ the CPU has executed."""
 class FP_x87:
     name = "FP_x87"
     domain = "Uops"
+    area = "RET"
     desc = """
 This metric represents floating-point (FP) x87 uops fraction the CPU has
 executed."""
@@ -688,6 +729,7 @@ executed."""
 class FP_Scalar:
     name = "FP_Scalar"
     domain = "Uops"
+    area = "RET"
     desc = """
 This metric represents arithmetic floating-point (FP) scalar uops fraction the
 CPU has executed."""
@@ -704,6 +746,7 @@ CPU has executed."""
 class FP_Vector:
     name = "FP_Vector"
     domain = "Uops"
+    area = "RET"
     desc = """
 This metric represents arithmetic floating-point (FP) vector uops fraction the
 CPU has executed."""
@@ -720,6 +763,7 @@ CPU has executed."""
 class OTHER:
     name = "OTHER"
     domain = "Uops"
+    area = "RET"
     desc = """
 This metric represents non-floating-point (FP) uop fraction the CPU has
 executed."""
@@ -736,6 +780,7 @@ executed."""
 class MicroSequencer:
     name = "MicroSequencer"
     domain = "Slots"
+    area = "RET"
     desc = """
 This metric represents slots fraction CPU was retiring uops fetched by the
 Microcode Sequencer (MS) ROM."""
@@ -857,6 +902,7 @@ class Setup:
         o["BackendBound"].FrontendBound = o["FrontendBound"]
         o["BackendBound"].BadSpeculation = o["BadSpeculation"]
         o["BackendBound"].Retiring = o["Retiring"]
+        o["L1Bound"].DTLBOverhead = o["DTLBOverhead"]
         o["StoresBound"].MemoryBound = o["MemoryBound"]
         o["CoreBound"].MemoryBound = o["MemoryBound"]
         o["PortsUtilization"].CoreBound = o["CoreBound"]
