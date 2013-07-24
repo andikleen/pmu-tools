@@ -28,7 +28,7 @@ checklist wsm-sp 720
 checklist wsm-dp 720
 checklist snb-client 310
 checklist snb-ep 334
-checklist ivb-client 290
+checklist ivb-client 326
 checklist nhm-ex 563
 checklist nhm-ep 561
 checklist bnl 276

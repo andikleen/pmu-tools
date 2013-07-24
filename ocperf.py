@@ -407,13 +407,13 @@ class EmapJSON(Emap):
         }
         if model == 45:
             self.latego = True
-        return self.read_spreadsheet(name, 'excel', ivb_spreadsheet)
+        return self.read_spreadsheet(name, 'excel', spreadsheet)
 
 
 readers = (
     ("snb-ep", EmapNEW),
     ("snb", EmapSNB),
-    ("ivb", EmapNEW),
+    ("ivb", EmapJSON),
     ("hsw", EmapJSON),
     ("nhm", EmapNHM),
     ("wsm", EmapNHM),
