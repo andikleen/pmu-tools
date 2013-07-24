@@ -16,7 +16,7 @@ with offcore events on Sandy Bridge EP (Intel Xeon E5 first generation)
 This is automatically enabled for the respective events, and also
 available as a standalone program.
 - A "toplev.py" tool to do cycle composition for a workload, that is 
-measure where in the CPU pipe line it bottle necks.
+measure where in the CPU pipe line the bottleneck occurs.
 - A plot tool to plot perf stat -Ixxx -x, or toplev.py -Ixxx -x, output
 - A tool to normalize the output of perf stat -Ixxx -x, / toplev.py -IXXX -x,
 - Some utility programs to access pci space or msrs on
@@ -66,7 +66,7 @@ to enable the offcore workaround, change MSRs or change PCI config space respect
 ## toplev.py:
 
 Do cycle decomposition on a workload: estimate on which part of the
-CPU pipeline it bottlenecks. The bottlenecks are expressed as a tree
+CPU pipeline the bottle neck occurs. The bottlenecks are expressed as a tree
 with different levels (max 4). Each bottleneck is only meaningful
 if the parent higher level crossed the threshold (it acts similar to a binary
 search). The tool automatically only prints meaningful ratios,
@@ -78,10 +78,9 @@ the [Intel optimization manual] (http://www.intel.com/content/dam/www/public/us/
 toplev.py only supports counting, that is it cannot tell you where in
 the program the problem occurred, just what happened.
 
-Requires an Intel Sandy, Ivy Bridge, Haswell CPU.
+Requires an Intel Sandy, Ivy Bridge, Haswell CPU. 
 
-It works best on Ivy Bridge currently, the others only support
-a basic (but reliable) model. By default the simple high level model
+It works best on Ivy Bridge currently.  By default the simple high level model
 is used. The detailed model is selected with -d, and the max level
 specified with -l (max 4, default 2).
 
@@ -120,8 +119,8 @@ with non steady state workloads.
 are much less accurate and it works best with programs that primarily
 do the same thing over and over)
 
-It's recommended to measure the program only after
-the startup phase by profiling globally or attaching later.
+It's recommended to measure the work load only after
+the startup phase by using interval mode or attaching later.
 level 1 or running without -d is generally the most reliable.
 
 One of the events (even used by level 1) requires a recent enough
