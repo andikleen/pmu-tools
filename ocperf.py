@@ -319,21 +319,6 @@ class Emap:
 # Handle the immense creativity of Event spreadsheet creators
 # 
 
-class EmapSNB(Emap):
-    def __init__(self, name, model):
-        snb_spreadsheet = {
-            'name': 'NAME',
-            'code': 'CODE',
-            'umask': 'UMASK',
-            'other': 'OTHER',
-            'msr_index': 'MSR_INDEX',
-            'msr_value': 'MSR_VALUE',
-            'desc': 'Description',
-            'pebs': 'PRECISE_EVENT',
-            'counter': 'COUNTER'
-        }
-        return self.read_spreadsheet(name, 'excel', snb_spreadsheet)
-
 class EmapBNL(Emap):
     # Event_Name,Code,UMask,Counter,Description,Counter_Mask,Invert,AnyThread,Edge_Detect,PEBS
     def __init__(self, name, model):
@@ -349,28 +334,6 @@ class EmapBNL(Emap):
             'pebs': 'PEBS',
             'counter': 'Counter'
         }
-        return self.read_spreadsheet(name, 'excel', spreadsheet)
-
-class EmapNEW(Emap):
-    # new format 
-    # Event_Name,Code,UMask,Counter,Counter_HT_Off,Description,MSR_Index,MSR_Value,Taken_Alone,Counter_Mask,Invert,AnyThread,Edge_Detect,PEBS
-    def __init__(self, name, model):
-        spreadsheet = {
-            'name': 'Event_Name',
-            'code': 'Code',
-            'umask': 'UMask',
-            'msr_index': 'MSR_Index',
-            'msr_value': 'MSR_Value',
-            'cmask': 'Counter_Mask',
-            'invert': 'Invert',
-            'any': 'AnyThread',
-            'edge': 'Edge_Detect',
-            'desc': 'Description',
-            'pebs': 'PEBS',
-            'counter': 'Counter'
-        }
-        if model == 45:
-            self.latego = True
         return self.read_spreadsheet(name, 'excel', spreadsheet)
 
 class EmapNHM(Emap):
@@ -409,10 +372,9 @@ class EmapJSON(Emap):
             self.latego = True
         return self.read_spreadsheet(name, 'excel', spreadsheet)
 
-
 readers = (
-    ("snb-ep", EmapNEW),
-    ("snb", EmapSNB),
+    ("snb-ep", EmapJSON),
+    ("snb", EmapJSON),
     ("ivb", EmapJSON),
     ("hsw", EmapJSON),
     ("nhm", EmapNHM),
