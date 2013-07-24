@@ -258,6 +258,10 @@ class Emap:
                 else:
                     e.msrval = msrval
                     e.msr = msrnum
+            if 'overflow' in m:
+                e.overflow = get('overflow')
+            else:
+                e.overflow = None
             self.events[name] = e
             self.codes[val] = e
             e.pebs = get('pebs')
@@ -348,7 +352,8 @@ class EmapNHM(Emap):
             'msr_value': 'MSR_VALUE',
             'desc': 'DESCRIPTION',
             'pebs': 'PRECISE_EVENT',
-            'counter': 'COUNTER'
+            'counter': 'COUNTER',
+            'overflow': 'OVERFLOW',
         }
         return self.read_spreadsheet(name, 'excel-tab', nhm_spreadsheet)
 
@@ -367,7 +372,8 @@ class EmapJSON(Emap):
             'edge': 'EdgeDetect',
             'desc': 'Description',
             'pebs': 'PreciseEvent',
-            'counter': 'Counter'
+            'counter': 'Counter',
+            'overflow': 'OverFlow',
         }
         if model == 45:
             self.latego = True
@@ -406,6 +412,7 @@ def addarg(s, add):
     return s + add
 
 def process_events(event, print_only):
+    overflow = None
     # ignore anything with new style args (cpu/a,b/) so far
     # because we get confused by the inner commas
     # need a proper parser
@@ -429,8 +436,22 @@ def process_events(event, print_only):
                 msr.checked_writemsr(e.msr, e.msrval, print_only)
 	    if emap.latego and (e.val & 0xffff) in latego.latego_events:
                 latego.setup_event(e.val & 0xffff, 1)
+            overflow = e.overflow
         nl.append(start + i + end)
-    return str.join(',', nl)
+    return str.join(',', nl), overflow
+
+def getarg(i, cmd):
+    if sys.argv[i][2:] == '':
+        cmd = addarg(cmd, sys.argv[i])
+        i += 1
+        arg = ""
+        if len(sys.argv) > i:
+            arg = sys.argv[i]
+        prefix = ""
+    else:
+        arg = sys.argv[i][2:]
+        prefix = sys.argv[i][:2]
+    return arg, i, cmd, prefix
 
 def process_args():
     cmd = os.getenv("PERF")
@@ -438,23 +459,27 @@ def process_args():
         cmd = "perf"
     cmd += " "
 
+    overflow = None
     print_only = False
     i = 1
     while i < len(sys.argv):
         if sys.argv[i] == "--print":
             print_only = True
             i += 1
-        if sys.argv[i][0:2] == '-e':
-            if sys.argv[i][2:] == '':
-                cmd = addarg(cmd, sys.argv[i])
-                i += 1
-                event = ""
-                if len(sys.argv) > i:
-                    event = sys.argv[i]
+        elif sys.argv[i][0:2] == '-e':
+            event, i, cmd, prefix = getarg(i, cmd)
+            event, overflow = process_events(event, print_only)
+            cmd = addarg(cmd, prefix + event)
+        elif sys.argv[i][0:2] == '-c':
+            oarg, i, cmd, prefix = getarg(i, cmd)
+            if oarg == "default":
+                if overflow == None:
+                    print >>sys.stderr,"""
+Specify the -e events before -c default or event has no overflow field."""
+                    sys.exit(1)
+                cmd = addarg(cmd, prefix + overflow) 
             else:
-                event = sys.argv[i][2:]
-            event = process_events(event, print_only)
-            cmd = addarg(cmd, event)
+                cmd = addarg(cmd, prefix + oarg)
         else:        
             cmd = addarg(cmd, sys.argv[i])
         i += 1

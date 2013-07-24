@@ -59,6 +59,10 @@ When a older kernel is used with offcore events,
 that does not support offcore events natively, ocperf has to run
 as root and only one such profiling can be active on a machine.
 
+When -c default is specified, the default sampling overflow value will be
+filled in for the sampling period. This option needs to be specified before 
+the events and is not supported for all CPUs.
+
 tester provides a simple test suite.
 
 The latego.py, msr.py, pci.py modules can be also used as standalone programs
