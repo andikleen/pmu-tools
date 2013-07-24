@@ -418,7 +418,7 @@ readers = (
     ("nhm", EmapNHM),
     ("wsm", EmapNHM),
     ("bnl", EmapBNL),
-    ("ivt", EmapNEW)
+    ("ivt", EmapJSON)
 )
 
 def find_emap():

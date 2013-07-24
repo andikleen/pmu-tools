@@ -32,7 +32,7 @@ checklist ivb-client 326
 checklist nhm-ex 563
 checklist nhm-ep 561
 checklist bnl 276
-checklist ivt 315
+checklist ivt 329
 
 set -e
 ./ocperf.py stat -e uops_issued.cycles_all_threads /bin/true
