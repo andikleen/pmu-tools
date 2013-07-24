@@ -337,7 +337,7 @@ class EmapSNB(Emap):
 class EmapBNL(Emap):
     # Event_Name,Code,UMask,Counter,Description,Counter_Mask,Invert,AnyThread,Edge_Detect,PEBS
     def __init__(self, name, model):
-        ivb_spreadsheet = {
+        spreadsheet = {
             'name': 'Event_Name',
             'code': 'Code',
             'umask': 'UMask',
@@ -349,13 +349,13 @@ class EmapBNL(Emap):
             'pebs': 'PEBS',
             'counter': 'Counter'
         }
-        return self.read_spreadsheet(name, 'excel', ivb_spreadsheet)
+        return self.read_spreadsheet(name, 'excel', spreadsheet)
 
 class EmapNEW(Emap):
     # new format 
     # Event_Name,Code,UMask,Counter,Counter_HT_Off,Description,MSR_Index,MSR_Value,Taken_Alone,Counter_Mask,Invert,AnyThread,Edge_Detect,PEBS
     def __init__(self, name, model):
-        ivb_spreadsheet = {
+        spreadsheet = {
             'name': 'Event_Name',
             'code': 'Code',
             'umask': 'UMask',
@@ -371,7 +371,7 @@ class EmapNEW(Emap):
         }
         if model == 45:
             self.latego = True
-        return self.read_spreadsheet(name, 'excel', ivb_spreadsheet)
+        return self.read_spreadsheet(name, 'excel', spreadsheet)
 
 class EmapNHM(Emap):
     def __init__(self, name, model):
@@ -391,7 +391,7 @@ class EmapNHM(Emap):
 class EmapJSON(Emap):
     # EventCode,UMask,EventName,Description,Counter,OverFlow,MSRIndex,MSRValue,PreciseEvent,Invert,AnyThread,EdgeDetect
     def __init__(self, name, model):
-        ivb_spreadsheet = {
+        spreadsheet = {
             'name': 'EventName',
             'code': 'EventCode',
             'umask': 'UMask',
