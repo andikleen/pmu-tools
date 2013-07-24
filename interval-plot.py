@@ -4,6 +4,7 @@
 # toplev -I1000 -x, -o file ... 
 # interval-plot.py file (or stdin)
 # delimeter must be ,
+# this is for data that is not normalized
 # TODO: move legend somewhere else where it doesn't overlap?
 # better and more colors
 import csv
