@@ -28,11 +28,11 @@ checklist wsm-sp 720
 checklist wsm-dp 720
 checklist snb-client 310
 checklist snb-ep 334
-checklist ivb-client 326
+checklist ivb-client 399
 checklist nhm-ex 563
 checklist nhm-ep 561
 checklist bnl 276
-checklist ivt 329
+checklist ivt 447
 
 set -e
 ./ocperf.py stat -e uops_issued.cycles_all_threads /bin/true
