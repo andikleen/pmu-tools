@@ -17,8 +17,9 @@ This is automatically enabled for the respective events, and also
 available as a standalone program.
 - A "toplev.py" tool to do cycle composition for a workload, that is 
 measure where in the CPU pipe line the bottleneck occurs.
+- A variety of tools for plotting and post processing perf stat -I1000 -x, 
+or toplev.py -I1000 -x, interval measurements.
 - A plot tool to plot perf stat -Ixxx -x, or toplev.py -Ixxx -x, output
-- A tool to normalize the output of perf stat -Ixxx -x, / toplev.py -IXXX -x,
 - Some utility programs to access pci space or msrs on
 the command line
 - A utility program to program the PMU directly from user space
@@ -131,6 +132,8 @@ kernel that understands its counter constraints.  3.10+ is safe.
 interval-plot.py can plot the output of perf stat -I1000 -x, or 
 or toplev.py -I1000 -x, 
 
+Requires pyplot to be installed.
+
 Below is the level 2 toplev measurement of a Linux kernel compile.
 
 ![plot-example] (http://halobates.de/interval.plot.l2.png)
@@ -139,7 +142,12 @@ Below is the level 2 toplev measurement of a Linux kernel compile.
 
 This converts the output of perf stat -Ixxx -x, / toplev.py -Ixxx -x, 
 to a normalized output (one column for each event). This allows
-easier plotting and processing with other tools.
+easier plotting and processing with other tools (spreadsheets, R, JMP, 
+gnuplot etc.)
+
+## plot-normalized:
+
+Plot an already normalized data file. Requires pyplot to be installed.
 
 ## self: 
 
