@@ -263,8 +263,6 @@ class Emap:
             if e.pebs and int(e.pebs):
                 if name.endswith("_PS"):
                     e.extra += "p"
-                else:
-                    self.desc[name] += " (Supports PEBS)"
             for (flag, name) in extra_flags:
                 if val & flag:
                     e.newextra += ",%s=%d" % (name, (val & flag) >> ffs(flag), )
@@ -390,26 +388,33 @@ class EmapNHM(Emap):
         }
         return self.read_spreadsheet(name, 'excel-tab', nhm_spreadsheet)
 
-class EmapHSW(Emap):
+class EmapJSON(Emap):
+    # EventCode,UMask,EventName,Description,Counter,OverFlow,MSRIndex,MSRValue,PreciseEvent,Invert,AnyThread,EdgeDetect
     def __init__(self, name, model):
-        hsw_spreadsheet = {
+        ivb_spreadsheet = {
             'name': 'EventName',
             'code': 'EventCode',
             'umask': 'UMask',
-            'other': 'Other',
             'msr_index': 'MSRIndex',
             'msr_value': 'MSRValue',
+            'cmask': 'Counter_Mask',
+            'invert': 'Invert',
+            'any': 'AnyThread',
+            'edge': 'EdgeDetect',
             'desc': 'Description',
             'pebs': 'PreciseEvent',
             'counter': 'Counter'
         }
-        return self.read_spreadsheet(name, 'excel', hsw_spreadsheet)
+        if model == 45:
+            self.latego = True
+        return self.read_spreadsheet(name, 'excel', ivb_spreadsheet)
+
 
 readers = (
     ("snb-ep", EmapNEW),
     ("snb", EmapSNB),
     ("ivb", EmapNEW),
-    ("hsw", EmapNEW),
+    ("hsw", EmapJSON),
     ("nhm", EmapNHM),
     ("wsm", EmapNHM),
     ("bnl", EmapBNL),
