@@ -138,7 +138,7 @@ kernel that understands its counter constraints.  3.10+ is safe.
 
 ## ucevent uncore monitoring
 
-Please see the [ucevent documentation] (http://github.com/andikleen/pmu-tools/tree/master/ucevent/)
+Please see the [ucevent documentation] (http://github.com/andikleen/pmu-tools/tree/master/ucevent/#ucevent-uncore-monitoring)
 
 ## interval-plot:
 
