@@ -17,6 +17,11 @@ This is automatically enabled for the respective events, and also
 available as a standalone program.
 - A "toplev.py" tool to do cycle composition for a workload, that is 
 measure where in the CPU pipe line the bottleneck occurs.
+- A tool to manage and compute uncore events on Intel Xeon E5 2600 series
+(SandyBridge EP) cpus. This can be useful to monitor power management, 
+IO bandwidth, memory bandwidth, QPI (interconnect) traffic, cache hit rates
+and other metrics. ucevent automatically generates event descriptions
+for the perf uncore driver and pretty print the output.
 - A variety of tools for plotting and post processing perf stat -I1000 -x, 
 or toplev.py -I1000 -x, interval measurements.
 - A plot tool to plot perf stat -Ixxx -x, or toplev.py -Ixxx -x, output
@@ -130,6 +135,10 @@ level 1 or running without -d is generally the most reliable.
 
 One of the events (even used by level 1) requires a recent enough
 kernel that understands its counter constraints.  3.10+ is safe.
+
+## ucevent uncore monitoring
+
+Please see the [ucevent documentation] (http://github.com/andikleen/pmu-tools/tree/master/ucevent/)
 
 ## interval-plot:
 

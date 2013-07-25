@@ -1,0 +1,47 @@
+commit 3840e75a2385a71cf9f0916fe69db2ea936f9cdc
+Author: Andi Kleen <ak@linux.intel.com>
+Date:   Mon Jul 15 15:00:08 2013 -0700
+
+    Add mask{0,1}, mask{0,1}
+
+diff --git a/arch/x86/kernel/cpu/perf_event_intel_uncore.c b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+index 6329563..5122385 100644
+--- a/arch/x86/kernel/cpu/perf_event_intel_uncore.c
++++ b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+@@ -54,6 +54,8 @@ DEFINE_UNCORE_FORMAT_ATTR(match_dnid, match_dnid, "config1:13-17");
+ DEFINE_UNCORE_FORMAT_ATTR(match_mc, match_mc, "config1:9-12");
+ DEFINE_UNCORE_FORMAT_ATTR(match_opc, match_opc, "config1:5-8");
+ DEFINE_UNCORE_FORMAT_ATTR(match_vnw, match_vnw, "config1:3-4");
++DEFINE_UNCORE_FORMAT_ATTR(match0, match0, "config1:0-31");
++DEFINE_UNCORE_FORMAT_ATTR(match1, match1, "config1:32-63");
+ DEFINE_UNCORE_FORMAT_ATTR(mask_rds, mask_rds, "config2:48-51");
+ DEFINE_UNCORE_FORMAT_ATTR(mask_rnid30, mask_rnid30, "config2:32-35");
+ DEFINE_UNCORE_FORMAT_ATTR(mask_rnid4, mask_rnid4, "config2:31");
+@@ -61,7 +63,8 @@ DEFINE_UNCORE_FORMAT_ATTR(mask_dnid, mask_dnid, "config2:13-17");
+ DEFINE_UNCORE_FORMAT_ATTR(mask_mc, mask_mc, "config2:9-12");
+ DEFINE_UNCORE_FORMAT_ATTR(mask_opc, mask_opc, "config2:5-8");
+ DEFINE_UNCORE_FORMAT_ATTR(mask_vnw, mask_vnw, "config2:3-4");
+-
++DEFINE_UNCORE_FORMAT_ATTR(mask0, mask0, "config2:0-31");
++DEFINE_UNCORE_FORMAT_ATTR(mask1, mask1, "config2:32-63");
+ 
+ static u64 uncore_msr_read_counter(struct intel_uncore_box *box, struct perf_event *event)
+ {
+@@ -325,6 +328,8 @@ static struct attribute *snbep_uncore_qpi_formats_attr[] = {
+ 	&format_attr_match_mc.attr,
+ 	&format_attr_match_opc.attr,
+ 	&format_attr_match_vnw.attr,
++	&format_attr_match0.attr,
++	&format_attr_match1.attr,
+ 	&format_attr_mask_rds.attr,
+ 	&format_attr_mask_rnid30.attr,
+ 	&format_attr_mask_rnid4.attr,
+@@ -332,6 +337,8 @@ static struct attribute *snbep_uncore_qpi_formats_attr[] = {
+ 	&format_attr_mask_mc.attr,
+ 	&format_attr_mask_opc.attr,
+ 	&format_attr_mask_vnw.attr,
++	&format_attr_mask0.attr,
++	&format_attr_mask1.attr,
+ 	NULL,
+ };
+ 

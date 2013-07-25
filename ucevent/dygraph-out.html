@@ -1,0 +1,41 @@
+<html>
+<head>
+<title>ucevent output</title>
+<script type="text/javascript"
+  src="http://dygraphs.com/dygraph-combined.js"></script>
+</head>
+<body>
+<div id="graphdiv2"
+  style="width:1000px; height:500px;"></div>
+
+<!-- XXX auto generate the labels with right names/numbers -->
+<input type=checkbox id=0 onClick="metricchange(this)" checked>
+<label for="0"> Metric 1 </label>
+<input type=checkbox id=1 onClick="metricchange(this)" checked>
+<label for="1"> Metric 2 </label>
+<input type=checkbox id=2 onClick="metricchange(this)" checked>
+<label for="2"> Metric 3 </label>
+<input type=checkbox id=2 onClick="metricchange(this)" checked>
+<label for="3"> Metric 4 </label>
+<input type=checkbox id=2 onClick="metricchange(this)" checked>
+<label for="4"> Metric 5 </label>
+<input type=checkbox id=2 onClick="metricchange(this)" checked>
+<label for="5"> Metric 6 </label>
+<input type=checkbox id=2 onClick="metricchange(this)" checked>
+<label for="6"> Metric 7 </label>
+
+<script type="text/javascript">
+  g2 = new Dygraph(
+    document.getElementById("graphdiv2"),
+    "out.csv",
+    { 
+    }
+  );
+
+function metricchange(el) {
+  g2.setVisibility(el.id, el.checked);
+}
+
+</script>
+</body>
+</html>

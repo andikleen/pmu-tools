@@ -1,0 +1,5 @@
+#!/bin/sh
+# run all events for 2 seconds each
+# requires GNU parallel (http://ftp.gnu.org/gnu/parallel/)
+./ucevent.py --unsupported --broken --name-only > all-events
+parallel "$@" -n 1 -k < all-events sh -c "echo "EVENT" {} ; ./ucevent.py -v {} sleep 2.2 2>&1" >res-all

@@ -1,0 +1,38 @@
+From 485a1208f27bad121685388f966856c5fe45849d Mon Sep 17 00:00:00 2001
+From: "Yan, Zheng" <zheng.z.yan@intel.com>
+Date: Fri, 12 Jul 2013 19:36:03 -0700
+Subject: [PATCH] support pcu extsel
+
+---
+ arch/x86/kernel/cpu/perf_event_intel_uncore.c |    2 +-
+ arch/x86/kernel/cpu/perf_event_intel_uncore.h |    1 +
+ 2 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/arch/x86/kernel/cpu/perf_event_intel_uncore.c b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+index 19f0cb4..036ccfd 100644
+--- a/arch/x86/kernel/cpu/perf_event_intel_uncore.c
++++ b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+@@ -285,7 +285,7 @@ static struct attribute *snbep_uncore_cbox_formats_attr[] = {
+ };
+ 
+ static struct attribute *snbep_uncore_pcu_formats_attr[] = {
+-	&format_attr_event.attr,
++	&format_attr_event_ext.attr,
+ 	&format_attr_occ_sel.attr,
+ 	&format_attr_edge.attr,
+ 	&format_attr_inv.attr,
+diff --git a/arch/x86/kernel/cpu/perf_event_intel_uncore.h b/arch/x86/kernel/cpu/perf_event_intel_uncore.h
+index ac77a7b..669fcc5 100644
+--- a/arch/x86/kernel/cpu/perf_event_intel_uncore.h
++++ b/arch/x86/kernel/cpu/perf_event_intel_uncore.h
+@@ -110,6 +110,7 @@
+ 				(SNBEP_PMON_CTL_EV_SEL_MASK | \
+ 				 SNBEP_PCU_MSR_PMON_CTL_OCC_SEL_MASK | \
+ 				 SNBEP_PMON_CTL_EDGE_DET | \
++				 SNBEP_PMON_CTL_EV_SEL_EXT | \
+ 				 SNBEP_PMON_CTL_INVERT | \
+ 				 SNBEP_PCU_MSR_PMON_CTL_TRESH_MASK | \
+ 				 SNBEP_PCU_MSR_PMON_CTL_OCC_INVERT | \
+-- 
+1.7.7.6
+

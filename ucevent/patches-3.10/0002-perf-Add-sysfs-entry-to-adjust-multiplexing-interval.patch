@@ -1,0 +1,130 @@
+From 4341acbf37e5eac1607ab4aa59e6ec941f9ee7b7 Mon Sep 17 00:00:00 2001
+From: Stephane Eranian <eranian@google.com>
+Date: Wed, 3 Apr 2013 14:21:34 +0200
+Subject: [PATCH 2/5] perf: Add sysfs entry to adjust multiplexing interval
+ per PMU
+
+This patch adds /sys/device/xxx/perf_event_mux_interval_ms to ajust
+the multiplexing interval per PMU. The unit is milliseconds. Value has
+to be >= 1.
+
+In the 4th version, we renamed the sysfs file to be more consistent
+with the other /proc/sys/kernel entries for perf_events.
+
+In the 5th version, we handle the reprogramming of the hrtimer using
+hrtimer_forward_now(). That way, we sync up to new timer value quickly
+(suggested by Jiri Olsa).
+
+Signed-off-by: Stephane Eranian <eranian@google.com>
+Signed-off-by: Peter Zijlstra <peterz@infradead.org>
+Cc: Frederic Weisbecker <fweisbec@gmail.com>
+Cc: Arnaldo Carvalho de Melo <acme@redhat.com>
+Link: http://lkml.kernel.org/r/1364991694-5876-3-git-send-email-eranian@google.com
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+---
+ include/linux/perf_event.h |    1 +
+ kernel/events/core.c       |   63 +++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 60 insertions(+), 4 deletions(-)
+
+diff --git a/include/linux/perf_event.h b/include/linux/perf_event.h
+index 3012c54..f42e8fb 100644
+--- a/include/linux/perf_event.h
++++ b/include/linux/perf_event.h
+@@ -194,6 +194,7 @@ struct pmu {
+ 	int * __percpu			pmu_disable_count;
+ 	struct perf_cpu_context * __percpu pmu_cpu_context;
+ 	int				task_ctx_nr;
++	int				hrtimer_interval_ms;
+ 
+ 	/*
+ 	 * Fully disable/enable this PMU, can be used to protect from the PMI
+diff --git a/kernel/events/core.c b/kernel/events/core.c
+index 71a39cc..5218771 100644
+--- a/kernel/events/core.c
++++ b/kernel/events/core.c
+@@ -720,13 +720,21 @@ static void __perf_cpu_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
+ {
+ 	struct hrtimer *hr = &cpuctx->hrtimer;
+ 	struct pmu *pmu = cpuctx->ctx.pmu;
++	int timer;
+ 
+ 	/* no multiplexing needed for SW PMU */
+ 	if (pmu->task_ctx_nr == perf_sw_context)
+ 		return;
+ 
+-	cpuctx->hrtimer_interval =
+-		ns_to_ktime(NSEC_PER_MSEC * PERF_CPU_HRTIMER);
++	/*
++	 * check default is sane, if not set then force to
++	 * default interval (1/tick)
++	 */
++	timer = pmu->hrtimer_interval_ms;
++	if (timer < 1)
++		timer = pmu->hrtimer_interval_ms = PERF_CPU_HRTIMER;
++
++	cpuctx->hrtimer_interval = ns_to_ktime(NSEC_PER_MSEC * timer);
+ 
+ 	hrtimer_init(hr, CLOCK_MONOTONIC, HRTIMER_MODE_REL_PINNED);
+ 	hr->function = perf_cpu_hrtimer_handler;
+@@ -6076,9 +6084,56 @@ type_show(struct device *dev, struct device_attribute *attr, char *page)
+ 	return snprintf(page, PAGE_SIZE-1, "%d\n", pmu->type);
+ }
+ 
++static ssize_t
++perf_event_mux_interval_ms_show(struct device *dev,
++				struct device_attribute *attr,
++				char *page)
++{
++	struct pmu *pmu = dev_get_drvdata(dev);
++
++	return snprintf(page, PAGE_SIZE-1, "%d\n", pmu->hrtimer_interval_ms);
++}
++
++static ssize_t
++perf_event_mux_interval_ms_store(struct device *dev,
++				 struct device_attribute *attr,
++				 const char *buf, size_t count)
++{
++	struct pmu *pmu = dev_get_drvdata(dev);
++	int timer, cpu, ret;
++
++	ret = kstrtoint(buf, 0, &timer);
++	if (ret)
++		return ret;
++
++	if (timer < 1)
++		return -EINVAL;
++
++	/* same value, noting to do */
++	if (timer == pmu->hrtimer_interval_ms)
++		return count;
++
++	pmu->hrtimer_interval_ms = timer;
++
++	/* update all cpuctx for this PMU */
++	for_each_possible_cpu(cpu) {
++		struct perf_cpu_context *cpuctx;
++		cpuctx = per_cpu_ptr(pmu->pmu_cpu_context, cpu);
++		cpuctx->hrtimer_interval = ns_to_ktime(NSEC_PER_MSEC * timer);
++
++		if (hrtimer_active(&cpuctx->hrtimer))
++			hrtimer_forward_now(&cpuctx->hrtimer, cpuctx->hrtimer_interval);
++	}
++
++	return count;
++}
++
++#define __ATTR_RW(attr) __ATTR(attr, 0644, attr##_show, attr##_store)
++
+ static struct device_attribute pmu_dev_attrs[] = {
+-       __ATTR_RO(type),
+-       __ATTR_NULL,
++	__ATTR_RO(type),
++	__ATTR_RW(perf_event_mux_interval_ms),
++	__ATTR_NULL,
+ };
+ 
+ static int pmu_bus_running;
+-- 
+1.7.7.6
+

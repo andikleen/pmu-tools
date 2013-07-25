@@ -1,0 +1,4 @@
+#!/bin/sh
+./JKT --unsupported --broken --name-only > all-events
+parallel "$@" -n 1 -k < all-events sh -c "echo "EVENT" {} ; ./JKT -v {} 2>&1" >res-mock
+

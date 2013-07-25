@@ -1,0 +1,9 @@
+#!/bin/sh
+
+for i in CHECK-* SANITY-ALL MOCK-ALL ; do 
+	echo $i 
+	./$i
+	echo STATUS $?
+done
+
+./uctester | tee res-tester

@@ -1,0 +1,4 @@
+#!/bin/sh
+# requires GNU parallel (http://ftp.gnu.org/gnu/parallel/)
+./ucevent.py --name-only > derived-events
+parallel "$@" -n 1 -k < derived-events sh -c "echo "EVENT" {} ; ./ucevent.py -v {} sleep 2.2 2>&1" >res-derived

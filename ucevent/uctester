@@ -1,0 +1,29 @@
+#!/bin/sh
+set -e
+set -x
+
+./sanity-run.py "PCU.*" sleep 3
+
+./sanity-run.py "PCU.CLOCKTICKS / KILO" sleep 3
+
+./sanity-run.py -S0 "PCU.*" sleep 3
+
+./sanity-run.py -S1 "PCU.*" sleep 3
+
+./sanity-run.py --cpu 0 "PCU.*" sleep 3
+
+./sanity-run.py -S1 "PCU.*" sleep 3
+
+./sanity-run.py --no-sum "CBO.RING_THRU_*_BYTES" sleep 3
+
+./sanity-run.py '{' PCU.CLOCKTICKS iMC.MEM_BW_READS '}' iMC.PCT_CYCLES_DLOFF sleep 3
+
+set +e # XXX
+./ucevent.py --parse-all | grep -qi error
+./ucevent.py --mock --parse-all | egrep -qi '#EVAL|#DIVZ|error'
+
+#./ucevent.py --check-events
+
+# qualifiers
+
+

@@ -1,0 +1,12 @@
+
+The following patches are needed for ucperf on top of Linux 3.10
+Newer kernels may have these patches already integrated.
+
+The patches affect both the perf binary and perf kernel code.
+
+To apply
+
+cd linux-3.10
+for i in PATCHDIR/00* ; do 
+    patch -p1 < $i 
+done
