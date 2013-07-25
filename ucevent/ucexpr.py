@@ -93,6 +93,8 @@ def expand_events(s):
     while ucevent.box_exists("%s_%d" % (m.group(1), n)):
         l.append(s.replace("_INDEX", "_%d" % (n)))
         n += 1
+    if len(l) == 0:
+        return [s]
     return l
 
 def expect(tl, c):
@@ -369,7 +371,7 @@ def parse(s, box, quiet=False, user_mode=False, qual=None):
         e, tl = expr(tl)
         if len(tl) > 0:
             raise ParseError("unexpected token %s at end" % (tl[0]))
-        ucmsg.debug_msg("expr", tl)
+        ucmsg.debug_msg("expr", e)
         eflat = expr_flat(e)
         if qual:
             eflat = apply_user_qual(eflat, qual)
