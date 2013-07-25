@@ -315,7 +315,10 @@ group. It currently cannot create groups automatically for some units
 at different time, unless explicit groups are specified. This may
 cause visible inaccuracies when different columns are compared.
 
-Also due to perf limitations some valid groups don't run.
+Also due to perf limitations some valid groups don't run. A common
+case of this is multiple events from a different instance of the same
+box on the same socket. The scheduler does not know that different 
+instances are independent.
 
 **In general avoiding multiplexing will yield the best results**
 
