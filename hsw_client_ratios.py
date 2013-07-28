@@ -175,7 +175,7 @@ bandwidth issues."""
     def compute(self, EV):
          try:
              self.val = self.FrontendBound.compute(EV) - self.FrontendLatency.compute(EV)
-             self.thresh = self.val > 0.2 & (IPC(EV) > 2.0) and self.parent.thresh
+             self.thresh = self.val > 0.2 & (IPC(EV) > 2.0) & self.parent.thresh
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
