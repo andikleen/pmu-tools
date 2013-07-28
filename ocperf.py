@@ -225,16 +225,12 @@ class Emap:
             name = get('name').lower().rstrip()
             code = gethex('code')
             umask = gethex('umask')
-            other = 0
-            if 'other' in m and m['other'] in index and get('other'):
+            if 'other' in m and m['other'] in index:
                 other = gethex('other') << 16
-            if 'edge' in m and m['edge'] in index:
-                other |= gethex('edge') << 18
-            if 'any' in m and m['any'] in index:
+            else:
+                other = gethex('edge') << 18
                 other |= gethex('any') << 21
-            if 'cmask' in m and m['cmask'] in index:
                 other |= gethex('cmask') << 24
-            if 'invert' in m and m['invert'] in index:
                 other |= gethex('invert') << 23
             val = code | (umask << 8) | other
             val &= EVMASK
@@ -366,7 +362,7 @@ class EmapJSON(Emap):
             'umask': 'UMask',
             'msr_index': 'MSRIndex',
             'msr_value': 'MSRValue',
-            'cmask': 'Counter_Mask',
+            'cmask': 'CounterMask',
             'invert': 'Invert',
             'any': 'AnyThread',
             'edge': 'EdgeDetect',
