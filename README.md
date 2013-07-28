@@ -47,6 +47,8 @@ in the same directory the script was located in.
 
 ## ocperf:
 
+A more detailed introduction is in [Andi's blog](http://halobates.de/blog/p/245)
+
 ocperf.py list
 List all the events perf and ocperf supports on the current CPU
 
@@ -84,6 +86,8 @@ unless -v is specified.
 
 This follows the "Top Down" methology described in B.3.2 of
 the [Intel optimization manual] (http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf)
+
+A more gentle introduction is in [andi's blog](http://halobates.de/blog/p/262)
 
 toplev.py only supports counting, that is it cannot tell you where in
 the program the problem occurred, just what happened.
