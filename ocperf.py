@@ -362,7 +362,7 @@ class EmapNHM(Emap):
         return self.read_spreadsheet(name, 'excel-tab', nhm_spreadsheet)
 
 class EmapJSON(Emap):
-    # EventCode,UMask,EventName,Description,Counter,OverFlow,MSRIndex,MSRValue,PreciseEvent,Invert,AnyThread,EdgeDetect
+    # EventCode,UMask,EventName,Description,Counter,OverFlow,MSRIndex,MSRValue,PreciseEvent,Invert,AnyThread,EdgeDetect,CounterMask
     def __init__(self, name, model):
         spreadsheet = {
             'name': 'EventName',
