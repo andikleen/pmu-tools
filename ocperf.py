@@ -312,9 +312,9 @@ class Emap:
             return self.pevents[p].name
         return p
 
-    def dumpevents(self):
+    def dumpevents(self, file):
         for k in sorted(self.desc.keys()):
-            print "  %-42s [%s]" % (k, self.desc[k],)
+            print >>file,"  %-42s [%s]" % (k, self.desc[k],)
 
 #
 # Handle the immense creativity of Event spreadsheet creators
@@ -484,11 +484,26 @@ Specify the -e events before -c default or event has no overflow field."""
         sys.exit(0)
     return cmd
 
+def get_pager():
+    f = sys.stdout
+    if f.isatty():
+        try:
+            sp = subprocess.Popen(["less", "-F"], stdin=subprocess.PIPE)
+            return sp.stdin, sp
+        except OSError:
+            f = sys.stdout
+    return f, None
+
 def perf_cmd(cmd):
     if len(sys.argv) >= 2 and sys.argv[1] == "list":
-        os.system(cmd + "| cat")
-        print
-        emap.dumpevents()
+        pager, proc = get_pager()
+        l = subprocess.Popen(cmd, shell=True, stdout=pager)
+        l.wait()
+        print >>pager
+        emap.dumpevents(pager)
+        if proc:
+            pager.close()
+            proc.wait()
     elif len(sys.argv) >= 2 and (sys.argv[1] == "report" or sys.argv[1] == "stat"):
         for w in sys.argv:
             if w == "--tui":
