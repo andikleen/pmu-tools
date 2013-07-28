@@ -620,7 +620,7 @@ class DividerActive:
     def compute(self, EV):
          try:
              self.val = EV("ARITH.FPU_DIV_ACTIVE") / CLKS(EV)
-             self.thresh = self.val > 0.0 and self.parent.thresh
+             self.thresh = self.val > 0.1 and self.parent.thresh
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
