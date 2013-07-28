@@ -35,6 +35,7 @@ import csv
 import re
 import shlex
 import copy
+import textwrap
 from pmudef import *
 
 import msr as msrmod
@@ -312,9 +313,16 @@ class Emap:
             return self.pevents[p].name
         return p
 
-    def dumpevents(self, file):
+    def dumpevents(self, f, human):
+        if human:
+            wrap = textwrap.TextWrapper(initial_indent="     ",
+                                        subsequent_indent="     ")            
         for k in sorted(self.desc.keys()):
-            print >>file,"  %-42s [%s]" % (k, self.desc[k],)
+            print >>f,"  %-42s" % (k,),
+            if human:
+                print >>f, "\n%s" % (wrap.fill(self.desc[k]),)
+            else:
+                print >>f, " [%s]" % (self.desc[k],)
 
 #
 # Handle the immense creativity of Event spreadsheet creators
@@ -500,7 +508,7 @@ def perf_cmd(cmd):
         l = subprocess.Popen(cmd, shell=True, stdout=pager)
         l.wait()
         print >>pager
-        emap.dumpevents(pager)
+        emap.dumpevents(pager, proc != None)
         if proc:
             pager.close()
             proc.wait()
