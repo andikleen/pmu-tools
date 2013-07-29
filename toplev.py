@@ -555,9 +555,9 @@ elif cpu.cpu == "ivt" and detailed_model:
 elif cpu.cpu == "snb" and detailed_model:
     import snb_client_ratios
     ev = snb_client_ratios.Setup(runner)
-elif cpu.cpu == "hsw" and detailed_model:
-    import hsw_client_ratios
-    ev = hsw_client_ratios.Setup(runner)
+#elif cpu.cpu == "hsw" and detailed_model and force:
+#    import hsw_client_ratios
+#    ev = hsw_client_ratios.Setup(runner)
 else:
     import simple_ratios
     ev = simple_ratios.Setup(runner)
