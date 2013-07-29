@@ -352,11 +352,6 @@ def flat_to_group(res, events, rev):
         resg.append(g)
     return resg
 
-def shell_arg(a):
-    if re.search(r"[\t \[\]()|$&{};<>?*\"']", a):
-        return "'%s'" % (a,)
-    return a
-
 # print results
 def gen_res(res, out, runner, timestamp):
     if res:
