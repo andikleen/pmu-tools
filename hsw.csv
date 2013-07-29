@@ -388,3 +388,4 @@ Penalty: A Decode Stream Buffer (DSB) hit followed by a Decode Stream Buffer (DS
 "0xB7,0xBB","0x01","OFFCORE_RESPONSE.ALL_RFO.ANY_RESPONSE","Counts all demand & prefetch prefetch RFOs","0,1,2,3","0","0x1A6,0x1A7","0x00010122","0","0","0","0","0"
 "0xB7,0xBB","0x01","OFFCORE_RESPONSE.ALL_READS.ANY_RESPONSE","Counts all data/code/rfo references (demand & prefetch)","0,1,2,3","0","0x1A6,0x1A7","0x000107F7","0","0","0","0","0"
 "0xB7,0xBB","0x01","OFFCORE_RESPONSE.DATA_IN_SOCKET.L3_MISS.LOCAL_DRAM","Counts L3 replacements","0,1,2,3","0","0x1A6,0x1A7","0x6004001b3","0","0","0","0","0"
+"0xB7,0xBB","0x01","OFFCORE_RESPONSE.DEMAND_RFO.L3_HIT.HITM_OTHER_CORE","Demand read-for-ownership hit other core's caches","0,1,2,3","0","0x1A6,0x1A7","0x10003c0002","0","0","0","0","0"
