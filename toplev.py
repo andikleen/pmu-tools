@@ -495,12 +495,18 @@ class Runner:
     def schedule(self, out):
         work = []
         evlist = set()
-        # XXX sort by evnums too
+        # pass 0:
+        # sort objects by number of counters
         solist = sorted(self.olist, key=lambda k: k.nc)
+        # pass 1: try to fit each objects events into groups
+        # that fit into the available CPU counters
+        # we dedup event and merge neighbours
         for obj in solist:
             objev = obj.evnum
             newev = set(list(evlist) + objev)
             needed = len(filter(lambda x: x not in ingroup_events, newev))
+            # when the current group doesn't have enough free slots
+            # start a new group
             if cpu.counters < needed and work:
                 self.add(work, evlist)
                 work = []
@@ -508,10 +514,14 @@ class Runner:
                 newev = set(objev)
             work.append(obj)
             evlist = newev
-        if work:
-            self.add(work, evlist)
+        if not work:
+            self.execute(out)
+            return
+        # some events left over that did not fit into a group
+        # this can happen with objects that have very long dependency chains
+        self.add(work, evlist)
         self.execute(out)
-    
+
     def print_res(self, out, timestamp):
         for obj in self.olist:
             if obj.res:
