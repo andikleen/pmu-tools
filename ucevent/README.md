@@ -25,9 +25,15 @@ report trends over time.
 # Supported systems and configurations
 
 ucevent currently only supports Intel Xeon E5 2600 series (codename Sandy
-Bridge EP) The BIOS also needs to expose the uncore monitoring PCI
-devices (this is often disabled by default and, depending on the
-system, may need a BIOS update to enable).
+Bridge EP) 
+
+For the QPI and memory controller metrics the BIOS also needs to
+expose the uncore monitoring PCI devices (this is often disabled by default
+and, depending on the system, may need a BIOS update to enable).
+
+When the BIOS does not support these devices only a subset (mostly
+power management) of the uncore monitoring is available. Enabling
+them may also require setting a BIOS option.
 
 You can check in lspci if the monitoring devices are available. It
 should show output similar to this:
@@ -60,14 +66,21 @@ It generates the perf command line to collect the data, runs perf
 and then does data post processing (computing equations) and finally
 outputs the data.
 
-The tutorial assumes you are in the ucevent source directory
+First set up pmu-tools if you haven't already
 
-	# cd ucevent
+	% git clone https://github.com/andikleen/pmu-tools
+	% cd pmu-tools
+
+The rest of the tutorial needs to run as root, as the uncore 
+is a global resource:
+
+	# cd pmu-tools/ucevent
+	# export PATH=$PATH:$(pwd)
 
 "sleep XXX" can be used to define the number of seconds to measure:
 Measure PCI bandwidth for 10 seconds, print measurement every two seconds:
 
-	# ./ucevent.py -I 2000  CBO.PCIE_DATA_BYTES sleep 10
+	# ucevent.py -I 2000  CBO.PCIE_DATA_BYTES sleep 10
 	S0-CBO.PCIE_DATA_BYTES
 	|      S1-CBO.PCIE_DATA_BYTES
 	384.00 256.00 
@@ -99,13 +112,13 @@ will profile the whole sockets specified unlike normal perf stat.
 This example shows the number of DIMM page misses in the DDR memory controller.
 This can be a fairly important metric, as it affects memory latency significantly.
 
-	# ./ucevent.py iMC.PCT_REQUESTS_PAGE_MISS my-workload
+	# ucevent.py iMC.PCT_REQUESTS_PAGE_MISS my-workload
 
 Only specific sockets can be measured. In this case it can help
 to bind a workload to that socket. Note that a socket in ucevent
 is not always the same as a node, but it often is.
 
-	# ./ucevent.py -v --socket 0 iMC.PCT_REQUESTS_PAGE_HIT numactl --cpunodebind=0 workload
+	# ucevent.py -v --socket 0 iMC.PCT_REQUESTS_PAGE_HIT numactl --cpunodebind=0 workload
 	Expression 1 - (PCT_REQUESTS_PAGE_EMPTY + PCT_REQUESTS_PAGE_MISS)
 	Events: iMC.PCT_REQUESTS_PAGE_HIT
 	perf stat -e '{uncore_imc_0/event=0x1/, ... lots of events ...  }' -I1000 -x, -C0 ...
@@ -122,7 +135,7 @@ and some more information.
 List derived (higher level) available metrics that can be measured
 (this is a subset of the full list)
 
-	# ./ucevent.py
+	# ucevent.py
 	...
 	CBO CACHE Events
 	  CBO.LLC_DRD_MISS_PCT           LLC DRD Miss Ratio                      
@@ -131,11 +144,11 @@ List derived (higher level) available metrics that can be measured
 
 List all PCU (Power Management Control Unit) events with description
 
-	# ./ucevent.py --desc --unsupported --cat PCU
+	# ucevent.py --desc --unsupported --cat PCU
 
 Display the memory read and write bandwidth
 
-	# ./ucevent.py  --scale GB iMC.MEM_BW_WRITES iMC.MEM_BW_READS
+	# ucevent.py  --scale GB iMC.MEM_BW_WRITES iMC.MEM_BW_READS
 
 "--scale GB" scales the metric to GB/s. The values are printed every second
 (can be changed with -I)
@@ -144,7 +157,7 @@ Display the QPI bandwidth and PCI-e bandwidth on socket 0 in GB/s This
 system has four memory controllers per socket, which are accounted
 separately
 
-	# ./ucevent.py -S0 "QPI_LL.DATA_FROM_QPI / GB" "CBO.PCIE_DATA_BYTES / GB"
+	# ucevent.py -S0 "QPI_LL.DATA_FROM_QPI / GB" "CBO.PCIE_DATA_BYTES / GB"
         ...
         iMC.MEM_BW_WRITES / GB
 	|     iMC.MEM_BW_WRITES / GB
@@ -163,7 +176,7 @@ Display the percentage of time the uncore was running higher than
 100. Make sure to use the right filter for the right band.  Upto 4
 bands are possible. 
 
-	# ./ucevent.py PCU.PCT_FREQ_BAND0,filter_band0=20 PCU.PCT_FREQ_BAND1,filter_band1=30
+	# ucevent.py PCU.PCT_FREQ_BAND0,filter_band0=20 PCU.PCT_FREQ_BAND1,filter_band1=30
 
 The parameter after the comma is a qualifier. --desc will output the
 possible qualifiers / filters for an event.  Some qualifier combinations may 
@@ -173,11 +186,11 @@ List the percentage of time the memory controllers spent in
 self-refresh mode. Output the data in CSV mode to a file without any
 extra output.
 
-	# ./ucevent.py -o out.csv -x, iMC.PCT_CYCLES_SELF_REFRESH
+	# ucevent.py -o out.csv -x, iMC.PCT_CYCLES_SELF_REFRESH
 
 Plot the data using R
 
-	# R
+	% R
 	...
 	> x <- read.csv("out.csv")
 	> summary(x)
@@ -185,11 +198,11 @@ Plot the data using R
 
 Plot the data in a web browser using [dygraphs](http://dygraphs.com/)
 
-	# mkdir web
-	# cp dygraph-out.html web/index.html
-	# cp out.csv web
-	# cd web
- 	# python -m SimpleHTTPServer
+	% mkdir web
+	% cp dygraph-out.html web/index.html
+	% cp out.csv web
+	% cd web
+ 	% python -m SimpleHTTPServer
 	... point web browser at localhost:8000 ...
 
 Note that dygraphs only works when the page is served through a HTTP
@@ -199,11 +212,11 @@ HTTP server directory to view it there.
 
 List how much of the time each socket's frequency is thermally limited
 
-	# ./ucevent.py PCU.PCT_FREQ_THERMAL_LTD
+	# ucevent.py PCU.PCT_FREQ_THERMAL_LTD
 
 Using ucevent as non root (insecure). Run as root once:
 
-	# sudo sysctl -w kernel.perf_event_paranoid=-1
+	# sysctl -w kernel.perf_event_paranoid=-1
 
 # Command Line options reference
 
