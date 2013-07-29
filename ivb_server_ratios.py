@@ -742,7 +742,7 @@ from the microcode-sequencer."""
     def compute(self, EV):
          try:
              self.val = self.Retiring.compute(EV) - self.MicroSequencer.compute(EV)
-             self.thresh = (self.val > 0.7) | self.MicroSequencer.compute(EV)
+             self.thresh = (self.val > 0.7) | (self.MicroSequencer.compute(EV) > 0)
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
