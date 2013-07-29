@@ -450,20 +450,6 @@ class Runner:
         obj.evlist = []
         self.olist.append(obj)
 
-    # dumbo topological sort
-    # xxx fix the input files to specify this directly
-    def fix_parents(self):
-	for obj in self.olist:
-	    if not obj.parent:
-	        continue
-	    if obj.level == 1:
-                obj.parent = None
-	    elif obj.parent.level >= obj.level:
-                my_list = self.olist[:self.olist.index(obj)]
-		all_parents = filter(lambda x: x.level < obj.level, my_list)
-		obj.parent = all_parents[-1]
-	        assert obj.parent.level < obj.level
-
     def add(self, work, evlist):
         self.workll.append(work)
         self.evll.append(evlist)
@@ -477,16 +463,14 @@ class Runner:
         measure(glist, self)
 
     # collect the events by pre-computing the equation
-    # we disable the output, so it happens silently
     def collect(self):
         self.objects = {}
         for obj in self.olist:
             self.objects[obj.name] = obj
         for obj in self.olist:
             obj.evlist = []
-            obj.compute(lambda ev: ev_append(ev, obj))
-            # for now until we sample
-            obj.evlist = map(lambda x: x.replace("_PS",""), obj.evlist)
+            obj.compute(lambda ev, level: ev_append(ev, obj))
+            obj.evlist = obj.evlist
             obj.evnum = raw_events(obj.evlist)
             obj.nc = num_counters(obj.evnum)
 
@@ -519,13 +503,15 @@ class Runner:
             return
         # some events left over that did not fit into a group
         # this can happen with objects that have very long dependency chains
+        # run them as non-group for now
         self.add(work, evlist)
         self.execute(out)
 
     def print_res(self, out, timestamp):
         for obj in self.olist:
             if obj.res:
-                obj.compute(lambda e: obj.res[obj.evlist.index(e.replace("_PS",""))])
+                obj.compute(lambda e, level:
+                            obj.res[obj.evlist.index(e)])
                 if obj.thresh or print_all:
                     out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
                           obj.name, obj.val, timestamp)
@@ -569,14 +555,13 @@ elif cpu.cpu == "ivt" and detailed_model:
 elif cpu.cpu == "snb" and detailed_model:
     import snb_client_ratios
     ev = snb_client_ratios.Setup(runner)
-elif cpu.cpu == "hsw" and detailed_model and force:
+elif cpu.cpu == "hsw" and detailed_model:
     import hsw_client_ratios
     ev = hsw_client_ratios.Setup(runner)
 else:
     import simple_ratios
     ev = simple_ratios.Setup(runner)
 
-runner.fix_parents()
 runner.collect()
 out = Output(logfile, csv_mode)
 runner.schedule(out)

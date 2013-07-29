@@ -7,7 +7,7 @@
 PipelineWidth = 4
 
 def CLKS(EV):
-    return EV("CPU_CLK_UNHALTED.THREAD")
+    return EV("CPU_CLK_UNHALTED.THREAD", 1)
 
 def SLOTS(EV):
     return PipelineWidth * CLKS(EV)
@@ -21,7 +21,7 @@ its Backend."""
     level = 1
     def compute(self, EV):
          try:
-             self.val = EV("IDQ_UOPS_NOT_DELIVERED.CORE") / SLOTS(EV)
+             self.val = EV("IDQ_UOPS_NOT_DELIVERED.CORE", 1) / SLOTS(EV)
              self.thresh = self.val > 0.2
          except ZeroDivisionError:
              self.val = 0
@@ -40,7 +40,7 @@ categorized under the Bad Speculation category"""
     level = 1
     def compute(self, EV):
          try:
-             self.val = ( EV("UOPS_ISSUED.ANY") - EV("UOPS_RETIRED.RETIRE_SLOTS") + PipelineWidth * EV("INT_MISC.RECOVERY_CYCLES") ) / SLOTS(EV)
+             self.val = ( EV("UOPS_ISSUED.ANY", 1) - EV("UOPS_RETIRED.RETIRE_SLOTS", 1) + PipelineWidth * EV("INT_MISC.RECOVERY_CYCLES", 1) ) / SLOTS(EV)
              self.thresh = self.val > 0.1
          except ZeroDivisionError:
              self.val = 0
@@ -72,7 +72,7 @@ eventually get retired."""
     level = 1
     def compute(self, EV):
          try:
-             self.val = EV("UOPS_RETIRED.RETIRE_SLOTS") / SLOTS(EV)
+             self.val = EV("UOPS_RETIRED.RETIRE_SLOTS", 1) / SLOTS(EV)
              self.thresh = self.val > 0.7
          except ZeroDivisionError:
              self.val = 0
