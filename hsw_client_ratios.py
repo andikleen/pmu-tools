@@ -19,13 +19,13 @@ MEM_XSNP_NONE_COST = 29
 # Aux. formulas
 
 def BackendBoundAtEXE_stalls(EV, level):
-    return ( EV("CYCLE_ACTIVITY.CYCLES_NO_EXECUTE", level) + EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level) - EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level) - EV("RS_EVENTS.EMPTY_CYCLES", level) )
+    return ( EV("CYCLE_ACTIVITY.CYCLES_NO_EXECUTE", level) + EV("UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC", level) - EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level) - EV("RS_EVENTS.EMPTY_CYCLES", level) )
 def BackendBoundAtEXE(EV, level):
     return BackendBoundAtEXE_stalls(EV, level) / CLKS(EV, level)
 def MemBoundFraction(EV, level):
     return ( EV("CYCLE_ACTIVITY.STALLS_LDM_PENDING", level) + EV("RESOURCE_STALLS.SB", level) ) / ( BackendBoundAtEXE_stalls(EV, level) + EV("RESOURCE_STALLS.SB", level) )
 def MemL3HitFraction(EV, level):
-    return EV("MEM_LOAD_UOPS_RETIRED.LLC_HIT", level) / ( EV("MEM_LOAD_UOPS_RETIRED.LLC_HIT", level) + MEM_L3_WEIGHT * EV("MEM_LOAD_UOPS_RETIRED.LLC_MISS", level) )
+    return EV("MEM_LOAD_UOPS_RETIRED.L3_HIT", level) / ( EV("MEM_LOAD_UOPS_RETIRED.L3_HIT", level) + MEM_L3_WEIGHT * EV("MEM_LOAD_UOPS_RETIRED.L3_MISS", level) )
 def AvgFillBufferLatency(EV, level):
     return EV("L1D_PEND_MISS.PENDING", level) / EV("MEM_LOAD_UOPS_RETIRED.L1_MISS", level)
 def MispredClearsFraction(EV, level):
@@ -436,7 +436,7 @@ class ContestedAccesses:
     level = 4
     def compute(self, EV):
          try:
-             self.val = MEM_XSNP_HITM_COST * ( EV("MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HITM", 4) + EV("MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_MISS", 4) ) / CLKS(EV, 4)
+             self.val = MEM_XSNP_HITM_COST * ( EV("MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM", 4) + EV("MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_MISS", 4) ) / CLKS(EV, 4)
              self.thresh = self.val > 0.0 and self.parent.thresh
          except ZeroDivisionError:
              self.val = 0
@@ -451,7 +451,7 @@ class DataSharing:
     level = 4
     def compute(self, EV):
          try:
-             self.val = MEM_XSNP_HIT_COST * EV("MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HIT", 4) / CLKS(EV, 4)
+             self.val = MEM_XSNP_HIT_COST * EV("MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HIT", 4) / CLKS(EV, 4)
              self.thresh = self.val > 0.0 and self.parent.thresh
          except ZeroDivisionError:
              self.val = 0
@@ -469,7 +469,7 @@ with a sibiling core."""
     level = 4
     def compute(self, EV):
          try:
-             self.val = MEM_XSNP_NONE_COST * EV("MEM_LOAD_UOPS_RETIRED.LLC_HIT", 4) / CLKS(EV, 4)
+             self.val = MEM_XSNP_NONE_COST * EV("MEM_LOAD_UOPS_RETIRED.L3_HIT", 4) / CLKS(EV, 4)
              self.thresh = (self.val > 0.1) and self.parent.thresh
          except ZeroDivisionError:
              self.val = 0
@@ -501,7 +501,7 @@ This metric represents how often CPU was stalled on due to store operations."""
     level = 4
     def compute(self, EV):
          try:
-             self.val = MEM_XSNP_HITM_COST * ( EV("MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HITM", 4) + EV("OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.HITM_OTHER_CORE", 4) ) / CLKS(EV, 4)
+             self.val = MEM_XSNP_HITM_COST * ( EV("MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM", 4) + EV("OFFCORE_RESPONSE.DEMAND_RFO.L3_HIT.HITM_OTHER_CORE", 4) ) / CLKS(EV, 4)
              self.thresh = (self.val > 0.2) and self.parent.thresh
          except ZeroDivisionError:
              self.val = 0
@@ -616,7 +616,7 @@ on all execution ports."""
     level = 4
     def compute(self, EV):
          try:
-             self.val = ( EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", 4) - EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", 4) ) / CLKS(EV, 4)
+             self.val = ( EV("UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC", 4) - EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", 4) ) / CLKS(EV, 4)
              self.thresh = (self.val > 0.1) and self.parent.thresh
          except ZeroDivisionError:
              self.val = 0
@@ -718,26 +718,26 @@ class Setup:
         o = dict()
         n = FrontendBound() ; r.run(n) ; o["FrontendBound"] = n
         n = FrontendLatency() ; r.run(n) ; o["FrontendLatency"] = n
-        n = ICacheMisses() ; r.run(n) ; o["ICacheMisses"] = n
+        #n = ICacheMisses() ; r.run(n) ; o["ICacheMisses"] = n
         n = ITLBmisses() ; r.run(n) ; o["ITLBmisses"] = n
-        n = BranchResteers() ; r.run(n) ; o["BranchResteers"] = n
+        #n = BranchResteers() ; r.run(n) ; o["BranchResteers"] = n
         n = DSBswitches() ; r.run(n) ; o["DSBswitches"] = n
         n = LCP() ; r.run(n) ; o["LCP"] = n
         n = FrontendBandwidth() ; r.run(n) ; o["FrontendBandwidth"] = n
         n = MITE() ; r.run(n) ; o["MITE"] = n
         n = DSB() ; r.run(n) ; o["DSB"] = n
-        n = LSD() ; r.run(n) ; o["LSD"] = n
+        #n = LSD() ; r.run(n) ; o["LSD"] = n
         n = BadSpeculation() ; r.run(n) ; o["BadSpeculation"] = n
         n = BranchMispredicts() ; r.run(n) ; o["BranchMispredicts"] = n
         n = MachineClears() ; r.run(n) ; o["MachineClears"] = n
         n = BackendBound() ; r.run(n) ; o["BackendBound"] = n
         n = MemoryBound() ; r.run(n) ; o["MemoryBound"] = n
-        n = L1Bound() ; r.run(n) ; o["L1Bound"] = n
-        n = DTLBOverhead() ; r.run(n) ; o["DTLBOverhead"] = n
-        n = LoadsBlockedbyStoreForwarding() ; r.run(n) ; o["LoadsBlockedbyStoreForwarding"] = n
-        n = SplitLoads() ; r.run(n) ; o["SplitLoads"] = n
-        n = G4KAliasing() ; r.run(n) ; o["G4KAliasing"] = n
-        n = L2Bound() ; r.run(n) ; o["L2Bound"] = n
+        #n = L1Bound() ; r.run(n) ; o["L1Bound"] = n
+        #n = DTLBOverhead() ; r.run(n) ; o["DTLBOverhead"] = n
+        #n = LoadsBlockedbyStoreForwarding() ; r.run(n) ; o["LoadsBlockedbyStoreForwarding"] = n
+        #n = SplitLoads() ; r.run(n) ; o["SplitLoads"] = n
+        #n = G4KAliasing() ; r.run(n) ; o["G4KAliasing"] = n
+        #n = L2Bound() ; r.run(n) ; o["L2Bound"] = n
         n = L3Bound() ; r.run(n) ; o["L3Bound"] = n
         n = ContestedAccesses() ; r.run(n) ; o["ContestedAccesses"] = n
         n = DataSharing() ; r.run(n) ; o["DataSharing"] = n
@@ -747,36 +747,36 @@ class Setup:
         n = SplitStores() ; r.run(n) ; o["SplitStores"] = n
         n = DTLBStoreOverhead() ; r.run(n) ; o["DTLBStoreOverhead"] = n
         n = CoreBound() ; r.run(n) ; o["CoreBound"] = n
-        n = DividerActive() ; r.run(n) ; o["DividerActive"] = n
-        n = PortsUtilization() ; r.run(n) ; o["PortsUtilization"] = n
-        n = G0_Ports() ; r.run(n) ; o["G0_Ports"] = n
-        n = G1_Port() ; r.run(n) ; o["G1_Port"] = n
-        n = G2_Ports() ; r.run(n) ; o["G2_Ports"] = n
-        n = G3m_Ports() ; r.run(n) ; o["G3m_Ports"] = n
+        #n = DividerActive() ; r.run(n) ; o["DividerActive"] = n
+        #n = PortsUtilization() ; r.run(n) ; o["PortsUtilization"] = n
+        #n = G0_Ports() ; r.run(n) ; o["G0_Ports"] = n
+        #n = G1_Port() ; r.run(n) ; o["G1_Port"] = n
+        #n = G2_Ports() ; r.run(n) ; o["G2_Ports"] = n
+        #n = G3m_Ports() ; r.run(n) ; o["G3m_Ports"] = n
         n = Retiring() ; r.run(n) ; o["Retiring"] = n
         n = BASE() ; r.run(n) ; o["BASE"] = n
         n = MicroSequencer() ; r.run(n) ; o["MicroSequencer"] = n
 
         # parents
         o["FrontendLatency"].parent = o["FrontendBound"]
-        o["ICacheMisses"].parent = o["FrontendLatency"]
+        #o["ICacheMisses"].parent = o["FrontendLatency"]
         o["ITLBmisses"].parent = o["FrontendLatency"]
-        o["BranchResteers"].parent = o["FrontendLatency"]
+        #o["BranchResteers"].parent = o["FrontendLatency"]
         o["DSBswitches"].parent = o["FrontendLatency"]
         o["LCP"].parent = o["FrontendLatency"]
         o["FrontendBandwidth"].parent = o["FrontendBound"]
         o["MITE"].parent = o["FrontendBandwidth"]
         o["DSB"].parent = o["FrontendBandwidth"]
-        o["LSD"].parent = o["FrontendBandwidth"]
+        #o["LSD"].parent = o["FrontendBandwidth"]
         o["BranchMispredicts"].parent = o["BadSpeculation"]
         o["MachineClears"].parent = o["BadSpeculation"]
         o["MemoryBound"].parent = o["BackendBound"]
-        o["L1Bound"].parent = o["MemoryBound"]
-        o["DTLBOverhead"].parent = o["L1Bound"]
-        o["LoadsBlockedbyStoreForwarding"].parent = o["L1Bound"]
-        o["SplitLoads"].parent = o["L1Bound"]
-        o["G4KAliasing"].parent = o["L1Bound"]
-        o["L2Bound"].parent = o["MemoryBound"]
+        #o["L1Bound"].parent = o["MemoryBound"]
+        #o["DTLBOverhead"].parent = o["L1Bound"]
+        #o["LoadsBlockedbyStoreForwarding"].parent = o["L1Bound"]
+        #o["SplitLoads"].parent = o["L1Bound"]
+        #o["G4KAliasing"].parent = o["L1Bound"]
+        #o["L2Bound"].parent = o["MemoryBound"]
         o["L3Bound"].parent = o["MemoryBound"]
         o["ContestedAccesses"].parent = o["L3Bound"]
         o["DataSharing"].parent = o["L3Bound"]
@@ -786,12 +786,12 @@ class Setup:
         o["SplitStores"].parent = o["StoresBound"]
         o["DTLBStoreOverhead"].parent = o["StoresBound"]
         o["CoreBound"].parent = o["BackendBound"]
-        o["DividerActive"].parent = o["CoreBound"]
-        o["PortsUtilization"].parent = o["CoreBound"]
-        o["G0_Ports"].parent = o["PortsUtilization"]
-        o["G1_Port"].parent = o["PortsUtilization"]
-        o["G2_Ports"].parent = o["PortsUtilization"]
-        o["G3m_Ports"].parent = o["PortsUtilization"]
+        #o["DividerActive"].parent = o["CoreBound"]
+        #o["PortsUtilization"].parent = o["CoreBound"]
+        #o["G0_Ports"].parent = o["PortsUtilization"]
+        #o["G1_Port"].parent = o["PortsUtilization"]
+        #o["G2_Ports"].parent = o["PortsUtilization"]
+        #o["G3m_Ports"].parent = o["PortsUtilization"]
         o["BASE"].parent = o["Retiring"]
         o["MicroSequencer"].parent = o["Retiring"]
 
@@ -805,10 +805,10 @@ class Setup:
         o["BackendBound"].FrontendBound = o["FrontendBound"]
         o["BackendBound"].BadSpeculation = o["BadSpeculation"]
         o["BackendBound"].Retiring = o["Retiring"]
-        o["L1Bound"].DTLBOverhead = o["DTLBOverhead"]
+        #o["L1Bound"].DTLBOverhead = o["DTLBOverhead"]
         o["StoresBound"].MemoryBound = o["MemoryBound"]
         o["CoreBound"].MemoryBound = o["MemoryBound"]
-        o["PortsUtilization"].CoreBound = o["CoreBound"]
-        o["PortsUtilization"].DividerActive = o["DividerActive"]
+        #o["PortsUtilization"].CoreBound = o["CoreBound"]
+        #o["PortsUtilization"].DividerActive = o["DividerActive"]
         o["BASE"].Retiring = o["Retiring"]
         o["BASE"].MicroSequencer = o["MicroSequencer"]
