@@ -1,0 +1,27 @@
+#!/bin/sh
+# simple regression tester for toplev
+# this just tests if all events resolve etc, as it would 
+# need the individual CPUs.
+
+set -e
+set -x
+
+cat >hello.c <<EOL
+#include <stdio.h>
+int main() {
+	printf("Hello world\n");
+	return 0; 
+}
+EOL
+
+LOAD="gcc -o /dev/null hello.c"
+
+EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py $LOAD
+EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -d -l4 $LOAD
+EVENTMAP=ivt.csv FORCECPU=ivt ./toplev.py -d -l4 $LOAD
+#EVENTMAP=snb-client.csv FORCECPU=snb ./toplev.py -d -l4 $LOAD
+EVENTMAP=snb-ep.csv FORCECPU=jkt ./toplev.py -d -l4 $LOAD
+EVENTMAP=hsw.csv FORCECPU=hsw ./toplev.py -d -l4 $LOAD
+
+echo 
+echo "SUCCEEDED"
