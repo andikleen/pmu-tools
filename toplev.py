@@ -335,6 +335,8 @@ def raw_event(i, emap):
         e = emap.getevent(i)
         if e == None:
             print "%s not found" % (i,)
+            if not force:
+                sys.exit(1)
             return "cycles" # XXX 
         i = emap.getevent(i).output(True, filter_string())
     return i
