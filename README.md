@@ -85,7 +85,8 @@ search). The tool automatically only prints meaningful ratios,
 unless -v is specified.
 
 This follows the "Top Down" methology described in B.3.2 of
-the [Intel optimization manual] (http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf)
+the [Intel optimization manual](http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf) and
+in this [article](http://software.intel.com/en-us/articles/how-to-tune-applications-using-a-top-down-characterization-of-microarchitectural-issues) and in [Ahmad Yasin's presentation](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxhbmFseXNpc21ldGhvZHN8Z3g6MWJjNTE2OTU4ODVlZGFkMw) at a [ISCA workshop](https://sites.google.com/site/analysismethods/isca2013/program-1). I didn't invent it, I'm just implementing it.
 
 A more gentle introduction is in [andi's blog](http://halobates.de/blog/p/262)
 
@@ -124,7 +125,7 @@ After -- perf arguments conflicting with toplevel can be used.
 
 ### Some caveats:
 
-The lower levels of the measurement tree are much less reliable
+The lower levels of the measurement tree are less reliable
 than the higher levels.  They also rely on counter multi-plexing
 and cannot use groups, which can cause larger measurement errors
 with non steady state workloads.
