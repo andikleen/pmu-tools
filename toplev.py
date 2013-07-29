@@ -43,7 +43,7 @@ measure pid PID
 
 -o set output file
 -v print everything
--d use detailed model if available (only Ivy Bridge currently)
+-d use detailed model if available
 -lLEVEL only use events upto max level (max 4)
 -x, CSV mode with separator ,
 -Inum  Enable interval mode, printing output every num ms
@@ -144,10 +144,12 @@ while first < len(sys.argv):
 if len(sys.argv) - first <= 0:
     usage()
 
+MAX_ERROR = 0.05
+
 def check_ratio(l):
     if print_all:
         return True
-    return l >= -0.05 and l < 1.05
+    return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
 class Output:
     "Generate output human readable or as CSV."
