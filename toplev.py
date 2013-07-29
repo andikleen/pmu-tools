@@ -351,7 +351,8 @@ def print_header(work, evlist):
     evnames0 = map(lambda obj: obj.evlist, work)
     evnames = set(itertools.chain(*evnames0))
     names = map(lambda obj: obj.__class__.__name__, work)
-    pwrap(" ".join(names) + ": " + " ".join(evnames).lower())
+    pwrap(" ".join(names) + ": " + " ".join(evnames).lower() + 
+            " [%d counters]" % (len(filter(lambda e: e not in ingroup_events, evnames))))
 
 # map the flat results back to the original groups
 # this assumes perf always outputs them in the original order
