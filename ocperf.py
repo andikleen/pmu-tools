@@ -289,7 +289,7 @@ class Emap:
             return self.getevent(e[:-3] + ":p" + extra)
         elif e.endswith("_0") or e.endswith("_1"):
             return self.getevent(e.replace("_0","").replace("_1","") + edelim + extra)
-        elif e.startswith("offcore") and (e + "_") in self.events:
+        elif e.startswith("offcore") and (e + "_0") in self.events:
             return self.getevent(e + "_0" + edelim + extra)
         return None
 
