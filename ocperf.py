@@ -272,9 +272,11 @@ class Emap:
     def getevent_worker(self, e):
         e = e.lower()
         extra = ""
+        edelim = ""
         m = re.match(r'(.*):(.*)', e)
         if m:
             extra = m.group(2)
+            edelim = ":"
             e = m.group(1)
         if e in self.events:
             if extra:
@@ -286,7 +288,9 @@ class Emap:
         elif e.endswith("_ps"):
             return self.getevent(e[:-3] + ":p" + extra)
         elif e.endswith("_0") or e.endswith("_1"):
-            return self.getevent(e.replace("_0","").replace("_1","") + ":" + extra)
+            return self.getevent(e.replace("_0","").replace("_1","") + edelim + extra)
+        elif e.startswith("offcore"):
+            return self.getevent(e + "_0" + edelim + extra)
         return None
 
     def getevent(self, e):
