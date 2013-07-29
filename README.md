@@ -119,6 +119,8 @@ Usage:
 	-lLEVEL only use events upto max level (max 4)
 	-x,     Enable CSV mode with separator ,
 	-Ixxx   Enable interval mode, measure every xxx ms
+	--kernel Only measure kernel code
+	--user	Only measure user code
 
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplevel can be used.

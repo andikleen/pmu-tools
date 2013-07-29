@@ -47,6 +47,8 @@ measure pid PID
 -lLEVEL only use events upto max level (max 4)
 -x, CSV mode with separator ,
 -Inum  Enable interval mode, printing output every num ms
+--kernel Measure kernel code only
+--user   Measure user code only
 
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplevel can be used.
@@ -109,6 +111,7 @@ max_level = 2
 csv_mode = None
 interval_mode = None
 force = False
+ring_filter = None
 
 first = 1
 while first < len(sys.argv):
@@ -121,6 +124,8 @@ while first < len(sys.argv):
         print_all = True
     elif sys.argv[first] == '--force':
         force = True
+    elif sys.argv[first] in ('--kernel', '--user'):
+        ring_filter = sys.argv[first][2:]
     elif sys.argv[first] == '-d':
         detailed_model = True
     elif sys.argv[first].startswith("-l"):
@@ -301,11 +306,21 @@ def num_counters(ev):
             counter += 1
     return counter
 
-fixed_counters = {
-	"CPU_CLK_UNHALTED.THREAD": "cycles",
-	"INST_RETIRED.ANY": "instructions",
-	"CPU_CLK_UNHALTED.REF_TSC": "ref-cycles"
+filter_to_perf = {
+    "kernel": "k",
+    "user": "u",
 }
+
+fixed_counters = {
+    "CPU_CLK_UNHALTED.THREAD": "cycles",
+    "INST_RETIRED.ANY": "instructions",
+    "CPU_CLK_UNHALTED.REF_TSC": "ref-cycles"
+}
+
+def filter_string():
+    if ring_filter:
+        return filter_to_perf[ring_filter]
+    return ""
 
 def raw_event(i, emap):
     if i.count(".") > 0:
@@ -315,7 +330,7 @@ def raw_event(i, emap):
         if e == None:
             print "%s not found" % (i,)
             return "cycles" # XXX 
-        i = emap.getevent(i).output(True)
+        i = emap.getevent(i).output(True, filter_string())
     return i
 
 # generate list of converted raw events from events string

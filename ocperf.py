@@ -162,9 +162,9 @@ class Event:
         self.msrvalue = 0
         self.desc = desc
 
-    def output(self, use_raw=False):
+    def output(self, use_raw=False, flags=""):
         val = self.val
-        extra = self.extra
+        extra = self.extra + flags
         m = re.search(r"c(mask=)?([0-9]+)", extra)
         if m:
             extra = re.sub(r"c(mask=)?[0-9]+", "", extra)
