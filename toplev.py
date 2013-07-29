@@ -52,7 +52,7 @@ Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplevel can be used.
 
 Some caveats:
-The lower levels of the measurement tree are much less reliable
+The lower levels of the measurement tree are less reliable
 than the higher levels.  They also rely on counter multi-plexing
 and cannot use groups, which can cause larger measurement errors
 with non steady state workloads.
