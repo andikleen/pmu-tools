@@ -284,7 +284,11 @@ class PerfRun:
 	    outp, inp = pty.openpty()
 	    n = r.index("--log-fd")
 	    r[n + 1] = "%d" % (inp)
-        print " ".join(r)
+        l = map(lambda x: "'" + x + "'" if x.find("{") >= 0 else x,  r)
+        if "--log-fd" in r:
+            i = l.index('--log-fd')
+            del l[i:i+2]
+        print " ".join(l)
 	self.perf = subprocess.Popen(r)
 	if "--log-fd" not in r:
 	     self.perf.wait()
