@@ -457,9 +457,9 @@ def finish(work, res, evlist):
     for obj in work:
         obj.res = map(lambda x: values[x], obj.evnum)
 
-def ev_append(ev, obj):
-    if not ev in obj.evlist:
-        obj.evlist.append(ev)
+def ev_append(ev, level, obj):
+    if not (ev, level) in obj.evlevels:
+        obj.evlevels.append((ev, level))
     return 1
 
 class Runner:
@@ -475,7 +475,6 @@ class Runner:
         if obj.level > self.max_level:
             return
         obj.res = None
-        obj.evlist = []
         self.olist.append(obj)
 
     def add(self, work, evlist):
@@ -496,9 +495,9 @@ class Runner:
         for obj in self.olist:
             self.objects[obj.name] = obj
         for obj in self.olist:
-            obj.evlist = []
-            obj.compute(lambda ev, level: ev_append(ev, obj))
-            obj.evlist = obj.evlist
+            obj.evlevels = []
+            obj.compute(lambda ev, level: ev_append(ev, level, obj))
+            obj.evlist = map(lambda x: x[0], obj.evlevels)
             obj.evnum = raw_events(obj.evlist)
             obj.nc = len(set(obj.evnum) - ingroup_events)
 
@@ -537,7 +536,7 @@ class Runner:
         for obj in self.olist:
             if obj.res:
                 obj.compute(lambda e, level:
-                            obj.res[obj.evlist.index(e)])
+                            obj.res[obj.evlevels.index((e, level,))])
                 if obj.thresh or print_all:
                     out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
                           obj.name, obj.val, timestamp)
