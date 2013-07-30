@@ -305,13 +305,6 @@ class PerfRun:
         if self.logfile:	
             os.remove(self.logfile)
 
-def num_counters(ev):
-    counter = 0
-    for i in ev:
-        if re.match(r'r[0-9a-f](:p)?', i):
-            counter += 1
-    return counter
-
 filter_to_perf = {
     "kernel": "k",
     "user": "u",
@@ -491,7 +484,7 @@ class Runner:
             obj.compute(lambda ev, level: ev_append(ev, obj))
             obj.evlist = obj.evlist
             obj.evnum = raw_events(obj.evlist)
-            obj.nc = num_counters(obj.evnum)
+            obj.nc = len(set(obj.evnum) - ingroup_events)
 
     # fit events into available counters
     # simple first fit algorithm
