@@ -361,7 +361,7 @@ def flat_to_group(res, events, rev):
             if i >= len(rev):
                 print "--- not enough results res %s events %s rev %s" % (res, events, rev)
                 return []
-            elif rev[i] != j:
+            elif base_event(rev[i]) != base_event(j):
                 print "--- got event %s expected %s" % (rev[i], j, )
                 return []
             g.append(res[i])
@@ -375,6 +375,13 @@ def gen_res(res, out, runner, timestamp):
         for work, evll, r in zip(runner.workll, runner.evll, res):
             finish(work, r, evll)
     runner.print_res(out, timestamp)
+
+def base_event(event):
+    event = event.rstrip()
+    m = re.match(r"(.*):.*", event)
+    if m:
+        event = m.group(1)
+    return event
 
 def setup_perf(events):
     plog = "plog.%d" % (os.getpid(),)
@@ -419,20 +426,25 @@ def measure(events, runner):
                         res = []
                         rev = []
                     prev_interval = interval
+        if l.find(",") < 0:
+            print l,
+            continue
+        count, event = l.split(",", 1) 
+        event = base_event(event)
         reg = r"[0-9.]+,(" + "|".join(ingroup_events) + r"|(r|raw )[0-9a-fx]+|cpu/[^/]+/)"
         if re.match(reg, l):
-            count, event = l.split(",", 1) 
-            res.append(float(count))
-            rev.append(event.rstrip())
-        elif l.startswith("<not counted>"):
-            res.append(0)
-            rev.append(l.split(",")[1].rstrip())
-        elif l.startswith("<not supported>"):
-            print "warning: event %s not supported" % (l.split(",")[1].rstrip())
-            res.append(0)
-            rev.append(l.split(",")[1].rstrip())
+            val = float(count)
+        elif count == "<not counted>":
+            val = 0
+        elif count == "<not supported>":
+            print "warning: event %s not supported" % (event)
+            val = 0
         else:
+            print "unparseable perf output"
             print l,
+            continue
+        res.append(val)
+        rev.append(event)
     inf.close()
     prun.wait()
     gen_res(flat_to_group(res, events, rev), out, runner, interval)
