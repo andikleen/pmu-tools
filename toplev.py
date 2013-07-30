@@ -511,13 +511,11 @@ class Runner:
             work.append(obj)
             evlist = newev
         if not work:
-            self.execute(out)
             return
         # some events left over that did not fit into a group
         # this can happen with objects that have very long dependency chains
         # run them as non-group for now
         self.add(work, evlist)
-        self.execute(out)
 
     def print_res(self, out, timestamp):
         for obj in self.olist:
@@ -577,3 +575,4 @@ else:
 runner.collect()
 out = Output(logfile, csv_mode)
 runner.schedule(out)
+runner.execute(out)
