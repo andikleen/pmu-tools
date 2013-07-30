@@ -376,9 +376,7 @@ def gen_res(res, out, runner, timestamp):
             finish(work, r, evll)
     runner.print_res(out, timestamp)
 
-# execute perf: list of event-groups -> list of results-for-group
-# and print result
-def measure(events, runner):
+def setup_perf(events):
     plog = "plog.%d" % (os.getpid(),)
     rest = ["-x,", "-e", ",".join(map(lambda e: feat.event_group(e, cpu.counters), events))]
     if interval_mode:
@@ -390,6 +388,12 @@ def measure(events, runner):
     #except IOError:
     #    print "Cannot open result file %s" % (plog)
     #    return
+    return inf, prun
+
+# execute perf: list of event-groups -> list of results-for-group
+# and print result
+def measure(events, runner):
+    inf, prun = setup_perf(events)
     res = []
     rev = []
     prev_interval = 0.0
