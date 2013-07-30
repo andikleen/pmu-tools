@@ -94,7 +94,7 @@ class PerfFeatures:
             return "--output %s " % (plog,)
 
     def event_group(self, evlist, max_counters):
-        need_counters = filter(lambda e: e not in ingroup_events, evlist)
+        need_counters = set(evlist) - ingroup_events
 	e = ",".join(evlist)
         # when the group has to be multiplexed anyways don't use a group
         # perf doesn't support groups that need to be multiplexed internally too
@@ -347,7 +347,7 @@ def print_header(work, evlist):
     evnames = set(itertools.chain(*evnames0))
     names = map(lambda obj: obj.__class__.__name__, work)
     pwrap(" ".join(names) + ": " + " ".join(evnames).lower() + 
-            " [%d counters]" % (len(filter(lambda e: e not in ingroup_events, evnames))))
+            " [%d counters]" % (len(evnames - ingroup_events)))
 
 # map the flat results back to the original groups
 # this assumes perf always outputs them in the original order
@@ -500,7 +500,7 @@ class Runner:
         for obj in solist:
             objev = obj.evnum
             newev = set(list(evlist) + objev)
-            needed = len(filter(lambda x: x not in ingroup_events, newev))
+            needed = len(newev - ingroup_events)
             # when the current group doesn't have enough free slots
             # start a new group
             if cpu.counters < needed and work:
