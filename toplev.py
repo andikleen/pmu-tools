@@ -540,7 +540,6 @@ class Runner:
     # fit events into available counters
     # simple first fit algorithm
     def schedule(self, out):
-        evlist = []
         curobj = []
         curev = []
         curlev = []
