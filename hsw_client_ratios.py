@@ -598,12 +598,12 @@ class Setup:
         n = LoadsBlockedbyStoreForwarding() ; r.run(n) ; o["LoadsBlockedbyStoreForwarding"] = n
         n = SplitLoads() ; r.run(n) ; o["SplitLoads"] = n
         n = G4KAliasing() ; r.run(n) ; o["G4KAliasing"] = n
-        n = L2Bound() ; r.run(n) ; o["L2Bound"] = n
-        n = L3Bound() ; r.run(n) ; o["L3Bound"] = n
-        n = ContestedAccesses() ; r.run(n) ; o["ContestedAccesses"] = n
-        n = DataSharing() ; r.run(n) ; o["DataSharing"] = n
-        n = L3Latency() ; r.run(n) ; o["L3Latency"] = n
-        n = DRAMBound() ; r.run(n) ; o["DRAMBound"] = n
+        #n = L2Bound() ; r.run(n) ; o["L2Bound"] = n
+        #n = L3Bound() ; r.run(n) ; o["L3Bound"] = n
+        #n = ContestedAccesses() ; r.run(n) ; o["ContestedAccesses"] = n
+        #n = DataSharing() ; r.run(n) ; o["DataSharing"] = n
+        #n = L3Latency() ; r.run(n) ; o["L3Latency"] = n
+        #n = DRAMBound() ; r.run(n) ; o["DRAMBound"] = n
         n = StoresBound() ; r.run(n) ; o["StoresBound"] = n
         n = FalseSharing() ; r.run(n) ; o["FalseSharing"] = n
         n = SplitStores() ; r.run(n) ; o["SplitStores"] = n
@@ -629,12 +629,12 @@ class Setup:
         o["LoadsBlockedbyStoreForwarding"].parent = o["L1Bound"]
         o["SplitLoads"].parent = o["L1Bound"]
         o["G4KAliasing"].parent = o["L1Bound"]
-        o["L2Bound"].parent = o["MemoryBound"]
-        o["L3Bound"].parent = o["MemoryBound"]
-        o["ContestedAccesses"].parent = o["L3Bound"]
-        o["DataSharing"].parent = o["L3Bound"]
-        o["L3Latency"].parent = o["L3Bound"]
-        o["DRAMBound"].parent = o["MemoryBound"]
+        #o["L2Bound"].parent = o["MemoryBound"]
+        #o["L3Bound"].parent = o["MemoryBound"]
+        #o["ContestedAccesses"].parent = o["L3Bound"]
+        #o["DataSharing"].parent = o["L3Bound"]
+        #o["L3Latency"].parent = o["L3Bound"]
+        #o["DRAMBound"].parent = o["MemoryBound"]
         o["StoresBound"].parent = o["MemoryBound"]
         o["FalseSharing"].parent = o["StoresBound"]
         o["SplitStores"].parent = o["StoresBound"]
