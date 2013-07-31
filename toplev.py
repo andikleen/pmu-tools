@@ -98,7 +98,8 @@ class PerfFeatures:
 	e = ",".join(evlist)
         # when the group has to be multiplexed anyways don't use a group
         # perf doesn't support groups that need to be multiplexed internally too
-        if len(need_counters) <= cpu.counters and self.group_support:
+        if (len(need_counters) <= cpu.counters and self.group_support
+                and len(need_counters) > 1):
             e = "{%s}" % (e,)
         return e
  
@@ -496,7 +497,7 @@ class Runner:
         if len(set(get_levels(evlev))) == 1:
             # split again
             while evlev:
-		n = num_non_fixed(get_names(l))
+                n = num_non_fixed(get_names(evlev))
 		l = evlev[:n]
                 self.add(objl, raw_events(get_names(l)), l)
                 evlev = evlev[n:]
