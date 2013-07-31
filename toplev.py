@@ -545,11 +545,10 @@ class Runner:
         curev = []
         curlev = []
         # pass 0:
-        # sort objects by level
+        # sort objects by level and the by num-counters
         solist = sorted(self.olist, cmp=cmp_obj)
         # pass 1: try to fit each objects events into groups
         # that fit into the available CPU counters
-        # we dedup event and merge neighbours
         for obj in solist:
             newev = curev + obj.evnum
             newlev = curlev + obj.evlevels
@@ -569,9 +568,6 @@ class Runner:
             curlev = newlev
         if not curobj:
             return
-        # some events left over that did not fit into a group
-        # this can happen with objects that have very long dependency chains
-        # run them as non-group for now
         self.add(curobj, curev, curlev)
 
     def print_res(self, res, rev, out, timestamp):
