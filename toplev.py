@@ -22,7 +22,7 @@ import exceptions, pprint
 #sys.path.append("../pmu-tools")
 import ocperf
 
-ingroup_events = set(["cycles", "instructions", "ref-cycles"])
+ingroup_events = frozenset(["cycles", "instructions", "ref-cycles"])
 
 def usage():
     print >>sys.stderr, """
@@ -459,10 +459,10 @@ def cmp_obj(a, b):
     return a.level - b.level
 
 def update_res_map(evlev, objl, base):
-    for lev in evlev:
+    for lev, i in zip(evlev, range(0, len(evlev))):
         for obj in objl:
             if lev in obj.evlevels:
-                obj.res_map[lev] = base + evlev.index(lev)
+                obj.res_map[lev] = base + i
 
 def get_levels(evlev):
     return map(lambda x: x[1], evlev)
