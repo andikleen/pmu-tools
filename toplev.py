@@ -512,7 +512,6 @@ class Runner:
     def add(self, objl, evnum, evlev):
         assert evlev
         # does not fit into a group. 
-        # generate sub groups for each level
         if len(set(evnum) - ingroup_events) > cpu.counters:
             self.split_groups(objl, evlev)
             return
@@ -524,7 +523,7 @@ class Runner:
         if self.evstr:
             self.evstr += ","
         self.evstr += feat.event_group(evnum)
-        print_header(objl, map(lambda x: x[0], evlev))
+        print_header(objl, get_names(evlev))
 
     # collect the events by pre-computing the equation
     def collect(self):
