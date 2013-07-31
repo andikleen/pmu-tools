@@ -469,6 +469,13 @@ def get_levels(evlev):
 def get_names(evlev):
     return map(lambda x: x[0], evlev)
 
+def num_non_fixed(l):
+    n = cpu.counters
+    fixed_set = frozenset(fixed_counters.keys())
+    while len(set(l[:n]) - fixed_set) < cpu.counters and n < len(l):
+        n += 1
+    return n
+
 class Runner:
     "Schedule measurements of event groups. Try to run multiple in parallel."
     def __init__(self, max_level):
@@ -488,11 +495,11 @@ class Runner:
     def split_groups(self, objl, evlev):
         if len(set(get_levels(evlev))) == 1:
             # split again
-            # XXX ignore fixed counters
             while evlev:
-                l = evlev[:cpu.counters]
+		n = num_non_fixed(get_names(l))
+		l = evlev[:n]
                 self.add(objl, raw_events(get_names(l)), l)
-                evlev = evlev[cpu.counters:]
+                evlev = evlev[n:]
         else:
             # resubmit each level
             max_level = max(get_levels(evlev))
