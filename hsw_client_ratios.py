@@ -30,8 +30,6 @@ def AvgFillBufferLatency(EV, level):
     return EV("L1D_PEND_MISS.PENDING", level) / EV("MEM_LOAD_UOPS_RETIRED.L1_MISS", level)
 def MispredClearsFraction(EV, level):
     return EV("BR_MISP_RETIRED.ALL_BRANCHES", level) / ( EV("BR_MISP_RETIRED.ALL_BRANCHES", level) + EV("MACHINE_CLEARS.COUNT", level) )
-def AvgRsEmptyPeriodClears(EV, level):
-    return ( EV("RS_EVENTS.EMPTY_CYCLES", level) - EV("ICACHE.IFETCH_STALL", level) ) / EV("RS_EVENTS.EMPTY_END", level)
 def RetireUopFraction(EV, level):
     return EV("UOPS_RETIRED.RETIRE_SLOTS", level) / EV("UOPS_ISSUED.ANY", level)
 def CLKS(EV, level):
@@ -81,23 +79,6 @@ issues."""
              self.thresh = False
          return self.val
 
-class ICacheMisses:
-    name = "ICache Misses"
-    domain = "Clocks"
-    area = "FE"
-    desc = """
-This metric represents cycles fraction CPU was stalled due to instruction
-cache misses."""
-    level = 3
-    def compute(self, EV):
-         try:
-             self.val = ( EV("ICACHE.IFETCH_STALL", 3) - EV("ITLB_MISSES.WALK_DURATION", 3) ) / CLKS(EV, 3)
-             self.thresh = (self.val > 0.05) and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
 class ITLBmisses:
     name = "ITLB misses"
     domain = "Clocks"
@@ -109,22 +90,6 @@ misses."""
     def compute(self, EV):
          try:
              self.val = EV("ITLB_MISSES.WALK_DURATION", 3) / CLKS(EV, 3)
-             self.thresh = (self.val > 0.05) and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class BranchResteers:
-    name = "Branch Resteers"
-    domain = "Clocks"
-    area = "FE"
-    desc = """
-This metric represents cycles fraction CPU was stalled due to Branch Resteers."""
-    level = 3
-    def compute(self, EV):
-         try:
-             self.val = ( EV("BR_MISP_RETIRED.ALL_BRANCHES", 3) + EV("MACHINE_CLEARS.COUNT", 3) + EV("BACLEARS.ANY", 3) ) * AvgRsEmptyPeriodClears(EV, 3) / CLKS(EV, 3)
              self.thresh = (self.val > 0.05) and self.parent.thresh
          except ZeroDivisionError:
              self.val = 0
@@ -211,23 +176,6 @@ DSB (decoded uop cache) fetch pipeline."""
          try:
              self.val = EV("IDQ.ALL_DSB_CYCLES_ANY_UOPS", 3) - EV("IDQ.ALL_DSB_CYCLES_4_UOPS", 3)
              self.thresh = (self.val > 0.3) and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class LSD:
-    name = "LSD"
-    domain = "Clocks"
-    area = "FE"
-    desc = """
-This metric represents cycles fraction in which CPU was likely limited due to
-LSD (Loop Stream Detector) unit."""
-    level = 3
-    def compute(self, EV):
-         try:
-             self.val = ( EV("LSD.CYCLES_ACTIVE", 3) - EV("LSD.CYCLES_4_UOPS", 3) ) / CLKS(EV, 3)
-             self.thresh = (self.val > 0.1) and self.parent.thresh
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
@@ -329,7 +277,7 @@ cache."""
     def compute(self, EV):
          try:
              self.val = ( EV("CYCLE_ACTIVITY.STALLS_LDM_PENDING", 3) - EV("CYCLE_ACTIVITY.STALLS_L1D_PENDING", 3) ) / CLKS(EV, 3)
-             self.thresh = (self.val > 0.07 and self.parent.thresh) | (self.DTLBOverhead.compute(EV) > 0)
+             self.thresh = ((self.val > 0.07) and self.parent.thresh) | (self.DTLBOverhead.thresh > 0)
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
@@ -476,6 +424,22 @@ with a sibiling core."""
              self.thresh = False
          return self.val
 
+class DRAMBound:
+    name = "DRAM Bound"
+    domain = "Clocks"
+    area = "BE/Mem"
+    desc = """
+This metric represents how often CPU was stalled on main memory (DRAM)."""
+    level = 3
+    def compute(self, EV):
+         try:
+             self.val = ( 1 - MemL3HitFraction(EV, 3) ) * EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3) / CLKS(EV, 3)
+             self.thresh = (self.val > 0.1) and self.parent.thresh
+         except ZeroDivisionError:
+             self.val = 0
+             self.thresh = False
+         return self.val
+
 class StoresBound:
     name = "Stores Bound"
     domain = "Clocks"
@@ -557,106 +521,6 @@ This metric represents how much Core non-memory issues were a bottleneck."""
              self.thresh = False
          return self.val
 
-class DividerActive:
-    name = "Divider Active"
-    domain = "Clocks"
-    area = "BE/Core"
-    desc = ""
-    level = 3
-    def compute(self, EV):
-         try:
-             self.val = EV("ARITH.FPU_DIV_ACTIVE", 3) / CLKS(EV, 3)
-             self.thresh = (self.val > 0.1) and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class PortsUtilization:
-    name = "Ports Utilization"
-    domain = "Clocks"
-    area = "BE/Core"
-    desc = """
-This metric represents cycles fraction application was stalled due to Core
-non-divider-related issues."""
-    level = 3
-    def compute(self, EV):
-         try:
-             self.val = self.CoreBound.compute(EV) - self.DividerActive.compute(EV)
-             self.thresh = (self.val > 0.1) and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class G0_Ports:
-    name = "0_Ports"
-    domain = "Clocks"
-    area = "BE/Core"
-    desc = """
-This metric represents cycles fraction CPU executed no uops on any execution
-port."""
-    level = 4
-    def compute(self, EV):
-         try:
-             self.val = ( EV("CYCLE_ACTIVITY.CYCLES_NO_EXECUTE", 4) - EV("RS_EVENTS.EMPTY_CYCLES", 4) ) / CLKS(EV, 4)
-             self.thresh = (self.val > 0.1) and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class G1_Port:
-    name = "1_Port"
-    domain = "Clocks"
-    area = "BE/Core"
-    desc = """
-This metric represents cycles fraction CPU executed total of 1 uop per cycle
-on all execution ports."""
-    level = 4
-    def compute(self, EV):
-         try:
-             self.val = ( EV("UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC", 4) - EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", 4) ) / CLKS(EV, 4)
-             self.thresh = (self.val > 0.1) and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class G2_Ports:
-    name = "2_Ports"
-    domain = "Clocks"
-    area = "BE/Core"
-    desc = """
-This metric represents cycles fraction CPU executed total of 2 uops per cycle
-on all execution ports."""
-    level = 4
-    def compute(self, EV):
-         try:
-             self.val = ( EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", 4) - EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", 4) ) / CLKS(EV, 4)
-             self.thresh = (self.val > 0.1) and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
-class G3m_Ports:
-    name = "3m_Ports"
-    domain = "Clocks"
-    area = "BE/Core"
-    desc = """
-This metric represents cycles fraction CPU executed total of 3 or more uops
-per cycle on all execution ports."""
-    level = 4
-    def compute(self, EV):
-         try:
-             self.val = EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", 4) / CLKS(EV, 4)
-             self.thresh = (self.val > 0.1) and self.parent.thresh
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
-
 class Retiring:
     name = "Retiring"
     domain = "Slots"
@@ -687,7 +551,7 @@ from the microcode-sequencer."""
     def compute(self, EV):
          try:
              self.val = self.Retiring.compute(EV) - self.MicroSequencer.compute(EV)
-             self.thresh = (self.val > 0.7) | self.MicroSequencer.thresh
+             self.thresh = ((self.val > 0.7) | (self.MicroSequencer.thresh > 0))
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
@@ -718,80 +582,64 @@ class Setup:
         o = dict()
         n = FrontendBound() ; r.run(n) ; o["FrontendBound"] = n
         n = FrontendLatency() ; r.run(n) ; o["FrontendLatency"] = n
-        #n = ICacheMisses() ; r.run(n) ; o["ICacheMisses"] = n
         n = ITLBmisses() ; r.run(n) ; o["ITLBmisses"] = n
-        #n = BranchResteers() ; r.run(n) ; o["BranchResteers"] = n
         n = DSBswitches() ; r.run(n) ; o["DSBswitches"] = n
         n = LCP() ; r.run(n) ; o["LCP"] = n
         n = FrontendBandwidth() ; r.run(n) ; o["FrontendBandwidth"] = n
         n = MITE() ; r.run(n) ; o["MITE"] = n
         n = DSB() ; r.run(n) ; o["DSB"] = n
-        #n = LSD() ; r.run(n) ; o["LSD"] = n
         n = BadSpeculation() ; r.run(n) ; o["BadSpeculation"] = n
         n = BranchMispredicts() ; r.run(n) ; o["BranchMispredicts"] = n
         n = MachineClears() ; r.run(n) ; o["MachineClears"] = n
         n = BackendBound() ; r.run(n) ; o["BackendBound"] = n
         n = MemoryBound() ; r.run(n) ; o["MemoryBound"] = n
-        #n = L1Bound() ; r.run(n) ; o["L1Bound"] = n
-        #n = DTLBOverhead() ; r.run(n) ; o["DTLBOverhead"] = n
-        #n = LoadsBlockedbyStoreForwarding() ; r.run(n) ; o["LoadsBlockedbyStoreForwarding"] = n
-        #n = SplitLoads() ; r.run(n) ; o["SplitLoads"] = n
-        #n = G4KAliasing() ; r.run(n) ; o["G4KAliasing"] = n
-        #n = L2Bound() ; r.run(n) ; o["L2Bound"] = n
+        n = L1Bound() ; r.run(n) ; o["L1Bound"] = n
+        n = DTLBOverhead() ; r.run(n) ; o["DTLBOverhead"] = n
+        n = LoadsBlockedbyStoreForwarding() ; r.run(n) ; o["LoadsBlockedbyStoreForwarding"] = n
+        n = SplitLoads() ; r.run(n) ; o["SplitLoads"] = n
+        n = G4KAliasing() ; r.run(n) ; o["G4KAliasing"] = n
+        n = L2Bound() ; r.run(n) ; o["L2Bound"] = n
         n = L3Bound() ; r.run(n) ; o["L3Bound"] = n
         n = ContestedAccesses() ; r.run(n) ; o["ContestedAccesses"] = n
         n = DataSharing() ; r.run(n) ; o["DataSharing"] = n
         n = L3Latency() ; r.run(n) ; o["L3Latency"] = n
+        n = DRAMBound() ; r.run(n) ; o["DRAMBound"] = n
         n = StoresBound() ; r.run(n) ; o["StoresBound"] = n
         n = FalseSharing() ; r.run(n) ; o["FalseSharing"] = n
         n = SplitStores() ; r.run(n) ; o["SplitStores"] = n
         n = DTLBStoreOverhead() ; r.run(n) ; o["DTLBStoreOverhead"] = n
         n = CoreBound() ; r.run(n) ; o["CoreBound"] = n
-        #n = DividerActive() ; r.run(n) ; o["DividerActive"] = n
-        #n = PortsUtilization() ; r.run(n) ; o["PortsUtilization"] = n
-        #n = G0_Ports() ; r.run(n) ; o["G0_Ports"] = n
-        #n = G1_Port() ; r.run(n) ; o["G1_Port"] = n
-        #n = G2_Ports() ; r.run(n) ; o["G2_Ports"] = n
-        #n = G3m_Ports() ; r.run(n) ; o["G3m_Ports"] = n
         n = Retiring() ; r.run(n) ; o["Retiring"] = n
         n = BASE() ; r.run(n) ; o["BASE"] = n
         n = MicroSequencer() ; r.run(n) ; o["MicroSequencer"] = n
 
         # parents
         o["FrontendLatency"].parent = o["FrontendBound"]
-        #o["ICacheMisses"].parent = o["FrontendLatency"]
         o["ITLBmisses"].parent = o["FrontendLatency"]
-        #o["BranchResteers"].parent = o["FrontendLatency"]
         o["DSBswitches"].parent = o["FrontendLatency"]
         o["LCP"].parent = o["FrontendLatency"]
         o["FrontendBandwidth"].parent = o["FrontendBound"]
         o["MITE"].parent = o["FrontendBandwidth"]
         o["DSB"].parent = o["FrontendBandwidth"]
-        #o["LSD"].parent = o["FrontendBandwidth"]
         o["BranchMispredicts"].parent = o["BadSpeculation"]
         o["MachineClears"].parent = o["BadSpeculation"]
         o["MemoryBound"].parent = o["BackendBound"]
-        #o["L1Bound"].parent = o["MemoryBound"]
-        #o["DTLBOverhead"].parent = o["L1Bound"]
-        #o["LoadsBlockedbyStoreForwarding"].parent = o["L1Bound"]
-        #o["SplitLoads"].parent = o["L1Bound"]
-        #o["G4KAliasing"].parent = o["L1Bound"]
-        #o["L2Bound"].parent = o["MemoryBound"]
+        o["L1Bound"].parent = o["MemoryBound"]
+        o["DTLBOverhead"].parent = o["L1Bound"]
+        o["LoadsBlockedbyStoreForwarding"].parent = o["L1Bound"]
+        o["SplitLoads"].parent = o["L1Bound"]
+        o["G4KAliasing"].parent = o["L1Bound"]
+        o["L2Bound"].parent = o["MemoryBound"]
         o["L3Bound"].parent = o["MemoryBound"]
         o["ContestedAccesses"].parent = o["L3Bound"]
         o["DataSharing"].parent = o["L3Bound"]
         o["L3Latency"].parent = o["L3Bound"]
+        o["DRAMBound"].parent = o["MemoryBound"]
         o["StoresBound"].parent = o["MemoryBound"]
         o["FalseSharing"].parent = o["StoresBound"]
         o["SplitStores"].parent = o["StoresBound"]
         o["DTLBStoreOverhead"].parent = o["StoresBound"]
         o["CoreBound"].parent = o["BackendBound"]
-        #o["DividerActive"].parent = o["CoreBound"]
-        #o["PortsUtilization"].parent = o["CoreBound"]
-        #o["G0_Ports"].parent = o["PortsUtilization"]
-        #o["G1_Port"].parent = o["PortsUtilization"]
-        #o["G2_Ports"].parent = o["PortsUtilization"]
-        #o["G3m_Ports"].parent = o["PortsUtilization"]
         o["BASE"].parent = o["Retiring"]
         o["MicroSequencer"].parent = o["Retiring"]
 
@@ -805,10 +653,8 @@ class Setup:
         o["BackendBound"].FrontendBound = o["FrontendBound"]
         o["BackendBound"].BadSpeculation = o["BadSpeculation"]
         o["BackendBound"].Retiring = o["Retiring"]
-        #o["L1Bound"].DTLBOverhead = o["DTLBOverhead"]
+        o["L1Bound"].DTLBOverhead = o["DTLBOverhead"]
         o["StoresBound"].MemoryBound = o["MemoryBound"]
         o["CoreBound"].MemoryBound = o["MemoryBound"]
-        #o["PortsUtilization"].CoreBound = o["CoreBound"]
-        #o["PortsUtilization"].DividerActive = o["DividerActive"]
         o["BASE"].Retiring = o["Retiring"]
         o["BASE"].MicroSequencer = o["MicroSequencer"]

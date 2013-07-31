@@ -333,7 +333,7 @@ cache."""
     def compute(self, EV):
          try:
              self.val = ( EV("CYCLE_ACTIVITY.STALLS_LDM_PENDING", 3) - EV("CYCLE_ACTIVITY.STALLS_L1D_PENDING", 3) ) / CLKS(EV, 3)
-             self.thresh = (self.val > 0.07 and self.parent.thresh) | (self.DTLBOverhead.compute(EV) > 0)
+             self.thresh = ((self.val > 0.07) and self.parent.thresh) | (self.DTLBOverhead.thresh > 0)
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
@@ -474,6 +474,22 @@ with a sibiling core."""
     def compute(self, EV):
          try:
              self.val = MEM_XSNP_NONE_COST * EV("MEM_LOAD_UOPS_RETIRED.LLC_HIT", 4) / CLKS(EV, 4)
+             self.thresh = (self.val > 0.1) and self.parent.thresh
+         except ZeroDivisionError:
+             self.val = 0
+             self.thresh = False
+         return self.val
+
+class DRAMBound:
+    name = "DRAM Bound"
+    domain = "Clocks"
+    area = "BE/Mem"
+    desc = """
+This metric represents how often CPU was stalled on main memory (DRAM)."""
+    level = 3
+    def compute(self, EV):
+         try:
+             self.val = ( 1 - MemL3HitFraction(EV, 3) ) * EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3) / CLKS(EV, 3)
              self.thresh = (self.val > 0.1) and self.parent.thresh
          except ZeroDivisionError:
              self.val = 0
@@ -742,7 +758,7 @@ from the microcode-sequencer."""
     def compute(self, EV):
          try:
              self.val = self.Retiring.compute(EV) - self.MicroSequencer.compute(EV)
-             self.thresh = (self.val > 0.7) | self.MicroSequencer.thresh
+             self.thresh = ((self.val > 0.7) | (self.MicroSequencer.thresh > 0))
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
@@ -882,6 +898,7 @@ class Setup:
         n = ContestedAccesses() ; r.run(n) ; o["ContestedAccesses"] = n
         n = DataSharing() ; r.run(n) ; o["DataSharing"] = n
         n = L3Latency() ; r.run(n) ; o["L3Latency"] = n
+        n = DRAMBound() ; r.run(n) ; o["DRAMBound"] = n
         n = LocalDRAM() ; r.run(n) ; o["LocalDRAM"] = n
         n = RemoteDRAM() ; r.run(n) ; o["RemoteDRAM"] = n
         n = RemoteCache() ; r.run(n) ; o["RemoteCache"] = n
@@ -929,9 +946,10 @@ class Setup:
         o["ContestedAccesses"].parent = o["L3Bound"]
         o["DataSharing"].parent = o["L3Bound"]
         o["L3Latency"].parent = o["L3Bound"]
-        o["LocalDRAM"].parent = o["L3Bound"]
-        o["RemoteDRAM"].parent = o["L3Bound"]
-        o["RemoteCache"].parent = o["L3Bound"]
+        o["DRAMBound"].parent = o["MemoryBound"]
+        o["LocalDRAM"].parent = o["DRAMBound"]
+        o["RemoteDRAM"].parent = o["DRAMBound"]
+        o["RemoteCache"].parent = o["DRAMBound"]
         o["StoresBound"].parent = o["MemoryBound"]
         o["FalseSharing"].parent = o["StoresBound"]
         o["SplitStores"].parent = o["StoresBound"]
