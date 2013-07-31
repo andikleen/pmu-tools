@@ -18,7 +18,7 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, types, platform, pty, subprocess
-import exceptions
+import exceptions, pprint
 #sys.path.append("../pmu-tools")
 import ocperf
 
@@ -93,12 +93,12 @@ class PerfFeatures:
         elif self.output_supported:
             return "--output %s " % (plog,)
 
-    def event_group(self, evlist, max_counters):
+    def event_group(self, evlist):
         need_counters = set(evlist) - ingroup_events
 	e = ",".join(evlist)
         # when the group has to be multiplexed anyways don't use a group
         # perf doesn't support groups that need to be multiplexed internally too
-        if len(need_counters) <= max_counters and self.group_support:
+        if len(need_counters) <= cpu.counters and self.group_support:
             e = "{%s}" % (e,)
         return e
  
@@ -112,6 +112,7 @@ csv_mode = None
 interval_mode = None
 force = False
 ring_filter = None
+emap = None
 
 first = 1
 while first < len(sys.argv):
@@ -336,7 +337,9 @@ def raw_event(i, emap):
 
 # generate list of converted raw events from events string
 def raw_events(evlist):
-    emap = ocperf.find_emap()
+    global emap
+    if not emap:
+        emap = ocperf.find_emap()
     return map(lambda x: raw_event(x, emap), evlist)
 
 def pwrap(s):
@@ -347,34 +350,7 @@ def print_header(work, evlist):
     evnames = set(itertools.chain(*evnames0))
     names = map(lambda obj: obj.__class__.__name__, work)
     pwrap(" ".join(names) + ": " + " ".join(evnames).lower() + 
-            " [%d counters]" % (len(evnames - ingroup_events)))
-
-# map the flat results back to the original groups
-# this assumes perf always outputs them in the original order
-# also check if we got the right events
-def flat_to_group(res, events, rev):
-    resg = []
-    i = 0
-    for egroup in events:
-        g = []
-        for j in egroup:
-            if i >= len(rev):
-                print "--- not enough results res %s events %s rev %s" % (res, events, rev)
-                return []
-            elif base_event(rev[i]) != base_event(j):
-                print "--- got event %s expected %s" % (rev[i], j, )
-                return []
-            g.append(res[i])
-            i += 1
-        resg.append(g)
-    return resg
-
-# print results
-def gen_res(res, out, runner, timestamp):
-    if res:
-        for work, evll, r in zip(runner.workll, runner.evll, res):
-            finish(work, r, evll)
-    runner.print_res(out, timestamp)
+            " [%d counters]" % (len(evnames - set(fixed_counters.keys()))))
 
 def base_event(event):
     event = event.rstrip()
@@ -383,9 +359,9 @@ def base_event(event):
         event = m.group(1)
     return event
 
-def setup_perf(events):
+def setup_perf(events, evstr):
     plog = "plog.%d" % (os.getpid(),)
-    rest = ["-x,", "-e", ",".join(map(lambda e: feat.event_group(e, cpu.counters), events))]
+    rest = ["-x,", "-e", evstr]
     if interval_mode:
         rest += [interval_mode]
     rest += sys.argv[first:]
@@ -399,8 +375,8 @@ def setup_perf(events):
 
 # execute perf: list of event-groups -> list of results-for-group
 # and print result
-def measure(events, runner):
-    inf, prun = setup_perf(events)
+def execute(events, runner, out):
+    inf, prun = setup_perf(events, runner.evstr)
     res = []
     rev = []
     prev_interval = 0.0
@@ -422,19 +398,20 @@ def measure(events, runner):
                 l = m.group(2)
                 if interval != prev_interval:
                     if res:
-                        gen_res(flat_to_group(res, events, rev), out, runner, prev_interval)
+                        runner.print_res(res, rev, out, prev_interval)
                         res = []
                         rev = []
                     prev_interval = interval
         if l.find(",") < 0:
+            print "unparseable perf output"
             print l,
             continue
         count, event = l.split(",", 1) 
         event = base_event(event)
-        reg = r"[0-9.]+,(" + "|".join(ingroup_events) + r"|(r|raw )[0-9a-fx]+|cpu/[^/]+/)"
-        if re.match(reg, l):
+        if re.match(r"[0-9]+,", l):
             val = float(count)
         elif count == "<not counted>":
+            print "warning: event %s not counted" % (event)
             val = 0
         elif count == "<not supported>":
             print "warning: event %s not supported" % (event)
@@ -447,26 +424,56 @@ def measure(events, runner):
         rev.append(event)
     inf.close()
     prun.wait()
-    gen_res(flat_to_group(res, events, rev), out, runner, interval)
-
-# map events to their values
-def finish(work, res, evlist):
-    values = {}
-    for r, ev in zip(res, evlist):
-        values[ev] = r
-    for obj in work:
-        obj.res = map(lambda x: values[x], obj.evnum)
+    runner.print_res(res, rev, out, interval)
 
 def ev_append(ev, level, obj):
     if not (ev, level) in obj.evlevels:
         obj.evlevels.append((ev, level))
     return 1
 
+def canon_event(e):
+    if e.upper() in fixed_counters:
+        return fixed_counters[e.upper()]
+    if e.endswith("_0"):
+        e = e[:-2]
+    return e.lower()
+
+def lookup_res(res, rev, ev, index):
+    assert canon_event(emap.getperf(rev[index])) == canon_event(ev)
+    return res[index]
+
+# dedup a and keep b uptodate
+def dedup2(a, b):
+    s = sorted(a)
+    for j in range(0, len(s) - 1):
+        if s[j] == s[j+1]:
+            i = a.index(s[j], a.index(s[j]) + 1)
+            del a[i]
+            del b[i]
+    return a, b
+
+def cmp_obj(a, b):
+    if a.level == b.level:
+        return a.nc - b.nc
+    return a.level - b.level
+
+def update_res_map(evlev, objl, base):
+    for lev in evlev:
+        for obj in objl:
+            if lev in obj.evlevels:
+                obj.res_map[lev] = base + evlev.index(lev)
+
+def get_levels(evlev):
+    return map(lambda x: x[1], evlev)
+
+def get_names(evlev):
+    return map(lambda x: x[0], evlev)
+
 class Runner:
     "Schedule measurements of event groups. Try to run multiple in parallel."
     def __init__(self, max_level):
-        self.workll = []
-        self.evll = []
+        self.evnum = [] # flat global list
+        self.evstr = ""
         self.olist = []
         self.max_level = max_level
 
@@ -475,19 +482,41 @@ class Runner:
         if obj.level > self.max_level:
             return
         obj.res = None
+        obj.res_map = dict()
         self.olist.append(obj)
 
-    def add(self, work, evlist):
-        self.workll.append(work)
-        self.evll.append(evlist)
+    def split_groups(self, objl, evlev):
+        if len(set(get_levels(evlev))) == 1:
+            # split again
+            # XXX ignore fixed counters
+            while evlev:
+                l = evlev[:cpu.counters]
+                self.add(objl, raw_events(get_names(l)), l)
+                evlev = evlev[cpu.counters:]
+        else:
+            # resubmit each level
+            max_level = max(get_levels(evlev))
+            for l in range(1, max_level + 1):
+                evl = filter(lambda x: x[1] == l, evlev)
+                if evl:
+                    self.add(objl, raw_events(get_names(evl)), evl)
 
-    def execute(self, out):
-        for work, evlist in zip(self.workll, self.evll):
-            print_header(work, evlist)
-        glist = []
-        for e in self.evll:
-            glist.append(e)
-        measure(glist, self)
+    def add(self, objl, evnum, evlev):
+        assert evlev
+        # does not fit into a group. 
+        # generate sub groups for each level
+        if len(set(evnum) - ingroup_events) > cpu.counters:
+            self.split_groups(objl, evlev)
+            return
+        base = len(self.evnum)
+        evlev, evnum = dedup2(evlev, evnum)
+        update_res_map(evlev, objl, base)
+
+        self.evnum += evnum
+        if self.evstr:
+            self.evstr += ","
+        self.evstr += feat.event_group(evnum)
+        print_header(objl, map(lambda x: x[0], evlev))
 
     # collect the events by pre-computing the equation
     def collect(self):
@@ -504,39 +533,48 @@ class Runner:
     # fit events into available counters
     # simple first fit algorithm
     def schedule(self, out):
-        work = []
-        evlist = set()
+        evlist = []
+        curobj = []
+        curev = []
+        curlev = []
         # pass 0:
-        # sort objects by number of counters
-        solist = sorted(self.olist, key=lambda k: k.nc)
+        # sort objects by level
+        solist = sorted(self.olist, cmp=cmp_obj)
         # pass 1: try to fit each objects events into groups
         # that fit into the available CPU counters
         # we dedup event and merge neighbours
         for obj in solist:
-            objev = obj.evnum
-            newev = set(list(evlist) + objev)
-            needed = len(newev - ingroup_events)
+            newev = curev + obj.evnum
+            newlev = curlev + obj.evlevels
+            needed = len(set(newev) - ingroup_events)
             # when the current group doesn't have enough free slots
+            # or is already too large
             # start a new group
-            if cpu.counters < needed and work:
-                self.add(work, evlist)
-                work = []
-                evlist = []
-                newev = set(objev)
-            work.append(obj)
-            evlist = newev
-        if not work:
+            if cpu.counters < needed and curobj:
+                self.add(curobj, curev, curlev)
+                curobj = []
+                curev = []
+                curlev = []
+                newev = obj.evnum
+                newlev = obj.evlevels
+            curobj.append(obj)
+            curev = newev
+            curlev = newlev
+        if not curobj:
             return
         # some events left over that did not fit into a group
         # this can happen with objects that have very long dependency chains
         # run them as non-group for now
-        self.add(work, evlist)
+        self.add(curobj, curev, curlev)
 
-    def print_res(self, out, timestamp):
+    def print_res(self, res, rev, out, timestamp):
+        if len(res) == 0:
+            print "Nothing measured?"
+            return
         for obj in self.olist:
-            if obj.res:
+            if obj.res_map:
                 obj.compute(lambda e, level:
-                            obj.res[obj.evlevels.index((e, level,))])
+                            lookup_res(res, rev, e, obj.res_map[(e, level)]))
                 if obj.thresh or print_all:
                     out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
                           obj.name, obj.val, timestamp)
@@ -590,4 +628,4 @@ else:
 runner.collect()
 out = Output(logfile, csv_mode)
 runner.schedule(out)
-runner.execute(out)
+execute(runner.evnum, runner, out)
