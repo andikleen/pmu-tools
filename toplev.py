@@ -104,6 +104,7 @@ class PerfFeatures:
         return e
  
 feat = PerfFeatures()
+emap = ocperf.find_emap()
 
 logfile = None
 print_all = False
@@ -113,7 +114,6 @@ csv_mode = None
 interval_mode = None
 force = False
 ring_filter = None
-emap = None
 
 first = 1
 while first < len(sys.argv):
@@ -323,7 +323,7 @@ def filter_string():
         return filter_to_perf[ring_filter]
     return ""
 
-def raw_event(i, emap):
+def raw_event(i):
     if i.count(".") > 0:
 	if i in fixed_counters:
 	    return fixed_counters[i]
@@ -333,15 +333,12 @@ def raw_event(i, emap):
             if not force:
                 sys.exit(1)
             return "cycles" # XXX 
-        i = emap.getevent(i).output(True, filter_string())
+        i = e.output(True, filter_string())
     return i
 
 # generate list of converted raw events from events string
 def raw_events(evlist):
-    global emap
-    if not emap:
-        emap = ocperf.find_emap()
-    return map(lambda x: raw_event(x, emap), evlist)
+    return map(lambda x: raw_event(x), evlist)
 
 def pwrap(s):
     print "\n".join(textwrap.wrap(s, 60))
