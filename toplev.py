@@ -49,6 +49,7 @@ measure pid PID
 -Inum  Enable interval mode, printing output every num ms
 --kernel Measure kernel code only
 --user   Measure user code only
+-g  Print group assignments
 
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplevel can be used.
@@ -105,12 +106,14 @@ emap = ocperf.find_emap()
 
 logfile = None
 print_all = False
+dont_hide = False
 detailed_model = False
 max_level = 2
 csv_mode = None
 interval_mode = None
 force = False
 ring_filter = None
+print_group = False
 
 first = 1
 while first < len(sys.argv):
@@ -121,16 +124,20 @@ while first < len(sys.argv):
         logfile = sys.argv[first]
     elif sys.argv[first] == '-v':
         print_all = True
+        dont_hide = True
     elif sys.argv[first] == '--force':
         force = True
     elif sys.argv[first] in ('--kernel', '--user'):
         ring_filter = sys.argv[first][2:]
     elif sys.argv[first] == '-d':
         detailed_model = True
+    elif sys.argv[first] == '-g':
+        print_group = True
     elif sys.argv[first].startswith("-l"):
         max_level = int(sys.argv[first][2:])
     elif sys.argv[first].startswith("-x"):
         csv_mode = sys.argv[first][2:]
+        print_all = True
     elif sys.argv[first].startswith("-I"):
         interval_mode = sys.argv[first]
     elif sys.argv[first] == '--':
@@ -161,15 +168,22 @@ class Output:
             self.logf = sys.stderr
             self.terminal = self.logf.isatty()
 
-    def s(self, area, hdr, s):
+    def s(self, area, hdr, s, remark="", desc=""):
         if self.csv:
-            print >>self.logf,"%s%s%s" % (hdr, self.csv, s)
+            remark = self.csv + remark
+            desc = self.csv + desc
+            desc = re.sub(r"\s+", " ", desc)
+            print >>self.logf,"%s%s%s%s%s" % (hdr, self.csv, s.strip(), remark, desc)
         else:
             if area:
                 hdr = "%-7s %s" % (area, hdr)
-            print >>self.logf, "%-42s\t%s" % (hdr + ":", s)
+            print >>self.logf, "%-42s\t%s %s" % (hdr + ":", s, remark)
+            if desc:
+                print "\t" + desc
 
-    def p(self, area, name, l, timestamp):
+    def p(self, area, name, l, timestamp, remark, desc):
+        fmtnum = lambda l: "%5s%%" % ("%2.2f" % (100.0 * l))
+
         if timestamp:
             sep = " "
             if self.csv:
@@ -177,20 +191,16 @@ class Output:
             print >>self.logf,"%6.9f%s" % (timestamp, sep),
 	if l:
             if check_ratio(l):
-	        self.s(area, name, "%5s%%"  % ("%2.2f" % (100.0 * l)))
+	        self.s(area, name, fmtnum(l), remark, desc)
 	    else:
-		self.s(area, name, "mismeasured")
+		self.s(area, name, fmtnum(0), "mismeasured", "")
         else:
-            self.s(area, name, "not available")
+            self.s(area, name, fmtnum(0), "not available", "")
 
     def bold(self, s):
         if (not self.terminal) or self.csv:
             return s
         return '\033[1m' + s + '\033[0m'
-
-    def desc(self, d):
-        if not self.csv:
-            print >>self.logf, "\t%s" % (d)
 
     def warning(self, s):
         if not self.csv:
@@ -512,7 +522,8 @@ class Runner:
         if self.evstr:
             self.evstr += ","
         self.evstr += feat.event_group(evnum)
-        print_header(objl, get_names(evlev))
+        if print_group:
+            print_header(objl, get_names(evlev))
 
     # collect the events by pre-computing the equation
     def collect(self):
@@ -567,11 +578,14 @@ class Runner:
                 obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj.res_map[(e, level)]))
                 if obj.thresh or print_all:
+                    val = obj.val
+                    if not obj.thresh and not dont_hide:
+                        val = 0.0
                     out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
-                          obj.name, obj.val, timestamp)
-                if obj.thresh and check_ratio(obj.val):
-                    out.desc(obj.desc[1:].replace("\n","\n\t"))
-                else:
+                          obj.name, val, timestamp,
+                          "below threshold" if not obj.thresh else "",
+                          obj.desc[1:].replace("\n","\n\t"))
+                elif not print_all:
                     obj.thresh = 0 # hide children too
             else:
                 out.warning("%s not measured" % (obj.__class__.__name__,))
