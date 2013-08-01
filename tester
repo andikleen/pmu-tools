@@ -23,7 +23,7 @@ checklist()
 
 BASELEN=$($PERF list | wc -l)
 
-checklist hsw 380
+checklist hsw 383
 checklist wsm-sp 720
 checklist wsm-dp 720
 checklist snb-client 546
