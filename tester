@@ -49,9 +49,9 @@ checkmsr hsw OFFCORE_RESPONSE.COREWB.ANY_RESPONSE_0
 
 checkev()
 {
-	DIRECT_MSR=1 EVENTMAP=$1.csv ./ocperf.py stat -e $2 /bin/true | grep -- "-e $3"
+	DIRECT_MSR=1 EVENTMAP=$1.csv ./ocperf.py stat -e $2 /bin/true | egrep -- "-e $3"
 }
-checkev nhm-ep L1D.M_EVICT r451
+checkev nhm-ep L1D.M_EVICT '(r451|cpu/event=0x51,umask=0x4/)'
 checkev nhm-ep L1D.M_EVICT:c4 r4000451
 checkev nhm-ex L1D.M_EVICT:c4 r4000451
 checkev wsm-dp L1D.M_EVICT:c4 r4000451
@@ -71,5 +71,18 @@ checkmsr2 nhm-ex offcore_response_0.data_ifetch.any_location "msr 1a6 = ff77"
 # xxx add hsw
 checkmsr2 ivt offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
 checkmsr2 snb-ep offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
+
+# parser checks
+checkp() 
+{
+	EVENTMAP=hsw.csv ./ocperf.py --print stat -e "$1"  | grep "$2"
+}
+DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS 'r1c4:p$'
+DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL:p  'r1c4:p$'
+DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS:p  'r1c4:p$'
+DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS:ppp  'r1c4:ppp$'
+checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/  'event=0xc4,umask=0x1,foo=bar/$'
+checkp cpu/BR_INST_RETIRED.CONDITIONAL_PS,foo=bar/  'event=0xc4,umask=0x1,foo=bar/p$'
+checkp cpu/BR_INST_RETIRED.CONDITIONAL_PS,foo=bar/ppu  'event=0xc4,umask=0x1,foo=bar/ppu$'
 
 echo SUCCEEDED

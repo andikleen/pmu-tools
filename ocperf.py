@@ -85,7 +85,7 @@ class PerfVersion:
             if re.match("[0-9]+", major) and int(major) > 3:
                 minor = 100 # infinity
 
-        self.direct = os.getenv("DIRECT_MSR") != None or minor < 4
+        self.direct = os.getenv("DIRECT_MSR") or minor < 4
         self.offcore = has_format("offcore_rsp") and not self.direct
         self.ldlat = has_format("ldlat") and not self.direct
 
@@ -169,26 +169,19 @@ class Event:
 
     def output(self, use_raw=False, flags=""):
         val = self.val
-        extra = self.extra + flags
+        extra = "".join(merge_extra(extra_set(self.extra), extra_set(flags)))
         m = re.search(r"c(mask=)?([0-9]+)", extra)
         if m:
             extra = re.sub(r"c(mask=)?[0-9]+", "", extra)
             val |= int(m.group(2)) << 24
 
-        if version.direct and not use_raw:
-            ename = "cpu/%s/" % (self.output_newstyle())
-        else:
-            ename = "r%x" % (val,)
+        if version.direct or use_raw:
+            ename = "r%x" % (val,) 
             if extra:
                 ename += ":" + extra
-
-        if ename and not use_raw:
-            e = ename + extra
         else:
-            e = ename
-            if self.extra != "":
-                e += ":" + self.extra
-        return e
+            ename = "cpu/%s/" % (self.output_newstyle()) + extra
+        return ename
 
 extra_flags = (
         (EVENTSEL_EDGE, "edge"),
@@ -207,6 +200,18 @@ def ffs(flag):
         m = m << 1
         j += 1
     return j
+
+def extra_set(e):
+    return set(map(lambda x: x[0],
+                   re.findall(r"((p+)|[ukHG]|(c(mask=)?\d+))", e)))
+
+def merge_extra(a, b):
+    m = a | b
+    if 'ppp' in m:
+        m = m - set(['p', 'pp'])
+    if 'pp' in m:
+        m = m - set(['p'])
+    return m
 
 class Emap:
     "Read a event spreadsheet."
@@ -286,10 +291,12 @@ class Emap:
             edelim = ":"
             e = m.group(1)
         if e in self.events:
-            if extra:
+            extra = extra_set(extra)
+            ev = self.events[e]
+            ev_extra = extra_set(ev.extra)
+            if extra and merge_extra(ev_extra, extra) > ev_extra:
                 ev = copy.deepcopy(self.events[e])
-                ev.extra += extra
-                ev.output()
+                ev.extra = "".join(merge_extra(ev_extra, extra))
                 return ev
             return self.events[e]
         elif e.endswith("_ps"):
@@ -304,11 +311,12 @@ class Emap:
         ev = self.getevent_worker(e)
         if ev == None:
             return None
-        e = ev.output()
-        if e not in self.pevents:
-            self.pevents[e] = ev
         return ev
 
+    def update_event(self, e, ev):
+        if e not in self.pevents:
+            self.pevents[e] = ev
+        
     def getraw(self, r):
         e = "r%x" % (r)
         if e in self.pevents:
@@ -443,28 +451,34 @@ def process_events(event, print_only):
         if i.endswith('}'):
             end = "}"
             i = i[:-1]
-        m = re.match(r"(cpu/)([^/#]+)(.*)", i)
+        m = re.match(r"(cpu/)([^/#]+)([^/]+/)([^,]*)", i)
         if m:
             start += m.group(1)
-            e = emap.getevent(m.group(2))
+            ev = emap.getevent(m.group(2))
             end += m.group(3)
-            if e:
-                end += e.extra
-            i = e.output_newstyle()
+            if ev:
+                end += "".join(merge_extra(extra_set(ev.extra), extra_set(m.group(4))))
+            i = ev.output_newstyle()
         else:
-            e = emap.getevent(i)
-            if e:
-                if e.extra:
-                    end += ":" + e.extra
-            i = e.output()
-        if e:
-            if e.msr:
-                msr.checked_writemsr(e.msr, e.msrval, print_only)
-	    if emap.latego and (e.val & 0xffff) in latego.latego_events:
-                latego.setup_event(e.val & 0xffff, 1)
-            overflow = e.overflow
-        nl.append(start + i + end)
-    return str.join(',', nl).replace("#",","), overflow
+            extra = ""
+            m = re.match("([^:]*):(.*)", i)
+            if m:
+                extra = m.group(2)
+                i = m.group(1)
+            ev = emap.getevent(i)
+            i = ev.output(flags=extra)
+        if ev:
+            if ev.msr:
+                msr.checked_writemsr(ev.msr, ev.msrval, print_only)
+	    if emap.latego and (ev.val & 0xffff) in latego.latego_events:
+                latego.setup_event(ev.val & 0xffff, 1)
+            overflow = ev.overflow
+        event = (start + i + end).replace("#", ",")
+        nl.append(event)
+        if ev:
+            emap.update_event(event, ev)
+
+    return str.join(',', nl), overflow
 
 def getarg(i, cmd):
     if sys.argv[i][2:] == '':

@@ -343,6 +343,7 @@ def raw_event(i):
                 sys.exit(1)
             return "cycles" # XXX 
         i = e.output(True, filter_string())
+        emap.update_event(i, e)
     return i
 
 # generate list of converted raw events from events string
@@ -358,13 +359,6 @@ def print_header(work, evlist):
     names = map(lambda obj: obj.__class__.__name__, work)
     pwrap(" ".join(names) + ": " + " ".join(evnames).lower() + 
             " [%d_counters]" % (len(evnames - fixed_set)))
-
-def base_event(event):
-    event = event.rstrip()
-    m = re.match(r"(.*):.*", event)
-    if m:
-        event = m.group(1)
-    return event
 
 def setup_perf(events, evstr):
     plog = "plog.%d" % (os.getpid(),)
@@ -408,7 +402,7 @@ def execute(events, runner, out):
             print l,
             continue
         count, event = l.split(",", 1) 
-        event = base_event(event)
+        event = event.rstrip()
         if re.match(r"[0-9]+,", l):
             val = float(count)
         elif count == "<not counted>":
