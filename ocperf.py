@@ -162,6 +162,11 @@ class Event:
         self.msrvalue = 0
         self.desc = desc
 
+    def output_newstyle(self):
+        val = self.val
+        return "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff,
+                                                           self.newextra, )
+
     def output(self, use_raw=False, flags=""):
         val = self.val
         extra = self.extra + flags
@@ -171,17 +176,16 @@ class Event:
             val |= int(m.group(2)) << 24
 
         if version.direct and not use_raw:
-            self.ename = "cpu/event=0x%x,umask=0x%x%s/" % (val & 0xff, (val >> 8) & 0xff,
-                                                           self.newextra, )
+            ename = "cpu/%s/" % (self.output_newstyle())
         else:
-            self.ename = "r%x" % (val,)
+            ename = "r%x" % (val,)
             if extra:
-                self.ename += ":" + extra
+                ename += ":" + extra
 
-        if self.ename and not use_raw:
-            e = self.ename + extra
+        if ename and not use_raw:
+            e = ename + extra
         else:
-            e = self.ename
+            e = ename
             if self.extra != "":
                 e += ":" + self.extra
         return e
@@ -424,11 +428,10 @@ def addarg(s, add):
 
 def process_events(event, print_only):
     overflow = None
-    # ignore anything with new style args (cpu/a,b/) so far
-    # because we get confused by the inner commas
-    # need a proper parser
-    if event.find("/") >= 0:
-        return event
+    # replace inner commas so we can split events
+    event = re.sub(r"([a-z][a-z0-9]+/)([^/]+)/",
+            lambda m: m.group(1) + m.group(2).replace(",", "#") + "/",
+            event)
     el = event.split(",")
     nl = []
     for i in el:
@@ -440,16 +443,28 @@ def process_events(event, print_only):
         if i.endswith('}'):
             end = "}"
             i = i[:-1]
-        e = emap.getevent(i)
-        if e:
+        m = re.match(r"(cpu/)([^/#]+)(.*)", i)
+        if m:
+            start += m.group(1)
+            e = emap.getevent(m.group(2))
+            end += m.group(3)
+            if e:
+                end += e.extra
+            i = e.output_newstyle()
+        else:
+            e = emap.getevent(i)
+            if e:
+                if e.extra:
+                    end += ":" + e.extra
             i = e.output()
+        if e:
             if e.msr:
                 msr.checked_writemsr(e.msr, e.msrval, print_only)
 	    if emap.latego and (e.val & 0xffff) in latego.latego_events:
                 latego.setup_event(e.val & 0xffff, 1)
             overflow = e.overflow
         nl.append(start + i + end)
-    return str.join(',', nl), overflow
+    return str.join(',', nl).replace("#",","), overflow
 
 def getarg(i, cmd):
     if sys.argv[i][2:] == '':
