@@ -96,10 +96,7 @@ class PerfFeatures:
     def event_group(self, evlist):
         need_counters = set(evlist) - ingroup_events
 	e = ",".join(evlist)
-        # when the group has to be multiplexed anyways don't use a group
-        # perf doesn't support groups that need to be multiplexed internally too
-        if (len(need_counters) <= cpu.counters and self.group_support
-                and len(need_counters) > 1):
+        if 1 < len(need_counters) <= cpu.counters and self.group_support:
             e = "{%s}" % (e,)
         return e
  
@@ -318,6 +315,8 @@ fixed_counters = {
     "CPU_CLK_UNHALTED.REF_TSC": "ref-cycles"
 }
 
+fixed_set = frozenset(fixed_counters.keys())
+
 def filter_string():
     if ring_filter:
         return filter_to_perf[ring_filter]
@@ -348,7 +347,7 @@ def print_header(work, evlist):
     evnames = set(itertools.chain(*evnames0))
     names = map(lambda obj: obj.__class__.__name__, work)
     pwrap(" ".join(names) + ": " + " ".join(evnames).lower() + 
-            " [%d_counters]" % (len(evnames - set(fixed_counters.keys()))))
+            " [%d_counters]" % (len(evnames - fixed_set)))
 
 def base_event(event):
     event = event.rstrip()
@@ -364,15 +363,9 @@ def setup_perf(events, evstr):
         rest += [interval_mode]
     rest += sys.argv[first:]
     prun = PerfRun()
-    #try:
     inf = prun.execute(plog, ["perf", "stat"]  + feat.perf_output(plog).split(" ") + rest)
-    #except IOError:
-    #    print "Cannot open result file %s" % (plog)
-    #    return
     return inf, prun
 
-# execute perf: list of event-groups -> list of results-for-group
-# and print result
 def execute(events, runner, out):
     inf, prun = setup_perf(events, runner.evstr)
     res = []
@@ -469,7 +462,6 @@ def get_names(evlev):
 
 def num_non_fixed(l):
     n = cpu.counters
-    fixed_set = frozenset(fixed_counters.keys())
     while len(set(l[:n]) - fixed_set) < cpu.counters and n < len(l):
         n += 1
     return n
