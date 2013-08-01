@@ -348,7 +348,7 @@ def print_header(work, evlist):
     evnames = set(itertools.chain(*evnames0))
     names = map(lambda obj: obj.__class__.__name__, work)
     pwrap(" ".join(names) + ": " + " ".join(evnames).lower() + 
-            " [%d counters]" % (len(evnames - set(fixed_counters.keys()))))
+            " [%d_counters]" % (len(evnames - set(fixed_counters.keys()))))
 
 def base_event(event):
     event = event.rstrip()
