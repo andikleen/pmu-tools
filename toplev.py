@@ -590,9 +590,10 @@ if sysctl("kernel.nmi_watchdog") != 0:
     print >>sys.stderr,"Please disable nmi watchdog (echo 0 > /proc/sys/kernel/nmi_watchdog)"
     sys.exit(1)
 
-version = map(int, platform.release().split(".")[:2])
-if version[0] < 3 or (version[0] == 3 and version[1] < 10):
-    print >>sys.stderr, "Older kernel than 3.10. Events may not be correctly scheduled."
+if detailed_model:
+    version = map(int, platform.release().split(".")[:2])
+    if version[0] < 3 or (version[0] == 3 and version[1] < 10):
+        print >>sys.stderr, "Older kernel than 3.10. Events may not be correctly scheduled."
 
 if cpu.cpu == None:
     print >>sys.stderr, "Unsupported CPU model %d" % (cpu.model,)
