@@ -18,6 +18,8 @@ LOAD="gcc -o /dev/null hello.c"
 
 EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py $LOAD
 EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -d -l4 $LOAD
+EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -v -d -l4 $LOAD
+EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -x, -v -d -l4 $LOAD
 EVENTMAP=ivt.csv FORCECPU=ivt ./toplev.py -d -l4 $LOAD
 EVENTMAP=snb-client.csv FORCECPU=snb ./toplev.py -d -l4 $LOAD
 EVENTMAP=snb-ep.csv FORCECPU=jkt ./toplev.py -d -l4 $LOAD
