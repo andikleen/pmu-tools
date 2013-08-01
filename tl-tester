@@ -25,6 +25,8 @@ EVENTMAP=snb-client.csv FORCECPU=snb ./toplev.py -d -l4 $LOAD
 EVENTMAP=snb-ep.csv FORCECPU=jkt ./toplev.py -d -l4 $LOAD
 EVENTMAP=hsw.csv FORCECPU=hsw ./toplev.py -d -l4 $LOAD
 EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -d -l4 -I 1000 sleep 3
-EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -d -l4 --user $LOAD
+EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -d -l4 --user $LOAD | tee log
+grep :u log
+
 echo 
 echo "SUCCEEDED"
