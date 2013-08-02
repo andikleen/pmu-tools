@@ -19,6 +19,7 @@
 
 import sys, os, re, itertools, textwrap, types, platform, pty, subprocess
 import exceptions
+from collections import defaultdict, Counter
 #sys.path.append("../pmu-tools")
 import ocperf
 
@@ -376,7 +377,24 @@ def setup_perf(events, evstr):
     inf = prun.execute(plog, ["perf", "stat"]  + feat.perf_output(plog).split(" ") + rest)
     return inf, prun
 
+class Stat:
+    def __init__(self):
+        self.total = 0
+        self.errors = Counter()
+
+def print_not(a, count , msg, j):
+     print >>sys.stderr, ("warning: %s[%s] %s %.2f%% in %d measurements"
+                % (emap.getperf(j), j, msg, 100.0 * (float(count) / float(a.total)), a.total))
+
+# XXX need to get real ratios from perf
+def print_account(ad):
+    for j in ad:
+        a = ad[j]
+        for e in a.errors:
+            print_not(a, a.errors[e], e, j)
+
 def execute(events, runner, out):
+    account = defaultdict(Stat)
     inf, prun = setup_perf(events, runner.evstr)
     res = []
     rev = []
@@ -411,21 +429,20 @@ def execute(events, runner, out):
         event = event.rstrip()
         if re.match(r"[0-9]+,", l):
             val = float(count)
-        elif count == "<not counted>":
-            print "warning: event %s not counted" % (event)
-            val = 0
-        elif count == "<not supported>":
-            print "warning: event %s not supported" % (event)
+        elif count.startswith("<"):
+            account[event].errors[count.replace("<","").replace(">","")] += 1
             val = 0
         else:
             print "unparseable perf output"
             print l,
             continue
+        account[event].total += 1
         res.append(val)
         rev.append(event)
     inf.close()
     prun.wait()
     runner.print_res(res, rev, out, interval)
+    print_account(account)
 
 def ev_append(ev, level, obj):
     if not (ev, level) in obj.evlevels:
