@@ -179,7 +179,7 @@ class Output:
                 hdr = "%-7s %s" % (area, hdr)
             print >>self.logf, "%-42s\t%s %s" % (hdr + ":", s, remark)
             if desc:
-                print >>self.log, "\t" + desc
+                print >>self.logf, "\t" + desc
 
     def p(self, area, name, l, timestamp, remark, desc):
         fmtnum = lambda l: "%5s%%" % ("%2.2f" % (100.0 * l))
