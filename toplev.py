@@ -18,7 +18,7 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, types, platform, pty, subprocess
-import exceptions, pprint
+import exceptions
 #sys.path.append("../pmu-tools")
 import ocperf
 
