@@ -497,14 +497,14 @@ class Runner:
 
     def split_groups(self, objl, evlev):
         if len(set(get_levels(evlev))) == 1:
-            # split again
+            # when there is only a single left just fill groups
             while evlev:
                 n = num_non_fixed(get_names(evlev))
 		l = evlev[:n]
                 self.add(objl, raw_events(get_names(l)), l)
                 evlev = evlev[n:]
         else:
-            # resubmit each level
+            # resubmit groups for each level
             max_level = max(get_levels(evlev))
             for l in range(1, max_level + 1):
                 evl = filter(lambda x: x[1] == l, evlev)
@@ -520,7 +520,6 @@ class Runner:
         base = len(self.evnum)
         evnum, evlev = dedup2(evnum, evlev)
         update_res_map(evnum, objl, base)
-
         self.evnum += evnum
         if self.evstr:
             self.evstr += ","
@@ -546,12 +545,12 @@ class Runner:
         curobj = []
         curev = []
         curlev = []
-        # pass 0:
-        # sort objects by level and the by num-counters
+        # sort objects by level and inside each level by num-counters
         solist = sorted(self.olist, cmp=cmp_obj)
-        # pass 1: try to fit each objects events into groups
+        # try to fit each objects events into groups
         # that fit into the available CPU counters
         for obj in solist:
+            # try adding another object to the current group
             newev = curev + obj.evnum
             newlev = curlev + obj.evlevels
             needed = len(set(newev) - add_filter(ingroup_events))
@@ -560,17 +559,18 @@ class Runner:
             # start a new group
             if cpu.counters < needed and curobj:
                 self.add(curobj, curev, curlev)
+                # restart new group
                 curobj = []
                 curev = []
                 curlev = []
                 newev = obj.evnum
                 newlev = obj.evlevels
+            # commit the object to the group
             curobj.append(obj)
             curev = newev
             curlev = newlev
-        if not curobj:
-            return
-        self.add(curobj, curev, curlev)
+        if curobj:
+            self.add(curobj, curev, curlev)
 
     def print_res(self, res, rev, out, timestamp):
         if len(res) == 0:
