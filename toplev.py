@@ -95,7 +95,7 @@ class PerfFeatures:
             return "--output %s " % (plog,)
 
     def event_group(self, evlist):
-        need_counters = set(evlist) - ingroup_events
+        need_counters = set(evlist) - add_filter(ingroup_events)
 	e = ",".join(evlist)
         if 1 < len(need_counters) <= cpu.counters and self.group_support:
             e = "{%s}" % (e,)
@@ -329,10 +329,19 @@ def filter_string():
         return filter_to_perf[ring_filter]
     return ""
 
+def add_filter(s):
+    f = filter_string()
+    if f:
+        s = set(map(lambda x: x + ":" + f, s))
+    return s
+
 def raw_event(i):
     if i.count(".") > 0:
 	if i in fixed_counters:
-	    return fixed_counters[i]
+	    i = fixed_counters[i]
+            if filter_string():
+                i += ":" + filter_string()
+            return i
         e = emap.getevent(i)
         if e == None:
             print >>sys.stderr, "%s not found" % (i,)
@@ -424,6 +433,9 @@ def ev_append(ev, level, obj):
     return 1
 
 def canon_event(e):
+    m = re.match(r"(.*):(.*)", e)
+    if m:
+        e = m.group(1)
     if e.upper() in fixed_counters:
         return fixed_counters[e.upper()]
     if e.endswith("_0"):
@@ -506,7 +518,7 @@ class Runner:
     def add(self, objl, evnum, evlev):
         assert evlev
         # does not fit into a group. 
-        if len(set(evnum) - ingroup_events) > cpu.counters:
+        if len(set(evnum) - add_filter(ingroup_events)) > cpu.counters:
             self.split_groups(objl, evlev)
             return
         base = len(self.evnum)
@@ -530,7 +542,7 @@ class Runner:
             obj.compute(lambda ev, level: ev_append(ev, level, obj))
             obj.evlist = map(lambda x: x[0], obj.evlevels)
             obj.evnum = raw_events(obj.evlist)
-            obj.nc = len(set(obj.evnum) - ingroup_events)
+            obj.nc = len(set(obj.evnum) - add_filter(ingroup_events))
 
     # fit events into available counters
     # simple first fit algorithm
@@ -546,7 +558,7 @@ class Runner:
         for obj in solist:
             newev = curev + obj.evnum
             newlev = curlev + obj.evlevels
-            needed = len(set(newev) - ingroup_events)
+            needed = len(set(newev) - add_filter(ingroup_events))
             # when the current group doesn't have enough free slots
             # or is already too large
             # start a new group
