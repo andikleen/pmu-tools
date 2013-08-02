@@ -83,7 +83,7 @@ class PerfFeatures:
         self.logfd_supported = works("perf stat --log-fd 3 3>/dev/null true")
         # some broken perf versions log on stdin
         if not self.output_supported and not self.logfd_supported:
-	    print "perf binary is too old. please upgrade"
+	    print >>sys.stderr, "perf binary is too old. please upgrade"
 	    sys.exit(1)
         if self.output_supported:
             self.group_support = works("perf stat --output /dev/null -e '{cycles,branches}' true")
@@ -179,7 +179,7 @@ class Output:
                 hdr = "%-7s %s" % (area, hdr)
             print >>self.logf, "%-42s\t%s %s" % (hdr + ":", s, remark)
             if desc:
-                print "\t" + desc
+                print >>self.log, "\t" + desc
 
     def p(self, area, name, l, timestamp, remark, desc):
         fmtnum = lambda l: "%5s%%" % ("%2.2f" % (100.0 * l))
@@ -338,7 +338,7 @@ def raw_event(i):
 	    return fixed_counters[i]
         e = emap.getevent(i)
         if e == None:
-            print "%s not found" % (i,)
+            print >>sys.stderr, "%s not found" % (i,)
             if not force:
                 sys.exit(1)
             return "cycles" # XXX 
