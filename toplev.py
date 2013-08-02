@@ -453,11 +453,7 @@ def add_key(k, x, y):
 def dedup2(a, b):
     k = dict()
     map(lambda x, y: add_key(k, x, y), a, b)
-    a = k.keys()
-    b = map(lambda x: k[x], k.keys())
-    assert len(set(a)) == len(a)
-    assert len(set(b)) == len(b)
-    return a, b
+    return k.keys(), map(lambda x: k[x], k.keys())
 
 def cmp_obj(a, b):
     if a.level == b.level:
