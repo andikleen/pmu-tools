@@ -437,14 +437,17 @@ def lookup_res(res, rev, ev, index):
     assert canon_event(emap.getperf(rev[index])) == canon_event(ev)
     return res[index]
 
+def add_key(k, x, y):
+    k[x] = y
+
 # dedup a and keep b uptodate
 def dedup2(a, b):
-    s = sorted(a)
-    for j in range(0, len(s) - 1):
-        if s[j] == s[j+1]:
-            i = a.index(s[j], a.index(s[j]) + 1)
-            del a[i]
-            del b[i]
+    k = dict()
+    map(lambda x, y: add_key(k, x, y), a, b)
+    a = k.keys()
+    b = map(lambda x: k[x], k.keys())
+    assert len(set(a)) == len(a)
+    assert len(set(b)) == len(b)
     return a, b
 
 def cmp_obj(a, b):
@@ -452,11 +455,12 @@ def cmp_obj(a, b):
         return a.nc - b.nc
     return a.level - b.level
 
-def update_res_map(evlev, objl, base):
-    for lev, i in zip(evlev, range(0, len(evlev))):
-        for obj in objl:
-            if lev in obj.evlevels:
-                obj.res_map[lev] = base + i
+def update_res_map(evnum, objl, base):
+    for obj in objl:
+        for lev in obj.evlevels:
+            r = raw_event(lev[0])
+            if r in evnum:
+                obj.res_map[lev] = base + evnum.index(r)
 
 def get_levels(evlev):
     return map(lambda x: x[1], evlev)
@@ -509,8 +513,8 @@ class Runner:
             self.split_groups(objl, evlev)
             return
         base = len(self.evnum)
-        evlev, evnum = dedup2(evlev, evnum)
-        update_res_map(evlev, objl, base)
+        evnum, evlev = dedup2(evnum, evlev)
+        update_res_map(evnum, objl, base)
 
         self.evnum += evnum
         if self.evstr:
