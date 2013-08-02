@@ -17,4 +17,4 @@ def get_level(name):
     return 0
 
 runner = Runner()
-ivb_client_ratios.Setup(runner)
+ivb_server_ratios.Setup(runner)
