@@ -189,13 +189,10 @@ class Output:
             if self.csv:
                 sep = self.csv
             print >>self.logf,"%6.9f%s" % (timestamp, sep),
-	if l:
-            if check_ratio(l):
-	        self.s(area, name, fmtnum(l), remark, desc)
-	    else:
-		self.s(area, name, fmtnum(0), "mismeasured", "")
-        else:
-            self.s(area, name, fmtnum(0), "not available", "")
+        if check_ratio(l):
+	    self.s(area, name, fmtnum(l), remark, desc)
+	else:
+	    self.s(area, name, fmtnum(0), "mismeasured", "")
 
     def bold(self, s):
         if (not self.terminal) or self.csv:
