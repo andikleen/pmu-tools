@@ -183,13 +183,6 @@ class Event:
             ename = "cpu/%s/" % (self.output_newstyle()) + extra
         return ename
 
-extra_flags = (
-        (EVENTSEL_EDGE, "edge"),
-        (EVENTSEL_PC,   "pc"),
-        (EVENTSEL_ANY,  "any"),
-        (EVENTSEL_INV,  "inv"),
-        (EVENTSEL_CMASK, "cmask"))
-
 def ffs(flag):
     if flag == 0:
         print "bad flag"
