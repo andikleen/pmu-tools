@@ -198,9 +198,7 @@ class Event:
         return ename
 
 def ffs(flag):
-    if flag == 0:
-        print "bad flag"
-        return -1
+    assert flag != 0
     m = 1
     j = 0
     while (flag & m) == 0:
