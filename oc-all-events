@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+cpu()
+{
+	EVENTMAP=$1 ./list-events.py | while read i ; do EVENTMAP=$1 ./ocperf.py --print stat -e $i echo $1  ;done
+}
+
+cpu bnl.csv
+cpu hsw.csv
+cpu ivb-client.csv
+cpu ivt.csv
+cpu nhm-ep.csv
+cpu nhm-ex.csv
+cpu snb-client.csv
+cpu snb-ep.csv
+cpu wsm-dp.csv
+cpu wsm-sp.csv
+
