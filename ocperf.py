@@ -274,9 +274,10 @@ class Emap:
             if e.pebs and int(e.pebs):
                 if name.endswith("_ps"):
                     e.extra += "p"
-                    self.desc[name] += " (Uses PEBS)"
+                    d += " (Uses PEBS)"
                 else:
-                    self.desc[name] = self.desc[name].replace("(Precise Event)","") + " (Supports PEBS)"
+                    d = d.replace("(Precise Event)","") + " (Supports PEBS)"
+            e.desc = self.desc[name] = d
             for (flag, name) in extra_flags:
                 if val & flag:
                     e.newextra += ",%s=%d" % (name, (val & flag) >> ffs(flag), )
