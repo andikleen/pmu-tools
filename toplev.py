@@ -312,10 +312,12 @@ class PerfRun:
              return os.fdopen(outp, 'r')
 
     def wait(self):
+        ret = 0
 	if self.perf:
-	    self.perf.wait()
+	    ret = self.perf.wait()
         if self.logfile:	
             os.remove(self.logfile)
+        return ret
 
 filter_to_perf = {
     "kernel": "k",
@@ -680,4 +682,4 @@ else:
 runner.collect()
 out = Output(logfile, csv_mode)
 runner.schedule(out)
-execute(runner.evnum, runner, out)
+sys.exit(execute(runner.evnum, runner, out))
