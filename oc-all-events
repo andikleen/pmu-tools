@@ -1,9 +1,12 @@
 #!/bin/sh
+# convert all events for testing
+# needs GNU parallel
 set -e
 
 cpu()
 {
-	EVENTMAP=$1 ./list-events.py | while read i ; do EVENTMAP=$1 ./ocperf.py --print stat -e $i echo $1  ;done
+	export EVENTMAP=$1
+	./list-events.py | parallel -n1 ./ocperf.py --print stat -e 
 }
 
 cpu bnl.csv
