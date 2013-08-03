@@ -381,7 +381,10 @@ def setup_perf(events, evstr):
         rest += [interval_mode]
     rest += sys.argv[first:]
     prun = PerfRun()
-    inf = prun.execute(plog, ["perf", "stat"]  + feat.perf_output(plog).split(" ") + rest)
+    perf = os.getenv("PERF")
+    if not perf:
+        perf = "perf"
+    inf = prun.execute(plog, [perf, "stat"]  + feat.perf_output(plog).split(" ") + rest)
     return inf, prun
 
 class Stat:
