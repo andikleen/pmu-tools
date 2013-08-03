@@ -163,6 +163,8 @@ class Event:
         self.desc = desc
 
     def output_newstyle(self, newextra=""):
+        """Format an perf event for output and return as perf event string.
+           Always uses new style (cpu/.../)."""
         val = self.val
         extra = self.newextra
         if newextra:
@@ -173,6 +175,11 @@ class Event:
         return e
 
     def output(self, use_raw=False, flags=""):
+        """Format an event for output and return as perf event string.
+           use_raw when true return old style perf string (rXXX).
+           Otherwise chose between old and new style based on the 
+           capabilities of the installed perf executable.
+           flags when set add perf flags (e.g. u for user, p for pebs)."""
         val = self.val
         newe = ""
         extra = "".join(merge_extra(extra_set(self.extra), extra_set(flags)))
@@ -283,6 +290,7 @@ class Emap:
                     e.newextra += ",%s=%d" % (name, (val & flag) >> ffs(flag), )
 
     def getevent(self, e):
+        """Retrieve an event with name e. Return Event object or None."""
         e = e.lower()
         extra = ""
         edelim = ""
@@ -327,7 +335,9 @@ class Emap:
             return self.pevents[p].name
         return p
 
-    def dumpevents(self, f, human):
+    def dumpevents(self, f=sys.stdout, human=True):
+        """Print all events with descriptions to the file descriptor f.
+           When human is true word wrap all the descriptions."""
         if human:
             wrap = textwrap.TextWrapper(initial_indent="     ",
                                         subsequent_indent="     ")            
@@ -409,6 +419,11 @@ readers = (
 )
 
 def find_emap():
+    """Search and read a perfmon event map in CSV format.
+       When the EVENTMAP environment variable is set read that, otherwise
+       read the map for the current CPU.
+       Return an emap object that contains the events and can be queried
+       or None if nothing is found or the current CPU is unknown."""
     cpu = CPU()
     t = cpu.getmap()
     if t:
