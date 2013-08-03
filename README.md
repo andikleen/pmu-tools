@@ -71,6 +71,21 @@ tester provides a simple test suite.
 The latego.py, msr.py, pci.py modules can be also used as standalone programs
 to enable the offcore workaround, change MSRs or change PCI config space respectively.
 
+ocperf.py can be also used as a python module to convert or list
+events for the current CPU:
+
+	import ocperf
+
+	emap = ocperf.find_emap()
+	ev = emap.getevent("BR_MISP_EXEC.ANY")
+	if ev:
+		print "name:", ev.output()
+		print "raw form:", ev.output(use_raw=True)
+		print "description:, ev.desc
+
+To retrieve data for other CPUs set the EVENTMAP environment variable
+to the csv file of the CPU before calling find\_emap()
+
 ## toplev.py:
 
 Do cycle decomposition on a workload: estimate on which part of the
