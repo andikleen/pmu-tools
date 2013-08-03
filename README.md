@@ -264,7 +264,7 @@ that log the complete PEBS record. When the CPU supports PEBSv2
 	  make [KDIR=/my/kernel/build/dir]
 	  insmod pebs-grabber.ko 
 	  # needs to record as root
-	  perf record -e cycles:p,pebs_v1,pebs_v2 [command, -a for all etc.]
+	  perf record -e cycles:p,pebs_v1,pebs\_v2 [command, -a for all etc.]
 	  perf report
 	  perf script to display pebs data
 	  # alternatively trace-cmd and kernelshark can be also used to dump
@@ -286,9 +286,10 @@ Requires a Linux 3.10+ kernel and a supported CPU.
 event-rmap [cpu] prints the currently running events. This provides
 an easier answer to question Q2j in Vince Weaver's perf events FAQ.
 
-# Support
+# Mailing list
 
 Please post to the linux-perf-users@vger.kernel.org mailing list.
+For bugs please open an issue on https://github.com/andikleen/pmu-tools/issues
 
 # Licenses
 
