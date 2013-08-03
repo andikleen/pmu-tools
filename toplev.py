@@ -433,7 +433,7 @@ def execute(events, runner, out):
                 l = m.group(2)
                 if interval != prev_interval:
                     if res:
-                        for j in res:
+                        for j in sorted(res.keys()):
                             runner.print_res(res[j], rev[j], out, prev_interval, j)
                         res = defaultdict(list)
                         rev = defaultdict(list)
@@ -469,7 +469,7 @@ def execute(events, runner, out):
         rev[title].append(event)
     inf.close()
     ret = prun.wait()
-    for j in res:
+    for j in sorted(res.keys()):
         runner.print_res(res[j], rev[j], out, interval, j)
     print_account(account)
     return ret
