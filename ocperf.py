@@ -19,8 +19,6 @@
 # For the later must run as root and only as a single instance per machine 
 # Normal events (mainly not OFFCORE) can be handled unprivileged 
 # For events you can specify additional intel names from the list
-# In browser mode the raw events cannot be decoded back.
-# The :cXXX notation cannot be decoded back
 # env variables:
 # PERF=... perf binary to use (default "perf")
 # EVENTMAP=... eventmap file (default: location of script based on CPU)
@@ -88,6 +86,7 @@ class PerfVersion:
         self.direct = os.getenv("DIRECT_MSR") or minor < 4
         self.offcore = has_format("offcore_rsp") and not self.direct
         self.ldlat = has_format("ldlat") and not self.direct
+        self.has_name = minor >= 4
 
 version = PerfVersion()
 
@@ -162,25 +161,32 @@ class Event:
         self.msrvalue = 0
         self.desc = desc
 
-    def output_newstyle(self):
+    def output_newstyle(self, newextra=""):
         val = self.val
-        return "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff,
-                                                           self.newextra, )
+        extra = self.newextra + newextra
+        if extra:
+            extra = "," + extra
+        e = "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff, extra)
+        if version.has_name:
+            e += ",name=%s" % (self.name.replace(".", "_"),)
+        return e
 
     def output(self, use_raw=False, flags=""):
         val = self.val
+        newe = ""
         extra = "".join(merge_extra(extra_set(self.extra), extra_set(flags)))
         m = re.search(r"c(mask=)?([0-9]+)", extra)
         if m:
             extra = re.sub(r"c(mask=)?[0-9]+", "", extra)
             val |= int(m.group(2)) << 24
+            newe += "cmask=%x" % (int(m.group(2)))
 
         if version.direct or use_raw:
             ename = "r%x" % (val,) 
             if extra:
                 ename += ":" + extra
         else:
-            ename = "cpu/%s/" % (self.output_newstyle()) + extra
+            ename = "cpu/%s/" % (self.output_newstyle(newextra=newe)) + extra
         return ename
 
 def ffs(flag):
@@ -542,11 +548,17 @@ def perf_cmd(cmd):
             pager.close()
             proc.wait()
     elif len(sys.argv) >= 2 and (sys.argv[1] == "report" or sys.argv[1] == "stat"):
-        for w in sys.argv:
-            if w == "--tui":
-                os.system(cmd)
-                latego.cleanup()
-                sys.exit(0)
+        direct = version.has_name
+        if not direct:
+            for w in sys.argv:
+                if w == "--tui":
+                    direct = True
+                    break
+        if direct:
+            p = subprocess.Popen(shlex.split(cmd))
+            ret = os.waitpid(p.pid, 0)[1]
+            latego.cleanup()
+            sys.exit(ret)
         pipe = subprocess.Popen(shlex.split(cmd), 
                                 stdout=subprocess.PIPE, 
                                 stderr=subprocess.STDOUT).stdout
@@ -559,7 +571,9 @@ def perf_cmd(cmd):
         pipe.close()
         latego.cleanup()
     else:
-        os.system(cmd)
+        p = subprocess.Popen(shlex.split(cmd))
+        ret = os.waitpid(p.pid, 0)[1]
+        sys.exit(ret)
 
 if __name__ == '__main__':
     emap = find_emap()

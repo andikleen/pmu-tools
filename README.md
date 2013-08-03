@@ -58,10 +58,6 @@ List all the events perf and ocperf supports on the current CPU
 
 	ocperf.py report --stdio
 
-The translation back from the raw event name for report is only supported
-for the --stdio mode. The interactive browser can be also used, but will
-display raw perf event names.
-
 When a older kernel is used with offcore events,
 that does not support offcore events natively, ocperf has to run
 as root and only one such profiling can be active on a machine.
