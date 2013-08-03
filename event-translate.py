@@ -7,6 +7,8 @@ import ocperf
 from pmudef import *
 
 emap = ocperf.find_emap()
+if not emap:
+    sys.exit("Unknown CPU or cannot find event table")
 for j in sys.argv[1:]:
     m = re.match(r'r([0-9a-f]+)(:.*)?', j)
     if m:

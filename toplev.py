@@ -104,6 +104,8 @@ class PerfFeatures:
  
 feat = PerfFeatures()
 emap = ocperf.find_emap()
+if not emap:
+    sys.exit("Unknown CPU or CPU event map not found.")
 
 logfile = None
 print_all = False

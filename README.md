@@ -77,6 +77,8 @@ events for the current CPU:
 	import ocperf
 
 	emap = ocperf.find_emap()
+	if not emap:
+		sys.exit("Unknown CPU or cannot find event table")
 	ev = emap.getevent("BR_MISP_EXEC.ANY")
 	if ev:
 		print "name:", ev.output()

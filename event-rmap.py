@@ -18,6 +18,8 @@ if len(sys.argv) > 1:
     cpu = int(sys.argv[1])
 
 emap = ocperf.find_emap()
+if not emap:
+    sys.exit("Unknown CPU or cannot find CPU event table")
 for i in range(0, 8):
     try:
         evsel = msr.readmsr(MSR_EVNTSEL + i, cpu)
