@@ -75,14 +75,21 @@ checkmsr2 snb-ep offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr
 # parser checks
 checkp() 
 {
-	EVENTMAP=hsw.csv ./ocperf.py --print stat -e "$1"  | grep "$2"
+	./ocperf.py --print stat -e "$1"  | grep -q "$2"
 }
+export EVENTMAP=hsw.csv
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS 'r1c4:p$'
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL:p  'r1c4:p$'
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS:p  'r1c4:p$'
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS:ppp  'r1c4:ppp$'
-checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/  'event=0xc4,umask=0x1,foo=bar/$'
-checkp cpu/BR_INST_RETIRED.CONDITIONAL_PS,foo=bar/  'event=0xc4,umask=0x1,foo=bar/p$'
-checkp cpu/BR_INST_RETIRED.CONDITIONAL_PS,foo=bar/ppu  'event=0xc4,umask=0x1,foo=bar/ppu$'
+
+# following tests need new enough perf
+
+checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/$'
+checkp cpu/BR_INST_RETIRED.CONDITIONAL_PS,foo=bar/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional_ps,foo=bar/p$'
+checkp cpu/BR_INST_RETIRED.CONDITIONAL_PS,foo=bar/ppu  'event=0xc4,umask=0x1,name=br_inst_retired_conditional_ps,foo=bar/ppu$'
+export EVENTMAP=wsm-sp.csv
+DIRECT_MSR=1 checkp l2_write.rfo.m_state:c4 'r4000827'
+#checkp l2_write.rfo.m_state:c4 'cpu/event=0x27,umask=0x8,cmask=4,name=l2_write_rfo_m_state/'
 
 echo SUCCEEDED

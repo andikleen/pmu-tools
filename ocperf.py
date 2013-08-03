@@ -34,6 +34,7 @@ import re
 import shlex
 import copy
 import textwrap
+import pipes
 from pmudef import *
 
 import msr as msrmod
@@ -163,9 +164,9 @@ class Event:
 
     def output_newstyle(self, newextra=""):
         val = self.val
-        extra = self.newextra + newextra
-        if extra:
-            extra = "," + extra
+        extra = self.newextra
+        if newextra:
+            extra += "," + newextra
         e = "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff, extra)
         if version.has_name:
             e += ",name=%s" % (self.name.replace(".", "_"),)
@@ -427,12 +428,6 @@ def find_emap():
     print "Unknown CPU"
     sys.exit(1)
 
-def addarg(s, add):
-    s += " "
-    if add.count(" ") > 0:
-        return s + "\"" + add + "\""
-    return s + add
-
 def process_events(event, print_only):
     overflow = None
     # replace inner commas so we can split events
@@ -465,7 +460,8 @@ def process_events(event, print_only):
                 extra = m.group(2)
                 i = m.group(1)
             ev = emap.getevent(i)
-            i = ev.output(flags=extra)
+            if ev:
+                i = ev.output(flags=extra)
         if ev:
             if ev.msr:
                 msr.checked_writemsr(ev.msr, ev.msrval, print_only)
@@ -481,7 +477,7 @@ def process_events(event, print_only):
 
 def getarg(i, cmd):
     if sys.argv[i][2:] == '':
-        cmd = addarg(cmd, sys.argv[i])
+        cmd.append(sys.argv[i])
         i += 1
         arg = ""
         if len(sys.argv) > i:
@@ -490,13 +486,13 @@ def getarg(i, cmd):
     else:
         arg = sys.argv[i][2:]
         prefix = sys.argv[i][:2]
-    return arg, i, cmd, prefix
+    return arg, i, prefix
 
 def process_args():
-    cmd = os.getenv("PERF")
-    if not cmd:
-        cmd = "perf"
-    cmd += " "
+    perf = os.getenv("PERF")
+    if not perf:
+        perf = "perf"
+    cmd = [perf]
 
     overflow = None
     print_only = False
@@ -504,25 +500,24 @@ def process_args():
     while i < len(sys.argv):
         if sys.argv[i] == "--print":
             print_only = True
-            i += 1
         elif sys.argv[i][0:2] == '-e':
-            event, i, cmd, prefix = getarg(i, cmd)
+            event, i, prefix = getarg(i, cmd)
             event, overflow = process_events(event, print_only)
-            cmd = addarg(cmd, prefix + event)
+            cmd.append(prefix + event)
         elif sys.argv[i][0:2] == '-c':
-            oarg, i, cmd, prefix = getarg(i, cmd)
+            oarg, i, prefix = getarg(i, cmd)
             if oarg == "default":
                 if overflow == None:
                     print >>sys.stderr,"""
 Specify the -e events before -c default or event has no overflow field."""
                     sys.exit(1)
-                cmd = addarg(cmd, prefix + overflow) 
+                cmd.append(prefix + overflow)
             else:
-                cmd = addarg(cmd, prefix + oarg)
+                cmd.append(prefix + oarg)
         else:        
-            cmd = addarg(cmd, sys.argv[i])
+            cmd.append(sys.argv[i])
         i += 1
-    print cmd
+    print " ".join(map(pipes.quote, cmd))
     if print_only:
         sys.exit(0)
     return cmd
@@ -540,7 +535,7 @@ def get_pager():
 def perf_cmd(cmd):
     if len(sys.argv) >= 2 and sys.argv[1] == "list":
         pager, proc = get_pager()
-        l = subprocess.Popen(cmd, shell=True, stdout=pager)
+        l = subprocess.Popen(cmd, stdout=pager)
         l.wait()
         print >>pager
         emap.dumpevents(pager, proc != None)
@@ -555,11 +550,10 @@ def perf_cmd(cmd):
                     direct = True
                     break
         if direct:
-            p = subprocess.Popen(shlex.split(cmd))
-            ret = os.waitpid(p.pid, 0)[1]
+            ret = subprocess.call(cmd)
             latego.cleanup()
             sys.exit(ret)
-        pipe = subprocess.Popen(shlex.split(cmd), 
+        pipe = subprocess.Popen(cmd, 
                                 stdout=subprocess.PIPE, 
                                 stderr=subprocess.STDOUT).stdout
         raw = lambda e: " " + emap.getraw(int(e.group(1), 16))
@@ -571,9 +565,7 @@ def perf_cmd(cmd):
         pipe.close()
         latego.cleanup()
     else:
-        p = subprocess.Popen(shlex.split(cmd))
-        ret = os.waitpid(p.pid, 0)[1]
-        sys.exit(ret)
+        sys.exit(subprocess.call(cmd))
 
 if __name__ == '__main__':
     emap = find_emap()
