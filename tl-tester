@@ -28,5 +28,11 @@ EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -d -l4 -I 1000 sleep 3
 EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -d -l4 --user $LOAD | tee log
 grep :u log
 
+# need new perf
+# test other perf output formats
+EVENTMAP=hsw.csv FORCECPU=hsw ./toplev.py -d -l4 -I 1000 -a --per-core sleep 1
+EVENTMAP=hsw.csv FORCECPU=hsw ./toplev.py -d -l4 -I 1000 -a --per-socket sleep 1
+EVENTMAP=hsw.csv FORCECPU=hsw ./toplev.py -d -l4 -I 1000 -a -A sleep 1
+
 echo 
 echo "SUCCEEDED"

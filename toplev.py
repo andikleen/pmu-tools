@@ -182,14 +182,19 @@ class Output:
             if desc:
                 print >>self.logf, "\t" + desc
 
-    def p(self, area, name, l, timestamp, remark, desc):
+    def p(self, area, name, l, timestamp, remark, desc, title):
         fmtnum = lambda l: "%5s%%" % ("%2.2f" % (100.0 * l))
 
         if timestamp:
             sep = " "
             if self.csv:
                 sep = self.csv
-            print >>self.logf,"%6.9f%s" % (timestamp, sep),
+            self.logf.write("%6.9f%s" % (timestamp, sep))
+        if title:
+            if self.csv:
+                self.logf.write(title + self.csv)
+            else:
+                self.logf.write("%-5s" % (title))
         if check_ratio(l):
 	    self.s(area, name, fmtnum(l), remark, desc)
 	else:
@@ -393,13 +398,19 @@ def print_account(ad):
         for e in a.errors:
             print_not(a, a.errors[e], e, j)
 
+def is_event(l, n):
+    if len(l) <= n:
+        return False
+    return re.match(r"(r[0-9a-f]+|cycles|instructions|ref-cycles)", l[n])
+
 def execute(events, runner, out):
     account = defaultdict(Stat)
     inf, prun = setup_perf(events, runner.evstr)
-    res = []
-    rev = []
+    res = defaultdict(list)
+    rev = defaultdict(list)
     prev_interval = 0.0
     interval = None
+    title = ""
     while True:
         try:
             l = inf.readline()
@@ -417,32 +428,46 @@ def execute(events, runner, out):
                 l = m.group(2)
                 if interval != prev_interval:
                     if res:
-                        runner.print_res(res, rev, out, prev_interval)
-                        res = []
-                        rev = []
+                        for j in res:
+                            runner.print_res(res[j], rev[j], out, prev_interval, j)
+                        res = defaultdict(list)
+                        rev = defaultdict(list)
                     prev_interval = interval
-        if l.find(",") < 0:
+        n = l.split(",")
+        # timestamp is already removed
+        # -a --per-socket socket,numcpus,count,event,...
+        # -a --per-core core,numcpus,count,event,...
+        # -a -A cpu,count,event,...
+        # count,event,...
+        if is_event(n, 1):
+            title, count, event = "", n[0], n[1]
+        elif is_event(n, 3):
+            title, count, event = n[0], n[2], n[3]
+        elif is_event(n, 2):
+            title, count, event = n[0], n[1], n[2]
+        else:
             print "unparseable perf output"
-            print l,
+            sys.stdout.write(l)
             continue
-        count, event = l.split(",", 1) 
         event = event.rstrip()
-        if re.match(r"[0-9]+,", l):
+        if re.match(r"[0-9]+", count):
             val = float(count)
         elif count.startswith("<"):
             account[event].errors[count.replace("<","").replace(">","")] += 1
             val = 0
         else:
-            print "unparseable perf output"
-            print l,
+            print "unparseable perf count"
+            sys.stdout.write(l)
             continue
         account[event].total += 1
-        res.append(val)
-        rev.append(event)
+        res[title].append(val)
+        rev[title].append(event)
     inf.close()
-    prun.wait()
-    runner.print_res(res, rev, out, interval)
+    ret = prun.wait()
+    for j in res:
+        runner.print_res(res[j], rev[j], out, interval, j)
     print_account(account)
+    return ret
 
 def ev_append(ev, level, obj):
     if not (ev, level) in obj.evlevels:
@@ -589,7 +614,7 @@ class Runner:
         if curobj:
             self.add(curobj, curev, curlev)
 
-    def print_res(self, res, rev, out, timestamp):
+    def print_res(self, res, rev, out, timestamp, title=""):
         if len(res) == 0:
             print "Nothing measured?"
             return
@@ -603,8 +628,9 @@ class Runner:
                         val = 0.0
                     out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
                           obj.name, val, timestamp,
-                          "below threshold" if not obj.thresh else "",
-                          obj.desc[1:].replace("\n","\n\t"))
+                          "below" if not obj.thresh else "above",
+                          obj.desc[1:].replace("\n","\n\t"),
+                          title)
                 elif not print_all:
                     obj.thresh = 0 # hide children too
             else:
