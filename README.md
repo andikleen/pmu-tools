@@ -104,7 +104,7 @@ A more gentle introduction is in [andi's blog](http://halobates.de/blog/p/262)
 toplev.py only supports counting, that is it cannot tell you where in
 the program the problem occurred, just what happened.
 
-Requires an Intel Sandy, Ivy Bridge, Haswell CPU. 
+Requires an Intel Sandy Bridge, Ivy Bridge, Haswell CPU (Core 2rd, 3rd, 4th generation)
 
 It works best on Ivy Bridge currently.  By default the simple high level model
 is used. The detailed model is selected with -d, and the max level
