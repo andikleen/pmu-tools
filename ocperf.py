@@ -433,10 +433,8 @@ def find_emap():
                     emap = i[1](t, cpu.model)
                     return emap
         except IOError:
-            print "Cannot read %s" % (t,)
-            sys.exit(1)
-    print "Unknown CPU"
-    sys.exit(1)
+            return None
+    return None
 
 def process_events(event, print_only):
     overflow = None
@@ -579,6 +577,8 @@ def perf_cmd(cmd):
 
 if __name__ == '__main__':
     emap = find_emap()
+    if not emap:
+        sys.exit("Do not recognize CPU or cannot find CPU map file")
     msr = MSR()
     cmd = process_args()
     perf_cmd(cmd)
