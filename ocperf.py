@@ -281,7 +281,7 @@ class Emap:
                 if val & flag:
                     e.newextra += ",%s=%d" % (name, (val & flag) >> ffs(flag), )
 
-    def getevent_worker(self, e):
+    def getevent(self, e):
         e = e.lower()
         extra = ""
         edelim = ""
@@ -306,12 +306,6 @@ class Emap:
         elif e.startswith("offcore") and (e + "_0") in self.events:
             return self.getevent(e + "_0" + edelim + extra)
         return None
-
-    def getevent(self, e):
-        ev = self.getevent_worker(e)
-        if ev == None:
-            return None
-        return ev
 
     def update_event(self, e, ev):
         if e not in self.pevents:
