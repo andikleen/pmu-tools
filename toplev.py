@@ -167,11 +167,12 @@ class Output:
     def __init__(self, logfile, csv):
         self.csv = csv
         if logfile:
-            self.logf = open(logfile, "w")
-            self.terminal = False
+            try:
+                self.logf = open(logfile, "w")
+            except IOError:
+                sys.exit("Cannot open " + logfile)
         else:
             self.logf = sys.stderr
-            self.terminal = self.logf.isatty()
 
     def s(self, area, hdr, s, remark="", desc=""):
         if self.csv:
@@ -203,15 +204,6 @@ class Output:
 	    self.s(area, name, fmtnum(l), remark, desc)
 	else:
 	    self.s(area, name, fmtnum(0), "mismeasured", "")
-
-    def bold(self, s):
-        if (not self.terminal) or self.csv:
-            return s
-        return '\033[1m' + s + '\033[0m'
-
-    def warning(self, s):
-        if not self.csv:
-            print >>sys.stderr, self.bold("warning:") + " " + s
 
 known_cpus = (
     ("snb", (42, )),
@@ -643,7 +635,7 @@ class Runner:
                 elif not print_all:
                     obj.thresh = 0 # hide children too
             else:
-                out.warning("%s not measured" % (obj.__class__.__name__,))
+                print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
 
 def sysctl(name):
     try:
