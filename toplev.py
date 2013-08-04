@@ -164,9 +164,10 @@ def check_ratio(l):
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
 class Output:
-    "Generate output human readable or as CSV."
-    def __init__(self, logfile, csv):
-        self.csv = csv
+    """Generate output human readable."""
+    def __init__(self, logfile):
+        self.csv = False
+        self.sep = " "
         if logfile:
             try:
                 self.logf = open(logfile, "w")
@@ -176,26 +177,17 @@ class Output:
             self.logf = sys.stderr
 
     def s(self, area, hdr, s, remark="", desc=""):
-        if self.csv:
-            remark = self.csv + remark
-            desc = self.csv + desc
-            desc = re.sub(r"\s+", " ", desc)
-            print >>self.logf,"%s%s%s%s%s" % (hdr, self.csv, s.strip(), remark, desc)
-        else:
-            if area:
-                hdr = "%-7s %s" % (area, hdr)
-            print >>self.logf, "%-42s\t%s %s" % (hdr + ":", s, remark)
-            if desc:
-                print >>self.logf, "\t" + desc
+        if area:
+            hdr = "%-7s %s" % (area, hdr)
+        print >>self.logf, "%-42s\t%s %s" % (hdr + ":", s, remark)
+        if desc:
+            print >>self.logf, "\t" + desc
 
     def p(self, area, name, l, timestamp, remark, desc, title):
         fmtnum = lambda l: "%5s%%" % ("%2.2f" % (100.0 * l))
 
         if timestamp:
-            sep = " "
-            if self.csv:
-                sep = self.csv
-            self.logf.write("%6.9f%s" % (timestamp, sep))
+            self.logf.write("%6.9f%s" % (timestamp, self.sep))
         if title:
             if self.csv:
                 self.logf.write(title + self.csv)
@@ -205,6 +197,18 @@ class Output:
 	    self.s(area, name, fmtnum(l), remark, desc)
 	else:
 	    self.s(area, name, fmtnum(0), "mismeasured", "")
+
+class OutputCSV(Output):
+    def __init__(self, logfile, csv):
+        Output.__init__(self, logfile)
+        self.csv = csv
+        self.sep = self.csv
+
+    def s(self, area, hdr, s, remark="", desc=""):
+        remark = self.csv + remark
+        desc = self.csv + desc
+        desc = re.sub(r"\s+", " ", desc)
+        print >>self.logf,"%s%s%s%s%s" % (hdr, self.csv, s.strip(), remark, desc)
 
 known_cpus = (
     ("snb", (42, )),
@@ -679,6 +683,9 @@ else:
     ev = simple_ratios.Setup(runner)
 
 runner.collect()
-out = Output(logfile, csv_mode)
+if csv_mode:
+    out = OutputCSV(logfile, csv_mode)
+else:
+    out = Output(logfile)
 runner.schedule(out)
 sys.exit(execute(runner.evnum, runner, out))
