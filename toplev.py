@@ -43,7 +43,7 @@ measure whole system for X seconds
 measure pid PID
 
 -o set output file
--v print everything
+-v print all results, even if below threshold
 -d use detailed model if available
 -lLEVEL only use events upto max level (max 4)
 -x, CSV mode with separator ,
@@ -57,9 +57,10 @@ After -- perf arguments conflicting with toplevel can be used.
 
 Some caveats:
 The lower levels of the measurement tree are less reliable
-than the higher levels.  They also rely on counter multi-plexing
-and cannot use groups, which can cause larger measurement errors
-with non steady state workloads.
+than the higher levels.  They also rely on counter multi-plexing,
+and can not run each equation in a single group, which can cause larger
+measurement errors with non steady state workloads.
+
 (If you don't understand this terminology; it means measurements
 are much less accurate and it works best with programs that primarily
 do the same thing over and over)
