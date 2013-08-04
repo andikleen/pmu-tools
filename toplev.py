@@ -138,6 +138,8 @@ while first < len(sys.argv):
         print_group = True
     elif sys.argv[first].startswith("-l"):
         max_level = int(sys.argv[first][2:])
+        if max_level > 1:
+            detailed_model = True
     elif sys.argv[first].startswith("-x"):
         csv_mode = sys.argv[first][2:]
         print_all = True
