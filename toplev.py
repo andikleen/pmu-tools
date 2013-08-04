@@ -215,8 +215,6 @@ known_cpus = (
 )
 
 class CPU:
-    counters = 0
-
     # overrides for easy regression tests
     def force_cpu(self):
         force = os.getenv("FORCECPU")
@@ -241,6 +239,7 @@ class CPU:
         self.threads = 0 
         self.cpu = None
         self.ht = False
+        self.counters = 0
         forced_cpu = self.force_cpu()
         self.force_counters()
         cores = {}
