@@ -53,6 +53,8 @@ measure pid PID
 -g  Print group assignments
 
 Other perf arguments allowed (see the perf documentation)
+All toplev arguments must come before perf arguments.
+toplev single letter arguments cannot be combined.
 After -- perf arguments conflicting with toplevel can be used.
 
 Some caveats:
