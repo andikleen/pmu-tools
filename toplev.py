@@ -18,15 +18,38 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, types, platform, pty, subprocess
-import exceptions
+import exceptions, argparse
 from collections import defaultdict, Counter
 #sys.path.append("../pmu-tools")
 import ocperf
 
 ingroup_events = frozenset(["cycles", "instructions", "ref-cycles"])
 
-def usage():
-    print >>sys.stderr, """
+def works(x):
+    return os.system(x + " >/dev/null 2>/dev/null") == 0
+
+class PerfFeatures:
+    "Adapt to the quirks of various perf versions."
+    def __init__(self):
+        self.logfd_supported = works("perf stat --log-fd 3 3>/dev/null true")
+        if not self.logfd_supported:
+	    print >>sys.stderr, "perf binary is too old. please upgrade"
+	    sys.exit(1)
+
+    def event_group(self, evlist):
+        need_counters = set(evlist) - add_filter(ingroup_events)
+	e = ",".join(evlist)
+        if 1 < len(need_counters) <= cpu.counters:
+            e = "{%s}" % (e,)
+        return e
+ 
+feat = PerfFeatures()
+emap = ocperf.find_emap()
+if not emap:
+    sys.exit("Unknown CPU or CPU event map not found.")
+
+p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
+description='''
 Do cycle decomposition on a workload: estimate on which part of the
 CPU pipeline it bottlenecks. The bottlenecks are expressed as a tree
 with different levels (max 4).
@@ -34,30 +57,22 @@ with different levels (max 4).
 Requires an Intel Sandy, Ivy Bridge, Haswell CPU.
 It works best on Ivy Bridge currently.
 
-Usage:
-./toplev.py [-lX] [-v] [-d] [-o logfile] program
-measure program
-./toplev.py [-lX] [-v] [-d] [-o logfile] -a sleep X
+Examples:
+
+./toplev.py -l2 program
+measure program in level 2
+
+./toplev.py -a sleep X
 measure whole system for X seconds
-./toplev.py [-lX] [-v] [-d] [-o logfile] -p PID
-measure pid PID
 
--o set output file
--v print all results, even if below threshold
--d use detailed model if available
--lLEVEL only use events upto max level (max 4)
--x, CSV mode with separator ,
--Inum  Enable interval mode, printing output every num ms
---kernel Measure kernel code only
---user   Measure user code only
--g  Print group assignments
-
+./toplev.py -o logfile.csv -x, -p PID
+measure pid PID, outputting in CSV format
+''', epilog='''
 Other perf arguments allowed (see the perf documentation)
-All toplev arguments must come before perf arguments.
-toplev single letter arguments cannot be combined.
 After -- perf arguments conflicting with toplevel can be used.
 
 Some caveats:
+
 The lower levels of the measurement tree are less reliable
 than the higher levels.  They also rely on counter multi-plexing,
 and can not run each equation in a single group, which can cause larger
@@ -73,90 +88,41 @@ level 1 or running without -d is generally the most reliable.
 
 One of the events (even used by level 1) requires a recent enough
 kernel that understands its counter constraints.  3.10+ is safe.
-"""
-    sys.exit(1)
+''',
+formatter_class=argparse.RawDescriptionHelpFormatter)
+p.add_argument('--verbose', '-v', help='Print all results even when below threshold',
+               action='store_true')
+p.add_argument('--force', help='Force potentially broken configurations', 
+               action='store_true')
+p.add_argument('--kernel', help='Only measure kernel code', action='store_true')
+p.add_argument('--user', help='Only measure user code', action='store_true')
+p.add_argument('--print-group', '-g', help='Print event group assignments',
+               action='store_true')
+p.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
+p.add_argument('--interval', '-I', help='Enable interval mode with ms interval',
+               type=int)
+p.add_argument('--output', '-o', help='Set output file', default=sys.stderr,
+               type=argparse.FileType('w'))
+p.add_argument('--level', '-l', help='Measure upto level N (max 5)',
+               type=int)
+p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
+args, rest = p.parse_known_args()
 
-def works(x):
-    return os.system(x + " >/dev/null 2>/dev/null") == 0
-
-class PerfFeatures:
-    "Adapt to the quirks of various perf versions."
-    group_support = False
-    def __init__(self):
-        self.output_supported = works("perf stat --output /dev/null true")
-        self.logfd_supported = works("perf stat --log-fd 3 3>/dev/null true")
-        # some broken perf versions log on stdin
-        if not self.output_supported and not self.logfd_supported:
-	    print >>sys.stderr, "perf binary is too old. please upgrade"
-	    sys.exit(1)
-        if self.output_supported:
-            self.group_support = works("perf stat --output /dev/null -e '{cycles,branches}' true")
-
-    def perf_output(self, plog):
-        if self.logfd_supported:
-            return "--log-fd X"
-        elif self.output_supported:
-            return "--output %s " % (plog,)
-
-    def event_group(self, evlist):
-        need_counters = set(evlist) - add_filter(ingroup_events)
-	e = ",".join(evlist)
-        if 1 < len(need_counters) <= cpu.counters and self.group_support:
-            e = "{%s}" % (e,)
-        return e
- 
-feat = PerfFeatures()
-emap = ocperf.find_emap()
-if not emap:
-    sys.exit("Unknown CPU or CPU event map not found.")
-
-logfile = None
-print_all = False
-dont_hide = False
-detailed_model = False
-max_level = 2
-csv_mode = None
-interval_mode = None
-force = False
+print_all = args.verbose or args.csv
+dont_hide = args.verbose
+max_level = args.level if args.level else 1
+detailed_model = (max_level > 1) or args.detailed
+csv_mode = args.csv
+interval_mode = args.interval
+force = args.force
 ring_filter = None
-print_group = False
-
-first = 1
-while first < len(sys.argv):
-    if sys.argv[first] == '-o':
-        first += 1
-        if first >= len(sys.argv):
-            usage()
-        logfile = sys.argv[first]
-    elif sys.argv[first] == '-v':
-        print_all = True
-        dont_hide = True
-    elif sys.argv[first] == '--force':
-        force = True
-    elif sys.argv[first] in ('--kernel', '--user'):
-        ring_filter = sys.argv[first][2:]
-    elif sys.argv[first] == '-d':
-        detailed_model = True
-    elif sys.argv[first] == '-g':
-        print_group = True
-    elif sys.argv[first].startswith("-l"):
-        max_level = int(sys.argv[first][2:])
-        if max_level > 1:
-            detailed_model = True
-    elif sys.argv[first].startswith("-x"):
-        csv_mode = sys.argv[first][2:]
-        print_all = True
-    elif sys.argv[first].startswith("-I"):
-        interval_mode = sys.argv[first]
-    elif sys.argv[first] == '--':
-        first += 1
-        break
-    else:
-        break
-    first += 1
-
-if len(sys.argv) - first <= 0:
-    usage()
+if args.kernel:
+    ring_filter = 'kernel'
+if args.user:
+    ring_filter = 'user'
+if args.user and args.kernel:
+    ring_filter = None
+print_group = args.print_group
 
 MAX_ERROR = 0.05
 
@@ -170,13 +136,7 @@ class Output:
     def __init__(self, logfile):
         self.csv = False
         self.sep = " "
-        if logfile:
-            try:
-                self.logf = open(logfile, "w")
-            except IOError:
-                sys.exit("Cannot open " + logfile)
-        else:
-            self.logf = sys.stderr
+        self.logf = logfile
 
     def s(self, area, hdr, s, remark="", desc=""):
         if area:
@@ -291,34 +251,22 @@ class CPU:
 cpu = CPU()
 
 class PerfRun:
-    def execute(self, logfile, r):
-	# XXX handle non logfd
-	self.logfile = None
-	if "--log-fd" in r:
-	    outp, inp = pty.openpty()
-	    n = r.index("--log-fd")
-	    r[n + 1] = "%d" % (inp)
+    def execute(self, r):
+        outp, inp = pty.openpty()
+        n = r.index("--log-fd")
+        r[n + 1] = "%d" % (inp)
         l = map(lambda x: "'" + x + "'" if x.find("{") >= 0 else x,  r)
-        if "--log-fd" in r:
-            i = l.index('--log-fd')
-            del l[i:i+2]
+        i = l.index('--log-fd')
+        del l[i:i+2]
         print " ".join(l)
 	self.perf = subprocess.Popen(r)
-	if "--log-fd" not in r:
-	     self.perf.wait()
-	     self.perf = None
-	     self.logfile = logfile
-	     return open(logfile, "r")
-        else:
-	     os.close(inp)
-             return os.fdopen(outp, 'r')
+        os.close(inp)
+        return os.fdopen(outp, 'r')
 
     def wait(self):
         ret = 0
 	if self.perf:
 	    ret = self.perf.wait()
-        if self.logfile:	
-            os.remove(self.logfile)
         return ret
 
 filter_to_perf = {
@@ -376,17 +324,15 @@ def print_header(work, evlist):
     pwrap(" ".join(names) + ": " + " ".join(evnames).lower() + 
             " [%d_counters]" % (len(evnames - fixed_set)))
 
-def setup_perf(events, evstr):
-    plog = "plog.%d" % (os.getpid(),)
-    rest = ["-x,", "-e", evstr]
-    if interval_mode:
-        rest += [interval_mode]
-    rest += sys.argv[first:]
+def setup_perf(events, evstr, rest):
     prun = PerfRun()
     perf = os.getenv("PERF")
     if not perf:
         perf = "perf"
-    inf = prun.execute(plog, [perf, "stat"]  + feat.perf_output(plog).split(" ") + rest)
+    add = []
+    if interval_mode:
+        add += ['-I', str(interval_mode)]
+    inf = prun.execute([perf, "stat", "-x,", "--log-fd", "X", "-e", evstr]  + add + rest)
     return inf, prun
 
 class Stat:
@@ -410,9 +356,9 @@ def is_event(l, n):
         return False
     return re.match(r"(r[0-9a-f]+|cycles|instructions|ref-cycles)", l[n])
 
-def execute(events, runner, out):
+def execute(events, runner, out, rest):
     account = defaultdict(Stat)
-    inf, prun = setup_perf(events, runner.evstr)
+    inf, prun = setup_perf(events, runner.evstr, rest)
     res = defaultdict(list)
     rev = defaultdict(list)
     prev_interval = 0.0
@@ -686,8 +632,8 @@ else:
 
 runner.collect()
 if csv_mode:
-    out = OutputCSV(logfile, csv_mode)
+    out = OutputCSV(args.output, csv_mode)
 else:
-    out = Output(logfile)
+    out = Output(args.output)
 runner.schedule(out)
-sys.exit(execute(runner.evnum, runner, out))
+sys.exit(execute(runner.evnum, runner, out, rest))
