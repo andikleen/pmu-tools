@@ -203,7 +203,6 @@ class CPU:
 
     def __init__(self):
         self.model = 0
-        self.threads = 0 
         self.cpu = None
         self.ht = False
         self.counters = 0
@@ -225,8 +224,6 @@ class CPU:
                 elif (n[0], n[1]) == ("model", ":") and ok == 2:
                     ok += 1
                     self.model = int(n[2])
-                elif n[0] == "processor":
-                    self.threads += 1
                 elif (n[0], n[1]) == ("physical", "id"):
                     physid = int(n[3])
                 elif (n[0], n[1]) == ("core", "id"):
@@ -602,6 +599,10 @@ def sysctl(name):
 if sysctl("kernel.nmi_watchdog") != 0:
     print >>sys.stderr,"Please disable nmi watchdog (echo 0 > /proc/sys/kernel/nmi_watchdog)"
     sys.exit(1)
+
+if cpu.ht and max_level > 1:
+    print >>sys.stderr, "WARNING: HT enabled"
+    print >>sys.stderr, "Measuring multiple processes/threads on the same core may not be reliable."
 
 if detailed_model:
     version = map(int, platform.release().split(".")[:2])
