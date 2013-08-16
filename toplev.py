@@ -600,7 +600,7 @@ if sysctl("kernel.nmi_watchdog") != 0:
     print >>sys.stderr,"Please disable nmi watchdog (echo 0 > /proc/sys/kernel/nmi_watchdog)"
     sys.exit(1)
 
-if cpu.ht and max_level > 1:
+if cpu.ht:
     print >>sys.stderr, "WARNING: HT enabled"
     print >>sys.stderr, "Measuring multiple processes/threads on the same core may not be reliable."
 
