@@ -5,38 +5,47 @@ analysis on Intel CPUs on top of Linux perf.
 
 # Current features:
 
-- A wrapper to "perf" that provides a full core event list for 
+## Major tools/libraries
+
+* A wrapper to "perf" that provides a full core event list for 
 common Intel CPUs. This allows to use all the Intel events,
-not just the builtin events of perf.
-- Support for Intel "offcore" events on older systems that
-do not have support for  this in the Intel. Offcore events
-allow to profile the location of a memory access outside the
-CPU's caches. This also implements a workaround for some issues
-with offcore events on Sandy Bridge EP (Intel Xeon E5 first generation)
-This is automatically enabled for the respective events, and also
-available as a standalone program.
-- A "toplev.py" tool to do cycle composition for a workload, that is 
-measure where in the CPU pipe line the bottleneck occurs.
-- A tool to manage and compute uncore events on Intel Xeon E5 2600 series
-(SandyBridge EP) cpus. This can be useful to monitor power management, 
+not just the builtin events of perf. Can be also used
+as a library from other python programs
+* The "toplev.py" tool to do cycle decomposition for a workload. It can 
+measure where in the CPU pipe line the bottleneck of a workload occurs.
+* The "ucevnet" tool to manage and compute uncore performance events on Intel Xeon E5 2600 series (SandyBridge EP). Uncore is the part of the CPU that is not core.  This can be useful to monitor power management, 
 IO bandwidth, memory bandwidth, QPI (interconnect) traffic, cache hit rates
 and other metrics. ucevent automatically generates event descriptions
-for the perf uncore driver and pretty print the output.
-- A variety of tools for plotting and post processing perf stat -I1000 -x, 
+for the perf uncore driver and pretty prints the output. It also supports
+computing higher level metrics derived from multiple events. 
+* A library for self profiling with Linux since Linux 3.3
+Note for self-profiling on older kernels you can use
+[simple-pmu] (http://halobates.de/simple-pmu)
+* Support for Intel "offcore" events on older Linux systems where
+the kernel perf subsystem does not support them natively.
+Offcore events allow to categorize memory accesses that are
+not satisfied by a core's own caches.
+* Workarounds for some issues with offcore events on Sandy Bridge EP 
+(Intel Xeon E5 v1)
+This is automatically enabled for the respective events with ocperf, and also
+available as a standalone program.
+* A variety of tools for plotting and post processing perf stat -I1000 -x, 
 or toplev.py -I1000 -x, interval measurements.
-- A plot tool to plot perf stat -Ixxx -x, or toplev.py -Ixxx -x, output
+
+---
+
+## Experimental/minor tools:
+- An example program for address profiling on Nehalem and later
+Intel CPUs (addr)
 - Some utility programs to access pci space or msrs on
 the command line
 - A utility program to program the PMU directly from user space
 (pmumon.py) for counting. This is mainly useful for testing
 and experimental purposes.
-- A library for self profiling with Linux since Linux 3.3
-Note for self-profiling on older kernels you can use
-[simple-pmu] (http://halobates.de/simple-pmu)
-- An example program for address profiling on Nehalem and later
-Intel CPUs (addr)
 - A program to print the currently running events (event-rmap)
 - Support for analyzing the raw PEBS records with perf.
+
+---
 
 # Usage:
 
@@ -74,6 +83,7 @@ to enable the offcore workaround, change MSRs or change PCI config space respect
 ocperf.py can be also used as a python module to convert or list
 events for the current CPU:
 
+```python
 	import ocperf
 
 	emap = ocperf.find_emap()
@@ -84,6 +94,7 @@ events for the current CPU:
 		print "name:", ev.output()
 		print "raw form:", ev.output(use_raw=True)
 		print "description:, ev.desc
+```
 
 To retrieve data for other CPUs set the EVENTMAP environment variable
 to the csv file of the CPU before calling find\_emap()
@@ -219,6 +230,7 @@ This is very simplified, for a real benchmark you almost certainly
 want some warmup, multiple iterations, possibly context switch
 filtering and some filler code to avoid cache effects.
 
+```C
 	#include "rdpmc.h"
 
 	struct rdpmc_ctx ctx;
@@ -228,6 +240,7 @@ filtering and some filler code to avoid cache effects.
 	start = rdpmc_read(&ctx);
 	... your workload ...
 	end = rdpmc_read(&ctx);
+```
 
 [measure] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/measure.html)
 supports event group profiling.  
