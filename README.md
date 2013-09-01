@@ -1,32 +1,31 @@
 ![pmu-tools] (http://halobates.de/pmu-tools.png)
 
 pmu tools is a collection of tools for profile collection and performance
-analysis on Intel CPUs on top of Linux perf.
+analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index.php/Main_Page). This uses performance counters in the CPU.
 
 # Current features:
 
 ## Major tools/libraries
 
-* A wrapper to "perf" that provides a full core event list for 
-common Intel CPUs. This allows to use all the Intel events,
-not just the builtin events of perf. Can be also used
+* The "ocperf" wrapper to "perf" that provides a full core performance 
+counter event list for common Intel CPUs. This allows to use all the
+Intel events, not just the builtin events of perf. Can be also used
 as a library from other python programs
 * The "toplev.py" tool to do cycle decomposition for a workload. It can 
 measure where in the CPU pipe line the bottleneck of a workload occurs.
 This implements the [TopDown](http://software.intel.com/en-us/articles/how-to-tune-applications-using-a-top-down-characterization-of-microarchitectural-issues)
 methology.
-* The "ucevent" tool to manage and compute uncore performance events on Intel Xeon E5 2600 series (SandyBridge EP). Uncore is the part of the CPU that is not core.  This can be useful to monitor power management, 
-IO bandwidth, memory bandwidth, QPI (interconnect) traffic, cache hit rates
-and other metrics. ucevent automatically generates event descriptions
+* The "ucevent" tool to manage and compute uncore performance events on Intel Xeon E5 2600 series (SandyBridge EP). Uncore is the part of the CPU that is not core.  Supports many metrics for power management, IO, QPI (interconnect), caches, and others.  ucevent automatically generates event descriptions
 for the perf uncore driver and pretty prints the output. It also supports
 computing higher level metrics derived from multiple events. 
-* A library for self profiling with Linux since Linux 3.3
-Note for self-profiling on older kernels you can use
+* A library for self profiling with Linux since Linux 3.3. Self
+profiling is a program monitoring its own execution, either for controlled
+benchmarking or to optimize itself.
+For self-profiling on older kernels you can use
 [simple-pmu] (http://halobates.de/simple-pmu)
 * Support for Intel "offcore" events on older Linux systems where
 the kernel perf subsystem does not support them natively.
-Offcore events allow to categorize memory accesses that are
-not satisfied by a core's own caches.
+Offcore events allow to categorize memory accesses that go outside the core.
 * Workarounds for [some issues](http://software.intel.com/en-us/articles/performance-monitoring-on-intel-xeon-processor-e5-family) with offcore events on Sandy Bridge EP 
 (Intel Xeon E5 v1)
 This is automatically enabled for the respective events with ocperf, and also
