@@ -236,6 +236,7 @@ class Emap:
 
             get = lambda (x): row[index[m[x]]]
             gethex = lambda (x): int(get(x).split(",")[0], 16)
+            getdec = lambda (x): int(get(x), 10)
 
             name = get('name').lower().rstrip()
             code = gethex('code')
@@ -245,7 +246,7 @@ class Emap:
             else:
                 other = gethex('edge') << 18
                 other |= gethex('any') << 21
-                other |= gethex('cmask') << 24
+                other |= getdec('cmask') << 24
                 other |= gethex('invert') << 23
             val = code | (umask << 8) | other
             val &= EVMASK
