@@ -77,11 +77,14 @@ that count types of memory accesses outside the CPU core)
 that does not support offcore events natively, ocperf has to run
 as root and only one such profiling can be active on a machine.
 
-When "-c default" is specified, the default sampling overflow value will be
+When "-c default" is specified for record, the default sampling overflow value will be
 filled in for the sampling period. This option needs to be specified before 
 the events and is not supported for all CPUs. By default perf uses 
 a dynamic sampling period, which can cause varying (and sometimes
 large) overhead. The fixed period minimizes this problem.
+
+If you have trouble with one of the many acronyms in the event
+list descriptions, the [Intel optimization manual](http://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-optimization-manual.html) describes many of them.
 
 ### ocperf API
 
