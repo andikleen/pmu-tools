@@ -193,8 +193,8 @@ and cannot use groups, which can cause larger measurement errors
 with non steady state workloads.
 
 (If you don't understand this terminology; it means measurements
-are much less accurate and it works best with programs that primarily
-do the same thing over and over)
+in higher levels are less accurate and it works best with programs that
+primarily do the same thing over and over)
 
 It's recommended to measure the work load only after
 the startup phase by using interval mode or attaching later.
