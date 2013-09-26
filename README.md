@@ -205,6 +205,13 @@ is useful to skip the startup phase.
 One of the events (even used by level 1) requires a recent enough
 kernel that understands its counter constraints.  3.10+ is safe.
 
+If you are on SandyBridge E/EP which does not have a detailed
+model currently it's possible to force normal SandyBridge
+with "FORCECPU=snb ./toplev.py ..."
+to get higher levels working.  However some of the estimated latencies will be wrong
+and some tree nodes may not work correctly. You have been
+warned.
+
 ## ucevent uncore monitoring
 
 Please see the [ucevent documentation] (http://github.com/andikleen/pmu-tools/tree/master/ucevent/#ucevent-uncore-monitoring)
