@@ -600,19 +600,19 @@ if sysctl("kernel.nmi_watchdog") != 0:
     print >>sys.stderr,"Please disable nmi watchdog (echo 0 > /proc/sys/kernel/nmi_watchdog)"
     sys.exit(1)
 
-if cpu.ht:
-    print >>sys.stderr, "WARNING: HT enabled"
-    print >>sys.stderr, "Measuring multiple processes/threads on the same core may not be reliable."
+if cpu.cpu == None:
+    print >>sys.stderr, "Unsupported CPU model %d" % (cpu.model,)
+    sys.exit(1)
 
 if detailed_model:
     version = map(int, platform.release().split(".")[:2])
     if version[0] < 3 or (version[0] == 3 and version[1] < 10):
         print >>sys.stderr, "Older kernel than 3.10. Events may not be correctly scheduled."
 
-if cpu.cpu == None:
-    print >>sys.stderr, "Unsupported CPU model %d" % (cpu.model,)
-    sys.exit(1)
-    
+if cpu.ht:
+    print >>sys.stderr, "WARNING: HT enabled"
+    print >>sys.stderr, "Measuring multiple processes/threads on the same core may not be reliable."
+   
 runner = Runner(max_level)
 
 if cpu.cpu == "ivb" and detailed_model:
@@ -628,6 +628,8 @@ elif cpu.cpu == "hsw" and detailed_model:
     import hsw_client_ratios
     ev = hsw_client_ratios.Setup(runner)
 else:
+    if detailed_model:
+        print >>sys.stderr, "Sorry, no detailed model for your CPU. Only Level 1 supported."
     import simple_ratios
     ev = simple_ratios.Setup(runner)
 
