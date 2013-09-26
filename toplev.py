@@ -79,7 +79,7 @@ and can not run each equation in a single group, which can cause larger
 measurement errors with non steady state workloads.
 
 (If you don't understand this terminology; it means measurements
-are much less accurate and it works best with programs that primarily
+in higher levels are less accurate and it works best with programs that primarily
 do the same thing over and over)
 
 In this case it's recommended to measure the program only after
