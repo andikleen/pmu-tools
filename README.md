@@ -58,6 +58,10 @@ in the same directory the script was located in.
 
 ## ocperf:
 
+ocperf is a wrapper to "perf" that provides a full core event list for 
+common Intel CPUs. This allows to use all the Intel defined events,
+not just the builtin events of perf. 
+
 A more detailed introduction is in [Andi's blog](http://halobates.de/blog/p/245)
 
 ocperf.py list
@@ -65,22 +69,22 @@ List all the events perf and ocperf supports on the current CPU
 
 	ocperf.py stat -e eventname ... 
 
-	ocperf.py record -e eventname ...
+	ocperf.py record -c default -e eventname ...
 
-	ocperf.py report --stdio
+	ocperf.py report
 
-When a older kernel is used with offcore events,
+When a older kernel is used with offcore events (events
+that count types of memory accesses outside the CPU core)
 that does not support offcore events natively, ocperf has to run
 as root and only one such profiling can be active on a machine.
 
-When -c default is specified, the default sampling overflow value will be
+When "-c default" is specified, the default sampling overflow value will be
 filled in for the sampling period. This option needs to be specified before 
-the events and is not supported for all CPUs.
+the events and is not supported for all CPUs. By default perf uses 
+a dynamic sampling period, which can cause varying (and sometimes
+large) overhead. The fixed period minimizes this problem.
 
-tester provides a simple test suite.
-
-The latego.py, msr.py, pci.py modules can be also used as standalone programs
-to enable the offcore workaround, change MSRs or change PCI config space respectively.
+### ocperf API
 
 ocperf.py can be also used as a python module to convert or list
 events for the current CPU:
@@ -101,6 +105,35 @@ events for the current CPU:
 To retrieve data for other CPUs set the EVENTMAP environment variable
 to the csv file of the CPU before calling find\_emap()
 
+### changing MSRs and PCI config space
+
+The msr.py, pci.py, latego.py can be used as standalone programs
+or python modules to change MSRs, PCI config space or enable/disable
+the [workarounds](http://software.intel.com/en-us/articles/performance-monitoring-on-intel-xeon-processor-e5-family).
+
+For example to set the MSR 0x123 on all CPUs to value 1 use:
+
+	$ sudo ./msr.py 0x123 1
+
+To read MSR 0x123 on CPU 0 
+
+	$ sudo ./msr.py 0x123
+
+To read MSR 0x123 on CPU 3: 
+
+	$ sudo python
+	>>> import msr
+	>>> msr.readmsr(0x123, 3)
+
+To set bit 0 in MSR 0x123 on all CPUs:
+
+	$ sudo python
+	>>> import msr
+	>>> msr.writemsr(0x123, msr.readmsr(0x123) | 1)
+
+(this assumes the MSR has the same value on all CPUs, otherwise iterate the readmsr 
+over the CPUs)
+
 ## toplev.py:
 
 Do cycle decomposition on a workload: estimate on which part of the
@@ -120,6 +153,8 @@ toplev.py only supports counting, that is it cannot tell you where in
 the program the problem occurred, just what happened.
 
 Requires an Intel Sandy Bridge, Ivy Bridge, Haswell CPU (Core 2rd, 3rd, 4th generation)
+On Sandy Bridge E/EP (Xeon E5, Core i7 39xx) only level 1 is supported
+currently.
 
 It works best on Ivy Bridge currently.  By default the simple high level model
 is used. The detailed model is selected with -d, and the max level
@@ -165,6 +200,8 @@ do the same thing over and over)
 It's recommended to measure the work load only after
 the startup phase by using interval mode or attaching later.
 level 1 or running without -d is generally the most reliable.
+If your perf stat is new enough (3.12+) the --initial-delay option
+is useful to skip the startup phase.
 
 One of the events (even used by level 1) requires a recent enough
 kernel that understands its counter constraints.  3.10+ is safe.
