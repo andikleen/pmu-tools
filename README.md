@@ -354,7 +354,7 @@ For bugs please open an issue on https://github.com/andikleen/pmu-tools/issues
 
 # Licenses
 
-ocperf is under GPLv2, self and addr under the modified BSD license.
+ocperf, toplev, ucevent are under GPLv2, self and addr under the modified BSD license.
 
 Andi Kleen
 pmu-tools@halobates.de
