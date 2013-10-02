@@ -185,6 +185,8 @@ def show_filter(f):
 qual_cache = dict()
 
 def get_qualifiers(box):
+    if not box:
+        return set()
     obox = box
     if box in qual_cache:
         return qual_cache[box]
@@ -485,6 +487,8 @@ class PerfRun:
 
 def perf_box(x):
     m = re.match(r"uncore_([^/]+)(_\d+)?/", x)
+    if not m:
+        return None
     return m.group(1)
 
 def available_counters(box):
@@ -505,6 +509,8 @@ def supports_group(evl, nl):
     bnames = defaultdict(list)
     for j, n in zip(evl, nl):
         box = perf_box(j)
+        if not box:
+            continue
         boxes[box].append(j)
         bnames[box].append(n)
     for box in boxes:
