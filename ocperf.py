@@ -56,7 +56,9 @@ cpu_mapping = {
     60: "hsw.csv", 62: "hsw.csv", 70: "hsw.csv", 71: "hsw.csv",  # Haswell
     69: "hsw.csv", 
     28: "bnl.csv", 38: "bnl.csv", 39: "bnl.csv", 53: "bnl.csv", 54: "bnl.csv",
-    62: "ivt.csv"      # ivybridge-ep
+    62: "ivt.csv",     # ivybridge-ep
+    77: "slm.csv",     # avoton
+    55: "slm.csv",     # 22nm Atom
 }
 
 fixed_counters = {
@@ -414,7 +416,8 @@ readers = (
     ("nhm", EmapNHM),
     ("wsm", EmapNHM),
     ("bnl", EmapBNL),
-    ("ivt", EmapJSON)
+    ("ivt", EmapJSON),
+    ("slm", EmapJSON)
 )
 
 def find_emap():

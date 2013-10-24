@@ -33,6 +33,7 @@ checklist nhm-ex 563
 checklist nhm-ep 561
 checklist bnl 276
 checklist ivt 447
+checklist slm 222
 
 set -e
 ./ocperf.py stat -e uops_issued.cycles_all_threads /bin/true
@@ -71,6 +72,7 @@ checkmsr2 nhm-ex offcore_response_0.data_ifetch.any_location "msr 1a6 = ff77"
 # xxx add hsw
 checkmsr2 ivt offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
 checkmsr2 snb-ep offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
+checkmsr2 slm offcore_response.pf_llc_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0080"
 
 # parser checks
 checkp() 
