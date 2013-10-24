@@ -274,6 +274,8 @@ class Emap:
                     e.msr = msrnum
             if 'overflow' in m:
                 e.overflow = get('overflow')
+                if e.overflow == "0":
+                    print >>sys.stderr, "Warning: %s has no overflow value" % (name,)
             else:
                 e.overflow = None
             self.events[name] = e
