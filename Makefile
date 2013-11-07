@@ -1,5 +1,8 @@
 
-all: ivb-model.svg simple-model.svg
+all:
+	@echo "Nothing to compile here."
+	
+graphs: ivb-model.svg simple-model.svg
 
 ivb.dot: gen-dot.py ivb_client_ratios.py
 	./gen-dot.py > $@
