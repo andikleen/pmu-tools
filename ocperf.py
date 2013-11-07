@@ -12,6 +12,11 @@
 # more details.
 #
 # wrapper for perf for using named events and events with additional MSRs.
+# syntax is like perf, except Intel events are listed and can be specified
+# 
+# or library for other python program to convert intel event names to
+# perf/raw format
+#
 # Features:
 # - map intel events to raw perf events
 # - enable disable workarounds for specific events
@@ -19,6 +24,7 @@
 # For the later must run as root and only as a single instance per machine 
 # Normal events (mainly not OFFCORE) can be handled unprivileged 
 # For events you can specify additional intel names from the list
+#
 # env variables:
 # PERF=... perf binary to use (default "perf")
 # EVENTMAP=... eventmap file (default: location of script based on CPU)
