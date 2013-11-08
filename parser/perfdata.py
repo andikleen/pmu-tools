@@ -58,10 +58,17 @@ def event(sample_type, read_format):
                    Struct("branch_stack",
                           UNInt64("nr"),
                           Array(lambda ctx: ctx.nr,
-                                Struct(None,
+                                Struct("branch",
                                        UNInt64("from"),
                                        UNInt64("to"),
-                                       UNInt64("flags"))))), # XXX split
+                                       # Little-Endian!
+                                       BitStruct("flags",
+                                                 Padding(4),
+                                                 Flag("abort"),
+                                                 Flag("in_tx"),
+                                                 Flag("predicted"),
+                                                 Flag("mispred"),
+                                                 Padding(64 - 1*8)))))),
                 # both need parameters passed in
                 # sample reg
                 # stack user
