@@ -19,7 +19,7 @@ def throttle(name):
                   UNInt64("id"),
                   UNInt64("stream_id"))
 
-def event(sample_type, read_format):
+def event(sample_type, read_format, sample_regs_user):
     return Embedded(
          Struct("event",
                 If(lambda ctx: sample_type.identifier,
@@ -69,9 +69,19 @@ def event(sample_type, read_format):
                                                  Flag("predicted"),
                                                  Flag("mispred"),
                                                  Padding(64 - 1*8)))))),
-                # both need parameters passed in
-                # sample reg
-                # stack user
+                If(lambda ctx: sample_type.regs_user,
+                   Struct("regs_user",
+                          Enum(UNInt64("abi"),
+                               NONE = 0,
+                               ABI_32 = 1,
+                               ABI_64 = 2),
+                          Array(lambda ctx: sample_regs_user,
+                                UNInt64("reg")))),
+                If(lambda ctx: sample_type.stack_user,
+                   Struct("stack_user", 
+                          UNInt64("size"),
+                          Bytes("data", lambda ctx: ctx.size),
+                          UNInt64("dyn_size"))),
                 If(lambda ctx: sample_type.weight,
                    UNInt64("weight")),
                 If(lambda ctx: sample_type.data_src,
@@ -81,7 +91,7 @@ def event(sample_type, read_format):
 
 # XXX need to make OnDemand for large files
 
-def perf_event(sample_type, read_format):         
+def perf_event(sample_type, read_format, sample_regs_user):         
     return Struct("perf_event",
                     Anchor("start"),
                     Enum(UNInt32("type"),
@@ -118,14 +128,15 @@ def perf_event(sample_type, read_format):
                               "UNTHROTTLE": throttle("unthottle"),
                               "FORK": fork_exit("fork"),
                               #"READ": read_format(read_format),
-                              "SAMPLE": event(sample_type, read_format),
+                              "SAMPLE": event(sample_type, read_format, 
+                                              sample_regs_user),
                            }),
 			Anchor("end"),
 			Padding(lambda ctx: ctx.size - (ctx.end - ctx.start))
                     )
 
-def perf_event_seq(sample_type, read_format):
-    return GreedyRange(perf_event(sample_type, read_format))
+def perf_event_seq(sample_type, read_format, sample_regs_user):
+    return GreedyRange(perf_event(sample_type, read_format, sample_regs_user))
 
 
 perf_event_attr_sizes = (64, 72, 80, 96)
@@ -266,7 +277,7 @@ def get_events(h):
     # XXX
     ev0 = h.attrs.perf_file_attr.perf_event_attr[0]
     assert ev0.size in perf_event_attr_sizes
-    return perf_event_seq(ev0.sample_type, ev0.read_format).parse(data)
+    return perf_event_seq(ev0.sample_type, ev0.read_format, ev0.sample_regs_user).parse(data)
 
 if __name__ == '__main__':
     import sys
