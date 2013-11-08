@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # A description of the perf.data file format in "construct"
 #
+# Only works on Little-Endian with LE input files. Sorry.
+#
 from construct import *
 
 def fork_exit(name): 
@@ -20,12 +22,14 @@ def throttle(name):
 def event(sample_type, read_format):
     return Embedded(
          Struct("event",
+                If(lambda ctx: sample_type.identifier,
+                   UNInt64("id")),
                 If(lambda ctx: sample_type.ip,
                    UNInt64("ip")),
                 If(lambda ctx: sample_type.tid,
                    Struct("tid",
-                          SNInt64("pid"),
-                          SNInt64("tid"))),
+                          SNInt32("pid"),
+                          SNInt32("tid"))),
                 If(lambda ctx: sample_type.time,
                    UNInt64("time")),
                 If(lambda ctx: sample_type.addr,
@@ -131,30 +135,38 @@ perf_event_attr = Struct("perf_event_attr",
                          UNInt32("size"),
                          UNInt64("config"),
                          UNInt64("sample_period_freq"),
-                         BitStruct("read_format",
-                                            Flag("total_time_enabled"),
-                                            Flag("total_time_running"),
-                                            Flag("id"),
-                                            Flag("group"),
-                                            Padding(64 - 4)),
+                         # must be in LE order, original is a u64
+                         # each byte is reversed
                          BitStruct("sample_type",
-                                            Flag("ip"),
-                                            Flag("tid"),
-                                            Flag("time"),
-                                            Flag("addr"),
-                                            Flag("read"),
-                                            Flag("callchain"),
-                                            Flag("id"),
-                                            Flag("cpu"),
-                                            Flag("period"),
-                                            Flag("stream_id"),
-                                            Flag("raw"),
-                                            Flag("branch_stack"),
-                                            Flag("regs_user"),
-                                            Flag("stack_user"),
-                                            Flag("weight"),
-                                            Flag("data_src"),
-                                            Padding(64 - 16)),
+                                   Flag("cpu"),
+                                   Flag("id"),
+                                   Flag("callchain"),
+                                   Flag("read"),
+                                   Flag("addr"),
+                                   Flag("time"),
+                                   Flag("tid"),
+                                   Flag("ip"),
+
+                                   Flag("data_src"),
+                                   Flag("weight"),
+                                   Flag("stack_user"),
+                                   Flag("regs_user"),
+                                   Flag("branch_stack"),
+                                   Flag("raw"),
+                                   Flag("stream_id"),
+                                   Flag("period"),
+                                   
+                                   Padding(7),
+                                   Flag("identifier"),
+
+                                   Padding(64 - 3*8)),
+                         BitStruct("read_format",
+                                   Padding(4),
+                                   Flag("group"),
+                                   Flag("id"),
+                                   Flag("total_time_running"),
+                                   Flag("total_time_enabled"),
+                                   Padding(64 - 1*8)),
                          BitStruct(None,
                                             Flag("disabled"),
                                             Flag("inherit"),
