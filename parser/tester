@@ -1,0 +1,29 @@
+#!/bin/bash
+# test different variants of the perf format
+
+set -e
+set -x
+
+CMD=${1:-bash -c /bin/true}
+
+check() { 
+	echo -- testing "$@"
+	perf record -c 1000 "$@" -- $CMD
+	python perfdata.py perf.data > /dev/null
+
+	# XXX check more fields
+	AS=$(python perfdata.py perf.data | grep -c SAMPLE)
+	BS=$(perf report -D | grep -c "PERF_RECORD_SAMPLE")
+	[ $AS == $BS ] 
+}
+
+check
+check -g
+check -b -g
+check -P
+check -T
+check -e cycles,branches,branch-misses
+check --group -e cycles,branches,branch-misses
+
+# new kernel
+check -g dwarf
