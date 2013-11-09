@@ -8,6 +8,7 @@ CMD=${1:-bash -c /bin/true}
 
 check() { 
 	echo -- testing "$@"
+	rm -f perf.data
 	perf record -c 1000 "$@" -- $CMD
 	python perfdata.py perf.data > /dev/null
 
@@ -22,6 +23,7 @@ check -g
 check -b -g
 check -P
 check -T
+check -d
 check -e cycles,branches,branch-misses
 check --group -e cycles,branches,branch-misses
 
