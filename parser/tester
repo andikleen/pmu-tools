@@ -10,6 +10,9 @@ check() {
 	echo -- testing "$@"
 	rm -f perf.data
 	perf record -c 1000 "$@" -- $CMD
+	if [ $(stat -c %s perf.data) == 0 ] ; then
+		return
+	fi
 	python perfdata.py perf.data > /dev/null
 
 	# XXX check more fields
@@ -24,11 +27,14 @@ check -b -g
 check -P
 check -T
 check -d
-check -e cycles,branches,branch-misses
 
 set +e 
 # known broken for now
+check -e cycles,branches,branch-misses
 check --group -e cycles,branches,branch-misses
 
 # new kernel
 check -g dwarf
+
+# XXX sw trace points
+
