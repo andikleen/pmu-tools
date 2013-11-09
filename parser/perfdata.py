@@ -142,7 +142,7 @@ def perf_event_seq(sample_type, read_format, sample_regs_user):
 perf_event_attr_sizes = (64, 72, 80, 96)
 
 perf_event_attr = Struct("perf_event_attr",
-                         Anchor("start"),
+                         Anchor("start"),                         
                          Enum(UNInt32("type"),
                               HARDWARE = 0,
                               SOFTWARE = 1,
@@ -225,11 +225,24 @@ perf_event_attr = Struct("perf_event_attr",
                          Value("perf_event_attr_size", lambda ctx: ctx.end - ctx.start),
                          Padding(lambda ctx: ctx.size - ctx.perf_event_attr_size))
 
-# assumes all attributes are the same size
+def perf_file_section(name, target):
+    return Struct(name,
+                  UNInt64("offset"),
+                  UNInt64("size"),
+                  Pointer(lambda ctx: ctx.offset, target))
+
+id_array = Array(lambda ctx: ctx.size / 8,
+                 UNInt64("id"))
+
+def num_attr(ctx):
+    print "size", ctx._.size, "attr_size", ctx._._.attr_size
+    return ctx._.size / ctx._._.attr_size
 
 perf_file_attr = Struct("perf_file_attr",
-                        Peek(Embedded(Struct(None, UNInt32("type"), UNInt32("size")))),
-                        Array(lambda ctx: ctx._.size / ctx.size, perf_event_attr))
+                        Array(lambda ctx: num_attr(ctx),
+                              Struct("f_attr",
+                                     perf_event_attr,
+                                     perf_file_section("ids", id_array))))
 
 perf_event_types = Struct("perf_file_attr",
                           Anchor("here"),
@@ -237,45 +250,48 @@ perf_event_types = Struct("perf_file_attr",
 
 perf_data = OnDemand(Bytes("perf_data", lambda ctx: ctx.size))
                              
-def perf_file_section(name, target):
-    return Struct(name,
-                  UNInt64("offset"),
-                  UNInt64("size"),
-                  Pointer(lambda ctx: ctx.offset, target))
 
 perf_file = Struct("perf_file_header",
-                   UNInt64("magic"), # XXX
+                   # no support for version 1
+                   Magic("PERFILE2"),
                    UNInt64("size"),
                    UNInt64("attr_size"),
                    perf_file_section("attrs", perf_file_attr),
                    perf_file_section("data", perf_data),
                    perf_file_section("event_types", perf_event_types),
+                   # XXX decoders for all of these
+                   # little endian
                    BitStruct("adds_features",
-                             Flag("tracing_data"),
-                             Flag("build_id"),
-                             Flag("hostname"),
-                             Flag("osrelease"),
-                             Flag("version"),
-                             Flag("arch"),
                              Flag("nrcpus"),
-                             Flag("cpudesc"),
-                             Flag("cpuid"),
-                             Flag("total_mem"),
-                             Flag("cmdline"),
-                             Flag("event_desc"),
-                             Flag("cpu_topology"),
-                             Flag("numa_topology"),
+                             Flag("arch"),
+                             Flag("version"),
+                             Flag("osrelease"),
+                             Flag("hostname"),
+                             Flag("build_id"),
+                             Flag("tracing_data"),
+                             Flag("reserved"),
+
                              Flag("branch_stack"),
-                             Flag("pmu_mappings"),
+                             Flag("numa_topology"),
+                             Flag("cpu_topology"),
+                             Flag("event_desc"),
+                             Flag("cmdline"),
+                             Flag("total_mem"),
+                             Flag("cpuid"),
+                             Flag("cpudesc"),
+
+                             Padding(6),
                              Flag("group_desc"),
-                             Padding(64 - 17)),
+                             Flag("pmu_mappings"),
+
+                             Padding(64 - 3*8)),
                    Padding(3 * 8))
 
 def get_events(h):
     data = h.data.perf_data.value
     # assumes event 0 attributes applies to all samples?
-    # XXX
-    ev0 = h.attrs.perf_file_attr.perf_event_attr[0]
+    # XXX use ids
+    ev0 = h.attrs.perf_file_attr.f_attr[0].perf_event_attr
     assert ev0.size in perf_event_attr_sizes
     return perf_event_seq(ev0.sample_type, ev0.read_format, ev0.sample_regs_user).parse(data)
 
