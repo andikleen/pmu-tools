@@ -244,10 +244,16 @@ perf_event_attr = Struct("perf_event_attr",
                          Value("perf_event_attr_size", lambda ctx: ctx.end - ctx.start),
                          Padding(lambda ctx: ctx.size - ctx.perf_event_attr_size))
 
+def pad():
+    return Padding(lambda ctx: ctx.len - (ctx.offset - ctx.start))
+
 def str_with_len(name):
     return Struct(name,
                   UNInt32("len"),
-                  CString(name))
+                  Anchor("start"),
+                  CString(name),
+                  Anchor("offset"),
+                  pad())
 
 def feature_string(name):
     return If(lambda ctx: ctx._[name],
@@ -256,30 +262,22 @@ def feature_string(name):
                                        UNInt32("len"),
                                        CString(name))))
 
-def pad():
-    return Padding(lambda ctx: ctx.len - (ctx.offset - ctx.start))
-
 def string_list(name, extra = Pass):
-    return Struct(name,
-                  UNInt32("nr"),
-                  Array(lambda ctx: ctx.nr,
-                        Struct(name,
+    return PrefixedArray(Struct(name,
                                UNInt32("len"),
                                Anchor("start"),
                                CString(name),
                                Anchor("offset"),
                                pad(),
-                               extra)))
+                               extra), UNInt32("nr"))
 
 def numa_topology():
-    return Struct("numa_topology",
-                  UNInt32("nr"),
-                  Array(lambda ctx: ctx.nr,
-                        Struct("node",
-                               UNInt32("nodenr"),
-                               UNInt64("mem_total"),
-                               UNInt64("mem_free"),
-                               str_with_len("cpus"))))
+    return PrefixedArray(Struct("node",
+                                UNInt32("nodenr"),
+                                UNInt64("mem_total"),
+                                UNInt64("mem_free"),
+                                str_with_len("cpus")),
+                         UNInt32("nr"))
 
 def group_desc():
     return string_list("group_desc",
@@ -294,13 +292,14 @@ def perf_features():
                                        Pass)),
                   If(lambda ctx: ctx._.build_id,
                      perf_file_section("build_id",
-                                       Pass)),
-                  # FIXME
-                  # Struct("build_id",
-                  #        perf_event_header(),
-                  #        UNInt32("pid"),
-                  #        Bytes("build_id", 20),
-                  #        CString("filename")))),
+                                       # FIXME array
+                                       Struct("build_id",
+                                              UNInt32("type"),
+                                              UNInt16("misc"),
+                                              UNInt16("size"),
+                                              SNInt32("pid"),
+                                              Bytes("build_id", 20),
+                                              CString("filename")))),
                   feature_string("hostname"),
                   feature_string("osrelease"),
                   feature_string("version"),
