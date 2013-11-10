@@ -303,6 +303,12 @@ def section_adapter(name, target):
                                                   lambda ctx: ctx.size),
                                            target))
 
+def pmu_mappings():
+    return PrefixedArray(Struct("pmu",
+                                UNInt32("type"),
+                                str_with_len("name")),
+                         UNInt32("nr"))     
+
 def perf_features():
     return Struct("features",
                   # XXX
@@ -345,10 +351,9 @@ def perf_features():
                   If(lambda ctx: ctx._.branch_stack,
                      perf_file_section("branch_stack",
                                        Pass)),
-                  # XXX
                   If(lambda ctx: ctx._.pmu_mappings,
                      perf_file_section("pmu_mappings",
-                                       Pass)),
+                                       pmu_mappings())),
                   If(lambda ctx: ctx._.group_desc,
                      perf_file_section("group_desc",
                                        group_desc())))
@@ -414,6 +419,7 @@ perf_file = Struct("perf_file_header",
                            perf_features()),
                    Padding(3 * 8))
 
+# XXX use tunnel adapter
 def get_events(h):
     data = h.data.perf_data.value
     # assumes event 0 attributes applies to all samples?
