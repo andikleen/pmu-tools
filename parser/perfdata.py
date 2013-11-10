@@ -287,6 +287,7 @@ def group_desc():
 
 def perf_features():
     return Struct("features",
+                  # XXX
                   If(lambda ctx: ctx._.tracing_data,
                      perf_file_section("tracing_data",
                                        Pass)),
@@ -317,6 +318,7 @@ def perf_features():
                   If(lambda ctx: ctx._.cmdline,
                      perf_file_section("cmdline",
                                        string_list("cmdline"))),
+                  # XXX
                   If(lambda ctx: ctx._.event_desc,
                      perf_file_section("event_desc",
                                        Pass)),                           
@@ -332,6 +334,7 @@ def perf_features():
                   If(lambda ctx: ctx._.branch_stack,
                      perf_file_section("branch_stack",
                                        Pass)),
+                  # XXX
                   If(lambda ctx: ctx._.pmu_mappings,
                      perf_file_section("pmu_mappings",
                                        Pass)),
@@ -371,7 +374,6 @@ perf_file = Struct("perf_file_header",
                    perf_file_section("attrs", perf_file_attr),
                    perf_file_section("data", perf_data),
                    perf_file_section("event_types", perf_event_types),
-                   # XXX decoders for all of these
                    # little endian
                    Embedded(BitStruct(None,
                              Flag("nrcpus"),
