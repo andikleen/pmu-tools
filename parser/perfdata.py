@@ -329,6 +329,7 @@ def perf_features():
                   If(lambda ctx: ctx._.numa_topology,                     
                      perf_file_section("numa_topology",
                                        numa_topology())),
+                  # not implemented in perf
                   If(lambda ctx: ctx._.branch_stack,
                      perf_file_section("branch_stack",
                                        Pass)),
@@ -349,7 +350,6 @@ id_array = Array(lambda ctx: ctx.size / 8,
                  UNInt64("id"))
 
 def num_attr(ctx):
-    print "size", ctx._.size, "attr_size", ctx._._.attr_size
     return ctx._.size / ctx._._.attr_size
 
 perf_file_attr = Struct("perf_file_attr",
