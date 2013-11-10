@@ -259,7 +259,7 @@ def feature_string(name):
 def pad():
     return Padding(lambda ctx: ctx.len - (ctx.offset - ctx.start))
 
-def string_list(name):
+def string_list(name, extra = Pass):
     return Struct(name,
                   UNInt32("nr"),
                   Array(lambda ctx: ctx.nr,
@@ -268,7 +268,8 @@ def string_list(name):
                                Anchor("start"),
                                CString(name),
                                Anchor("offset"),
-                               pad())))
+                               pad(),
+                               extra)))
 
 def numa_topology():
     return Struct("numa_topology",
@@ -279,6 +280,12 @@ def numa_topology():
                                UNInt64("mem_total"),
                                UNInt64("mem_free"),
                                str_with_len("cpus"))))
+
+def group_desc():
+    return string_list("group_desc",
+                       Embedded(Struct(None,
+                                       UNInt32("leader_idx"),
+                                       UNInt32("nr_members"))))
 
 def perf_features():
     return Struct("features",
@@ -330,7 +337,7 @@ def perf_features():
                                        Pass)),
                   If(lambda ctx: ctx._.group_desc,
                      perf_file_section("group_desc",
-                                       Pass)))
+                                       group_desc())))
 
 def perf_file_section(name, target):
     return Struct(name,
