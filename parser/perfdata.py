@@ -23,7 +23,7 @@ def event(sample_type, read_format, sample_regs_user):
     return Embedded(
          Struct("event",
                 If(lambda ctx: sample_type.identifier,
-                   UNInt64("id")),
+                   UNInt64("identifier")),
                 If(lambda ctx: sample_type.ip,
                    UNInt64("ip")),
                 If(lambda ctx: sample_type.tid,
@@ -34,6 +34,8 @@ def event(sample_type, read_format, sample_regs_user):
                    UNInt64("time")),
                 If(lambda ctx: sample_type.addr,
                    UNInt64("addr")),
+                If(lambda ctx: sample_type.id,
+                   UNInt64("id")),
                 If(lambda ctx: sample_type.stream_id,
                    UNInt64("stream_id")),
                 If(lambda ctx: sample_type.cpu,
@@ -303,7 +305,6 @@ perf_file = Struct("perf_file_header",
 def get_events(h):
     data = h.data.perf_data.value
     # assumes event 0 attributes applies to all samples?
-    # XXX use ids
     ev0 = h.attrs.perf_file_attr.f_attr[0].perf_event_attr
     assert ev0.size in perf_event_attr_sizes
     return perf_event_seq(ev0.sample_type, ev0.read_format, ev0.sample_regs_user).parse(data)
