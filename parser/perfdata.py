@@ -93,35 +93,39 @@ def event(sample_type, read_format, sample_regs_user):
 
 # XXX need to make OnDemand for large files
 
+def perf_event_header():
+    return Embedded(Struct(None,
+                           Enum(UNInt32("type"),
+                                MMAP			= 1,
+                                LOST			= 2,
+                                COMM			= 3,
+                                EXIT			= 4,
+                                THROTTLE		= 5,
+                                UNTHROTTLE		= 6,
+                                FORK			= 7,
+                                READ			= 8,
+                                SAMPLE			= 9),
+                           Embedded(BitStruct(None,
+                                              Padding(1),
+                                              Enum(BitField("cpumode", 7),
+                                                   UNKNOWN = 0,
+                                                   KERNEL = 1,
+                                                   USER = 2,
+                                                   HYPERVISOR = 3,
+                                                   GUEST_KERNEL = 4,
+                                                   GUEST_USER = 5),
+                                              
+                                              Flag("ext_reserved"),
+                                              Flag("exact_ip"),
+                                              Flag("mmap_data"),
+                                              Padding(5))),
+                           UNInt16("size")))
+
 def perf_event(sample_type, read_format, sample_regs_user):         
     return Struct("perf_event",
-                    Anchor("start"),
-                    Enum(UNInt32("type"),
-                         MMAP			= 1,
-                         LOST			= 2,
-                         COMM			= 3,
-                         EXIT			= 4,
-                         THROTTLE		= 5,
-                         UNTHROTTLE		= 6,
-                         FORK			= 7,
-                         READ			= 8,
-                         SAMPLE			= 9),
-                    Embedded(BitStruct(None,
-                              Padding(1),
-                              Enum(BitField("cpumode", 7),
-                                   UNKNOWN = 0,
-                                   KERNEL = 1,
-                                   USER = 2,
-                                   HYPERVISOR = 3,
-                                   GUEST_KERNEL = 4,
-                                   GUEST_USER = 5),
-
-                              Flag("ext_reserved"),
-                              Flag("exact_ip"),
-                              Flag("mmap_data"),
-                              Padding(5))),
-                    UNInt16("size"),
-                    Switch("data",
+                  Anchor("start"),
+                  perf_event_header(),
+                  Switch("data",
                            lambda ctx: ctx.type,
                            {
                               "MMAP": Struct("mmap",
@@ -240,6 +244,79 @@ perf_event_attr = Struct("perf_event_attr",
                          Value("perf_event_attr_size", lambda ctx: ctx.end - ctx.start),
                          Padding(lambda ctx: ctx.size - ctx.perf_event_attr_size))
 
+def feature_string(name):
+    return If(lambda ctx: ctx._[name],
+              perf_file_section(name,
+                                Embedded(Struct(name,
+                                                UNInt32("size2"),
+                                                # XXX always 0 terminated?
+                                                CString(name)))))
+
+def string_list(name):
+    return Struct(name,
+                  UNInt32("nr"),
+                  Array(lambda ctx: ctx.nr,
+                        Struct(name,
+                               UNInt32("len"),
+                               Anchor("start"),
+                               CString(name),
+                               Anchor("offset"),
+                               Padding(lambda ctx:
+                                           ctx.len - 
+                                       (ctx.offset - ctx.start)))))
+
+def perf_features():
+    return Struct("features",
+                  If(lambda ctx: ctx._.tracing_data,
+                     perf_file_section("tracing_data",
+                                       Pass)),
+                  If(lambda ctx: ctx._.build_id,
+                     perf_file_section("build_id",
+                                       Pass)),
+                  # FIXME
+                  # Struct("build_id",
+                  #        perf_event_header(),
+                  #        UNInt32("pid"),
+                  #        Bytes("build_id", 20),
+                  #        CString("filename")))),
+                  feature_string("hostname"),
+                  feature_string("osrelease"),
+                  feature_string("version"),
+                  feature_string("arch"),
+                  If(lambda ctx: ctx._.nrcpus,
+                     perf_file_section("nrcpus",
+                                       Struct("nrcpus",
+                                              UNInt32("nr_cpus_online"),
+                                              UNInt32("nr_cpus_avail")))),
+                  feature_string("cpudesc"),
+                  feature_string("cpuid"),
+                  If(lambda ctx: ctx._.total_mem,
+                     perf_file_section("total_mem",
+                                       UNInt64("total_mem"))),
+                  If(lambda ctx: ctx._.cmdline,
+                     perf_file_section("cmdline",
+                                       string_list("cmdline"))),
+                  If(lambda ctx: ctx._.event_desc,
+                     perf_file_section("event_desc",
+                                       Pass)),                           
+                  If(lambda ctx: ctx._.cpu_topology,
+                     perf_file_section("cpu_topology",
+                                       Struct("cpu_topology",
+                                              string_list("cores"),
+                                              string_list("threads")))),
+                  If(lambda ctx: ctx._.numa_topology,
+                     perf_file_section("numa_topology",
+                                       Pass)),
+                  If(lambda ctx: ctx._.branch_stack,
+                     perf_file_section("branch_stack",
+                                       Pass)),
+                  If(lambda ctx: ctx._.pmu_mappings,
+                     perf_file_section("pmu_mappings",
+                                       Pass)),
+                  If(lambda ctx: ctx._.group_desc,
+                     perf_file_section("group_desc",
+                                       Pass)))
+
 def perf_file_section(name, target):
     return Struct(name,
                   UNInt64("offset"),
@@ -275,7 +352,7 @@ perf_file = Struct("perf_file_header",
                    perf_file_section("event_types", perf_event_types),
                    # XXX decoders for all of these
                    # little endian
-                   BitStruct("adds_features",
+                   Embedded(BitStruct(None,
                              Flag("nrcpus"),
                              Flag("arch"),
                              Flag("version"),
@@ -298,7 +375,9 @@ perf_file = Struct("perf_file_header",
                              Flag("group_desc"),
                              Flag("pmu_mappings"),
 
-                             Padding(64 - 3*8)),
+                             Padding(64 - 3*8))),
+                   Pointer(lambda ctx: ctx.data.offset + ctx.data.size,
+                           perf_features()),
                    Padding(3 * 8))
 
 def get_events(h):
