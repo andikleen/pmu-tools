@@ -309,6 +309,18 @@ def pmu_mappings():
                                 str_with_len("name")),
                          UNInt32("nr"))     
 
+def event_desc():
+    return Struct("event_desc",
+                  UNInt32("nr"),
+                  UNInt32("attr_size"),
+                  Array(lambda ctx: ctx.nr,
+                        Struct("desc",
+                               perf_event_attr,
+                               UNInt32("nr_ids"),
+                               str_with_len("event"),
+                               Array(lambda ctx: ctx.nr_ids,
+                                     UNInt64("id")))))
+
 def perf_features():
     return Struct("features",
                   # XXX
@@ -335,10 +347,9 @@ def perf_features():
                   If(lambda ctx: ctx._.cmdline,
                      perf_file_section("cmdline",
                                        string_list("cmdline"))),
-                  # XXX
                   If(lambda ctx: ctx._.event_desc,
                      perf_file_section("event_desc",
-                                       Pass)),                           
+                                       event_desc())),
                   If(lambda ctx: ctx._.cpu_topology,
                      perf_file_section("cpu_topology",
                                        Struct("cpu_topology",
