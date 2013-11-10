@@ -29,7 +29,6 @@ def samples_to_df(h):
             data[name].append(j[name])
         # XXX assumes time exists
         index.append(j["time"])
-    print "index", len(index)
     return pd.DataFrame(data, index=index, dtype=np.uint64)
 
 def read_samples(fn):
