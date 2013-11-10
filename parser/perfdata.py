@@ -396,7 +396,7 @@ perf_file = Struct("perf_file_header",
                              Flag("group_desc"),
                              Flag("pmu_mappings"),
 
-                             Padding(64 - 3*8))),
+                             Padding(256 - 3*8))),
                    Pointer(lambda ctx: ctx.data.offset + ctx.data.size,
                            perf_features()),
                    Padding(3 * 8))
