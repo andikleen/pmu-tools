@@ -21,7 +21,7 @@ def throttle(name):
 
 def event(sample_type, read_format, sample_regs_user):
     return Embedded(
-         Struct("event",
+        Struct("event",
                 If(lambda ctx: sample_type.identifier,
                    UNInt64("identifier")),
                 If(lambda ctx: sample_type.ip,
@@ -244,8 +244,8 @@ perf_event_attr = Struct("perf_event_attr",
                          Value("perf_event_attr_size", lambda ctx: ctx.end - ctx.start),
                          Padding(lambda ctx: ctx.size - ctx.perf_event_attr_size))
 
-def pad():
-    return Padding(lambda ctx: ctx.len - (ctx.offset - ctx.start))
+def pad(l = "len"):
+    return Padding(lambda ctx: ctx[l] - (ctx.offset - ctx.start))
 
 def str_with_len(name):
     return Struct(name,
@@ -285,6 +285,18 @@ def group_desc():
                                        UNInt32("leader_idx"),
                                        UNInt32("nr_members"))))
 
+def build_id():
+    return Struct("build_id",
+                  Anchor("start"),
+                  UNInt32("type"),
+                  UNInt16("misc"),
+                  UNInt16("size"),
+                  SNInt32("pid"),
+                  HexDumpAdapter(String("build_id", 24)),
+                  CString("filename"),
+                  Anchor("offset"),
+                  pad("size"))
+
 def perf_features():
     return Struct("features",
                   # XXX
@@ -293,14 +305,10 @@ def perf_features():
                                        Pass)),
                   If(lambda ctx: ctx._.build_id,
                      perf_file_section("build_id",
-                                       # FIXME array
-                                       Struct("build_id",
-                                              UNInt32("type"),
-                                              UNInt16("misc"),
-                                              UNInt16("size"),
-                                              SNInt32("pid"),
-                                              Bytes("build_id", 20),
-                                              CString("filename")))),
+                                       TunnelAdapter(String("data",
+                                                            lambda ctx:
+                                                                ctx.size),
+                                                     GreedyRange(build_id())))),
                   feature_string("hostname"),
                   feature_string("osrelease"),
                   feature_string("version"),
