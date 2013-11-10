@@ -244,13 +244,20 @@ perf_event_attr = Struct("perf_event_attr",
                          Value("perf_event_attr_size", lambda ctx: ctx.end - ctx.start),
                          Padding(lambda ctx: ctx.size - ctx.perf_event_attr_size))
 
+def str_with_len(name):
+    return Struct(name,
+                  UNInt32("len"),
+                  CString(name))
+
 def feature_string(name):
     return If(lambda ctx: ctx._[name],
               perf_file_section(name,
-                                Embedded(Struct(name,
-                                                UNInt32("size2"),
-                                                # XXX always 0 terminated?
-                                                CString(name)))))
+                                Struct(name,
+                                       UNInt32("len"),
+                                       CString(name))))
+
+def pad():
+    return Padding(lambda ctx: ctx.len - (ctx.offset - ctx.start))
 
 def string_list(name):
     return Struct(name,
@@ -261,9 +268,17 @@ def string_list(name):
                                Anchor("start"),
                                CString(name),
                                Anchor("offset"),
-                               Padding(lambda ctx:
-                                           ctx.len - 
-                                       (ctx.offset - ctx.start)))))
+                               pad())))
+
+def numa_topology():
+    return Struct("numa_topology",
+                  UNInt32("nr"),
+                  Array(lambda ctx: ctx.nr,
+                        Struct("node",
+                               UNInt32("nodenr"),
+                               UNInt64("mem_total"),
+                               UNInt64("mem_free"),
+                               str_with_len("cpus"))))
 
 def perf_features():
     return Struct("features",
@@ -304,9 +319,9 @@ def perf_features():
                                        Struct("cpu_topology",
                                               string_list("cores"),
                                               string_list("threads")))),
-                  If(lambda ctx: ctx._.numa_topology,
+                  If(lambda ctx: ctx._.numa_topology,                     
                      perf_file_section("numa_topology",
-                                       Pass)),
+                                       numa_topology())),
                   If(lambda ctx: ctx._.branch_stack,
                      perf_file_section("branch_stack",
                                        Pass)),
