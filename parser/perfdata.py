@@ -258,9 +258,9 @@ def str_with_len(name):
 def feature_string(name):
     return If(lambda ctx: ctx._[name],
               perf_file_section(name,
-                                Struct(name,
-                                       UNInt32("len"),
-                                       CString(name))))
+                                Embedded(Struct(name,
+                                                UNInt32("len"),
+                                                CString(name)))))
 
 def string_list(name, extra = Pass):
     return PrefixedArray(Struct(name,
@@ -297,6 +297,12 @@ def build_id():
                   Anchor("offset"),
                   pad("size"))
 
+def section_adapter(name, target):
+    return perf_file_section(name,
+                             TunnelAdapter(String("data",
+                                                  lambda ctx: ctx.size),
+                                           target))
+
 def perf_features():
     return Struct("features",
                   # XXX
@@ -304,20 +310,17 @@ def perf_features():
                      perf_file_section("tracing_data",
                                        Pass)),
                   If(lambda ctx: ctx._.build_id,
-                     perf_file_section("build_id",
-                                       TunnelAdapter(String("data",
-                                                            lambda ctx:
-                                                                ctx.size),
-                                                     GreedyRange(build_id())))),
+                     section_adapter("build_id", 
+                                     GreedyRange(build_id()))),
                   feature_string("hostname"),
                   feature_string("osrelease"),
                   feature_string("version"),
                   feature_string("arch"),
                   If(lambda ctx: ctx._.nrcpus,
                      perf_file_section("nrcpus",
-                                       Struct("nrcpus",
-                                              UNInt32("nr_cpus_online"),
-                                              UNInt32("nr_cpus_avail")))),
+                                       Embedded(Struct("nrcpus",
+                                                UNInt32("nr_cpus_online"),
+                                                UNInt32("nr_cpus_avail"))))),
                   feature_string("cpudesc"),
                   feature_string("cpuid"),
                   If(lambda ctx: ctx._.total_mem,
