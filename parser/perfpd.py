@@ -16,6 +16,9 @@ from collections import defaultdict
 # s/w trace points
 # 
 
+ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
+           'mmap_data')
+
 def samples_to_df(h):
     ev = perfdata.get_events(h)
     index = []
@@ -24,11 +27,10 @@ def samples_to_df(h):
         if j.type != "SAMPLE":
             continue
         for name in j:
-            if name.startswith("__"):
-                continue
-            data[name].append(j[name])
+            if name not in ignored:
+                data[name].append(j[name])
         # XXX assumes time exists
-        index.append(j["time"])
+        index.append(pd.Timestamp(j["time"]))
     return pd.DataFrame(data, index=index, dtype=np.uint64)
 
 def read_samples(fn):
