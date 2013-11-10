@@ -63,7 +63,7 @@ def event(sample_type, read_format, sample_regs_user):
                    Struct("callchain",
                           UNInt64("nr"),
                           Array(lambda ctx: ctx.nr,
-                                UNInt64("addr")))),
+                                UNInt64("caller")))),
                 If(lambda ctx: sample_type.raw,
                    Struct("raw",
                           UNInt32("size"),
