@@ -9,6 +9,8 @@ from collections import defaultdict
 #
 # TBD 
 # resolve ips
+# fix types
+# drop unused columns
 # extra table for threads
 # good data model for callchains and branch_stack
 # expand registers, stack
