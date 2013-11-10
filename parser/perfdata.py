@@ -147,8 +147,8 @@ def perf_event(sample_type, read_format, sample_regs_user):
                                               sample_regs_user),
                            }),
 			Anchor("end"),
-			Padding(lambda ctx: ctx.size - (ctx.end - ctx.start))
-                    )
+			Padding(lambda ctx:
+                                    ctx.size - (ctx.end - ctx.start)))
 
 def perf_event_seq(sample_type, read_format, sample_regs_user):
     return GreedyRange(perf_event(sample_type, read_format, sample_regs_user))
@@ -200,7 +200,7 @@ perf_event_attr = Struct("perf_event_attr",
                                    Flag("total_time_running"),
                                    Flag("total_time_enabled"),
                                    Padding(64 - 1*8)),
-                         BitStruct(None,
+                         Embedded(BitStruct(None,
                                             Flag("disabled"),
                                             Flag("inherit"),
                                             Flag("pinned"),	       
@@ -223,7 +223,7 @@ perf_event_attr = Struct("perf_event_attr",
                                             Flag("exclude_guest"),
                                             Flag("exclude_callchain_kernel"),
                                             Flag("exclude_callchain_user"),
-                                            Padding(41)),
+                                            Padding(41))),
                          UNInt32("wakeup_events"),
                          UNInt32("bp_type"),
                          UNInt64("config1"),
@@ -264,7 +264,6 @@ perf_event_types = Struct("perf_file_attr",
                           Padding(lambda ctx: ctx._.size))
 
 perf_data = OnDemand(Bytes("perf_data", lambda ctx: ctx.size))
-                             
 
 perf_file = Struct("perf_file_header",
                    # no support for version 1

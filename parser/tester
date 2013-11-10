@@ -29,12 +29,12 @@ check -T
 check -d
 
 set +e 
-# known broken for now
-check -e cycles,branches,branch-misses
 check --group -e cycles,branches,branch-misses
+check -e '{cycles,branches},{branch-misses,cache-misses}'
+check -e cycles,branches,branch-misses
 
 # new kernel
-check -g dwarf
+#check -g dwarf
 
 # XXX sw trace points
 
