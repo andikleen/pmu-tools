@@ -17,19 +17,42 @@
 #
 from construct import *
 
-def fork_exit(name): 
+def sample_id(attr):
+    sample_type = attr.sample_type
+    return If(lambda ctx: attr.sample_id_all,
+              Embedded(Struct("id_all",
+                              If(lambda ctx: sample_type.tid,
+                                 Embedded(Struct("pid",
+                                                 SNInt32("pid"),
+                                                 SNInt32("tid")))),
+                              If(lambda ctx: sample_type.time,
+                                 UNInt64("time")),
+                              If(lambda ctx: sample_type.id,
+                                 UNInt64("id")),
+                              If(lambda ctx: sample_type.stream_id,
+                                 UNInt64("stream_id")),
+                              If(lambda ctx: sample_type.cpu,
+                                 Embedded(Struct("cpu",
+                                                 UNInt32("cpu"),
+                                                 UNInt32("res")))),
+                              If(lambda ctx: sample_type.identifier,
+                                 UNInt64("identifier")))))
+                              
+def fork_exit(name, attr): 
     return Struct(name,
                   SNInt32("pid"),
                   SNInt32("ppid"),
                   SNInt32("tid"),
                   SNInt32("ptid"),
-                  UNInt64("time"))
+                  UNInt64("time"),
+                  sample_id(attr))
 
-def throttle(name):
+def throttle(name, attr):
     return Struct(name,
                   UNInt64("time"),
                   UNInt64("id"),
-                  UNInt64("stream_id"))
+                  UNInt64("stream_id"),
+                  sample_id(attr))
 
 def event(sample_type, read_format, sample_regs_user):
     return Embedded(
@@ -133,7 +156,7 @@ def perf_event_header():
                                               Padding(5))),
                            UNInt16("size")))
 
-def perf_event(sample_type, read_format, sample_regs_user):         
+def perf_event(attr):         
     return Struct("perf_event",
                   Anchor("start"),
                   perf_event_header(),
@@ -141,34 +164,37 @@ def perf_event(sample_type, read_format, sample_regs_user):
                            lambda ctx: ctx.type,
                            {
                               "MMAP": Struct("mmap",
-                                              SNInt32("pid"),
-                                              SNInt32("tid"),
-                                              UNInt64("addr"),
-                                              UNInt64("len"),
-                                              UNInt64("pgoff"),
-                                                CString("filename")),
+                                             SNInt32("pid"),
+                                             SNInt32("tid"),
+                                             UNInt64("addr"),
+                                             UNInt64("len"),
+                                             UNInt64("pgoff"),
+                                             CString("filename"),
+                                             sample_id(attr)),
                               "LOST": Struct("lost",
                                               UNInt64("id"),
-                                              UNInt64("lost")),
+                                              UNInt64("lost"),
+                                             sample_id(attr)),
                               "COMM": Struct("comm",
                                              SNInt32("pid"),
                                              SNInt32("tid"),
-                                             CString("comm")),
-                              "EXIT": fork_exit("exit"),
-                              "THROTTLE": throttle("thottle"),
-                              "UNTHROTTLE": throttle("unthottle"),
-                              "FORK": fork_exit("fork"),
+                                             CString("comm"),
+                                             sample_id(attr)),
+                              "EXIT": fork_exit("exit", attr),
+                              "THROTTLE": throttle("thottle", attr),
+                              "UNTHROTTLE": throttle("unthottle", attr),
+                              "FORK": fork_exit("fork", attr),
                               #"READ": read_format(read_format),
-                              "SAMPLE": event(sample_type, read_format, 
-                                              sample_regs_user),
+                              "SAMPLE": event(attr.sample_type, 
+                                              attr.read_format, 
+                                              attr.sample_regs_user),
                            }),
 			Anchor("end"),
 			Padding(lambda ctx:
                                     ctx.size - (ctx.end - ctx.start)))
 
-def perf_event_seq(sample_type, read_format, sample_regs_user):
-    return GreedyRange(perf_event(sample_type, read_format, sample_regs_user))
-
+def perf_event_seq(attr):
+    return GreedyRange(perf_event(attr))
 
 perf_event_attr_sizes = (64, 72, 80, 96)
 
@@ -448,7 +474,8 @@ def get_events(h):
     # assumes event 0 attributes applies to all samples?
     ev0 = h.attrs.perf_file_attr.f_attr[0].perf_event_attr
     assert ev0.size in perf_event_attr_sizes
-    return perf_event_seq(ev0.sample_type, ev0.read_format, ev0.sample_regs_user).parse(data)
+    # XXX look up by id
+    return perf_event_seq(ev0).parse(data)
 
 if __name__ == '__main__':
     import sys
