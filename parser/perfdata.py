@@ -15,6 +15,14 @@
 #
 # Only works on Little-Endian with LE input files. Sorry.
 #
+# TBD:
+# Look up sample type for each record by end id 
+# Unify records and header
+# Use TunnelAdapter for individual records
+# Fix sample_id_all check
+# Generic Bitfield adapter that handles endian properly?
+# 
+
 from construct import *
 
 def sample_id_size(attr, ctx):
