@@ -1,6 +1,5 @@
 #!/usr/bin/python
 # Import perf.data into a pandas DataFrame
-# May need substantial memory for large input files.
 import pandas as pd
 import numpy as np
 import perfdata
@@ -20,40 +19,62 @@ import pprint
 # fix time
 # 
 
-ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
-           'mmap_data')
+ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved')
 
 def lookup(m, ip):
-    mr = m[bisect.bisect_left(m, (ip,)) - 1]
-    return mr, ip - mr[0] 
+    i = bisect.bisect_left(m, (ip,)) - 1
+    if i < len(m):
+        mr = m[i]
+        return mr, ip - mr[0] 
+    return None, 0
 
 def resolve(maps, pid, ip):
+    if not maps[pid]:
+        # xxx kernel
+        return None, 0
     m, offset = lookup(maps[pid], ip)
-    if offset >= m[1]:
+    if not m or offset >= m[1]:
         # look up kernel
         m, offset = lookup(maps[-1], ip)
         if offset >= m[1]:
             return None, 0
+    assert ip >= m[0] and ip < m[0] + m[1]
     return m[2], offset
 
 def samples_to_df(h):
     ev = perfdata.get_events(h)
     index = []
     data = defaultdict(list)
+    procs = dict()
+
     maps = defaultdict(list)
     pnames = defaultdict(str)
+
+    # comm do not necessarily appear in order
+    # first build queue of comm in order
+    updates = []
     for j in ev:
-        if j.type == 'MMAP':
-            pid = j.pid
-            bisect.insort(maps[pid], (j.addr, j.len, j.filename))
-            if pid != -1:
-                print "maps",pid,pnames[pid], maps[pid]
-        elif j.type == 'COMM':
-            print "comm", j.pid, j.comm
-            maps[j.pid] = []
-            pnames[j.pid] = j.comm
+        # no time stamp: assume it's synthesized and kernel
+        if j.type == 'MMAP' and j.pid == -1 and j.tid == 0:
+            bisect.insort(maps[j.pid], (j.addr, j.len, j.filename))
+        elif j.type in ('COMM','MMAP'):
+            bisect.insort(updates, (j.time2, j))
+
+    for j in ev:
         if j.type != "SAMPLE":
             continue
+
+        # process pending updates
+        while len(updates) > 0 and j.time >= updates[0][0]:
+            u = updates[0][1]
+            del updates[0]
+            if u.type == 'MMAP':
+                pid = u.pid
+                bisect.insort(maps[pid], (u.addr, u.len, u.filename))
+            elif u.type == 'COMM':
+                maps[u.pid] = []
+                pnames[u.pid] = u.comm
+    
         filename, offset = resolve(maps, j.pid, j.ip)
         data['filename'].append(filename)
         data['offset'].append(offset)

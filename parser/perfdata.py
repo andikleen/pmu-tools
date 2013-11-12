@@ -17,26 +17,31 @@
 #
 from construct import *
 
+def sample_id_size(attr, ctx):
+    st = attr.sample_type
+    return (st.tid + st.time + st.id + st.stream_id + st.cpu +
+            st.identifier) * 8
+
 def sample_id(attr):
     sample_type = attr.sample_type
-    return If(lambda ctx: attr.sample_id_all,
+    return If(lambda ctx: True, # xxx check size
               Embedded(Struct("id_all",
                               If(lambda ctx: sample_type.tid,
-                                 Embedded(Struct("pid",
-                                                 SNInt32("pid"),
-                                                 SNInt32("tid")))),
+                                 Embedded(Struct("pid2",
+                                                 SNInt32("pid2"),
+                                                 SNInt32("tid2")))),
                               If(lambda ctx: sample_type.time,
-                                 UNInt64("time")),
+                                 UNInt64("time2")),
                               If(lambda ctx: sample_type.id,
-                                 UNInt64("id")),
+                                 UNInt64("id2")),
                               If(lambda ctx: sample_type.stream_id,
-                                 UNInt64("stream_id")),
+                                 UNInt64("stream_id2")),
                               If(lambda ctx: sample_type.cpu,
                                  Embedded(Struct("cpu",
-                                                 UNInt32("cpu"),
+                                                 UNInt32("cpu2"),
                                                  UNInt32("res")))),
                               If(lambda ctx: sample_type.identifier,
-                                 UNInt64("identifier")))))
+                                 UNInt64("identifier2")))))
                               
 def fork_exit(name, attr): 
     return Struct(name,
@@ -156,21 +161,41 @@ def perf_event_header():
                                               Padding(5))),
                            UNInt16("size")))
 
+def PaddedCString(name):
+    return Embedded(Struct(name,
+                           Anchor("sstart"),
+                           CString(name),
+                           Anchor("send"),
+                           Bytes("cpad", lambda ctx:
+                                       8 - ((ctx.send - ctx.sstart) % 8))))
+
+def mmap(attr):
+    return Struct("mmap",
+                  SNInt32("pid"),
+                  SNInt32("tid"),
+                  UNInt64("addr"),
+                  UNInt64("len"),
+                  UNInt64("pgoff"),
+                  Anchor("start_of_filename"),
+                  CString("filename"),
+                  Anchor("end_of_filename"),
+                  # hack for now. this shouldn't be needed.
+                  If(lambda ctx: True, # XXX
+                     #ctx.size >= ctx.end_of_filename + sample_id_size(attr, ctx),
+                     Embedded(Pointer(lambda ctx: 
+                                      ctx.size + ctx.start - 
+                                      sample_id_size(attr, ctx),
+                                      sample_id(attr)))))
+
 def perf_event(attr):         
     return Struct("perf_event",
                   Anchor("start"),
                   perf_event_header(),
+                  Anchor("header_end"),
                   Switch("data",
                            lambda ctx: ctx.type,
                            {
-                              "MMAP": Struct("mmap",
-                                             SNInt32("pid"),
-                                             SNInt32("tid"),
-                                             UNInt64("addr"),
-                                             UNInt64("len"),
-                                             UNInt64("pgoff"),
-                                             CString("filename"),
-                                             sample_id(attr)),
+                              "MMAP":  mmap(attr),
                               "LOST": Struct("lost",
                                               UNInt64("id"),
                                               UNInt64("lost"),
@@ -178,7 +203,7 @@ def perf_event(attr):
                               "COMM": Struct("comm",
                                              SNInt32("pid"),
                                              SNInt32("tid"),
-                                             CString("comm"),
+                                             PaddedCString("comm"),
                                              sample_id(attr)),
                               "EXIT": fork_exit("exit", attr),
                               "THROTTLE": throttle("thottle", attr),
@@ -190,7 +215,7 @@ def perf_event(attr):
                                               attr.sample_regs_user),
                            }),
 			Anchor("end"),
-			Padding(lambda ctx:
+			Bytes("pad",lambda ctx:
                                     ctx.size - (ctx.end - ctx.start)))
 
 def perf_event_seq(attr):
