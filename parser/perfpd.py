@@ -10,16 +10,15 @@ import pprint
 #
 # TBD 
 # fix all types
-# drop unused columns
 # extra table for threads
 # flatten callchains and branch_stack
 # expand registers, stack
 # represent other metadata
 # s/w trace points
-# fix time
 # 
 
-ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved')
+ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
+           'header_end', 'end_event', 'offset')
 
 def lookup(m, ip):
     i = bisect.bisect_left(m, (ip,)) - 1
@@ -49,6 +48,7 @@ def samples_to_df(h):
 
     maps = defaultdict(list)
     pnames = defaultdict(str)
+    used = Counter()
 
     # comm do not necessarily appear in order
     # first build queue of comm in order
@@ -78,11 +78,18 @@ def samples_to_df(h):
         filename, offset = resolve(maps, j.pid, j.ip)
         data['filename'].append(filename)
         data['offset'].append(offset)
+        used['offset'] += 1
+        used['filename'] += 1
         for name in j:
             if name not in ignored:
+                if j[name]:
+                    used[name] += 1
                 data[name].append(j[name])
         # XXX assumes time exists
         index.append(pd.Timestamp(j["time"]))
+    for j in data.keys():
+        if used[j] == 0:
+            del data[j]
     return pd.DataFrame(data, index=index, dtype=np.uint64)
 
 def read_samples(fn):
