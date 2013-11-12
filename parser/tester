@@ -27,6 +27,9 @@ check -b -g
 check -P
 check -T
 check -d
+check -e cycles:S 
+# seems to be broken in perf
+check -e '{cycles,branches}:S'
 
 set +e 
 check --group -e cycles,branches,branch-misses

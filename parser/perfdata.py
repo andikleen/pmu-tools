@@ -67,7 +67,7 @@ def throttle(name, attr):
                   UNInt64("stream_id"),
                   sample_id(attr))
 
-def event(sample_type, read_format, sample_regs_user):
+def event(sample_type, rformat, sample_regs_user):
     return Embedded(
         Struct("event",
                 If(lambda ctx: sample_type.identifier,
@@ -92,9 +92,8 @@ def event(sample_type, read_format, sample_regs_user):
                                    UNInt32("res")))),
                 If(lambda ctx: sample_type.period,
                    UNInt64("period")),
-                # XXX
-                #If(lambda ctx: sample_type.read,
-                #   read_format(rformat)),
+                If(lambda ctx: sample_type.read,
+                   read_format(rformat)),
                 If(lambda ctx: sample_type.callchain,
                    Struct("callchain",
                           UNInt64("nr"),
@@ -189,11 +188,35 @@ def mmap(attr):
                   Anchor("end_of_filename"),
                   # hack for now. this shouldn't be needed.
                   If(lambda ctx: True, # XXX
-                     #ctx.size >= ctx.end_of_filename + sample_id_size(attr, ctx),
                      Embedded(Pointer(lambda ctx: 
                                       ctx.size + ctx.start - 
                                       sample_id_size(attr, ctx),
                                       sample_id(attr)))))
+
+def enabled_running(read_format):
+    return Struct("enabled_running",
+                  If(lambda ctx: read_format.total_time_enabled,
+                     UNInt64("total_time_enabled")),
+                  If(lambda ctx: read_format.total_time_running,
+                     UNInt64("total_time_running")))
+
+def read_format(read_format):
+    return Struct("read",
+                  If(lambda ctx: read_format.group,
+                     Struct("group",
+                            UNInt64("nr"),
+                            Embedded(enabled_running(read_format)),
+                            Array(lambda ctx: ctx.nr,
+                                  Struct("val",
+                                         UNInt64("value"),
+                                         If(lambda ctx: read_format.id,
+                                            UNInt64("id2")))))),
+                  If(lambda ctx: not read_format.group,
+                      Struct("single",
+                             UNInt64("value"),
+                             Embedded(enabled_running(read_format)),
+                             If(lambda ctx: read_format.id,
+                                UNInt64("id2")))))
 
 def perf_event(attr):         
     return Struct("perf_event",
@@ -217,7 +240,11 @@ def perf_event(attr):
                               "THROTTLE": throttle("thottle", attr),
                               "UNTHROTTLE": throttle("unthottle", attr),
                               "FORK": fork_exit("fork", attr),
-                              #"READ": read_format(read_format),
+                              "READ": Embedded(Struct("read_event",
+                                                      SNInt32("pid"),
+                                                      SNInt32("tid"),
+                                                      read_format(attr.read_format),
+                                                      sample_id(attr))),
                               "SAMPLE": event(attr.sample_type, 
                                               attr.read_format, 
                                               attr.sample_regs_user),
