@@ -87,10 +87,7 @@ def samples_to_df(h):
         filename, offset = resolve(maps, j.pid, j.ip)        
         add('filename', filename)
         add('foffset', offset)
-        sym = None
-        offset = None
-        line = None
-        srcfile = None
+        sym, offset, line = None, None, None
         if filename and filename.startswith("/"):
             sym, offset, line = elf.resolve_addr(filename, j.ip)
         add('symbol', sym)
