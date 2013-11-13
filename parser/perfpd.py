@@ -5,6 +5,7 @@ import numpy as np
 import perfdata
 from collections import defaultdict, Counter
 import bisect
+import elf
 
 #
 # TBD 
@@ -39,6 +40,10 @@ def resolve(maps, pid, ip):
     assert ip >= m[0] and ip < m[0] + m[1]
     return m[2], offset
 
+def do_add(d, u, k, i):
+    d[k].append(i)
+    u[k] += 1
+
 def samples_to_df(h):
     ev = perfdata.get_events(h)
     index = []
@@ -60,6 +65,8 @@ def samples_to_df(h):
             bisect.insort(updates, (j.time2, j))
 
     for j in ev:
+        add = lambda k, i: do_add(data, used, k, i)
+
         if j.type != "SAMPLE":
             continue
 
@@ -74,11 +81,18 @@ def samples_to_df(h):
                 maps[u.pid] = []
                 pnames[u.pid] = u.comm
     
-        filename, offset = resolve(maps, j.pid, j.ip)
-        data['filename'].append(filename)
-        data['offset'].append(offset)
-        used['offset'] += 1
-        used['filename'] += 1
+        filename, offset = resolve(maps, j.pid, j.ip)        
+        add('filename', filename)
+        add('foffset', offset)
+        sym = None
+        offset = None
+        line = None
+        srcfile = None
+        if filename and filename.startswith("/"):
+            sym, offset, line = elf.resolve_addr(filename, j.ip)
+        add('symbol', sym)
+        add('soffset', offset)
+        add('line', line)
         for name in j:
             if name not in ignored:
                 if j[name]:
@@ -102,3 +116,5 @@ if __name__ == '__main__':
     df = read_samples(sys.argv[1])
     print df
     print df['filename'].value_counts()
+    print df['symbol'].value_counts()
+    print df['line'].value_counts()
