@@ -21,11 +21,14 @@ ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
            'header_end', 'end_event', 'offset')
 
 def lookup(m, ip):
-    i = bisect.bisect_left(m, (ip,)) - 1
-    if i < len(m):
+    i = bisect.bisect_left(m, (ip,))
+    if i < len(m) and m[i][0] == ip:
         mr = m[i]
-        return mr, ip - mr[0] 
-    return None, 0
+    elif i == 0:
+        return None, 0
+    else:
+        mr = m[i - 1]
+    return mr, ip - mr[0] 
 
 def resolve(maps, pid, ip):
     if not maps[pid]:

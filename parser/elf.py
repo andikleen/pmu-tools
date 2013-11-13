@@ -41,7 +41,6 @@ def build_symtab(elffile):
     syms.sort()
     return syms
 
-# fixme
 def find_le(f, key):
     pos = bisect.bisect_left(f, (key,))
     if pos < len(f) and f[pos][0] == key:
