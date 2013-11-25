@@ -25,85 +25,87 @@
 
 from construct import *
 
-def sample_id_size(attr, ctx):
-    st = attr.sample_type
+def sample_type(ctx):
+    return ctx.attr.perf_event_attr.sample_type
+
+def sample_id_size(ctx):
+    st = sample_type(ctx)
     return (st.tid + st.time + st.id + st.stream_id + st.cpu +
             st.identifier) * 8
 
-def sample_id(attr):
-    sample_type = attr.sample_type
+def sample_id():
     return If(lambda ctx: True, # xxx check size
               Embedded(Struct("id_all",
-                              If(lambda ctx: sample_type.tid,
+                              If(lambda ctx: sample_type(ctx).tid,
                                  Embedded(Struct("pid2",
                                                  SNInt32("pid2"),
                                                  SNInt32("tid2")))),
-                              If(lambda ctx: sample_type.time,
+                              If(lambda ctx: sample_type(ctx).time,
                                  UNInt64("time2")),
-                              If(lambda ctx: sample_type.id,
+                              If(lambda ctx: sample_type(ctx).id,
                                  UNInt64("id2")),
-                              If(lambda ctx: sample_type.stream_id,
+                              If(lambda ctx: sample_type(ctx).stream_id,
                                  UNInt64("stream_id2")),
-                              If(lambda ctx: sample_type.cpu,
+                              If(lambda ctx: sample_type(ctx).cpu,
                                  Embedded(Struct("cpu",
                                                  UNInt32("cpu2"),
                                                  UNInt32("res")))),
-                              If(lambda ctx: sample_type.identifier,
+                              If(lambda ctx: sample_type(ctx).identifier,
                                  UNInt64("identifier2")))))
                               
-def fork_exit(name, attr): 
+def fork_exit(name): 
     return Struct(name,
                   SNInt32("pid"),
                   SNInt32("ppid"),
                   SNInt32("tid"),
                   SNInt32("ptid"),
                   UNInt64("time"),
-                  sample_id(attr))
+                  sample_id())
 
-def throttle(name, attr):
+def throttle(name):
     return Struct(name,
                   UNInt64("time"),
                   UNInt64("id"),
                   UNInt64("stream_id"),
-                  sample_id(attr))
+                  sample_id())
 
-def event(sample_type, rformat, sample_regs_user):
+def event():
     return Embedded(
         Struct("event",
-                If(lambda ctx: sample_type.identifier,
+                If(lambda ctx: sample_type(ctx).identifier,
                    UNInt64("identifier")),
-                If(lambda ctx: sample_type.ip,
+                If(lambda ctx: sample_type(ctx).ip,
                    UNInt64("ip")),
-                If(lambda ctx: sample_type.tid,
+                If(lambda ctx: sample_type(ctx).tid,
                    Embedded(Struct("tid",
                                    SNInt32("pid"),
                                    SNInt32("tid")))),
-                If(lambda ctx: sample_type.time,
+                If(lambda ctx: sample_type(ctx).time,
                    UNInt64("time")),
-                If(lambda ctx: sample_type.addr,
+                If(lambda ctx: sample_type(ctx).addr,
                    UNInt64("addr")),
-                If(lambda ctx: sample_type.id,
+                If(lambda ctx: sample_type(ctx).id,
                    UNInt64("id")),
-                If(lambda ctx: sample_type.stream_id,
+                If(lambda ctx: sample_type(ctx).stream_id,
                    UNInt64("stream_id")),
-                If(lambda ctx: sample_type.cpu,
+                If(lambda ctx: sample_type(ctx).cpu,
                    Embedded(Struct("cpu",
                                    UNInt32("cpu"),
                                    UNInt32("res")))),
-                If(lambda ctx: sample_type.period,
+                If(lambda ctx: sample_type(ctx).period,
                    UNInt64("period")),
-                If(lambda ctx: sample_type.read,
-                   read_format(rformat)),
-                If(lambda ctx: sample_type.callchain,
+                #If(lambda ctx: ctx.attr.sample_type.read,
+                #   read_format()),
+                If(lambda ctx: sample_type(ctx).callchain,
                    Struct("callchain",
                           UNInt64("nr"),
                           Array(lambda ctx: ctx.nr,
                                 UNInt64("caller")))),
-                If(lambda ctx: sample_type.raw,
+                If(lambda ctx: sample_type(ctx).raw,
                    Struct("raw",
                           UNInt32("size"),
                           Bytes("raw", lambda ctx: ctx.size))),
-                If(lambda ctx: sample_type.branch_stack,
+                If(lambda ctx: sample_type(ctx).branch_stack,
                    Struct("branch_stack",
                           UNInt64("nr"),
                           Array(lambda ctx: ctx.nr,
@@ -118,7 +120,7 @@ def event(sample_type, rformat, sample_regs_user):
                                                  Flag("predicted"),
                                                  Flag("mispred"),
                                                  Padding(64 - 1*8)))))),
-                If(lambda ctx: sample_type.regs_user,
+                If(lambda ctx: sample_type(ctx).regs_user,
                    Struct("regs_user",
                           Enum(UNInt64("abi"),
                                NONE = 0,
@@ -126,14 +128,14 @@ def event(sample_type, rformat, sample_regs_user):
                                ABI_64 = 2),
                           Array(lambda ctx: sample_regs_user,
                                 UNInt64("reg")))),
-                If(lambda ctx: sample_type.stack_user,
+                If(lambda ctx: sample_type(ctx).stack_user,
                    Struct("stack_user", 
                           UNInt64("size"),
                           Bytes("data", lambda ctx: ctx.size),
                           UNInt64("dyn_size"))),
-                If(lambda ctx: sample_type.weight,
+                If(lambda ctx: sample_type(ctx).weight,
                    UNInt64("weight")),
-                If(lambda ctx: sample_type.data_src,
+                If(lambda ctx: sample_type(ctx).data_src,
                    UNInt64("data_src")),
                 Anchor("end_event"),
                 Padding(lambda ctx: max(0, ctx.size - ctx.end_event))))
@@ -166,17 +168,24 @@ def perf_event_header():
                                               Flag("exact_ip"),
                                               Flag("mmap_data"),
                                               Padding(5))),
-                           UNInt16("size")))
+                           UNInt16("size"),
+                           # assumes sample_id_all
+                           Pointer(lambda ctx: ctx.start + ctx.size - 8,
+                                   UNInt64("end_id")),
+                           # FIXME: use end_id here
+                           Value("attr", 
+                                 lambda ctx:
+                                 ctx._._.attrs.perf_file_attr.f_attr[0])))
 
 def PaddedCString(name):
     return Embedded(Struct(name,
                            Anchor("sstart"),
                            CString(name),
                            Anchor("send"),
-                           Bytes("cpad", lambda ctx:
+                           Padding(lambda ctx:
                                        8 - ((ctx.send - ctx.sstart) % 8))))
 
-def mmap(attr):
+def mmap():
     return Struct("mmap",
                   SNInt32("pid"),
                   SNInt32("tid"),
@@ -190,35 +199,36 @@ def mmap(attr):
                   If(lambda ctx: True, # XXX
                      Embedded(Pointer(lambda ctx: 
                                       ctx.size + ctx.start - 
-                                      sample_id_size(attr, ctx),
-                                      sample_id(attr)))))
+                                      sample_id_size(ctx),
+                                      sample_id()))))
 
-def enabled_running(read_format):
+def enabled_running():
     return Struct("enabled_running",
-                  If(lambda ctx: read_format.total_time_enabled,
+                  If(lambda ctx: ctx._.attr.read_format.total_time_enabled,
                      UNInt64("total_time_enabled")),
-                  If(lambda ctx: read_format.total_time_running,
+                  If(lambda ctx: ctx._.attr.read_format.total_time_running,
                      UNInt64("total_time_running")))
 
-def read_format(read_format):
+def read_format():
     return Struct("read",
-                  If(lambda ctx: read_format.group,
+                  If(lambda ctx: ctx._.attr.read_format.group,
                      Struct("group",
                             UNInt64("nr"),
-                            Embedded(enabled_running(read_format)),
+                            Embedded(enabled_running()),
                             Array(lambda ctx: ctx.nr,
                                   Struct("val",
                                          UNInt64("value"),
-                                         If(lambda ctx: read_format.id,
+                                         If(lambda ctx: 
+                                            ctx._.attr.read_format.id,
                                             UNInt64("id2")))))),
-                  If(lambda ctx: not read_format.group,
+                  If(lambda ctx: not ctx._.attr.read_format.group,
                       Struct("single",
                              UNInt64("value"),
-                             Embedded(enabled_running(read_format)),
-                             If(lambda ctx: read_format.id,
+                             Embedded(enabled_running()),
+                             If(lambda ctx: ctx._._.attr.read_format.id,
                                 UNInt64("id2")))))
 
-def perf_event(attr):         
+def perf_event():
     return Struct("perf_event",
                   Anchor("start"),
                   perf_event_header(),
@@ -226,31 +236,29 @@ def perf_event(attr):
                   Switch("data",
                            lambda ctx: ctx.type,
                            {
-                              "MMAP":  mmap(attr),
+                              "MMAP": mmap(),
                               "LOST": Struct("lost",
                                               UNInt64("id"),
                                               UNInt64("lost"),
-                                             sample_id(attr)),
+                                             sample_id()),
                               "COMM": Struct("comm",
                                              SNInt32("pid"),
                                              SNInt32("tid"),
                                              PaddedCString("comm"),
-                                             sample_id(attr)),
-                              "EXIT": fork_exit("exit", attr),
-                              "THROTTLE": throttle("thottle", attr),
-                              "UNTHROTTLE": throttle("unthottle", attr),
-                              "FORK": fork_exit("fork", attr),
-                              "READ": Embedded(Struct("read_event",
-                                                      SNInt32("pid"),
-                                                      SNInt32("tid"),
-                                                      read_format(attr.read_format),
-                                                      sample_id(attr))),
-                              "SAMPLE": event(attr.sample_type, 
-                                              attr.read_format, 
-                                              attr.sample_regs_user),
+                                             sample_id()),
+                              "EXIT": fork_exit("exit"),
+                              "THROTTLE": throttle("thottle"),
+                              "UNTHROTTLE": throttle("unthottle"),
+                              "FORK": fork_exit("fork"),
+                              #"READ": Embedded(Struct("read_event",
+                              #                        SNInt32("pid"),
+                              #                        SNInt32("tid"),
+                              #                        read_format(),
+                              #                        sample_id())),
+                              "SAMPLE": event()
                            }),
 			Anchor("end"),
-			Bytes("pad",lambda ctx:
+			Padding(lambda ctx:
                                     ctx.size - (ctx.end - ctx.start)))
 
 def perf_event_seq(attr):
@@ -339,7 +347,8 @@ perf_event_attr = Struct("perf_event_attr",
                                             UNInt32("sample_stack_user"),
                                             UNInt32("__reserved_2")))),
                          Anchor("end"),
-                         Value("perf_event_attr_size", lambda ctx: ctx.end - ctx.start),
+                         Value("perf_event_attr_size",
+                               lambda ctx: ctx.end - ctx.start),
                          Padding(lambda ctx: ctx.size - ctx.perf_event_attr_size))
 
 def pad(l = "len"):
@@ -489,7 +498,10 @@ perf_event_types = Struct("perf_file_attr",
                           Anchor("here"),
                           Padding(lambda ctx: ctx._.size))
 
-perf_data = OnDemand(Bytes("perf_data", lambda ctx: ctx.size))
+perf_data = TunnelAdapter(Bytes("perf_data", lambda ctx: ctx.size),
+                          GreedyRange(perf_event()))
+
+#OnDemand(Bytes("perf_data", lambda ctx: ctx.size))
 
 perf_file = Struct("perf_file_header",
                    # no support for version 1
@@ -528,14 +540,8 @@ perf_file = Struct("perf_file_header",
                            perf_features()),
                    Padding(3 * 8))
 
-# XXX use tunnel adapter
 def get_events(h):
-    data = h.data.perf_data.value
-    # assumes event 0 attributes applies to all samples?
-    ev0 = h.attrs.perf_file_attr.f_attr[0].perf_event_attr
-    assert ev0.size in perf_event_attr_sizes
-    # XXX look up by id
-    return perf_event_seq(ev0).parse(data)
+    return h.data.perf_data
 
 if __name__ == '__main__':
     import sys
@@ -543,5 +549,5 @@ if __name__ == '__main__':
     with open(sys.argv[1], "rb") as f:
         h = perf_file.parse_stream(f)
         print h
-        print get_events(h)
+        #print get_events(h)
 

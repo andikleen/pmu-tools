@@ -15,10 +15,15 @@ import elf
 # expand registers, stack
 # represent other metadata
 # s/w trace points
+# resolve mmap
+# resolve kernel
+# fix callchain
+# resolve branch
+# use limited lookahead window for queue
 # 
 
 ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
-           'header_end', 'end_event', 'offset')
+           'header_end', 'end_event', 'offset', 'callchain', 'branch_stack')
 
 def lookup(m, ip):
     i = bisect.bisect_left(m, (ip,))
@@ -42,6 +47,20 @@ def resolve(maps, pid, ip):
             return None, 0
     assert ip >= m[0] and ip < m[0] + m[1]
     return m[2], offset
+
+def resolve_chain(cc, j, maps):
+    if cc:
+        j.callchain_func = []
+        j.callchain_src = []
+        for ip in cc.caller:
+            fn, _ = resolve(maps, j.pid, ip)
+            print ip, fn
+            sym, offset, line = None, None, None
+            if fn and fn.startswith("/"):
+                sym, offset, line = elf.resolve_addr(fn, ip)
+            print sym, offset, line
+            j.callchain_func.append((sym, offset))
+            j.callchain_src.append((fn, line))
 
 def do_add(d, u, k, i):
     d[k].append(i)
@@ -93,12 +112,13 @@ def samples_to_df(h):
         add('symbol', sym)
         add('soffset', offset)
         add('line', line)
+        #if 'callchain' in j:
+        #    resolve_chain(j['callchain'], j, maps)
         for name in j:
             if name not in ignored:
                 if j[name]:
                     used[name] += 1
                 data[name].append(j[name])
-        # XXX assumes time exists
         index.append(pd.Timestamp(j["time"]))
     for j in data.keys():
         if used[j] == 0:
