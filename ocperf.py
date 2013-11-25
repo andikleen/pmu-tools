@@ -36,6 +36,10 @@ import os, os.path
 import struct
 import subprocess
 import csv
+try:
+    import json
+except ImportError:
+    pass
 import re
 import shlex
 import copy
@@ -227,29 +231,23 @@ def merge_extra(a, b):
     return m
 
 class Emap:
-    "Read a event spreadsheet."
+    "Read an event table."
     events = {}
     codes = {}
     desc = {}
     pevents = {}
     latego = False
 
-    def read_spreadsheet(self, name, dialect, m):
-        index = None
-        r = csv.reader(open(name, 'rb'), dialect=dialect)
+    def read_table(self, r, m):
         for row in r:
-            if index == None:
-                index = dict(zip(row, xrange(len(row))))
-                continue
-
-            get = lambda (x): row[index[m[x]]]
+            get = lambda (x): row[m[x]]
             gethex = lambda (x): int(get(x).split(",")[0], 16)
             getdec = lambda (x): int(get(x), 10)
 
             name = get('name').lower().rstrip()
             code = gethex('code')
             umask = gethex('umask')
-            if 'other' in m and m['other'] in index:
+            if 'other' in m and m['other'] in row:
                 other = gethex('other') << 16
             else:
                 other = gethex('edge') << 18
@@ -259,6 +257,10 @@ class Emap:
             val = code | (umask << 8) | other
             val &= EVMASK
             d = get('desc').strip()
+            try:
+                d = d.encode('utf-8')
+            except UnicodeDecodeError:
+                pass
             self.desc[name] = d
             e = Event(name, val, d)
             counter = get('counter')
@@ -266,7 +268,7 @@ class Emap:
             if counter in fixed_counters:
                 e.pname = fixed_counters[counter]
             e.newextra = ""
-            if ('msr_index' in m and m['msr_index'] in index
+            if ('msr_index' in m and m['msr_index'] in row
                     and get('msr_index') and get('msr_value')):
                 msrnum = gethex('msr_index')
                 msrval = gethex('msr_value')
@@ -376,7 +378,8 @@ class EmapBNL(Emap):
             'pebs': 'PEBS',
             'counter': 'Counter'
         }
-        return self.read_spreadsheet(name, 'excel', spreadsheet)
+        r = csv.DictReader(open(name, 'rb'), dialect='excel')
+        return self.read_table(r, spreadsheet)
 
 class EmapNHM(Emap):
     def __init__(self, name, model):
@@ -392,7 +395,8 @@ class EmapNHM(Emap):
             'counter': 'COUNTER',
             'overflow': 'OVERFLOW',
         }
-        return self.read_spreadsheet(name, 'excel-tab', nhm_spreadsheet)
+        r = csv.DictReader(open(name, 'rb'), dialect='excel-tab')
+        return self.read_table(r, nhm_spreadsheet)
 
 class EmapJSON(Emap):
     # EventCode,UMask,EventName,Description,Counter,OverFlow,MSRIndex,MSRValue,PreciseEvent,Invert,AnyThread,EdgeDetect,CounterMask
@@ -414,7 +418,29 @@ class EmapJSON(Emap):
         }
         if model == 45:
             self.latego = True
-        return self.read_spreadsheet(name, 'excel', spreadsheet)
+        r = csv.DictReader(open(name, 'rb'), dialect='excel')
+        return self.read_table(r, spreadsheet)
+
+class EmapNativeJSON(Emap):
+    def __init__(self, name, model):
+        mapping = {
+            'name': u'EventName',
+            'code': u'EventCode',
+            'umask': u'UMask',
+            'msr_index': u'MSRIndex',
+            'msr_value': u'MSRValue',
+            'cmask': u'CounterMask',
+            'invert': u'Invert',
+            'any': u'AnyThread',
+            'edge': u'EdgeDetect',
+            'desc': u'PublicDescription',
+            'pebs': u'PEBS',
+            'counter': u'Counter',
+            'overflow': u'SampleAfterValue',
+        }
+        if model == 45:
+            self.latego = True
+        return self.read_table(json.load(open(name, 'rb')), mapping)
 
 readers = (
     ("snb-ep", EmapJSON),
@@ -437,11 +463,12 @@ def find_emap():
     cpu = CPU()
     t = cpu.getmap()
     if t:
+        if t.endswith(".json"):
+            return EmapNativeJSON(t, cpu.model)
         try:
             for i in readers:
                 if os.path.basename(t).startswith(i[0]):
-                    emap = i[1](t, cpu.model)
-                    return emap
+                    return i[1](t, cpu.model)
         except IOError:
             return None
     return None
