@@ -17,10 +17,9 @@
 #
 # TBD:
 # Look up sample type for each record by end id 
-# Unify records and header
-# Use TunnelAdapter for individual records
 # Fix sample_id_all check
 # Generic Bitfield adapter that handles endian properly?
+# check size in all cases (or use optional+tunnel)
 # 
 
 from construct import *
@@ -250,8 +249,8 @@ def perf_event():
                                              PaddedCString("comm"),
                                              sample_id()),
                               "EXIT": fork_exit("exit"),
-                              "THROTTLE": throttle("thottle"),
-                              "UNTHROTTLE": throttle("unthottle"),
+                              "THROTTLE": throttle("throttle"),
+                              "UNTHROTTLE": throttle("unthrottle"),
                               "FORK": fork_exit("fork"),
                               "READ": Embedded(Struct("read_event",
                                                       SNInt32("pid"),
