@@ -202,16 +202,19 @@ def mmap():
                                       sample_id_size(ctx),
                                       sample_id()))))
 
+def read_flags(ctx):
+    return ctx._.attr.read_format
+
 def enabled_running():
     return Struct("enabled_running",
-                  If(lambda ctx: ctx._.attr.read_format.total_time_enabled,
+                  If(lambda ctx: read_flags(ctx).total_time_enabled,
                      UNInt64("total_time_enabled")),
-                  If(lambda ctx: ctx._.attr.read_format.total_time_running,
+                  If(lambda ctx: read_flags(ctx).total_time_running,
                      UNInt64("total_time_running")))
 
 def read_format():
     return Struct("read",
-                  If(lambda ctx: ctx._.attr.read_format.group,
+                  If(lambda ctx: read_flags(ctx).group,
                      Struct("group",
                             UNInt64("nr"),
                             Embedded(enabled_running()),
@@ -219,13 +222,13 @@ def read_format():
                                   Struct("val",
                                          UNInt64("value"),
                                          If(lambda ctx: 
-                                            ctx._.attr.read_format.id,
+                                            read_flags(ctx).id,
                                             UNInt64("id2")))))),
-                  If(lambda ctx: not ctx._.attr.read_format.group,
+                  If(lambda ctx: not read_flags(ctx).group,
                       Struct("single",
                              UNInt64("value"),
                              Embedded(enabled_running()),
-                             If(lambda ctx: ctx._._.attr.read_format.id,
+                             If(lambda ctx: read_flags(ctx).id,
                                 UNInt64("id2")))))
 
 def perf_event():
@@ -250,11 +253,11 @@ def perf_event():
                               "THROTTLE": throttle("thottle"),
                               "UNTHROTTLE": throttle("unthottle"),
                               "FORK": fork_exit("fork"),
-                              #"READ": Embedded(Struct("read_event",
-                              #                        SNInt32("pid"),
-                              #                        SNInt32("tid"),
-                              #                        read_format(),
-                              #                        sample_id())),
+                              "READ": Embedded(Struct("read_event",
+                                                      SNInt32("pid"),
+                                                      SNInt32("tid"),
+                                                      read_format(),
+                                                      sample_id())),
                               "SAMPLE": event()
                            }),
 			Anchor("end"),
