@@ -6,6 +6,7 @@ import perfdata
 from collections import defaultdict, Counter
 import bisect
 import elf
+import mmap
 
 #
 # TBD 
@@ -15,46 +16,20 @@ import elf
 # expand registers, stack
 # represent other metadata
 # s/w trace points
-# resolve mmap
-# resolve kernel
 # handle shlibs
 # fix callchain
 # resolve branch
-# move resolution to other module
 # 
 
 ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
            'header_end', 'end_event', 'offset', 'callchain', 'branch_stack')
 
-def lookup(m, ip):
-    i = bisect.bisect_left(m, (ip,))
-    if i < len(m) and m[i][0] == ip:
-        mr = m[i]
-    elif i == 0:
-        return None, 0
-    else:
-        mr = m[i - 1]
-    return mr, ip - mr[0] 
-
-def resolve(maps, pid, ip):
-    if not maps[pid]:
-        # xxx kernel
-        return None, 0
-    m, offset = lookup(maps[pid], ip)
-    if not m or offset >= m[1]:
-        # look up kernel
-        m, offset = lookup(maps[-1], ip)
-        if offset >= m[1]:
-            return None, 0
-    assert ip >= m[0] and ip < m[0] + m[1]
-    return m[2], offset
-
-def resolve_chain(cc, j, maps):
+def resolve_chain(cc, j, mm):
     if cc:
         j.callchain_func = []
         j.callchain_src = []
         for ip in cc.caller:
-            fn, _ = resolve(maps, j.pid, ip)
+            fn, _ = mm.resolve(j.pid, ip)
             print ip, fn
             sym, offset, line = None, None, None
             if fn and fn.startswith("/"):
@@ -62,9 +37,6 @@ def resolve_chain(cc, j, maps):
             print sym, offset, line
             j.callchain_func.append((sym, offset))
             j.callchain_src.append((fn, line))
-
-# max reorder window for MMAP updates
-LOOKAHEAD_WINDOW = 1024
 
 def do_add(d, u, k, i):
     d[k].append(i)
@@ -74,46 +46,21 @@ def samples_to_df(h):
     ev = perfdata.get_events(h)
     index = []
     data = defaultdict(list)
-    procs = dict()
 
-    maps = defaultdict(list)
-    pnames = defaultdict(str)
     used = Counter()
+    mm = mmap.MmapTracker()
 
-    # comm do not necessarily appear in order
-    # first build queue of comm in order
-    updates = []    
-    lookahead = 0
     for n in range(0, len(ev)):
-        # look ahead for out of order mmap updates
-        if n - lookahead == 0:
-            lookahead = min(n + LOOKAHEAD_WINDOW, len(ev))
-            for l in range(n, lookahead):
-                j = ev[l]
-                # no time stamp: assume it's synthesized and kernel
-                if j.type == 'MMAP' and j.pid == -1 and j.tid == 0:
-                    bisect.insort(maps[j.pid], (j.addr, j.len, j.filename))
-                elif j.type in ('COMM','MMAP'):
-                    bisect.insort(updates, (j.time2, j))
+        mm.lookahead_mmap(ev, n)
 
         j = ev[n]
         if j.type != "SAMPLE":
             continue
 
+        mm.update_sample(j)
         add = lambda k, i: do_add(data, used, k, i)
 
-        # process pending updates
-        while len(updates) > 0 and j.time >= updates[0][0]:
-            u = updates[0][1]
-            del updates[0]
-            if u.type == 'MMAP':
-                pid = u.pid
-                bisect.insort(maps[pid], (u.addr, u.len, u.filename))
-            elif u.type == 'COMM':
-                maps[u.pid] = []
-                pnames[u.pid] = u.comm
-    
-        filename, offset = resolve(maps, j.pid, j.ip)        
+        filename, offset = mm.resolve(j.pid, j.ip)        
         add('filename', filename)
         add('foffset', offset)
         sym, offset, line = None, None, None
@@ -123,7 +70,7 @@ def samples_to_df(h):
         add('soffset', offset)
         add('line', line)
         #if 'callchain' in j:
-        #    resolve_chain(j['callchain'], j, maps)
+        #    resolve_chain(j['callchain'], j, mmap)
         for name in j:
             if name not in ignored:
                 if j[name]:
