@@ -17,9 +17,10 @@ import elf
 # s/w trace points
 # resolve mmap
 # resolve kernel
+# handle shlibs
 # fix callchain
 # resolve branch
-# use limited lookahead window for queue
+# move resolution to other module
 # 
 
 ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
@@ -62,6 +63,9 @@ def resolve_chain(cc, j, maps):
             j.callchain_func.append((sym, offset))
             j.callchain_src.append((fn, line))
 
+# max reorder window for MMAP updates
+LOOKAHEAD_WINDOW = 1024
+
 def do_add(d, u, k, i):
     d[k].append(i)
     u[k] += 1
@@ -78,19 +82,25 @@ def samples_to_df(h):
 
     # comm do not necessarily appear in order
     # first build queue of comm in order
-    updates = []
-    for j in ev:
-        # no time stamp: assume it's synthesized and kernel
-        if j.type == 'MMAP' and j.pid == -1 and j.tid == 0:
-            bisect.insort(maps[j.pid], (j.addr, j.len, j.filename))
-        elif j.type in ('COMM','MMAP'):
-            bisect.insort(updates, (j.time2, j))
+    updates = []    
+    lookahead = 0
+    for n in range(0, len(ev)):
+        # look ahead for out of order mmap updates
+        if n - lookahead == 0:
+            lookahead = min(n + LOOKAHEAD_WINDOW, len(ev))
+            for l in range(n, lookahead):
+                j = ev[l]
+                # no time stamp: assume it's synthesized and kernel
+                if j.type == 'MMAP' and j.pid == -1 and j.tid == 0:
+                    bisect.insort(maps[j.pid], (j.addr, j.len, j.filename))
+                elif j.type in ('COMM','MMAP'):
+                    bisect.insort(updates, (j.time2, j))
 
-    for j in ev:
-        add = lambda k, i: do_add(data, used, k, i)
-
+        j = ev[n]
         if j.type != "SAMPLE":
             continue
+
+        add = lambda k, i: do_add(data, used, k, i)
 
         # process pending updates
         while len(updates) > 0 and j.time >= updates[0][0]:
