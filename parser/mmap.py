@@ -16,6 +16,8 @@ def lookup(m, ip):
     return mr, ip - mr[0] 
 
 class MmapTracker:
+    """Track mmap updates in a perf stream and allow lookup of symbols."""
+
     def __init__(self):
         self.maps = defaultdict(list)
         self.pnames = defaultdict(str)
