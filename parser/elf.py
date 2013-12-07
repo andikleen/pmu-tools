@@ -49,7 +49,7 @@ def find_le(f, key):
         return None
     return f[pos - 1]
 
-def resolve_addr(fn, ip):
+def resolve_addr(fn, ip, resolve_line=True):
     if fn in open_files:
         elffile = open_files[fn]
     else:
@@ -57,7 +57,7 @@ def resolve_addr(fn, ip):
         elffile = ELFFile(f)
         open_files[fn] = elffile
 
-    if fn not in lines and elffile.has_dwarf_info():
+    if resolve_line and fn not in lines and elffile.has_dwarf_info():
         lines[fn] = build_line_table(elffile.get_dwarf_info())
 
     if fn not in symtables:
@@ -71,7 +71,7 @@ def resolve_addr(fn, ip):
             loc, offset = sym[2], ip - sym[0]
 
     src = None
-    if fn in lines:
+    if resolve_line and fn in lines:
         pos = find_le(lines[fn], ip)
         if pos:
             src = "%s:%d" % (pos[2], pos[3])    

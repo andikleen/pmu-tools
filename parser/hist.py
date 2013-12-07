@@ -23,10 +23,11 @@ def print_feat(feat):
 
 min_percent = float(args.min_percent) / 100.0
 for d in args.datafiles:
-    df, et, feat = perfpd.read_samples(d)
+    df, et, feat = perfpd.read_samples(d, (args.sort == 'line'))
+    print_feat(feat)
+    # xxx split by event
     h = df[args.sort].value_counts(normalize=True)
     cols = min(max(map(lambda x: len(x), h.index)) + 5, 70)
-    print_feat(feat)
     for s, v in zip(h.index, h.values):
        if v < min_percent:
            break

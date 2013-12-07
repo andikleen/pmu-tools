@@ -27,22 +27,21 @@ ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
 def resolve_chain(cc, j, mm):
     if cc:
         j.callchain_func = []
-        j.callchain_src = []
         for ip in cc.caller:
             fn, _ = mm.resolve(j.pid, ip)
             print ip, fn
-            sym, offset, line = None, None, None
-            if fn and fn.startswith("/"):
-                sym, offset, line = elf.resolve_addr(fn, ip)
-            print sym, offset, line
-            j.callchain_func.append((sym, offset))
-            j.callchain_src.append((fn, line))
+            #sym, offset, line = None, None, None
+            #if fn and fn.startswith("/"):
+            #    sym, offset, line = elf.resolve_addr(fn, ip)
+            #print sym, offset, line
+            #j.callchain_func.append((sym, offset))
+            #j.callchain_src.append((fn, line))
 
 def do_add(d, u, k, i):
     d[k].append(i)
     u[k] += 1
 
-def samples_to_df(h):
+def samples_to_df(h, need_line):
     ev = perfdata.get_events(h)
     index = []
     data = defaultdict(list)
@@ -65,7 +64,7 @@ def samples_to_df(h):
         add('foffset', offset)
         sym, offset, line = None, None, None
         if filename and filename.startswith("/"):
-            sym, offset, line = elf.resolve_addr(filename, j.ip)
+            sym, offset, line = elf.resolve_addr(filename, j.ip, need_line)
         add('symbol', sym)
         add('soffset', offset)
         add('line', line)
@@ -82,15 +81,15 @@ def samples_to_df(h):
             del data[j]
     return pd.DataFrame(data, index=index, dtype=np.uint64)
 
-def read_samples(fn):
+def read_samples(fn, need_line=True):
     with open(fn, "rb") as f:
         h = perfdata.perf_file.parse_stream(f)
-        df = samples_to_df(h)
-        return df
+        df = samples_to_df(h, need_line)
+        return df, h.attrs.perf_file_attr.f_attr, h.features
 
 if __name__ == '__main__':
     import sys
-    df = read_samples(sys.argv[1])
+    df, _, _ = read_samples(sys.argv[1])
     print df
     print df['filename'].value_counts()
     print df['symbol'].value_counts()
