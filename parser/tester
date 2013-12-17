@@ -1,0 +1,44 @@
+#!/bin/bash
+# test different variants of the perf format
+
+set -e
+set -x
+
+CMD=${1:-bash -c /bin/true}
+
+check() { 
+	echo -- testing "$@"
+	rm -f perf.data
+	perf record -c 1000 "$@" -- $CMD
+	if [ $(stat -c %s perf.data) == 0 ] ; then
+		return
+	fi
+	python perfdata.py perf.data > /dev/null
+	python perfpd.py perf.data > /dev/null
+
+	# XXX check more fields
+	AS=$(python perfdata.py perf.data | grep -c SAMPLE)
+	BS=$(perf report -D | grep -c "PERF_RECORD_SAMPLE")
+	[ $AS -eq $BS ]
+}
+
+check
+check -g
+check -b -g
+check -P
+check -T
+check -e cycles:S 
+# seems to be broken in perf
+#check -e '{cycles,branches}:S'
+
+set +e 
+check -d
+check --group -e cycles,branches,branch-misses
+check -e '{cycles,branches},{branch-misses,cache-misses}'
+check -e cycles,branches,branch-misses
+
+# new kernel
+#check -g dwarf
+
+# XXX sw trace points
+
