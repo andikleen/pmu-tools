@@ -23,7 +23,7 @@ rc = csv.reader(inf)
 for row in rc:
     if len(row) < 3:
         continue
-    ts, ev, val = row
+    ts, val, ev = row
     ev = ev.strip()
     if ts != timestamp:
         if timestamp:
