@@ -64,7 +64,7 @@ cpu_mapping = {
     47: "wsm-dp.csv",  # westmere-EX
     58: "ivb-client.csv", # ivy bridge client
     60: "hsw.csv", 70: "hsw.csv", 71: "hsw.csv",  # Haswell
-    69: "hsw.csv", 
+    69: "hsw.csv", 63: "hsw.csv",
     28: "bnl.csv", 38: "bnl.csv", 39: "bnl.csv", 53: "bnl.csv", 54: "bnl.csv",
     62: "ivt.csv",     # ivybridge-ep
     77: "slm.csv",     # avoton
