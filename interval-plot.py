@@ -101,4 +101,7 @@ for l in levels.keys():
     leg = ax.legend(t, loc='upper left')
     leg.get_frame().set_alpha(0.5)
     n += 1
+
+plt.xlabel('Time')
+plt.ylabel('Bottleneck %')
 plt.show()
