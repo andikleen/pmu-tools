@@ -11,6 +11,11 @@ import csv
 import sys
 import matplotlib.pyplot as plt
 import collections
+try:
+    from mpltools import style
+    style.use('ggplot')
+except ImportError:
+    print "Consider installing mpltools for prettier plots (pip install mpltools)"
 
 import gen_level
 
@@ -62,7 +67,10 @@ for l in levels.keys():
     for j in assigned.keys():
         if gen_level.get_level(j) == l:
             t.append(j)
-            ax.plot(timestamps[j], value[j], assigned[j])
+            if 'style' not in globals():
+                ax.plot(timestamps[j], value[j], assigned[j])
+            else:
+                ax.plot(timestamps[j], value[j])
     leg = ax.legend(t, loc='upper left')
     leg.get_frame().set_alpha(0.5)
     n += 1
