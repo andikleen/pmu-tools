@@ -11,11 +11,27 @@ import csv
 import sys
 import matplotlib.pyplot as plt
 import collections
-try:
-    from mpltools import style
-    style.use('ggplot')
-except ImportError:
-    print "Consider installing mpltools for prettier plots (pip install mpltools)"
+import argparse
+
+p = argparse.ArgumentParser(
+        usage='plot interval CSV output from perf stat/toplev',
+        description='''
+perf stat -I1000 -x, -o file ...
+toplev -I1000 -x, -o file ... 
+interval-plot.py file (or stdin)
+delimeter must be ,
+this is for data that is not normalized.''')
+p.add_argument('--xkcd', action='store_true', help='enable xkcd mode')
+p.add_argument('--style', help='set mpltools style (e.g. ggplot)')
+p.add_argument('file', help='CSV file to plot (or stdin)')
+args = p.parse_args()
+
+if args.style:
+    try:
+        from mpltools import style
+        style.use(args.style)
+    except ImportError:
+        print "Need mpltools for setting styles (pip install mpltools)"
 
 import gen_level
 
@@ -26,8 +42,8 @@ all_colors = ('green','orange','red','blue',
 cur_colors = collections.defaultdict(lambda: all_colors)
 assigned = dict()
 
-if len(sys.argv) > 1:
-    inf = open(sys.argv[1], "r")
+if args.file:
+    inf = open(args.file, "r")
 else:
     inf = sys.stdin
 
@@ -58,6 +74,12 @@ for r in rc:
 levels = dict()
 for j in assigned.keys():
     levels[gen_level.get_level(j)] = True
+
+if args.xkcd:
+    try:
+        plt.xkcd()
+    except NameError:
+        print "Please update matplotlib. Cannot enable xkcd mode."
 
 n = 1
 for l in levels.keys():
