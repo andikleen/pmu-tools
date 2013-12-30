@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import csv
 import argparse
 import math
+import re
 from collections import defaultdict
 
 try:
@@ -26,26 +27,27 @@ ts = None
 for r in rc:
     if len(r) < 4:
         continue
+    if not re.match(r"\d+(\.\d*)", r[0]):
+        r = ["0.0"] + r
     t = math.trunc(float(r[0]) * 100) / 100.0
-    print t,r[1]
     if t != ts:
         timestamps.append(t)
         ts = t
     ratios[r[1]].append(float(r[2].replace("%","")))
+
+print "time", len(timestamps), timestamps
+for j in ratios.keys():
+    print j, ratios[j]
     
-bars = []
-prev = [0] * len(ratios[ratios.keys()[0]])
-col = all_colors
-for j in ratios:
-    print j,ratios[j],prev
-    bars.append(plt.bar(timestamps, ratios[j], color=col[0], bottom=prev))
-    prev = [x+y for x,y in zip(prev, ratios[j])]
-    col = col[1:]
-    if not col:
-        col = all_colors
-              
-plt.xlabel('Time')
-plt.ylabel('Percent bottleneck')
-plt.legend(map(lambda x: x[0], bars), ratios.keys())
-plt.margins(0, 0)
+fig = plt.figure()
+ax = fig.add_subplot('111')
+stack =  ax.stackplot(timestamps, colors=all_colors, *(ratios.values()))
+ax.set_xlabel('Time (s)')
+ax.set_ylabel('Bottleneck (% of execution time)')
+
+p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
+plt.legend(p, ratios.keys())
+ax.margins(0, 0)
+if len(timestamps) == 1:
+    plt.gca().axes.get_xaxis().set_visible(False)
 plt.show()
