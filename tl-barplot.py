@@ -34,17 +34,18 @@ for r in rc:
     ratios[r[1]].append(float(r[2].replace("%","")))
     
 bars = []
-prev = None
+prev = [0] * len(ratios[ratios.keys()[0]])
 col = all_colors
 for j in ratios:
-    print j,ratios[j]
+    print j,ratios[j],prev
     bars.append(plt.bar(timestamps, ratios[j], color=col[0], bottom=prev))
-    prev = ratios[j]
+    prev = [x+y for x,y in zip(prev, ratios[j])]
     col = col[1:]
     if not col:
         col = all_colors
-               
+              
 plt.xlabel('Time')
 plt.ylabel('Percent bottleneck')
 plt.legend(map(lambda x: x[0], bars), ratios.keys())
+plt.margins(0, 0)
 plt.show()
