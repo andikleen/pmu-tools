@@ -244,6 +244,9 @@ Plot an already normalized data file. Requires pyplot to be installed.
 ## tl-barplot:
 
 Plot output from toplev.py -I 1000 -v -x, --output file.csv -lLEVELS
+toplev outputs percentages, so it's better to use a stacked plot,
+instead of the absolute values interval-plot displays.  tl-barplot
+implements a stacked barplot plot.
 
 Requires matplotlib to be installed.
 
@@ -255,9 +258,10 @@ Requires matplotlib to be installed.
 With a new enough matplotlib you can also enable xkcd mode
 (install Humor Sans first)
 
-	tl-barplot.py kbuild.1.csv  --title "kernel build" --output kbuild-xkcd.png  --xkcd
+	toplev.py -I 100 -v -x, -l2 --output grep.2.csv grep -r foobar /usr/*
+	tl-barplot.py grep.2.csv  --title "GNU grep" --output grep-xkcd.png  --xkcd
 
-![tl-barplot-xkcd] (http://halobates.de/kbuild-xkcd.png)
+![tl-barplot-xkcd] (http://halobates.de/grep-xkcd.png)
 
 ## self: 
 
