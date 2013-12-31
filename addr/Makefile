@@ -1,6 +1,6 @@
 CFLAGS := -g -Wall -O2 
 CXXFLAGS := -g -Wall  -O2 
-LDFLAGS := -lstdc++
+LDFLAGS := -lstdc++ -ldl
 
 # no deps on the includes
 
