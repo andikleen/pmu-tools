@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# plot toplev -lX -x, output as bar plot
+# plot toplev -v -lX -x, output as bar plot
 #
 # TODO:
 # y label
@@ -17,7 +17,7 @@ except ImportError:
     print "pip install brewer2mpl for better colors"
     all_colors = ('red','green','blue','yellow','black')
 
-p = argparse.ArgumentParser(usage='plot toplev -lN -x, output as bar plot') 
+p = argparse.ArgumentParser(usage='plot toplev -v -lN -x, output as bar plot') 
 p.add_argument('file', help='CSV file to plot')
 p.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
                   nargs='?')
