@@ -1,6 +1,11 @@
 #!/usr/bin/python
-# plot toplev -l1 -v -x, output as bar plot
-# works best with -v and -l1
+# plot toplev -lX -v -x, output as bar plot
+#
+# TODO:
+# fill in dummy values
+# move legend out
+# y label
+# two column legend
 import matplotlib.pyplot as plt
 import csv
 import argparse
