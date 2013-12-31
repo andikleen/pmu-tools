@@ -2,7 +2,6 @@
 # plot toplev -lX -x, output as bar plot
 #
 # TODO:
-# move legend out
 # y label
 import matplotlib.pyplot as plt
 import csv
@@ -86,12 +85,13 @@ for l in levels.keys():
     r = map(lambda x: ratios[x], non_null)
     stack = ax.stackplot(timestamps, colors=all_colors, *r)
     ax.set_ylim(0, 100)
-    ax.set_title('Level %d' % (l), loc='left')
+    ax.set_title('Level %d' % (l))
     ax.get_xaxis().set_visible(False)
-    ax.xaxis.tick_top()
+    #box = ax.get_position()
+    #ax.set_position([box.x0, box.y0, box.width, box.height * 0.8])
 
     p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
-    leg = plt.legend(p, non_null, ncol=2, bbox_to_anchor=(0., 0., 1., .102), loc=2)
+    leg = plt.legend(p, non_null, ncol=2, bbox_to_anchor=(0., 0., 1., 0.0), loc=2)
     leg.get_frame().set_alpha(0.5)
     ax.margins(0, 0)
     n += 1
@@ -105,8 +105,7 @@ if len(timestamps) == 1:
 
 plt.subplots_adjust(hspace=1.0)
 
-# xxx put in wrong place
-#plt.ylabel('Bottleneck (% of execution time)')
+plt.ylabel('(% of execution time)')
 if args.output:
     plt.savefig(args.output)
 else:
