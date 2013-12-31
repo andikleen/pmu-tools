@@ -59,7 +59,7 @@ class MmapTracker:
         if not m or offset >= m[1]:
             # look up kernel
             m, offset = lookup(self.maps[-1], ip)
-            if offset >= m[1]:
+            if not m or offset >= m[1]:
                 return None, 0
         assert ip >= m[0] and ip < m[0] + m[1]
         return m[2], offset
