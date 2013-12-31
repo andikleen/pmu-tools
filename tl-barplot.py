@@ -23,17 +23,17 @@ except ImportError:
 ratios = defaultdict(list)
 timestamps = []
 
-args = argparse.ArgumentParser(usage='plot toplev -lN -v -x, output as bar plot') 
-args.add_argument('file', help='CSV file to plot')
-args.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
+p = argparse.ArgumentParser(usage='plot toplev -lN -v -x, output as bar plot') 
+p.add_argument('file', help='CSV file to plot')
+p.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
                   nargs='?')
-args.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
-arg = args.parse_args()
+p.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
+args = p.parse_args()
 
-if arg.xkcd:
+if args.xkcd:
     plt.xkcd()
 
-rc = csv.reader(open(arg.file, "r"))
+rc = csv.reader(open(args.file, "r"))
 ts = None
 levels = defaultdict(list)
 for r in rc:
@@ -93,7 +93,7 @@ plt.subplots_adjust(hspace=1.0)
 
 # xxx put in wrong place
 #plt.ylabel('Bottleneck (% of execution time)')
-if arg.output:
-    plt.savefig(arg.output)
+if args.output:
+    plt.savefig(args.output)
 else:
     plt.show()
