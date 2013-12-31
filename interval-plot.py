@@ -23,6 +23,8 @@ this is for data that is not normalized.''')
 p.add_argument('--xkcd', action='store_true', help='enable xkcd mode')
 p.add_argument('--style', help='set mpltools style (e.g. ggplot)')
 p.add_argument('file', help='CSV file to plot (or stdin)')
+p.add_argument('--output', '-o', help='Output to file. Otherwise show.', 
+               nargs='?')
 args = p.parse_args()
 
 if args.style:
@@ -104,4 +106,7 @@ for l in levels.keys():
 
 plt.xlabel('Time')
 plt.ylabel('Bottleneck %')
-plt.show()
+if args.output:
+    plt.savefig(args.output)
+else:
+    plt.show()

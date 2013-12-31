@@ -21,9 +21,11 @@ timestamps = []
 
 args = argparse.ArgumentParser(usage='plot toplev -l1 -v -x, output as bar plot') 
 args.add_argument('file', help='CSV file to plot')
-p = args.parse_args()
+args.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
+                  nargs='?')
+arg = args.parse_args()
 
-rc = csv.reader(open(p.file, "r"))
+rc = csv.reader(open(arg.file, "r"))
 ts = None
 levels = defaultdict(list)
 for r in rc:
@@ -73,4 +75,7 @@ if len(timestamps) == 1:
 # xxx put in wrong place
 #plt.xlabel('Time (s)')
 #plt.ylabel('Bottleneck (% of execution time)')
-plt.show()
+if arg.output:
+    plt.savefig(arg.output)
+else:
+    plt.show()
