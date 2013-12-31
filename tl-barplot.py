@@ -23,6 +23,7 @@ p.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Othe
                   nargs='?')
 p.add_argument('--verbose', '-v', help='Print data values', action='store_true')
 p.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
+p.add_argument('--title', help='Set title of plot', nargs='?')
 args = p.parse_args()
 
 if args.xkcd:
@@ -107,6 +108,10 @@ if len(timestamps) == 1:
     plt.gca().axes.get_xaxis().set_visible(False)
 
 plt.subplots_adjust(hspace=0.9, bottom=0.19, top=0.95)
+
+if args.title:
+    plt.subplot(numplots, 1, 1)
+    plt.title(args.title)
 
 if args.output:
     plt.savefig(args.output)
