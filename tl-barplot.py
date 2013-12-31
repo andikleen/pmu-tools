@@ -35,7 +35,7 @@ def flush_vals(ratios, vals):
     if not k:
         k = vals.keys()
     for j in k:
-        if j in vals:
+        if j in vals and -5 <= vals[j] <= 105:
             ratios[j].append(vals[j])
         else:
             ratios[j].append(float('nan'))
@@ -67,13 +67,18 @@ if args.verbose:
     print "time", len(timestamps), timestamps
     for j in ratios.keys():
         print j, ratios[j]
+
+def valid_row(r):
+    s = sum(r)
+    return s != 0.0 and s != float('nan')
     
 n = 1
 numplots = len(levels.keys())
 fig = plt.figure()
 ax = None
+yset = False
 for l in levels.keys():
-    non_null = filter(lambda x: sum(ratios[x]) != 0.0, levels[l])
+    non_null = filter(lambda x: valid_row(ratios[x]), levels[l])
     if not non_null:
         print "nothing in level", l
         n += 1
