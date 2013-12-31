@@ -22,6 +22,7 @@ p = argparse.ArgumentParser(usage='plot toplev -lN -x, output as bar plot')
 p.add_argument('file', help='CSV file to plot')
 p.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
                   nargs='?')
+p.add_argument('--verbose', '-v', help='Print data values', action='store_true')
 p.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
 args = p.parse_args()
 
@@ -63,9 +64,10 @@ for r in rc:
     vals[r[1]] = float(r[2].replace("%",""))
 flush_vals(ratios, vals)
 
-print "time", len(timestamps), timestamps
-for j in ratios.keys():
-    print j, ratios[j]
+if args.verbose:
+    print "time", len(timestamps), timestamps
+    for j in ratios.keys():
+        print j, ratios[j]
     
 n = 1
 numplots = len(levels.keys())
