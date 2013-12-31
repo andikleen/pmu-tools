@@ -1,11 +1,9 @@
 #!/usr/bin/python
-# plot toplev -lX -v -x, output as bar plot
+# plot toplev -lX -x, output as bar plot
 #
 # TODO:
-# fill in dummy values
 # move legend out
 # y label
-# two column legend
 import matplotlib.pyplot as plt
 import csv
 import argparse
@@ -20,10 +18,7 @@ except ImportError:
     print "pip install brewer2mpl for better colors"
     all_colors = ('red','green','blue','yellow','black')
 
-ratios = defaultdict(list)
-timestamps = []
-
-p = argparse.ArgumentParser(usage='plot toplev -lN -v -x, output as bar plot') 
+p = argparse.ArgumentParser(usage='plot toplev -lN -x, output as bar plot') 
 p.add_argument('file', help='CSV file to plot')
 p.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
                   nargs='?')
@@ -33,9 +28,24 @@ args = p.parse_args()
 if args.xkcd:
     plt.xkcd()
 
+def flush_vals(ratios, vals):
+    if not vals:
+        return
+    k = ratios.keys()
+    if not k:
+        k = vals.keys()
+    for j in k:
+        if j in vals:
+            ratios[j].append(vals[j])
+        else:
+            ratios[j].append(float('nan'))
+
+ratios = defaultdict(list)
+timestamps = []
 rc = csv.reader(open(args.file, "r"))
 ts = None
 levels = defaultdict(list)
+vals = None
 for r in rc:
     if len(r) < 4:
         continue
@@ -48,8 +58,10 @@ for r in rc:
     if t != ts:
         timestamps.append(t)
         ts = t
-    # xxx fill in dummy values if not using -v
-    ratios[r[1]].append(float(r[2].replace("%","")))
+        flush_vals(ratios, vals)
+        vals = dict()
+    vals[r[1]] = float(r[2].replace("%",""))
+flush_vals(ratios, vals)
 
 print "time", len(timestamps), timestamps
 for j in ratios.keys():
