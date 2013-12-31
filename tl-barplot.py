@@ -11,7 +11,6 @@ import gen_level
 
 try:
     import brewer2mpl
-    all_colors = brewer2mpl.get_map('Spectral', 'Diverging', 4).hex_colors
 except ImportError:
     print "pip install brewer2mpl for better colors"
     all_colors = ('red','green','blue','yellow','black')
@@ -52,7 +51,7 @@ print "time", len(timestamps), timestamps
 for j in ratios.keys():
     print j, ratios[j]
     
-n = 0
+n = 1
 numplots = len(levels.keys())
 fig = plt.figure()
 for l in levels.keys():
@@ -61,6 +60,9 @@ for l in levels.keys():
         print "nothing in level", l
         n += 1
         continue
+    if 'brewer2mpl' in globals():
+        num_color = max(min(len(non_null), 11), 3)
+        all_colors = brewer2mpl.get_map('Spectral', 'Diverging', num_color).hex_colors
     ax = fig.add_subplot(numplots, 1, n)
     r = map(lambda x: ratios[x], non_null)
     stack =  ax.stackplot(timestamps, colors=all_colors, *r)
@@ -73,11 +75,15 @@ for l in levels.keys():
     ax.margins(0, 0)
     n += 1
 
+if ax:
+    ax.set_xlabel('Time (s)')
+
 if len(timestamps) == 1:
     plt.gca().axes.get_xaxis().set_visible(False)
 
+plt.subplots_adjust(hspace=0.5)
+
 # xxx put in wrong place
-#plt.xlabel('Time (s)')
 #plt.ylabel('Bottleneck (% of execution time)')
 if arg.output:
     plt.savefig(arg.output)
