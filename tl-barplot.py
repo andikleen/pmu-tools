@@ -90,27 +90,24 @@ for l in levels.keys():
     r = map(lambda x: ratios[x], non_null)
     stack = ax.stackplot(timestamps, colors=all_colors, *r)
     ax.set_ylim(0, 100)
-    ax.set_title('Level %d' % (l))
-    ax.get_xaxis().set_visible(False)
-    #box = ax.get_position()
-    #ax.set_position([box.x0, box.y0, box.width, box.height * 0.8])
+    ax.set_title('Level %d' % (l), loc='right')
+    for j in ax.get_xticklabels():
+        j.set_fontsize(8)
+    if n >= 2 and not yset:
+        ax.set_ylabel('(% of execution time)')
+        yset = True
 
     p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
-    leg = plt.legend(p, non_null, ncol=2, bbox_to_anchor=(0., 0., 1., 0.0), loc=2)
+    leg = plt.legend(p, non_null, ncol=2, bbox_to_anchor=(0., 0., -0.07, -0.07), loc=2)
     leg.get_frame().set_alpha(0.5)
     ax.margins(0, 0)
     n += 1
 
-if ax:
-    ax.set_xlabel('Time (s)')
-    ax.get_xaxis().set_visible(True)
-
 if len(timestamps) == 1:
     plt.gca().axes.get_xaxis().set_visible(False)
 
-plt.subplots_adjust(hspace=1.0)
+plt.subplots_adjust(hspace=0.9, bottom=0.19, top=0.95)
 
-plt.ylabel('(% of execution time)')
 if args.output:
     plt.savefig(args.output)
 else:
