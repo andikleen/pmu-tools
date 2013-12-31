@@ -23,7 +23,11 @@ args = argparse.ArgumentParser(usage='plot toplev -l1 -v -x, output as bar plot'
 args.add_argument('file', help='CSV file to plot')
 args.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
                   nargs='?')
+args.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
 arg = args.parse_args()
+
+if arg.xkcd:
+    plt.xkcd()
 
 rc = csv.reader(open(arg.file, "r"))
 ts = None
