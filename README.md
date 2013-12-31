@@ -221,12 +221,12 @@ Please see the [ucevent documentation] (http://github.com/andikleen/pmu-tools/tr
 
 ## interval-plot:
 
-interval-plot.py can plot the output of perf stat -I1000 -x, or 
-or toplev.py -I1000 -x, 
+interval-plot.py can plot the output of perf stat -I1000 -x
 
-Requires pyplot to be installed.
+Requires matplotlib to be installed.
 
 Below is the level 2 toplev measurement of a Linux kernel compile.
+Note that tl-barplot below is normally better to plot toplev output.
 
 ![plot-example] (http://halobates.de/interval.plot.l2.png)
 
@@ -240,6 +240,24 @@ gnuplot etc.)
 ## plot-normalized:
 
 Plot an already normalized data file. Requires pyplot to be installed.
+
+## tl-barplot:
+
+Plot output from toplev.py -I 1000 -v -x, --output file.csv -lLEVELS
+
+Requires matplotlib to be installed.
+
+	toplev.py -I 100 -v -x, -l2 --output kbuild.2.csv make
+	tl-barplot.py kbuild.2.csv  --title "kernel build"
+
+![tl-barplot-example] (http://halobates.de/kbuild.2.svg)
+
+With a new enough matplotlib you can also enable xkcd mode
+(install Humor Sans first)
+
+	tl-barplot.py kbuild.1.csv  --title "kernel build" --output kbuild-xkcd.png  --xkcd
+
+![tl-barplot-xkcd] (http://halobates.de/kbuild-xkcd.png)
 
 ## self: 
 
