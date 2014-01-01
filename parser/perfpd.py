@@ -59,7 +59,7 @@ def samples_to_df(h, need_line):
         mm.update_sample(j)
         add = lambda k, i: do_add(data, used, k, i)
 
-        filename, foffset = mm.resolve(j.pid, j.ip)
+        filename, mmap_base, foffset = mm.resolve(j.pid, j.ip)
         add('filename', filename)
         add('foffset', foffset)
         sym, soffset, line = None, 0, None
