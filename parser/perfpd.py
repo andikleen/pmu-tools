@@ -10,32 +10,45 @@ import mmap
 
 #
 # TBD 
-# fix all types
-# extra table for threads
+# fix all types?
+# extra table for threads?
 # flatten callchains and branch_stack
 # expand registers, stack
 # represent other metadata
 # s/w trace points
-# handle shlibs
 # fix callchain
 # resolve branch
+# debuginfo / buildid
+# instructions / basic blocks
 # 
 
 ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
            'header_end', 'end_event', 'offset', 'callchain', 'branch_stack')
 
-def resolve_chain(cc, j, mm):
-    if cc:
-        j.callchain_func = []
-        for ip in cc.caller:
-            fn, _ = mm.resolve(j.pid, ip)
-            print ip, fn
-            #sym, offset, line = None, None, None
-            #if fn and fn.startswith("/"):
-            #    sym, offset, line = elf.resolve_addr(fn, ip)
-            #print sym, offset, line
-            #j.callchain_func.append((sym, offset))
-            #j.callchain_src.append((fn, line))
+def resolve_ip(filename, foffset, ip, need_line):
+    sym, soffset, line = None, 0, None
+    if filename and filename.startswith("/"):
+        sym, soffset = elf.resolve_sym(filename, foffset)
+        if not sym:
+            sym, soffset = elf.resolve_sym(filename, ip)
+        if need_line:
+            line = elf.resolve_line(filename, ip)
+    return sym, soffset, line
+
+def resolve_chain(cc, j, mm, need_line):
+    if not cc:
+        return
+    j.callchain_sym = []
+    j.callchain_offset = []
+    if need_line:
+        j.callchain_src = []
+    for ip in cc.caller:
+        filename, mmap_base, foffset = mm.resolve(j.pid, ip)
+        sym, soffset, line = resolve_ip(filename, foffset, ip, need_line)
+        j.callchain_sym.append(sym)
+        j.callchain_offset.append(soffset)
+        if need_line:
+            j.callchain_src.append(line)
 
 def do_add(d, u, k, i):
     d[k].append(i)
@@ -62,19 +75,12 @@ def samples_to_df(h, need_line):
         filename, mmap_base, foffset = mm.resolve(j.pid, j.ip)
         add('filename', filename)
         add('foffset', foffset)
-        sym, soffset, line = None, 0, None
-        if filename and filename.startswith("/"):
-            sym, soffset = elf.resolve_sym(filename, foffset)
-            if not sym:
-                sym, soffset = elf.resolve_sym(filename, j.ip)
-            if need_line:
-                line = elf.resolve_line(filename, j.ip)
+        sym, soffset, line = resolve_ip(filename, foffset, j.ip, need_line)
         add('symbol', sym)
         add('line', line)
         add('soffset', soffset)
-        #print filename, "ip:%x soff:%x foff:%x " % (j.ip, soffset, foffset), sym, line
-        #if 'callchain' in j:
-        #    resolve_chain(j['callchain'], j, mmap)
+        if 'callchain' in j:
+            resolve_chain(j['callchain'], j, mm, need_line)
         for name in j:
             if name not in ignored:
                 if j[name]:
