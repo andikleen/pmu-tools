@@ -88,8 +88,21 @@ def read_samples(fn, need_line=True):
         return df, h.attrs.perf_file_attr.f_attr, h.features
 
 if __name__ == '__main__':
+    import argparse
+    import code
     import sys
-    df, _, _ = read_samples(sys.argv[1])
+
+    args = argparse.ArgumentParser()
+    args.add_argument('file', nargs='?', help='perf.data file to read', 
+                          default='perf.data')
+    args.add_argument('--repl', action='store_true',
+                             help='start python shell with data')
+    p = args.parse_args()
+    df, _, _ = read_samples(p.file)
+    if p.repl:
+        print df
+        code.interact(banner='perf.data is in df', local=locals())
+        sys.exit(0)
     print df
     print df['filename'].value_counts()
     print df['symbol'].value_counts()

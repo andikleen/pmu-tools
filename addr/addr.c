@@ -25,6 +25,7 @@
 #include <cpuid.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <dlfcn.h>
 
 #include "hist.h"
 #include "perf.h"
@@ -38,7 +39,7 @@
 
 float *x, *y;
 
-void init_test_load(void)
+void simple_test_init(void)
 {
 	y = calloc(SIZE, sizeof(float));
         x = calloc(SIZE, sizeof(float));
@@ -51,7 +52,7 @@ void init_test_load(void)
 	printf("test area %p-%p, %p-%p\n", x, x+SIZE, y, y+SIZE);
 }
 
-void test_load(void)
+void simple_test_load(void)
 {
         int i;
         int j;
@@ -62,6 +63,9 @@ void test_load(void)
 		}
 	}
 }
+
+void (*test_init)(void) = simple_test_init;
+void (*test_load)(void) = simple_test_load;
 
 void gen_hist(char *name, struct perf_fd *pfd)
 {
@@ -136,6 +140,23 @@ int main(int ac, char **av)
 		attr.precise_ip = 0;
 		attr.config = 0x3c;
 		cycles_only = true;
+		av--;
+	}
+
+	if (av[1]) { 
+		void *test_obj;
+		test_obj = dlopen(av[1], RTLD_NOW);
+		if (!test_obj) { 
+			fprintf(stderr, "Cannot load %s: %s\n", av[1], dlerror());
+			exit(1);
+		}
+		test_init = dlsym(test_obj, "test_init");
+		test_load = dlsym(test_obj, "test_load");
+		if (!test_init || !test_load) {
+			fprintf(stderr, "%s missing test_init or test_load symbols: %s\n",
+					av[1], dlerror());
+			exit(1);
+		}
 	}
 
 	struct perf_fd loads, stores;
@@ -153,7 +174,7 @@ int main(int ac, char **av)
 		have_stores = true;
 	}
 
-	init_test_load();
+	test_init();
 
 	/* Run measurement */
 
