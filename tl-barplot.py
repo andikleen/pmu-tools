@@ -23,6 +23,7 @@ p.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Othe
                   nargs='?')
 p.add_argument('--verbose', '-v', help='Print data values', action='store_true')
 p.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
+p.add_argument('--title', help='Set title of plot', nargs='?')
 args = p.parse_args()
 
 if args.xkcd:
@@ -35,7 +36,7 @@ def flush_vals(ratios, vals):
     if not k:
         k = vals.keys()
     for j in k:
-        if j in vals:
+        if j in vals and -5 <= vals[j] <= 105:
             ratios[j].append(vals[j])
         else:
             ratios[j].append(float('nan'))
@@ -67,13 +68,18 @@ if args.verbose:
     print "time", len(timestamps), timestamps
     for j in ratios.keys():
         print j, ratios[j]
+
+def valid_row(r):
+    s = sum(r)
+    return s != 0.0 and s != float('nan')
     
 n = 1
 numplots = len(levels.keys())
 fig = plt.figure()
 ax = None
+yset = False
 for l in levels.keys():
-    non_null = filter(lambda x: sum(ratios[x]) != 0.0, levels[l])
+    non_null = filter(lambda x: valid_row(ratios[x]), levels[l])
     if not non_null:
         print "nothing in level", l
         n += 1
@@ -85,27 +91,28 @@ for l in levels.keys():
     r = map(lambda x: ratios[x], non_null)
     stack = ax.stackplot(timestamps, colors=all_colors, *r)
     ax.set_ylim(0, 100)
-    ax.set_title('Level %d' % (l))
-    ax.get_xaxis().set_visible(False)
-    #box = ax.get_position()
-    #ax.set_position([box.x0, box.y0, box.width, box.height * 0.8])
+    ax.set_title('Level %d' % (l), loc='right')
+    for j in ax.get_xticklabels():
+        j.set_fontsize(8)
+    if n >= 2 and not yset:
+        ax.set_ylabel('(% of execution time)')
+        yset = True
 
     p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
-    leg = plt.legend(p, non_null, ncol=2, bbox_to_anchor=(0., 0., 1., 0.0), loc=2)
+    leg = plt.legend(p, non_null, ncol=2, bbox_to_anchor=(0., 0., -0.07, -0.07), loc=2)
     leg.get_frame().set_alpha(0.5)
     ax.margins(0, 0)
     n += 1
 
-if ax:
-    ax.set_xlabel('Time (s)')
-    ax.get_xaxis().set_visible(True)
-
 if len(timestamps) == 1:
     plt.gca().axes.get_xaxis().set_visible(False)
 
-plt.subplots_adjust(hspace=1.0)
+plt.subplots_adjust(hspace=0.9, bottom=0.19, top=0.95)
 
-plt.ylabel('(% of execution time)')
+if args.title:
+    plt.subplot(numplots, 1, 1)
+    plt.title(args.title)
+
 if args.output:
     plt.savefig(args.output)
 else:
