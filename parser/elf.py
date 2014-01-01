@@ -36,6 +36,8 @@ def build_symtab(elffile):
                 name = bytes2str(sym.name)
                 if not name:
                     continue
+                if sym.entry.st_info.type != 'STT_FUNC':
+                    continue
                 end = sym['st_value'] + sym['st_size']
                 syms.append((sym['st_value'], end, 
                              bytes2str(sym.name)))
