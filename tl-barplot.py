@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # plot toplev -v -lX -x, output as bar plot
 #
-# TODO:
-# y label
 import matplotlib.pyplot as plt
 import csv
 import argparse
@@ -15,7 +13,6 @@ try:
     import brewer2mpl
 except ImportError:
     print "pip install brewer2mpl for better colors"
-    all_colors = ('red','green','blue','yellow','black')
 
 p = argparse.ArgumentParser(usage='plot toplev -v -lN -x, output as bar plot') 
 p.add_argument('file', help='CSV file to plot')
@@ -78,6 +75,7 @@ numplots = len(levels.keys())
 fig = plt.figure()
 ax = None
 yset = False
+max_legend = 0
 for l in levels.keys():
     non_null = filter(lambda x: valid_row(ratios[x]), levels[l])
     if not non_null:
@@ -87,27 +85,33 @@ for l in levels.keys():
     if 'brewer2mpl' in globals():
         num_color = max(min(len(non_null), 11), 3)
         all_colors = brewer2mpl.get_map('Spectral', 'Diverging', num_color).hex_colors
+    else:
+        all_colors = None
     ax = fig.add_subplot(numplots, 1, n)
     r = map(lambda x: ratios[x], non_null)
     stack = ax.stackplot(timestamps, colors=all_colors, *r)
     ax.set_ylim(0, 100)
     ax.set_title('Level %d' % (l), loc='right')
-    for j in ax.get_xticklabels():
+    for j in ax.get_xticklabels() + ax.get_yticklabels():
         j.set_fontsize(8)
     if n >= 2 and not yset:
         ax.set_ylabel('(% of execution time)')
         yset = True
 
     p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
-    leg = plt.legend(p, non_null, ncol=2, bbox_to_anchor=(0., 0., -0.07, -0.07), loc=2)
+    leg = plt.legend(p, non_null, ncol=3 if len(non_null) > 4 else 2,
+                     bbox_to_anchor=(0., 0., -0.07, -0.07), loc=2)
     leg.get_frame().set_alpha(0.5)
+    if n != numplots:
+        max_legend = max(len(non_null), max_legend)
     ax.margins(0, 0)
     n += 1
 
 if len(timestamps) == 1:
     plt.gca().axes.get_xaxis().set_visible(False)
 
-plt.subplots_adjust(hspace=0.9, bottom=0.19, top=0.95)
+plt.subplots_adjust(hspace=2.5 if max_legend > 6 else 0.9, bottom=0.20,
+                    top=0.95)
 
 if args.title:
     plt.subplot(numplots, 1, 1)
