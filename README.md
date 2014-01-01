@@ -261,7 +261,7 @@ With a new enough matplotlib you can also enable xkcd mode
 	toplev.py -I 100 -v -x, -l2 --output povray.2.csv povray --benchmark
 	tl-barplot.py povray.2.csv  --title "povray" --output povray-xkcd.png  --xkcd
 
-![tl-barplot-xkcd] (http://halobates.de/grep-xkcd.png)
+![tl-barplot-xkcd] (http://halobates.de/povray.2.png)
 
 ## self: 
 
