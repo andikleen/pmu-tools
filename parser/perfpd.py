@@ -59,15 +59,18 @@ def samples_to_df(h, need_line):
         mm.update_sample(j)
         add = lambda k, i: do_add(data, used, k, i)
 
-        filename, offset = mm.resolve(j.pid, j.ip)        
+        filename, foffset = mm.resolve(j.pid, j.ip)
         add('filename', filename)
-        add('foffset', offset)
-        sym, offset, line = None, None, None
+        add('foffset', foffset)
+        sym, soffset, line = None, 0, None
         if filename and filename.startswith("/"):
-            sym, offset, line = elf.resolve_addr(filename, j.ip, need_line)
+            sym, soffset = elf.resolve_sym(filename, j.ip)
+            if need_line:
+                line = elf.resolve_line(filename, j.ip)
+                add('line', line)
         add('symbol', sym)
-        add('soffset', offset)
-        add('line', line)
+        add('soffset', soffset)
+        #print filename, "ip:%x soff:%x foff:%x " % (j.ip, soffset, foffset), sym, line
         #if 'callchain' in j:
         #    resolve_chain(j['callchain'], j, mmap)
         for name in j:

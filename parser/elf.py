@@ -5,6 +5,7 @@ from elftools.common.py3compat import maxint, bytes2str
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
+# global caches
 open_files = dict()
 resolved = dict()
 symtables = dict()
@@ -49,17 +50,30 @@ def find_le(f, key):
         return None
     return f[pos - 1]
 
-def resolve_addr(fn, ip, resolve_line=True):
+def find_elf_file(fn):
     if fn in open_files:
         elffile = open_files[fn]
     else:
         f = open(fn, 'rb')
         elffile = ELFFile(f)
         open_files[fn] = elffile
+    return elffile
 
-    if resolve_line and fn not in lines and elffile.has_dwarf_info():
+def resolve_line(fn, ip):
+    elffile = find_elf_file(fn)
+    if fn not in lines and elffile.has_dwarf_info():
         lines[fn] = build_line_table(elffile.get_dwarf_info())
 
+    src = None
+    if resolve_line and fn in lines:
+        pos = find_le(lines[fn], ip)
+        if pos:
+            src = "%s:%d" % (pos[2], pos[3])    
+    return src
+
+def resolve_sym(fn, ip):
+    elffile = find_elf_file(fn)
+        
     if fn not in symtables:
         symtables[fn] = build_symtab(elffile)
 
@@ -70,14 +84,9 @@ def resolve_addr(fn, ip, resolve_line=True):
         if sym:
             loc, offset = sym[2], ip - sym[0]
 
-    src = None
-    if resolve_line and fn in lines:
-        pos = find_le(lines[fn], ip)
-        if pos:
-            src = "%s:%d" % (pos[2], pos[3])    
-
-    return loc, offset, src
+    return loc, offset
         
 if __name__ == '__main__':
     import sys
     print resolve_addr(sys.argv[1], int(sys.argv[2], 16))
+    print resolve_line(sys.argv[1], int(sys.argv[2], 16))
