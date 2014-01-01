@@ -35,20 +35,21 @@ def resolve_ip(filename, foffset, ip, need_line):
             line = elf.resolve_line(filename, ip)
     return sym, soffset, line
 
-def resolve_chain(cc, j, mm, need_line):
+def resolve_chain(pre, j, mm, need_line):
+    cc = j[pre]
     if not cc:
         return
-    j.callchain_sym = []
-    j.callchain_offset = []
+    j[pre + '_sym'] = []
+    j[pre + '_offset'] = []
     if need_line:
-        j.callchain_src = []
+        j[pre + '_src'] = []
     for ip in cc.caller:
         filename, mmap_base, foffset = mm.resolve(j.pid, ip)
         sym, soffset, line = resolve_ip(filename, foffset, ip, need_line)
-        j.callchain_sym.append(sym)
-        j.callchain_offset.append(soffset)
+        j[pre + '_sym'].append(sym)
+        j[pre + '_offset'].append(soffset)
         if need_line:
-            j.callchain_src.append(line)
+            j[pre + '_src'].append(line)
 
 def do_add(d, u, k, i):
     d[k].append(i)
@@ -80,7 +81,7 @@ def samples_to_df(h, need_line):
         add('line', line)
         add('soffset', soffset)
         if 'callchain' in j:
-            resolve_chain(j['callchain'], j, mm, need_line)
+            resolve_chain('callchain', j, mm, need_line)
         for name in j:
             if name not in ignored:
                 if j[name]:
