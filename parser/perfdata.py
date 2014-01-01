@@ -232,6 +232,9 @@ def read_format():
                              If(lambda ctx: read_flags(ctx).id,
                                 UNInt64("id2")))))
 
+def unparsed_event():
+    return Bytes("raw", lambda ctx: ctx.size - (ctx.end - ctx.start))
+
 def perf_event():
     return Struct("perf_event",
                   Anchor("start"),
@@ -260,7 +263,7 @@ def perf_event():
                                                       read_format(),
                                                       sample_id())),
                               "SAMPLE": event()
-                           }),
+                           }, default = unparsed_event()),
 			Anchor("end"),
 			Padding(lambda ctx:
                                     ctx.size - (ctx.end - ctx.start)))
