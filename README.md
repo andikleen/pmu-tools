@@ -250,16 +250,16 @@ implements a stacked barplot plot.
 
 Requires matplotlib to be installed.
 
-	toplev.py -I 100 -v -x, -l2 --output kbuild.2.csv make
-	tl-barplot.py kbuild.2.csv  --title "kernel build"
+	toplev.py -I 100 -v -x, -l3 --output grep.3.csv make
+	tl-barplot.py grep.3.csv  --title "GNU grep"
 
-![tl-barplot-example] (http://halobates.de/kbuild.2.svg)
+![tl-barplot-example] (http://halobates.de/grep.3.svg)
 
 With a new enough matplotlib you can also enable xkcd mode
 (install Humor Sans first)
 
-	toplev.py -I 100 -v -x, -l2 --output grep.2.csv grep -r foobar /usr/*
-	tl-barplot.py grep.2.csv  --title "GNU grep" --output grep-xkcd.png  --xkcd
+	toplev.py -I 100 -v -x, -l2 --output povray.2.csv povray --benchmark
+	tl-barplot.py povray.2.csv  --title "povray" --output povray-xkcd.png  --xkcd
 
 ![tl-barplot-xkcd] (http://halobates.de/grep-xkcd.png)
 
