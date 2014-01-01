@@ -69,8 +69,8 @@ def samples_to_df(h, need_line):
                 sym, soffset = elf.resolve_sym(filename, j.ip)
             if need_line:
                 line = elf.resolve_line(filename, j.ip)
-                add('line', line)
         add('symbol', sym)
+        add('line', line)
         add('soffset', soffset)
         #print filename, "ip:%x soff:%x foff:%x " % (j.ip, soffset, foffset), sym, line
         #if 'callchain' in j:
