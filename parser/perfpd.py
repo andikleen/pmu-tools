@@ -64,7 +64,9 @@ def samples_to_df(h, need_line):
         add('foffset', foffset)
         sym, soffset, line = None, 0, None
         if filename and filename.startswith("/"):
-            sym, soffset = elf.resolve_sym(filename, j.ip)
+            sym, soffset = elf.resolve_sym(filename, foffset)
+            if not sym:
+                sym, soffset = elf.resolve_sym(filename, j.ip)
             if need_line:
                 line = elf.resolve_line(filename, j.ip)
                 add('line', line)
