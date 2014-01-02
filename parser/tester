@@ -6,19 +6,22 @@ set -x
 
 CMD=${1:-bash -c /bin/true}
 
+[ ! -d data ] && mkdir data
+
 check() { 
 	echo -- testing "$@"
-	rm -f perf.data
-	perf record -c 1000 "$@" -- $CMD
-	if [ $(stat -c %s perf.data) == 0 ] ; then
+	FN=data/perf.$(echo -- "$@" | tr -d '{} ')
+	rm -f $FN
+	perf record -c 1000 -o $FN "$@" -- $CMD
+	if [ $(stat -c %s $FN) == 0 ] ; then
 		return
 	fi
-	python perfdata.py perf.data > /dev/null
-	python perfpd.py perf.data > /dev/null
+	python perfdata.py $FN > /dev/null
+	python perfpd.py $FN > /dev/null
 
 	# XXX check more fields
-	AS=$(python perfdata.py perf.data | grep -c SAMPLE)
-	BS=$(perf report -D | grep -c "PERF_RECORD_SAMPLE")
+	AS=$(python perfdata.py $FN | grep -c SAMPLE)
+	BS=$(perf report -i $FN -D | grep -c "PERF_RECORD_SAMPLE")
 	[ $AS -eq $BS ]
 }
 
