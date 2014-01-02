@@ -80,6 +80,8 @@ def resolve_line(fn, ip):
     return src
 
 # global one hit cache
+# helps a lot for LBR decoding
+# tbd use a small list with LRU?
 last_sym = None
 
 def resolve_sym(fn, ip):
