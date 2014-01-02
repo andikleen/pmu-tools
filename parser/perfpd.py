@@ -23,8 +23,11 @@ import mmap
 # instructions / basic blocks
 # 
 
-ignored = ('type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
-           'header_end', 'end_event', 'offset', 'callchain', 'branch_stack')
+ignored = {'type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
+           'header_end', 'end_event', 'offset', 'callchain', 'branch', 'branch_stack',
+           # skip attr for now, as it is too complex
+           # XXX simple representation
+           'attr'}
 
 def resolve_ip(filename, foffset, ip, need_line):
     sym, soffset, line = None, 0, None
