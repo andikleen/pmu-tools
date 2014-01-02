@@ -54,7 +54,10 @@ def resolve_branch(branch, j, mm, need_line):
     return res
 
 class Path:
-    pass
+    """Store either a callchain or a branch stack as a list with id."""
+    def __init__(self, val, id):
+        self.val = val
+        self.id = id
 
 class Aux:
     """Store auxilliary data to the main pandas perf array, like call chains
@@ -75,9 +78,7 @@ class Aux:
         if h in self.paths:
             return self.paths[h].id
         id = self.alloc_id()
-        path = Path()
-        path.val = create()
-        path.id = id
+        path = Path(create(), id)
         self.paths[h] = path
         self.ids[id] = path
         return id
