@@ -1,5 +1,18 @@
 #!/usr/bin/python
 # resolve ELF and DWARF symbol tables using elftools
+#
+# Copyright (c) 2013-2014, Intel Corporation
+# Author: Andi Kleen
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms and conditions of the GNU General Public License,
+# version 2, as published by the Free Software Foundation.
+#
+# This program is distributed in the hope it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+
 from elftools.common.py3compat import maxint, bytes2str
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
