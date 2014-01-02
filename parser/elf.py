@@ -79,11 +79,18 @@ def resolve_line(fn, ip):
             src = "%s:%d" % (pos[2], pos[3])    
     return src
 
+# global one hit cache
+last_sym = None
+
 def resolve_sym(fn, ip):
     elffile = find_elf_file(fn)
+    global last_sym
         
     if fn not in symtables:
         symtables[fn] = build_symtab(elffile)
+
+    if last_sym and last_sym[0] <= ip <= last_sym[1]:
+        return last_sym[2], ip - last_sym[0]
 
     loc = None
     offset = None
