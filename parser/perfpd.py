@@ -51,7 +51,7 @@ def resolve_chain(cc, j, mm, need_line):
     res = []
     for ip in cc.caller:
         r = [ip,]
-        r += resolve_list(j, br['from'], mm, need_line)
+        r += resolve_list(j, ip, mm, need_line)
         res.append(r)
     return res
 
