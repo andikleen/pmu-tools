@@ -1,9 +1,10 @@
 #!/usr/bin/python
 # resolve ELF and DWARF symbol tables using elftools
-import bisect
 from elftools.common.py3compat import maxint, bytes2str
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+import util
+import kernel
 
 # global caches
 open_files = dict()
@@ -44,14 +45,6 @@ def build_symtab(elffile):
     syms.sort()
     return syms
 
-def find_le(f, key):
-    pos = bisect.bisect_left(f, (key,))
-    if pos < len(f) and f[pos][0] == key:
-        return f[pos]
-    if pos == 0:
-        return None
-    return f[pos - 1]
-
 def find_elf_file(fn):
     if fn in open_files:
         elffile = open_files[fn]
@@ -68,7 +61,7 @@ def resolve_line(fn, ip):
 
     src = None
     if resolve_line and fn in lines:
-        pos = find_le(lines[fn], ip)
+        pos = util.find_le(lines[fn], ip)
         if pos:
             src = "%s:%d" % (pos[2], pos[3])    
     return src
@@ -82,7 +75,7 @@ def resolve_sym(fn, ip):
     loc = None
     offset = None
     if fn in symtables:
-        sym = find_le(symtables[fn], ip)
+        sym = util.find_le(symtables[fn], ip)
         if sym:
             loc, offset = sym[2], ip - sym[0]
 
@@ -96,6 +89,8 @@ def resolve_ip(filename, foffset, ip, need_line):
             sym, soffset = resolve_sym(filename, ip)
         if need_line:
             line = resolve_line(filename, ip)
+    else:
+        sym, soffset = kernel.resolve_kernel(ip)
     return sym, soffset, line
 
 if __name__ == '__main__':

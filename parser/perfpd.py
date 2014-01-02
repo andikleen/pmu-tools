@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import perfdata
 from collections import defaultdict, Counter
-import bisect
 import elf
 import mmap
 
