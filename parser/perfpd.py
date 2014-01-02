@@ -10,7 +10,7 @@ import mmap
 #
 # TBD 
 # fix all types?
-# extra table for threads?
+# extra table for threads, processes.
 # stream_id
 # flatten callchains and branch_stack
 # expand registers, stack
