@@ -12,6 +12,7 @@ import mmap
 # TBD 
 # fix all types?
 # extra table for threads?
+# stream_id
 # flatten callchains and branch_stack
 # expand registers, stack
 # represent other metadata
@@ -100,8 +101,6 @@ def read_samples(fn, need_line=True):
 
 if __name__ == '__main__':
     import argparse
-    import code
-    import sys
 
     args = argparse.ArgumentParser()
     args.add_argument('file', nargs='?', help='perf.data file to read', 
@@ -111,9 +110,11 @@ if __name__ == '__main__':
     p = args.parse_args()
     df, _, _ = read_samples(p.file)
     if p.repl:
+        import code
         print df
         code.interact(banner='perf.data is in df', local=locals())
         sys.exit(0)
+
     print df
     print df['filename'].value_counts()
     print df['symbol'].value_counts()
