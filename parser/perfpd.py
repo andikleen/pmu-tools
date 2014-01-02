@@ -127,8 +127,9 @@ def samples_to_df(h, need_line):
         add = lambda k, i: do_add(data, used, k, i)
 
         filename, mmap_base, foffset = mm.resolve(j.pid, j.ip)
+        if filename == "[kernel.kallsyms]_text":
+            filename = None
         add('filename', filename)
-        add('foffset', foffset)
         sym, soffset, line = elf.resolve_ip(filename, foffset, j.ip, need_line)
         add('symbol', sym)
         add('line', line)
