@@ -159,7 +159,7 @@ if __name__ == '__main__':
     p = args.parse_args()
     df, _, _ = read_samples(p.file)
     if p.repl:
-        import code
+        import code, sys
         print df
         code.interact(banner='perf.data is in df', local=locals())
         sys.exit(0)
