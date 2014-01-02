@@ -39,20 +39,62 @@ def resolve_ip(filename, foffset, ip, need_line):
             line = elf.resolve_line(filename, ip)
     return sym, soffset, line
 
+def resolve_list(j, ip, mm, need_line):
+     filename, _, foffset = mm.resolve(j.pid, ip)
+     sym, soffset, line = resolve_ip(filename, foffset, ip, need_line)
+     return [filename, sym, soffset, line]
+
 def resolve_chain(cc, j, mm, need_line):
     if not cc:
-        return
-    j.callchain_sym = []
-    j.callchain_offset = []
-    if need_line:
-        j.callchain_src = []
+        return []
+    res = []
     for ip in cc.caller:
-        filename, mmap_base, foffset = mm.resolve(j.pid, ip)
-        sym, soffset, line = resolve_ip(filename, foffset, ip, need_line)
-        j.callchain_sym.append(sym)
-        j.callchain_offset.append(soffset)
-        if need_line:
-            j.callchain_src.append(line)
+        r = [ip,]
+        r += resolve_list(j, br['from'], mm, need_line)
+        res.append(r)
+    return res
+
+def resolve_branch(branch, j, mm, need_line):
+    res = []
+    for br in branch:
+        # XXX flags
+        r = [br['from'], br['to']]
+        r += resolve_list(j, br['from'], mm, need_line)
+        r += resolve_list(j, br['to'], mm, need_line)
+        res.append(r)
+    return res
+
+class Path:
+    pass
+
+class Aux:
+    """Store auxilliary data to the main pandas perf array, like call chains
+       or branch stacks. The data is deduped and a unique id generated."""
+
+    def __init__(self):
+        self.ids = dict()
+        self.paths = dict()
+        self.next_id = 0
+
+    def alloc_id(self):
+        id = self.next_id
+        self.next_id += 1
+        return id
+
+    def add(self, h, create):
+        h = tuple(h)
+        if h in self.paths:
+            return self.paths[h].id
+        id = self.alloc_id()
+        path = Path()
+        path.val = create()
+        path.id = id
+        self.paths[id] = path
+        self.ids[id] = path
+        return id
+
+    def getid(self, id):
+        return self.ids[id]
 
 def do_add(d, u, k, i):
     d[k].append(i)
@@ -62,6 +104,8 @@ def samples_to_df(h, need_line):
     ev = perfdata.get_events(h)
     index = []
     data = defaultdict(list)
+    callchains = Aux()
+    branches = Aux()
 
     used = Counter()
     mm = mmap.MmapTracker()
@@ -83,8 +127,14 @@ def samples_to_df(h, need_line):
         add('symbol', sym)
         add('line', line)
         add('soffset', soffset)
-        if 'callchain' in j:
-            resolve_chain(j['callchain'], j, mm, need_line)
+        if 'callchain' in j and j['callchain']:
+            id = callchains.add(j['callchain'].caller,
+                    lambda: resolve_chain(j['callchain'], j, mm, need_line))
+            add('callchain', id)
+        if 'branch' in j:
+            id = branches.add(map(lambda x: (x['from'], x.to),  j['branch']),
+                    lambda: resolve_branch(j['branch'], j, mm, need_line))
+            add('branch', id)
         for name in j:
             if name not in ignored:
                 if j[name]:
@@ -94,7 +144,10 @@ def samples_to_df(h, need_line):
     for j in data.keys():
         if used[j] == 0:
             del data[j]
-    return pd.DataFrame(data, index=index, dtype=np.uint64)
+    df = pd.DataFrame(data, index=index, dtype=np.uint64)
+    df.branch_aux = branches
+    df.callchain_aux = callchains
+    return df
 
 def read_samples(fn, need_line=True):
     with open(fn, "rb") as f:
