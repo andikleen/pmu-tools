@@ -144,7 +144,7 @@ def samples_to_df(h, need_line):
                 if j[name]:
                     used[name] += 1
                 data[name].append(j[name])
-        index.append(pd.Timestamp(j["time"]))
+        index.append(int(j["time"]))
     for j in data.keys():
         if used[j] == 0:
             del data[j]
