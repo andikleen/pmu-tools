@@ -17,8 +17,6 @@ import mmap
 # expand registers, stack
 # represent other metadata
 # s/w trace points
-# fix callchain
-# resolve branch
 # debuginfo / buildid
 # instructions / basic blocks
 # 
@@ -80,7 +78,7 @@ class Aux:
         path = Path()
         path.val = create()
         path.id = id
-        self.paths[id] = path
+        self.paths[h] = path
         self.ids[id] = path
         return id
 
