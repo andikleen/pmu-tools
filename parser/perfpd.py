@@ -35,7 +35,7 @@ import mmap
 
 ignored = {'type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
            'header_end', 'end_event', 'offset', 'callchain', 'branch',
-           'branch_stack', 'end_id', 'size',
+           'branch_stack', 'end_id', 'size', 'cpumode',
            # skip attr for now, as it is too complex
            # XXX simple representation
            'attr'}
@@ -98,6 +98,15 @@ class Aux:
     def getid(self, id):
         return self.ids[id]
 
+cpumodes = {
+    'UNKNOWN': (0, 0, 0),
+    'KERNEL': (1, 0, 0),
+    'USER': (0, 0, 0),
+    'HYPERVISOR': (0, 1, 0),
+    'GUEST_KERNEL': (1, 0, 1),
+    'GUEST_USER': (0, 0, 1),
+}
+
 def do_add(d, u, k, i):
     d[k].append(i)
     u[k] += 1
@@ -142,6 +151,10 @@ def samples_to_df(h, need_line):
             id = branches.add(map(lambda x: (x['from'], x.to),  j['branch']),
                     lambda: resolve_branch(j['branch'], j, mm, need_line))
             add('branch', id)
+        kernel, guest, hv = cpumodes[j['cpumode']]
+        add('kernel', kernel)
+        add('guest', guest)
+        add('hv', hv)
         for name in j:
             if name not in ignored:
                 if j[name]:
