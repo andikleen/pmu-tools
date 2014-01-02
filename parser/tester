@@ -27,7 +27,7 @@ check -g
 check -b -g
 check -P
 check -T
-check -e cycles:S 
+#check -e cycles:S 
 # seems to be broken in perf
 #check -e '{cycles,branches}:S'
 
