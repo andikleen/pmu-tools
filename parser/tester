@@ -11,6 +11,7 @@ CMD=${1:-bash -c /bin/true}
 check() { 
 	echo -- testing "$@"
 	FN=data/perf.$(echo -- "$@" | tr -d '{} ')
+	FN=${FN/--/}
 	rm -f $FN
 	perf record -c 1000 -o $FN "$@" -- $CMD
 	if [ $(stat -c %s $FN) == 0 ] ; then
@@ -27,6 +28,7 @@ check() {
 
 check
 check -g
+check -b
 check -b -g
 check -P
 check -T
@@ -35,7 +37,7 @@ check -T
 #check -e '{cycles,branches}:S'
 
 set +e 
-check -d
+#check -d
 check --group -e cycles,branches,branch-misses
 check -e '{cycles,branches},{branch-misses,cache-misses}'
 check -e cycles,branches,branch-misses
