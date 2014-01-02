@@ -30,19 +30,9 @@ ignored = {'type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
            # XXX simple representation
            'attr'}
 
-def resolve_ip(filename, foffset, ip, need_line):
-    sym, soffset, line = None, 0, None
-    if filename and filename.startswith("/"):
-        sym, soffset = elf.resolve_sym(filename, foffset)
-        if not sym:
-            sym, soffset = elf.resolve_sym(filename, ip)
-        if need_line:
-            line = elf.resolve_line(filename, ip)
-    return sym, soffset, line
-
 def resolve_list(j, ip, mm, need_line):
      filename, _, foffset = mm.resolve(j.pid, ip)
-     sym, soffset, line = resolve_ip(filename, foffset, ip, need_line)
+     sym, soffset, line = elf.resolve_ip(filename, foffset, ip, need_line)
      return [filename, sym, soffset, line]
 
 def resolve_chain(cc, j, mm, need_line):
@@ -128,7 +118,7 @@ def samples_to_df(h, need_line):
         filename, mmap_base, foffset = mm.resolve(j.pid, j.ip)
         add('filename', filename)
         add('foffset', foffset)
-        sym, soffset, line = resolve_ip(filename, foffset, j.ip, need_line)
+        sym, soffset, line = elf.resolve_ip(filename, foffset, j.ip, need_line)
         add('symbol', sym)
         add('line', line)
         add('soffset', soffset)

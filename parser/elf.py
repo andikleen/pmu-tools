@@ -88,6 +88,16 @@ def resolve_sym(fn, ip):
 
     return loc, offset
         
+def resolve_ip(filename, foffset, ip, need_line):
+    sym, soffset, line = None, 0, None
+    if filename and filename.startswith("/"):
+        sym, soffset = resolve_sym(filename, foffset)
+        if not sym:
+            sym, soffset = resolve_sym(filename, ip)
+        if need_line:
+            line = resolve_line(filename, ip)
+    return sym, soffset, line
+
 if __name__ == '__main__':
     import sys
     print resolve_addr(sys.argv[1], int(sys.argv[2], 16))
