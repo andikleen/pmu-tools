@@ -153,9 +153,10 @@ def samples_to_df(h, need_line):
             id = callchains.add(j['callchain'].caller,
                     lambda: resolve_chain(j['callchain'], j, mm, need_line))
             add('callchain', id)
-        if 'branch' in j:
-            id = branches.add(map(lambda x: (x['from'], x.to),  j['branch']),
-                    lambda: resolve_branch(j['branch'], j, mm, need_line))
+        if 'branch_stack' in j:
+            branch = j.branch_stack.branch
+            id = branches.add(map(lambda x: (x['from'], x.to), branch),
+                    lambda: resolve_branch(branch, j, mm, need_line))
             add('branch', id)
         kernel, guest, hv = cpumodes[j['cpumode']]
         add('kernel', kernel)
