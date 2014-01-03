@@ -13,7 +13,7 @@ check() {
 	FN=data/perf.$(echo -- "$@" | tr -d '{} ')
 	FN=${FN/--/}
 	rm -f $FN
-	perf record -c 1000 -o $FN "$@" -- $CMD
+	perf record -o $FN "$@" -- $CMD
 	if [ $(stat -c %s $FN) == 0 ] ; then
 		return
 	fi
@@ -27,20 +27,21 @@ check() {
 }
 
 check
-check -g
-check -b
-check -b -g
-check -P
-check -T
+check -c 1000
+check -g -c 1000
+check -b -c 1000
+check -b -g fp -c 1000
+check -P -c 10000
+check -T -c 10003
 #check -e cycles:S 
 # seems to be broken in perf
 #check -e '{cycles,branches}:S'
 
 set +e 
 #check -d
-check --group -e cycles,branches,branch-misses
-check -e '{cycles,branches},{branch-misses,cache-misses}'
-check -e cycles,branches,branch-misses
+check --group -e cycles,branches,branch-misses -c 1000
+check -e '{cycles,branches},{branch-misses,cache-misses}'  -c 1000
+check -e cycles,branches,branch-misses -c 1000
 
 # new kernel
 #check -g dwarf
