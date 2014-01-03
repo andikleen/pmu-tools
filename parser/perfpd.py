@@ -39,7 +39,7 @@ import mmap
 
 ignored = {'type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
            'header_end', 'end_event', 'offset', 'callchain', 'branch',
-           'branch_stack', 'end_id', 'size', 'cpumode', 'caller',
+           'branch_stack', 'end_id', 'size', 'cpumode', 'caller', 'time',
            # skip attr for now, as it is too complex
            # XXX simple representation
            'attr'}
