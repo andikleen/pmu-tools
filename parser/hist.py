@@ -21,8 +21,11 @@ def print_feat(feat):
             feat.cpuid.cpuid)
     print "# %s" % (" ".join(map(lambda x: x.cmdline, feat.cmdline.cmdline)))
 
-def compute_cols(c):
-    return min(max(map(lambda x: len(x), c)) + 5, 70)
+COLUMN_PAD = 5
+MAX_COLUMN = 70
+
+def compute_cols(names):
+    return min(max(map(len, names)) + COLUMN_PAD, MAX_COLUMN)
 
 min_percent = float(args.min_percent) / 100.0
 for d in args.datafiles:
