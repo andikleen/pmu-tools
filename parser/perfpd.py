@@ -31,6 +31,10 @@ import mmap
 # s/w trace points
 # debuginfo / buildid
 # instructions / basic blocks
+# demangle
+# handle multiple events
+# support leader sampling (include counts in model)
+# use dwarf location lists to determine values from regs/stack
 # 
 
 ignored = {'type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
