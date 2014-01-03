@@ -44,6 +44,8 @@ ignored = {'type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
            # XXX simple representation
            'attr'}
 
+bool_fields = {'kernel', 'hv', 'guest'}
+
 def resolve_list(j, ip, mm, need_line):
      filename, _, foffset = mm.resolve(j.pid, ip)
      sym, soffset, line = elf.resolve_ip(filename, foffset, ip, need_line)
@@ -169,6 +171,8 @@ def samples_to_df(h, need_line):
         if used[j] == 0:
             del data[j]
     df = pd.DataFrame(data, index=index, dtype=np.uint64)
+    for i in bool_fields:
+        df[i] = df[i].astype('bool')
     df.branch_aux = branches
     df.callchain_aux = callchains
     return df
