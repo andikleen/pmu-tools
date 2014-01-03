@@ -21,14 +21,26 @@ def print_feat(feat):
             feat.cpuid.cpuid)
     print "# %s" % (" ".join(map(lambda x: x.cmdline, feat.cmdline.cmdline)))
 
+def compute_cols(c):
+    return min(max(map(lambda x: len(x), c)) + 5, 70)
+
 min_percent = float(args.min_percent) / 100.0
 for d in args.datafiles:
     df, et, feat = perfpd.read_samples(d, (args.sort == 'line'))
     print_feat(feat)
+
     # xxx split by event
-    h = df[args.sort].value_counts(normalize=True)
-    cols = min(max(map(lambda x: len(x), h.index)) + 5, 70)
+    if 'period' in df:
+        total = float(df['period'].sum())
+        g = df.groupby(args.sort)
+        h = g.period.sum()
+        h.sort(ascending=False)
+        h = h.apply(lambda x: x / total)
+    else:
+        h = df[args.sort].value_counts(normalize=True)
+
+    cols = compute_cols(h.index)
     for s, v in zip(h.index, h.values):
-       if v < min_percent:
-           break
-       print "%-*s %.2f%%" % (cols, s, v*100.0)
+        if v < min_percent:
+            break
+        print "%-*s %.2f%%" % (cols, s, v*100.0)
