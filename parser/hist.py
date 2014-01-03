@@ -41,7 +41,6 @@ for d in args.datafiles:
         h = h.apply(lambda x: x / total)
     else:
         h = df[args.sort].value_counts(normalize=True)
-
     h = h[h >= min_percent]
 
     cols = compute_cols(h.index)
