@@ -39,8 +39,8 @@ for d in args.datafiles:
     else:
         h = df[args.sort].value_counts(normalize=True)
 
+    h = h[h >= min_percent]
+
     cols = compute_cols(h.index)
     for s, v in zip(h.index, h.values):
-        if v < min_percent:
-            break
         print "%-*s %.2f%%" % (cols, s, v*100.0)
