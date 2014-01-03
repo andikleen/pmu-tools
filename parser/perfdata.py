@@ -16,10 +16,12 @@
 # Only works on Little-Endian with LE input files. Sorry.
 #
 # TBD:
-# Look up sample type for each record by end id 
+# Fix end_id
+# Look up sample type/attr for each record by end id 
 # Fix sample_id_all check
 # Generic Bitfield adapter that handles endian properly?
 # check size in all cases (or use optional+tunnel)
+# read_format?
 # 
 
 from construct import *
