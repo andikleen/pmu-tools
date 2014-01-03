@@ -9,7 +9,7 @@ p.add_argument('datafiles', nargs='*',
                default=['perf.data'])
 p.add_argument('--sort', help='field to sort on (symbol, line)', 
                default='symbol')
-p.add_argument('--min-percent', help='Minimum percent to print', default=0.0)
+p.add_argument('--min-percent', help='Minimum percent to print', default=1.0)
 args = p.parse_args()
 
 def print_feat(feat):
