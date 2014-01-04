@@ -150,11 +150,11 @@ def samples_to_df(h, need_line):
         add('symbol', sym)
         add('line', line)
         add('soffset', soffset)
-        if 'callchain' in j and j['callchain']:
-            id = callchains.add(j['callchain'].caller,
-                    lambda: resolve_chain(j['callchain'], j, mm, need_line))
+        if 'callchain' in j and j.callchain:
+            id = callchains.add(j.callchain.caller,
+                    lambda: resolve_chain(j.callchain, j, mm, need_line))
             add('callchain', id)
-        if 'branch_stack' in j:
+        if 'branch_stack' in j and j.branch_stack:
             branch = j.branch_stack.branch
             id = branches.add(map(lambda x: (x['from'], x.to), branch),
                     lambda: resolve_branch(branch, j, mm, need_line))
