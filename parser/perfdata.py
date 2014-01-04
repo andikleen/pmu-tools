@@ -283,7 +283,7 @@ def perf_event():
 def perf_event_seq(attr):
     return GreedyRange(perf_event(attr))
 
-perf_event_attr_sizes = (64, 72, 80, 96)
+perf_event_attr_sizes = (64, 72, 80, 96, 120)
 
 perf_event_attr = Struct("perf_event_attr",
                          Anchor("start"),                         
@@ -293,7 +293,8 @@ perf_event_attr = Struct("perf_event_attr",
                               TRACEPOINT = 2,
                               HW_CACHE = 3,
                               RAW = 4,
-                              BREAKPOINT = 5),
+                              BREAKPOINT = 5,
+			      UNKNOWN = 6),
                          UNInt32("size"),
                          UNInt64("config"),
                          UNInt64("sample_period_freq"),
@@ -365,6 +366,12 @@ perf_event_attr = Struct("perf_event_attr",
                                             UNInt64("sample_regs_user"),
                                             UNInt32("sample_stack_user"),
                                             UNInt32("__reserved_2")))),
+                         If(lambda ctx: ctx.size >= perf_event_attr_sizes[4],
+                            Embedded(Struct(None,
+                                            UNInt64("itrace_config"),
+                                            UNInt32("itrace_watermark"),
+                                            UNInt32("itrace_sample_type"),
+                                            UNInt64("itrace_sample_size")))),
                          Anchor("end"),
                          Value("perf_event_attr_size",
                                lambda ctx: ctx.end - ctx.start),
