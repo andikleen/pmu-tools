@@ -61,7 +61,9 @@ def fork_exit(name):
                   SNInt32("tid"),
                   SNInt32("ptid"),
                   UNInt64("time"),
-                  sample_id())
+                  # FIXME
+                  #sample_id()
+                  )
 
 def throttle(name):
     return Struct(name,
@@ -260,8 +262,9 @@ def perf_event():
                               "COMM": Struct("comm",
                                              SNInt32("pid"),
                                              SNInt32("tid"),
-                                             PaddedCString("comm"),
-                                             sample_id()),
+                                             PaddedCString("comm")
+                                             #sample_id()
+                                             ),
                               "EXIT": fork_exit("exit"),
                               "THROTTLE": throttle("throttle"),
                               "UNTHROTTLE": throttle("unthrottle"),
