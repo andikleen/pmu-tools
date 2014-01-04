@@ -25,16 +25,17 @@ import mmap
 # fix all types?
 # extra table for threads, processes.
 # stream_id
-# flatten callchains and branch_stack
 # expand registers, stack
 # represent other metadata
 # s/w trace points
 # debuginfo / buildid
+# look up vmlinux
 # instructions / basic blocks
 # demangle
 # handle multiple events
 # support leader sampling (include counts in model)
 # use dwarf location lists to determine values from regs/stack
+# dedup branch stacks
 # 
 
 ignored = {'type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
