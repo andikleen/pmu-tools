@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # print histogram for perf.data
 import perfpd
+import pfeat
 import argparse
 
 p = argparse.ArgumentParser(description='Print histogram for perf.data')
@@ -12,15 +13,6 @@ p.add_argument('--sort', help='field to sort on (symbol, line)',
 p.add_argument('--min-percent', help='Minimum percent to print', default=1.0)
 args = p.parse_args()
 
-def print_feat(feat):
-    print "# Measured on %s (%s)" % (
-            feat.hostname.hostname,
-            feat.osrelease.osrelease)
-    print "# %s, %s" % (
-            feat.cpudesc.cpudesc,
-            feat.cpuid.cpuid)
-    print "# %s" % (" ".join(map(lambda x: x.cmdline, feat.cmdline.cmdline)))
-
 COLUMN_PAD = 5
 MAX_COLUMN = 70
 
@@ -30,7 +22,7 @@ def compute_cols(names):
 min_percent = float(args.min_percent) / 100.0
 for d in args.datafiles:
     df, et, feat = perfpd.read_samples(d, (args.sort == 'line'))
-    print_feat(feat)
+    pfeat.print_feat(feat)
 
     # xxx split by event
     if 'period' in df:
