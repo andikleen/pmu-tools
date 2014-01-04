@@ -72,6 +72,69 @@ def throttle(name):
                   UNInt64("stream_id"),
                   sample_id())
 
+def itrace():
+    return Struct("itrace",
+                  UNInt64("isize"),
+                  UNInt64("offset"),
+                  UNInt64("reference"),
+                  UNInt32("idx"),
+                  UNInt32("tid"),
+                  UNInt32("cpu"),
+                  UNInt32("reserved"),
+                  Bytes("pt", lambda ctx: ctx.isize))
+
+def itrace_lost():
+    return Struct("itrace_lost",
+                  UNInt64("offset"))
+
+def itrace_error():
+    return Struct("itrace_error",
+                  UNInt32("itrace_type"),
+                  UNInt32("code"),
+                  UNInt32("cpu"),
+                  UNInt32("pid"),
+                  UNInt32("tid"),
+                  UNInt32("res"),
+                  UNInt64("ip"),
+                  String("msg", 64))
+
+def itrace_intel_pt():
+    return Struct("intel_pt",
+                  UNInt64("pmu_type"),
+                  UNInt64("time_shift"),
+                  UNInt64("time_mult"),
+                  UNInt64("time_zero"),
+                  UNInt64("cap_user_time_zero"),
+                  UNInt64("tsc_bit"),
+                  UNInt64("noretcomp_bit"),
+                  UNInt64("have_sched_switch"),
+                  UNInt64("snapshot_mode"),
+                  UNInt64("per_cpu_maps"))
+
+def itrace_intel_bts():
+    return Struct("intel_bts",
+                  UNInt64("pmu_type"),
+                  UNInt64("time_shift"),
+                  UNInt64("time_mult"),
+                  UNInt64("time_zero"),
+                  UNInt64("cap_user_time_zero"),
+                  UNInt64("snapshot_mode"))
+
+def itrace_info():
+    return Struct("itrace_info",
+                  Enum(UNInt32("iinfo_type"),
+                       UNKNOWN = 0,
+                       INTEL_PT = 1,
+                       INTEL_BTS = 2),
+                  UNInt32("res"),
+                  Switch("info",
+                         lambda ctx: ctx.type,
+                         {
+                             "UNKNOWN": Pass,
+                             "INTEL_PT": itrace_intel_pt(),
+                             "INTEL_BTS": itrace_intel_bts(),
+                         }, default = Pass))
+
 def event():
     return Embedded(
         Struct("event",
@@ -274,11 +337,14 @@ def perf_event():
                                                       SNInt32("tid"),
                                                       read_format(),
                                                       sample_id())),
-                              "SAMPLE": event()
-                           }, default = unparsed_event()),
+                              "SAMPLE": event(),
+                              "HEADER_FINISHED_ROUND": Pass,
+                              "ITRACE": itrace(),
+                              "ITRACE_INFO": itrace_info(),
+                              "ITRACE_ERROR": itrace_error(),
+                           }, default = Pass),
 			Anchor("end"),
-			Padding(lambda ctx:
-                                    ctx.size - (ctx.end - ctx.start)))
+			Padding(padding_size))
 
 def perf_event_seq(attr):
     return GreedyRange(perf_event(attr))
