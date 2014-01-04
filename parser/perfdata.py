@@ -26,6 +26,8 @@
 
 from construct import *
 
+debug = False
+
 def sample_type(ctx):
     return ctx.attr.perf_event_attr.sample_type
 
@@ -306,8 +308,17 @@ def read_format():
                              If(lambda ctx: read_flags(ctx).id,
                                 UNInt64("id2")))))
 
+def unparsed_size(ctx):
+    if debug:
+        print "offset %x unparsed" % (ctx.start), "size", ctx.size, "header_end", ctx.header_end, "start", ctx.start
+    return ctx.size - 8 #(ctx.header_end - ctx.start)
+
 def unparsed_event():
-    return Bytes("raw", lambda ctx: ctx.size - (ctx.end - ctx.start))
+    return Bytes("raw", unparsed_size)
+
+def padding_size(ctx):
+    # XXX Hack for the extended isize
+    return max(0, ctx.size - (ctx.end - ctx.start))
 
 def perf_event():
     return Struct("perf_event",
@@ -578,6 +589,8 @@ id_array = Array(lambda ctx: ctx.size / 8,
                  UNInt64("id"))
 
 def num_attr(ctx):
+    if debug:
+        print "num_attr size", ctx._.size, "attr_size", ctx._._.attr_size, "mod", ctx._.size%ctx._._.attr_size
     return ctx._.size / ctx._._.attr_size
 
 perf_file_attr = Struct("perf_file_attr",
