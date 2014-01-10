@@ -1,5 +1,5 @@
 #!/bin/sh
-export FORCECPU=ivt
+export FORCECPU=hsx
 ./ucevent.py --mock --unsupported --broken --name-only > all-events
 parallel "$@" -n 1 -k < all-events sh -c "echo "EVENT" {} ; ./ucevent.py --mock -v {} 2>&1" >res-mock
 

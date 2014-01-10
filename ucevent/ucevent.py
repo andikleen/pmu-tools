@@ -43,6 +43,7 @@ dbg = ucmsg.debug_msg
 cpu_mapping = {
     45: "jkt",
     62: "ivt",
+    63: "hsx",
 }
 
 args = None
@@ -293,7 +294,8 @@ def format_attrs(ev, box):
 
 box_to_perf = {
     "cbo": "cbox",
-    "qpi_ll": "qpi"
+    "qpi_ll": "qpi",
+    "sbo": "sbox",
 }
 
 def format_box(ev):
