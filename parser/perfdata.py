@@ -548,9 +548,14 @@ def get_events(h):
     return h.data.perf_data
 
 if __name__ == '__main__':
-    import sys
-    
-    with open(sys.argv[1], "rb") as f:
+    import argparse
+
+    args = argparse.ArgumentParser()
+    args.add_argument('file', help='perf.data to read', default='perf.data',
+                      nargs='?')
+    p = args.parse_args()
+
+    with open(p.file, "rb") as f:
         h = perf_file.parse_stream(f)
         print h
         #print get_events(h)
