@@ -16,9 +16,6 @@
 # Only works on Little-Endian with LE input files. Sorry.
 #
 # TBD:
-# Fix end_id
-# Look up sample type/attr for each record by end id 
-# Fix sample_id_all check
 # Generic Bitfield adapter that handles endian properly?
 # check size in all cases (or use optional+tunnel)
 # read_format?
@@ -141,6 +138,28 @@ def event():
                 Anchor("end_event"),
                 Padding(lambda ctx: max(0, ctx.size - ctx.end_event))))
 
+def get_attr_list(ctx):
+    return ctx._._.attrs.perf_file_attr.f_attr
+
+# assume that sample_id_all is the same in all events
+# we cannot look up the event without this.
+def has_sample_id_all(ctx):
+    attr = get_attr_list(ctx)[0]
+    if 'sample_id_all' in attr:
+        return attr.sample_id_all
+    return False
+
+# when sample_id_all is not supported, we may 
+# not look up the right one (perf.data limitation)
+def lookup_event_attr(ctx):
+    if "end_id" in ctx and ctx.end_id:
+        idx = ctx.end_id
+    elif 'id' in ctx and ctx['id']:
+        idx = ctx['id']
+    else:
+        idx = 0
+    return get_attr_list(ctx)[idx]
+
 # XXX need to make OnDemand for large files
 
 def perf_event_header():
@@ -170,13 +189,10 @@ def perf_event_header():
                                               Flag("mmap_data"),
                                               Padding(5))),
                            UNInt16("size"),
-                           # assumes sample_id_all
-                           Pointer(lambda ctx: ctx.start + ctx.size - 8,
-                                   UNInt64("end_id")),
-                           # FIXME: use end_id here
-                           Value("attr", 
-                                 lambda ctx:
-                                 ctx._._.attrs.perf_file_attr.f_attr[0])))
+                           If(has_sample_id_all,
+                                 Pointer(lambda ctx: ctx.start + ctx.size - 8,
+                                   UNInt64("end_id"))),
+                           Value("attr", lookup_event_attr)))
 
 def PaddedCString(name):
     return Embedded(Struct(name,
