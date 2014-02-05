@@ -93,7 +93,10 @@ for l in levels.keys():
     r = map(lambda x: ratios[x], non_null)
     stack = ax.stackplot(timestamps, colors=all_colors, *r)
     ax.set_ylim(0, 100)
-    ax.set_title('Level %d' % (l), loc='right')
+    try:
+        ax.set_title('Level %d' % (l), loc='right')
+    except AttributeError:
+        ax.set_title('Level %d' % (l))
     for j in ax.get_xticklabels() + ax.get_yticklabels():
         j.set_fontsize(8)
     if n >= 2 and not yset:
