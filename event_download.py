@@ -11,7 +11,9 @@ import os
 import string
 from fnmatch import fnmatch
 
-modelpath = 'http://laut.jf.intel.com/events/models.txt'
+urlpath = 'http://laut.jf.intel.com/events'
+mapfile = 'mapfile.csv'
+modelpath = urlpath + "/" + mapfile
 
 def get_cpustr():
     f = open('/proc/cpuinfo', 'r')
@@ -21,18 +23,18 @@ def get_cpustr():
         if n[0] == 'vendor_id':
             cpu[0] = n[2]
         elif n[0] == 'model' and n[1] == ':':
-            cpu[2] = n[2]
+            cpu[2] = int(n[2])
         elif n[0] == 'cpu' and n[1] == 'family':
-            cpu[1] = n[3]
+            cpu[1] = int(n[3])
         if all(cpu):
             break
-    return "%s-%s-%s" % (cpu[0], cpu[1], cpu[2])
+    return "%s-%d-%X" % (cpu[0], cpu[1], cpu[2])
 
 def sanitize(s, a):
     o = ""
     for j in s:
-        if s[j] in a:
-            o += s[j]
+        if j in a:
+            o += j
     return o
 
 def dodir():
@@ -49,11 +51,12 @@ def download(match):
     try:
         models = urlopen(modelpath)
         for j in models:
-            cpu, version, url  = j.split()
+            cpu, version, name  = j.rstrip().split(",")
             if not fnmatch(cpu, match):
                 continue
-            cpu = sanitize(cpu, string.ascii_letters + ['-'] + string.digits)
-            print "Downloading", url
+            cpu = sanitize(cpu, string.ascii_letters + '-' + string.digits)
+            url = urlpath + name
+            print "Downloading", url, "to", cpu + ".json"
             f = urlopen(url)
             o = open(cpu + ".json", "w")
             o.write(f.read())
@@ -68,8 +71,12 @@ def download(match):
     return found
 
 def download_current():
-    """Download JSON event list for current cpu."""
+    """Download JSON event list for current cpu.
+       Returns >0 when a event list is found"""
     return download(get_cpustr())
+
+def eventlist_name():
+    return "%s/.events/%s.json" % (os.getenv("HOME"), get_cpustr())
 
 if __name__ == '__main__':
     cpustr = get_cpustr()
@@ -85,3 +92,4 @@ if __name__ == '__main__':
 
     if found == 0:
         print >>sys.stderr, "Nothing found"
+    print "my event list", eventlist_name()
