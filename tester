@@ -5,17 +5,38 @@ set -x
 
 PERF=${PERF:-perf}
 
+declare -a cpus
+cpus[nhm-ex]=GenuineIntel-6-2E
+cpus[nhm-ep]=GenuineIntel-6-1E
+cpus[nhm-ep]=GenuineIntel-6-1A
+cpus[wsm-ex]=GenuineIntel-6-2F
+cpus[wsm-sp]=GenuineIntel-6-25
+cpus[wsm-dp]=GenuineIntel-6-2C
+cpus[snb]=GenuineIntel-6-2A
+cpus[jkt]=GenuineIntel-6-2D
+cpus[ivt]=GenuineIntel-6-3E
+cpus[ivb]=GenuineIntel-6-3A
+cpus[hsw]=GenuineIntel-6-3C
+cpus[slm]=GenuineIntel-6-37
+cpus[bnl]=GenuineIntel-6-35
+
+#for j in ${cpus[@]} ; do
+#	if [ ! -r ~/.events/$j-core.json ] ; then
+#		./event_download $j
+#	fi
+#done
+
 # handle unknown event
 $PERF stat -e branch-misses true
 
 checklist()
 {
 	# just see that it doesn't fail
-	EVENTMAP=$1.csv ./ocperf.py list > /dev/null
+	EVENTMAP=${cpus[$1]} ./ocperf.py list > /dev/null
 
 	# see if all events are visible
-	R=$(EVENTMAP=$1.csv ./ocperf.py list | wc -l)
-	if [ $R != $[$BASELEN + $2] ]; then
+	R=$(EVENTMAP=${cpus[$1]} ./ocperf.py list | wc -l)
+	if [ $[$BASELEN + $2] -gt $R ]; then
 		echo $1 list mismatch $[$R - $BASELEN]
 		exit 1
 	fi
@@ -36,12 +57,12 @@ checklist ivt 447
 checklist slm 222
 
 set -e
-./ocperf.py stat -e uops_issued.cycles_all_threads /bin/true
+./ocperf.py stat -e inst_retired.any /bin/true
 
 # xxx cover new syntax too
 checkmsr()
 {
-	DIRECT_MSR=1 EVENTMAP=$1.csv ./ocperf.py --print stat -e $2 /bin/true | grep "msr 1a6 ="
+	DIRECT_MSR=1 EVENTMAP=${cpus[$1]} ./ocperf.py --print stat -e $2 /bin/true | grep "msr 1a6 ="
 }
 
 checkmsr wsm-dp OFFCORE_RESPONSE.ANY_DATA.ANY_CACHE_DRAM_0 
@@ -50,7 +71,7 @@ checkmsr hsw OFFCORE_RESPONSE.COREWB.ANY_RESPONSE_0
 
 checkev()
 {
-	DIRECT_MSR=1 EVENTMAP=$1.csv ./ocperf.py stat -e $2 /bin/true | egrep -- "-e $3"
+	DIRECT_MSR=1 EVENTMAP=${cpus[$1]} ./ocperf.py stat -e $2 /bin/true | egrep -- "-e $3"
 }
 checkev nhm-ep L1D.M_EVICT '(r451|cpu/event=0x51,umask=0x4/)'
 checkev nhm-ep L1D.M_EVICT:c4 r4000451
@@ -64,7 +85,7 @@ checkev ivt uops_issued.core_stall_cycles r1a0010e
 
 checkmsr2()
 {
-	EVENTMAP=$1.csv DIRECT_MSR=1 ./ocperf.py --print stat -e $2 /bin/true | grep "$3"
+	EVENTMAP=${cpus[$1]} DIRECT_MSR=1 ./ocperf.py --print stat -e $2 /bin/true | grep "$3"
 }
 
 checkmsr2 wsm-sp offcore_response.pf_rfo.remote_cache_hitm_1 "msr 1a7 = 820"
@@ -79,7 +100,7 @@ checkp()
 {
 	./ocperf.py --print stat -e "$1"  | grep -q "$2"
 }
-export EVENTMAP=hsw.csv
+export EVENTMAP=${cpus[hsw]}
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS 'r1c4:p$'
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL:p  'r1c4:p$'
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS:p  'r1c4:p$'
@@ -90,7 +111,7 @@ DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS:ppp  'r1c4:ppp$'
 checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/$'
 checkp cpu/BR_INST_RETIRED.CONDITIONAL_PS,foo=bar/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional_ps,foo=bar/p$'
 checkp cpu/BR_INST_RETIRED.CONDITIONAL_PS,foo=bar/ppu  'event=0xc4,umask=0x1,name=br_inst_retired_conditional_ps,foo=bar/ppu$'
-export EVENTMAP=wsm-sp.csv
+export EVENTMAP=${cpus[wsm-sp]}
 DIRECT_MSR=1 checkp l2_write.rfo.m_state:c4 'r4000827'
 #checkp l2_write.rfo.m_state:c4 'cpu/event=0x27,umask=0x8,cmask=4,name=l2_write_rfo_m_state/'
 

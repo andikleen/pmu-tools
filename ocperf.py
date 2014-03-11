@@ -27,21 +27,16 @@
 #
 # env variables:
 # PERF=... perf binary to use (default "perf")
-# EVENTMAP=... eventmap file (default: location of script based on CPU)
-# the script looks for the spreadsheets in the same directory as the
-# binary is
+# EVENTMAP=eventmap
+# When eventmap is not specified, look in ~/.events
+# The eventmap is automatically downloaded there
+#
 import sys
-import glob
-import os, os.path
+import os
 import struct
 import subprocess
-import csv
-try:
-    import json
-except ImportError:
-    pass
+import json
 import re
-import shlex
 import copy
 import textwrap
 import pipes
@@ -49,27 +44,7 @@ from pmudef import *
 
 import msr as msrmod
 import latego
-
-exedir = os.path.dirname(sys.argv[0])
-
-# some mismapped to similar systems (HEDT->EP etc.)
-cpu_mapping = {
-    42: "snb-client.csv", # sandy bridge
-    26: "nhm-ep.csv",  # bloomfield
-    30: "nhm-ep.csv",  # lynnfield
-    46: "nhm-ex.csv",  # beckton
-    37: "wsm-sp.csv",  # clarkdale
-    44: "wsm-dp.csv",  # gulftown
-    45: "snb-ep.csv",  # sandybridge ep
-    47: "wsm-dp.csv",  # westmere-EX
-    58: "ivb-client.csv", # ivy bridge client
-    60: "hsw.csv", 70: "hsw.csv", 71: "hsw.csv",  # Haswell
-    69: "hsw.csv", 63: "hsw.csv",
-    28: "bnl.csv", 38: "bnl.csv", 39: "bnl.csv", 53: "bnl.csv", 54: "bnl.csv",
-    62: "ivt.csv",     # ivybridge-ep
-    77: "slm.csv",     # avoton
-    55: "slm.csv",     # 22nm Atom
-}
+import event_download
 
 fixed_counters = {
     "32": "instructions",
@@ -117,53 +92,6 @@ class MSR:
             sys.exit("Multiple events use same register")
         self.writemsr(msr, val, print_only)
         self.reg[msr] = 1
-
-def resolve_symlink(p):
-    l = p
-    while os.path.islink(p):
-        p = os.readlink(p)
-        if os.path.isabs(p):
-            return p
-    return os.path.join(os.path.dirname(l), p)
-        
-def getconfig(name):
-    return os.path.join(exedir, name)
-
-class CPU:
-    def cpumap(self):
-        f = open("/proc/cpuinfo", "r")
-        if not f:
-            return False
-        for i in f:
-            n = i.split()
-            if n[0] == "vendor_id" and n[2] != "GenuineIntel":
-                return False
-            if n[0] == "cpu" and n[1] == "family" and n[3] != "6":
-                return False
-            if n[0] == "model":
-                model = int(n[2])
-                self.model = model
-                if model in cpu_mapping:
-                    return cpu_mapping[model]
-                print "Unknown CPU model %d" % (model,)
-                return False
-        f.close()
-        print "Cannot identify CPU"
-        return False
-
-    def getmap(self):
-        t = os.getenv('EVENTMAP')
-        if t:
-            # XXX
-            if t.find("snb-ep") >= 0:
-                self.model = 58
-            else:
-                self.model = 0
-            return t
-        t = self.cpumap()
-        if t:
-            return getconfig(t)
-        return False
 
 class Event:
     def __init__(self, name, val, desc):
@@ -282,8 +210,8 @@ class Emap:
                     e.msr = msrnum
             if 'overflow' in m:
                 e.overflow = get('overflow')
-                if e.overflow == "0":
-                    print >>sys.stderr, "Warning: %s has no overflow value" % (name,)
+                #if e.overflow == "0":
+                #    print >>sys.stderr, "Warning: %s has no overflow value" % (name,)
             else:
                 e.overflow = None
             self.events[name] = e
@@ -359,70 +287,9 @@ class Emap:
             else:
                 print >>f, " [%s]" % (self.desc[k],)
 
-#
-# Handle the immense creativity of Event spreadsheet creators
-# 
-
-class EmapBNL(Emap):
-    # Event_Name,Code,UMask,Counter,Description,Counter_Mask,Invert,AnyThread,Edge_Detect,PEBS
-    def __init__(self, name, model):
-        spreadsheet = {
-            'name': 'Event_Name',
-            'code': 'Code',
-            'umask': 'UMask',
-            'cmask': 'Counter_Mask',
-            'invert': 'Invert',
-            'any': 'AnyThread',
-            'edge': 'Edge_Detect',
-            'desc': 'Description',
-            'pebs': 'PEBS',
-            'counter': 'Counter'
-        }
-        r = csv.DictReader(open(name, 'rb'), dialect='excel')
-        return self.read_table(r, spreadsheet)
-
-class EmapNHM(Emap):
-    def __init__(self, name, model):
-        nhm_spreadsheet = {
-            'name': 'NAME',
-            'code': 'Event ID',
-            'umask': 'UMASK',
-            'other': 'OTHER',
-            'msr_index': 'MSR_INDEX',
-            'msr_value': 'MSR_VALUE',
-            'desc': 'DESCRIPTION',
-            'pebs': 'PRECISE_EVENT',
-            'counter': 'COUNTER',
-            'overflow': 'OVERFLOW',
-        }
-        r = csv.DictReader(open(name, 'rb'), dialect='excel-tab')
-        return self.read_table(r, nhm_spreadsheet)
-
-class EmapJSON(Emap):
-    # EventCode,UMask,EventName,Description,Counter,OverFlow,MSRIndex,MSRValue,PreciseEvent,Invert,AnyThread,EdgeDetect,CounterMask
-    def __init__(self, name, model):
-        spreadsheet = {
-            'name': 'EventName',
-            'code': 'EventCode',
-            'umask': 'UMask',
-            'msr_index': 'MSRIndex',
-            'msr_value': 'MSRValue',
-            'cmask': 'CounterMask',
-            'invert': 'Invert',
-            'any': 'AnyThread',
-            'edge': 'EdgeDetect',
-            'desc': 'Description',
-            'pebs': 'PreciseEvent',
-            'counter': 'Counter',
-            'overflow': 'OverFlow',
-        }
-        if model == 45:
-            self.latego = True
-        r = csv.DictReader(open(name, 'rb'), dialect='excel')
-        return self.read_table(r, spreadsheet)
-
+# XXX handle Errata, TakenAlone, DataLA
 class EmapNativeJSON(Emap):
-    def __init__(self, name, model):
+    def __init__(self, name):
         mapping = {
             'name': u'EventName',
             'code': u'EventCode',
@@ -438,39 +305,35 @@ class EmapNativeJSON(Emap):
             'counter': u'Counter',
             'overflow': u'SampleAfterValue',
         }
-        if model == 45:
+        if name.find("JKT") >= 0:
             self.latego = True
         return self.read_table(json.load(open(name, 'rb')), mapping)
 
-readers = (
-    ("snb-ep", EmapJSON),
-    ("snb", EmapJSON),
-    ("ivb", EmapJSON),
-    ("hsw", EmapJSON),
-    ("nhm", EmapNHM),
-    ("wsm", EmapNHM),
-    ("bnl", EmapBNL),
-    ("ivt", EmapJSON),
-    ("slm", EmapJSON)
-)
-
 def find_emap():
-    """Search and read a perfmon event map in CSV format.
+    """Search and read a perfmon event map.
        When the EVENTMAP environment variable is set read that, otherwise
        read the map for the current CPU.
        Return an emap object that contains the events and can be queried
        or None if nothing is found or the current CPU is unknown."""
-    cpu = CPU()
-    t = cpu.getmap()
-    if t:
-        if t.endswith(".json"):
-            return EmapNativeJSON(t, cpu.model)
+    el = os.getenv("EVENTMAP")
+    if el and el.find("/") >= 0:
         try:
-            for i in readers:
-                if os.path.basename(t).startswith(i[0]):
-                    return i[1](t, cpu.model)
+            return EmapNativeJSON(el)
         except IOError:
             return None
+    if not el:
+        el = event_download.get_cpustr()
+    try:
+        emap = EmapNativeJSON(event_download.eventlist_name(el))
+        if emap:
+            return emap
+    except IOError:
+        pass
+    try:
+        event_download.download(el)
+        return EmapNativeJSON(event_download.eventlist_name(el))
+    except IOError:
+        pass
     return None
 
 def process_events(event, print_only):
