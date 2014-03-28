@@ -170,9 +170,9 @@ class OutputCSV(Output):
 
     def s(self, area, hdr, s, remark="", desc=""):
         remark = self.csv + remark
-        desc = self.csv + desc
+        desc = self.csv + '"' + desc + '"'
         desc = re.sub(r"\s+", " ", desc)
-        print >>self.logf,"%s%s%s%s%s" % (hdr, self.csv, s.strip(), remark, desc)
+        print >>self.logf, '%s%s%s%s%s' % (hdr, self.csv, s.strip(), remark, desc)
 
 known_cpus = (
     ("snb", (42, )),
