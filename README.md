@@ -23,7 +23,7 @@ methology.
 for the perf uncore driver and pretty prints the output. It also supports
 computing higher level metrics derived from multiple events. 
 * A library to resolve named intel events (like INST_RETIRED.ANY) 
-to perf_event_attr (jevents)
+to perf_event_attr ([jevents](http://halobates.de/jevents.html))
 * A library for self profiling with Linux since Linux 3.3. Self
 profiling is a program monitoring its own execution, either for controlled
 benchmarking or to optimize itself.
