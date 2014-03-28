@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+./resolve cpu/event=1,umask=2/
+./resolve cpu/event=1,umask=2,any=1,cmask=2,edge,in_tx=1,in_tx_cp=1,inv=1/
+./resolve cpu/event=1,umask=2,any=1,cmask=2,edge,in_tx=1,in_tx_cp=1,inv=1,offcore_rsp=2/
+./resolve cpu/event=1,umask=2,any=1,cmask=2,edge,in_tx=1,in_tx_cp=1,inv=1,offcore_rsp=2,pc=1/
+./resolve cpu/event=1,umask=2,any=1,cmask=2,edge,in_tx=1,in_tx_cp=1,inv=1,offcore_rsp=2,pc=1,period=10000/
+./resolve cpu/branch-instructions/

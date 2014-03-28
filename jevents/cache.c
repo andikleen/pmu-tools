@@ -40,3 +40,17 @@ int resolve_event(char *name, struct perf_event_attr *attr)
 	}
 	return -1;
 }
+
+int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
+		void *data)
+{
+	struct event *e;
+	if (!eventlist)
+		read_events(NULL);
+	for (e = eventlist; e; e = e->next) {
+		int ret = func(data, e->name, e->event, e->desc);
+		if (ret)
+			return ret;
+	}
+	return 0;
+}
