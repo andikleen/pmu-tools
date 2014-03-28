@@ -7,7 +7,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 * New jevents library to resolve event lists from C (3/28/2014)
 * ucevent now supports Xeon E5/E7 v2 (IvyBridge Server) (old news)
 
-# Current features:
+# All features:
 
 ## Major tools/libraries
 
@@ -22,6 +22,8 @@ methology.
 * The "ucevent" tool to manage and compute uncore performance events on Intel Xeon E5 2600 series (SandyBridge EP). Uncore is the part of the CPU that is not core.  Supports many metrics for power management, IO, QPI (interconnect), caches, and others.  ucevent automatically generates event descriptions
 for the perf uncore driver and pretty prints the output. It also supports
 computing higher level metrics derived from multiple events. 
+* A library to resolve named intel events (like INST_RETIRED.ANY) 
+to perf_event_attr (jevents)
 * A library for self profiling with Linux since Linux 3.3. Self
 profiling is a program monitoring its own execution, either for controlled
 benchmarking or to optimize itself.
