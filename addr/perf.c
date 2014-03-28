@@ -104,6 +104,7 @@ struct perf_event_header *perf_buffer_read(struct perf_iter *iter, void *buffer,
 
 /**
  * perf_iter_continue - Allow the kernel to log over our data.
+ * @iter: Iterator.
  * Tell the kernel we are finished with the data and it can
  * continue logging.
  */
@@ -159,7 +160,7 @@ void perf_fd_close(struct perf_fd *p)
 
 /**
  * perf_enable - Start perf collection on pfd
- * @pfd - perf fd
+ * @p: perf fd
  * Return: -1 for error, otherwise 0.
  */
 
@@ -170,7 +171,7 @@ int perf_enable(struct perf_fd *p)
 
 /**
  * perf_enable - Stop perf collection on pfd
- * @pfd - perf fd
+ * @p: perf fd
  * Return: -1 for error, otherwise 0.
  */
 int perf_disable(struct perf_fd *p)
