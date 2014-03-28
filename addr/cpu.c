@@ -78,8 +78,7 @@ unsigned mem_loads_event(void)
 	for (i = 0; events[i].models; i++)
 		if (match_cpu_model(mod, events[i].models))
 			return events[i].mem_loads;	
-	printf("Unknown CPU model %d\n", mod);
-	exit(1);
+	return -1;
 }
 
 
@@ -90,7 +89,5 @@ unsigned mem_stores_event(void)
 	for (i = 0; events[i].models; i++)
 		if (match_cpu_model(mod, events[i].models))
 			return events[i].mem_stores;
-	printf("Unknown CPU model %d\n", mod);
-	exit(1);
-
+	return -1;
 }

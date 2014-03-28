@@ -135,6 +135,11 @@ int main(int ac, char **av)
 		.disabled = 1,
 	};
 
+	if (attr.config == -1) {
+		printf("Unknown CPU model\n");
+		exit(1);
+	}
+
 	if (av[1] && !strcmp(av[1], "cycles")) {
 		attr.sample_type = PERF_SAMPLE_IP;
 		attr.precise_ip = 0;
