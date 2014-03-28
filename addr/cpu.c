@@ -71,6 +71,13 @@ static bool match_cpu_model(int mod, int *models)
 	return false;
 }
 
+/**  
+ * mem_stores_event - Return precise mem load event for current CPU.
+ * This is an event which supports load address monitoring.
+ * Return: raw event, can be put int perf_event_attr->config. 
+ * -1 or error.
+ */
+
 unsigned mem_loads_event(void)
 {
 	int mod = get_cpu_model();
@@ -81,7 +88,12 @@ unsigned mem_loads_event(void)
 	return -1;
 }
 
-
+/**  
+ * mem_stores_event - Return precise mem stores event for current CPU.
+ * This is an event which supports load address monitoring.
+ * Return: raw event, can be put int perf_event_attr->config. 
+ * -1 or error.
+ */
 unsigned mem_stores_event(void)
 {
 	int mod = get_cpu_model();
