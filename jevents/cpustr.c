@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include "jevents.h"
 
+/**
+ * get_cpu_str - Return string describing the current CPU
+ *
+ * Used to store JSON event lists in the cache directory.
+ */
 char *get_cpu_str(void)
 {
 	char *line = NULL;

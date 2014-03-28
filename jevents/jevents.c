@@ -177,8 +177,18 @@ static struct msrmap *lookup_msr(char *map, jsmntok_t *val)
 	return NULL;
 }
 
-/* Call func with each event in the json file */
-
+/**
+ * json_events - Read JSON event file from disk and call event callback.
+ * @fn: File name to read or NULL for default.
+ * @func: Callback to call for each event
+ * @data: Abstract pointer to pass to func.
+ *
+ * The callback gets the data pointer, the event name, the event 
+ * in perf format and a description passed.
+ *
+ * Call func with each event in the json file 
+ * Return: -1 on failure, otherwise 0.
+ */
 int json_events(const char *fn,
 	  int (*func)(void *data, char *name, char *event, char *desc),
 	  void *data)
