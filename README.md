@@ -3,6 +3,10 @@
 pmu tools is a collection of tools for profile collection and performance
 analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index.php/Main_Page). This uses performance counters in the CPU.
 
+# Recent new features:
+* New jevents library to resolve event lists from C (3/28/2014)
+* ucevent now supports Xeon E5/E7 v2 (IvyBridge Server) (old news)
+
 # Current features:
 
 ## Major tools/libraries
