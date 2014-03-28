@@ -14,7 +14,13 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-/* Simple perf library */
+/**
+ * DOC: A simple perf library to manage the perf ring buffer
+ *
+ * This library provides a simple wrapping layer for the perf 
+ * mmap ring buffer.
+ */
+
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
 #include <unistd.h>
@@ -26,7 +32,13 @@
 #include "util.h"
 #include "perf.h"
 
-/* Iterator for perf ring buffer */
+/**
+ * perf_iter_init - Initialize iterator for perf ring buffer
+ * @iter: Iterator to initialize.
+ * @pfd: perf_fd from perf_fd_open() to use with the iterator.
+ *
+ * Needs to be called first to start walking a perf buffer.
+ */
 
 void perf_iter_init(struct perf_iter *iter, struct perf_fd *pfd)
 {
@@ -45,7 +57,20 @@ void perf_iter_init(struct perf_iter *iter, struct perf_fd *pfd)
 	iter->data = (char *)(iter->mpage) + pagesize;
 }
 
-/* Read from the ring buffer */
+/**
+ * perf_buffer_read - Access data in perf ring iterator.
+ * @iter: Iterator to copy data from
+ * @buffer: Temporary buffer to use for wrapped events
+ * @bufsize: Size of buffer
+ *
+ * Return the next available perf_event_header in the ring buffer.
+ * This normally does zero copy, but for wrapped events
+ * they are copied into the temporary buffer supplied and a
+ * pointer into that is returned.
+ *
+ * Return: NULL when nothing available, otherwise perf_event_header.
+ */
+
 struct perf_event_header *perf_buffer_read(struct perf_iter *iter, void *buffer, int bufsize)
 {
 	struct perf_event_header *hdr = (struct perf_event_header *)(iter->data + iter->cur);
@@ -77,7 +102,12 @@ struct perf_event_header *perf_buffer_read(struct perf_iter *iter, void *buffer,
 	}
 }
 
-/* Allow the kernel to log over our data */
+/**
+ * perf_iter_continue - Allow the kernel to log over our data.
+ * Tell the kernel we are finished with the data and it can
+ * continue logging.
+ */
+
 void perf_iter_continue(struct perf_iter *iter)
 {
 	iter->mpage->data_tail = iter->raw_head;
@@ -89,7 +119,13 @@ static unsigned perf_mmap_size(int buf_size_shift)
 	return ((1U << buf_size_shift) + 1) * sysconf(_SC_PAGESIZE);
 }
 
-/* Open a perf event with ring buffer for the current thread */
+/**
+ * perf_fd_open - Open a perf event with ring buffer for the current thread 
+ * @p: perf_fd to initialize
+ * @attr: perf event attribute to use
+ * @buf_size_shift: log2 of buffer size.
+ * Return: -1 on error, otherwise 0.
+ */
 int perf_fd_open(struct perf_fd *p, struct perf_event_attr *attr, int buf_size_shift)
 {
 	p->pfd = syscall(__NR_perf_event_open, attr, 0, -1, -1, 0);
@@ -109,6 +145,11 @@ int perf_fd_open(struct perf_fd *p, struct perf_event_attr *attr, int buf_size_s
 	return 0;
 }
 
+/**
+ * perf_fd_close - Close perf_fd
+ * @p: pfd to close.
+ */
+
 void perf_fd_close(struct perf_fd *p)
 {
 	munmap(p->mpage, perf_mmap_size(p->buf_size_shift));
@@ -116,11 +157,22 @@ void perf_fd_close(struct perf_fd *p)
 	p->mpage = NULL;
 }
 
+/**
+ * perf_enable - Start perf collection on pfd
+ * @pfd - perf fd
+ * Return: -1 for error, otherwise 0.
+ */
+
 int perf_enable(struct perf_fd *p)
 {
 	return ioctl(p->pfd, PERF_EVENT_IOC_ENABLE, 0);
 }
 
+/**
+ * perf_enable - Stop perf collection on pfd
+ * @pfd - perf fd
+ * Return: -1 for error, otherwise 0.
+ */
 int perf_disable(struct perf_fd *p)
 {
 	return ioctl(p->pfd, PERF_EVENT_IOC_DISABLE, 0);
