@@ -22,7 +22,7 @@ delimeter must be ,
 this is for data that is not normalized.''')
 p.add_argument('--xkcd', action='store_true', help='enable xkcd mode')
 p.add_argument('--style', help='set mpltools style (e.g. ggplot)')
-p.add_argument('file', help='CSV file to plot (or stdin)')
+p.add_argument('file', help='CSV file to plot (or stdin)', nargs='?')
 p.add_argument('--output', '-o', help='Output to file. Otherwise show.', 
                nargs='?')
 args = p.parse_args()
@@ -58,23 +58,29 @@ rc = csv.reader(inf)
 timestamps = dict()
 value = dict()
 
+val = ""
 for r in rc:
     # timestamp,event,value
     if len(r) < 3:
         continue
-    event = r[1]
+    print r
+    if len(r) >= 5:
+        ts, event, val, thresh, desc = r
+    elif len(r) >= 4:
+        ts, val, unit, event = r
+    else:
+        ts, val, event = r
     if event not in assigned:
         level = gen_level.get_level(event)
-        print level, event
         assigned[event] = cur_colors[level][0]
         cur_colors[level] = cur_colors[level][1:]
         if len(cur_colors[level]) == 0:
             cur_colors[level] = all_colors
         value[event] = []
         timestamps[event] = []
-    timestamps[event].append(r[0])
+    timestamps[event].append(float(ts))
     try:
-        value[event].append(float(r[2].replace("%","")))
+        value[event].append(float(val.replace("%","")))
     except ValueError:
         value[event].append(0.0)
 
@@ -91,9 +97,11 @@ if args.xkcd:
 n = 1
 for l in levels.keys():
     ax = plt.subplot(len(levels), 1, n)
-    ax.set_ylim(0, 100)
+    if val.find('%') >= 0:
+        ax.set_ylim(0, 100)
     t = []
     for j in assigned.keys():
+        print j, gen_level.get_level(j), l
         if gen_level.get_level(j) == l:
             t.append(j)
             if 'style' not in globals():
@@ -105,7 +113,10 @@ for l in levels.keys():
     n += 1
 
 plt.xlabel('Time')
-plt.ylabel('Bottleneck %')
+if val.find('%') >= 0:
+    plt.ylabel('Bottleneck %')
+else:
+    plt.ylabel("Counter value")
 if args.output:
     plt.savefig(args.output)
 else:
