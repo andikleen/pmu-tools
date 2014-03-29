@@ -307,7 +307,10 @@ class EmapNativeJSON(Emap):
         }
         if name.find("JKT") >= 0:
             self.latego = True
-        return self.read_table(json.load(open(name, 'rb')), mapping)
+        data = json.load(open(name, 'rb'))
+        if u'PublicDescription' not in data[0]:
+            mapping['desc'] = u'BriefDescription'
+        return self.read_table(data, mapping)
 
 def find_emap():
     """Search and read a perfmon event map.
