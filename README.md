@@ -377,6 +377,8 @@ trace points in modules. It works with later and earlier kernels.
 addr is a basic frame work for self profiling of memory addresses accessed by the program.
 Requires a Linux 3.10+ kernel and a supported CPU.
 
+Also provides a simple [perf ring buffer API](http://halobates.de/addr.html)
+
 ## event-rmap
 
 event-rmap [cpu] prints the currently running events. This provides
