@@ -37,27 +37,32 @@ def sanitize(s, a):
             o += j
     return o
 
-def dodir():
+def getdir():
     try:
-        d = "%s/.events" % (os.getenv('HOME'))
+        d = os.getenv("CACHEDIR")
+        home = os.getenv("HOME")
+        if not d:
+            d = "%s/.cache/pmu-events" % (home)
         if not os.path.isdir(d):
+            os.mkdir("%s/.cache" % (home))
             os.mkdir(d)
-        os.chdir(d)
+        return d
     except OSError:
-        sys.exit('Cannot access ~/.events')
+        raise Exception('Cannot access ' + d) 
 
-def getfile(url, fn):
+def getfile(url, dir, fn):
     print "Downloading", url, "to", fn
     f = urlopen(url)
-    o = open(fn, "w")
+    o = open(os.path.join(dir, fn), "w")
     o.write(f.read())
     o.close()
     f.close()
 
 def download(match, key="core"):
     found = 0
+    dir = getdir()
     try:
-        print "Downloading", modelpath
+        print >>sys.stderr, "Downloading", modelpath
         models = urlopen(modelpath)
         for j in models:
             cpu, version, name, type  = j.rstrip().split(",")
@@ -65,14 +70,14 @@ def download(match, key="core"):
                 continue
             cpu = sanitize(cpu, string.ascii_letters + '-' + string.digits)
             url = urlpath + name
-            getfile(url, "%s-%s.json" % (cpu, key))
+            getfile(url, dir, "%s-%s.json" % (cpu, key))
             found += 1
         models.close()
-        getfile(urlpath + "/readme.txt", "readme.txt")
+        getfile(urlpath + "/readme.txt", dir, "readme.txt")
     except URLError as e:
-        print "Cannot access event server:", e
+        print >>sys.stderr, "Cannot access event server:", e
     except OSError as e:
-        print "Cannot write events file:", e
+        print >>sys.stderr, "Cannot write events file:", e
     return found
 
 def download_current():
@@ -93,7 +98,7 @@ def eventlist_name(name=None, key="core"):
 
 if __name__ == '__main__':
     cpustr = get_cpustr()
-    dodir()
+    d = getdir()
     if len(sys.argv) == 1:
         found = download_current()
     elif len(sys.argv) == 2 and sys.argv[1] == '-a':
