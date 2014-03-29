@@ -12,7 +12,7 @@ addr: ${OBJ}
 clean:
 	rm -f addr ${OBJ} addr.html addr.man
 
-DOCFILES := cpu.c perf.c
+DOCFILES := perf.c cpu.c
 
 html: addr.html
 

@@ -18,7 +18,8 @@
  * DOC: A simple perf library to manage the perf ring buffer
  *
  * This library provides a simple wrapping layer for the perf 
- * mmap ring buffer.
+ * mmap ring buffer. This allows to access perf events in 
+ * zero-copy from a user program.
  */
 
 #include <linux/perf_event.h>
