@@ -57,10 +57,11 @@ p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
 description='''
 Do cycle decomposition on a workload: estimate on which part of the
 CPU pipeline it bottlenecks. The bottlenecks are expressed as a tree
-with different levels (max 4).
+with different levels.
 
 Requires an Intel Sandy, Ivy Bridge, Haswell CPU.
 It works best on Ivy Bridge currently.
+On Sandy Bridge Server use Sandy Bridge (FORCECPU=snb)
 
 Examples:
 
@@ -646,7 +647,7 @@ else:
     import simple_ratios
     ev = simple_ratios.Setup(runner)
 
-print "Using level %d. Change level with -lX" % (args.level)
+print "Using level %d. Change level with -lX" % (max_level)
 
 runner.collect()
 if csv_mode:
