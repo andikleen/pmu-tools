@@ -5,7 +5,7 @@ set -x
 
 PERF=${PERF:-perf}
 
-declare -a cpus
+declare -A cpus
 cpus[nhm-ex]=GenuineIntel-6-2E
 cpus[nhm-ep]=GenuineIntel-6-1E
 cpus[nhm-ep]=GenuineIntel-6-1A
@@ -16,7 +16,7 @@ cpus[snb]=GenuineIntel-6-2A
 cpus[jkt]=GenuineIntel-6-2D
 cpus[ivt]=GenuineIntel-6-3E
 cpus[ivb]=GenuineIntel-6-3A
-cpus[hsw]=GenuineIntel-6-3C
+cpus[hsw]=GenuineIntel-6-45
 cpus[slm]=GenuineIntel-6-37
 cpus[bnl]=GenuineIntel-6-35
 
@@ -31,12 +31,14 @@ $PERF stat -e branch-misses true
 
 checklist()
 {
+	echo cpu $1 = ${cpus[$1]}
+
 	# just see that it doesn't fail
 	EVENTMAP=${cpus[$1]} ./ocperf.py list > /dev/null
 
 	# see if all events are visible
 	R=$(EVENTMAP=${cpus[$1]} ./ocperf.py list | wc -l)
-	if [ $[$BASELEN + $2] -gt $R ]; then
+	if [ $[$R - $BASELEN] -lt $2 ]; then
 		echo $1 list mismatch $[$R - $BASELEN]
 		exit 1
 	fi
@@ -44,17 +46,17 @@ checklist()
 
 BASELEN=$($PERF list | wc -l)
 
-checklist hsw 382
-checklist wsm-sp 720
-checklist wsm-dp 720
-checklist snb-client 546
-checklist snb-ep 434
-checklist ivb-client 399
-checklist nhm-ex 563
-checklist nhm-ep 561
-checklist bnl 276
-checklist ivt 447
-checklist slm 222
+checklist hsw 100
+checklist wsm-sp 100
+checklist wsm-dp 100
+checklist snb-client 100
+checklist jkt 100
+checklist ivb-client 100
+checklist nhm-ex 100
+checklist nhm-ep 100
+checklist bnl 100
+checklist ivt 100
+checklist slm 100
 
 set -e
 ./ocperf.py stat -e inst_retired.any /bin/true
@@ -65,9 +67,10 @@ checkmsr()
 	DIRECT_MSR=1 EVENTMAP=${cpus[$1]} ./ocperf.py --print stat -e $2 /bin/true | grep "msr 1a6 ="
 }
 
-checkmsr wsm-dp OFFCORE_RESPONSE.ANY_DATA.ANY_CACHE_DRAM_0 
+checkmsr wsm-dp OFFCORE_RESPONSE.ANY_DATA.ANY_CACHE_DRAM
 checkmsr nhm-ex OFFCORE_RESPONSE_0.ANY_DATA.ANY_CACHE_DRAM
-checkmsr hsw OFFCORE_RESPONSE.COREWB.ANY_RESPONSE_0
+checkmsr hsw offcore_response.all_reads.l3_miss.any_response
+checkmsr hsw offcore_response.demand_data_rd.l3_hit.hit_other_core_no_fwd
 
 checkev()
 {
@@ -92,8 +95,8 @@ checkmsr2 wsm-sp offcore_response.pf_rfo.remote_cache_hitm_1 "msr 1a7 = 820"
 checkmsr2 nhm-ex offcore_response_0.data_ifetch.any_location "msr 1a6 = ff77"
 # xxx add hsw
 checkmsr2 ivt offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
-checkmsr2 snb-ep offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
-checkmsr2 slm offcore_response.pf_llc_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0080"
+checkmsr2 jkt offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
+checkmsr2 slm offcore_response.any_request.any_response "msr 1a6 = 18008"
 
 # parser checks
 checkp() 
@@ -101,16 +104,16 @@ checkp()
 	./ocperf.py --print stat -e "$1"  | grep -q "$2"
 }
 export EVENTMAP=${cpus[hsw]}
-DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS 'r1c4:p$'
+DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL 'r1c4$'
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL:p  'r1c4:p$'
-DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS:p  'r1c4:p$'
-DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL_PS:ppp  'r1c4:ppp$'
+DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL:p  'r1c4:p$'
+DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL:ppp  'r1c4:ppp$'
 
 # following tests need new enough perf
 
 checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/$'
-checkp cpu/BR_INST_RETIRED.CONDITIONAL_PS,foo=bar/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional_ps,foo=bar/p$'
-checkp cpu/BR_INST_RETIRED.CONDITIONAL_PS,foo=bar/ppu  'event=0xc4,umask=0x1,name=br_inst_retired_conditional_ps,foo=bar/ppu$'
+checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/p  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/p$'
+checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/ppu  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/ppu$'
 export EVENTMAP=${cpus[wsm-sp]}
 DIRECT_MSR=1 checkp l2_write.rfo.m_state:c4 'r4000827'
 #checkp l2_write.rfo.m_state:c4 'cpu/event=0x27,umask=0x8,cmask=4,name=l2_write_rfo_m_state/'
