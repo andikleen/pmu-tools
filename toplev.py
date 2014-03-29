@@ -633,6 +633,9 @@ elif cpu.cpu == "hsw" and detailed_model:
 else:
     if detailed_model:
         print >>sys.stderr, "Sorry, no detailed model for your CPU. Only Level 1 supported."
+    print >>sys.stderr, "Using fallback mode because of unknown CPU"
+    if cpu.cpu == "jkt":
+        print >>sys.stderr, "Consider using FORCECPU=snb"
     import simple_ratios
     ev = simple_ratios.Setup(runner)
 
