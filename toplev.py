@@ -25,6 +25,11 @@ import ocperf
 
 ingroup_events = frozenset(["cycles", "instructions", "ref-cycles"])
 
+sibling_events = {
+    "UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC",
+    "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC",
+}
+
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
@@ -179,7 +184,7 @@ known_cpus = (
     ("jkt", (45, )),
     ("ivb", (58, )),
     ("ivt", (62, )),
-    ("hsw", (60, 70, 71, 69 )),
+    ("hsw", (60, 70, 69 )),
     ("hsx", (63, )),
 )
 
@@ -425,6 +430,9 @@ def execute(events, runner, out, rest):
 def ev_append(ev, level, obj):
     if not (ev, level) in obj.evlevels:
         obj.evlevels.append((ev, level))
+    # hack for now to handle if else
+    if ev in sibling_events:
+        obj.evlevels.append((sibling_events[ev], level))
     return 1
 
 def canon_event(e):
@@ -483,7 +491,7 @@ class Runner:
         self.max_level = max_level
 
     def run(self, obj):
-	obj.thresh = 0.0
+	obj.thresh = None
         if obj.level > self.max_level:
             return
         obj.res = None
@@ -633,11 +641,12 @@ elif cpu.cpu == "hsw" and detailed_model:
 else:
     if detailed_model:
         print >>sys.stderr, "Sorry, no detailed model for your CPU. Only Level 1 supported."
-    print >>sys.stderr, "Using fallback mode because of unknown CPU"
-    if cpu.cpu == "jkt":
-        print >>sys.stderr, "Consider using FORCECPU=snb"
+        if cpu.cpu == "jkt":
+            print >>sys.stderr, "Consider using FORCECPU=snb"
     import simple_ratios
     ev = simple_ratios.Setup(runner)
+
+print "Using level %d. Change level with -lX" % (args.level)
 
 runner.collect()
 if csv_mode:
