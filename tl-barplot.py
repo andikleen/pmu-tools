@@ -93,19 +93,20 @@ for l in levels.keys():
     r = map(lambda x: ratios[x], non_null)
     stack = ax.stackplot(timestamps, colors=all_colors, *r)
     ax.set_ylim(0, 100)
+    ax.yaxis.set_ticks([0., 50., 100.])
     try:
         ax.set_title('Level %d' % (l), loc='right')
     except AttributeError:
         ax.set_title('Level %d' % (l))
     for j in ax.get_xticklabels() + ax.get_yticklabels():
-        j.set_fontsize(8)
+        j.set_fontsize(6)
     if n >= 2 and not yset:
         ax.set_ylabel('(% of execution time)')
         yset = True
 
     p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
     leg = plt.legend(p, non_null, ncol=3 if len(non_null) > 4 else 2,
-                     bbox_to_anchor=(0., 0., -0.07, -0.07), loc=2)
+            bbox_to_anchor=(0., 0., -0.07, -0.07), loc=2, prop={'size':8})
     leg.get_frame().set_alpha(0.5)
     if n != numplots:
         max_legend = max(len(non_null), max_legend)
