@@ -10,6 +10,9 @@ class Runner:
         #print "name |%s|" % (n.name), n
         omap[n.name] = n
 
+    def metric(self, n):
+        pass
+
 def get_level(name):
     name = name.strip()
     if name in omap:

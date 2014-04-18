@@ -1088,7 +1088,11 @@ class Metric_IPC:
 Instructions Per Cycle"""
 
     def compute(self, EV):
-        self.val = IPC(EV, 0)
+        try:
+            self.val = IPC(EV, 0)
+        except ZeroDivisionError:
+            print "IPC zero division"
+            self.val = 0
 
 class Metric_UPI:
     name = "UPI"
@@ -1096,7 +1100,11 @@ class Metric_UPI:
 Uops Per Instruction"""
 
     def compute(self, EV):
-        self.val = UPI(EV, 0)
+        try:
+            self.val = UPI(EV, 0)
+        except ZeroDivisionError:
+            print "UPI zero division"
+            self.val = 0
 
 class Metric_InstPerTakenBranch:
     name = "InstPerTakenBranch"
@@ -1104,7 +1112,11 @@ class Metric_InstPerTakenBranch:
 Instruction per taken branch"""
 
     def compute(self, EV):
-        self.val = InstPerTakenBranch(EV, 0)
+        try:
+            self.val = InstPerTakenBranch(EV, 0)
+        except ZeroDivisionError:
+            print "InstPerTakenBranch zero division"
+            self.val = 0
 
 class Metric_DSBCoverage:
     name = "DSBCoverage"
@@ -1112,7 +1124,11 @@ class Metric_DSBCoverage:
 Fraction of Uops delivered by the DSB (decoded instructions cache)"""
 
     def compute(self, EV):
-        self.val = DSBCoverage(EV, 0)
+        try:
+            self.val = DSBCoverage(EV, 0)
+        except ZeroDivisionError:
+            print "DSBCoverage zero division"
+            self.val = 0
 
 class Metric_ILP:
     name = "ILP"
@@ -1121,7 +1137,11 @@ Instruction-Level-Parallelism (avg uops executed when there is at least 1 uop
 executed)"""
 
     def compute(self, EV):
-        self.val = ILP(EV, 0)
+        try:
+            self.val = ILP(EV, 0)
+        except ZeroDivisionError:
+            print "ILP zero division"
+            self.val = 0
 
 class Metric_MLP:
     name = "MLP"
@@ -1130,7 +1150,11 @@ Memory-Level-Parallelism (avg L1 miss demand load when there is at least 1
 such miss)"""
 
     def compute(self, EV):
-        self.val = MLP(EV, 0)
+        try:
+            self.val = MLP(EV, 0)
+        except ZeroDivisionError:
+            print "MLP zero division"
+            self.val = 0
 
 class Metric_L1dMissLatency:
     name = "L1dMissLatency"
@@ -1138,7 +1162,11 @@ class Metric_L1dMissLatency:
 Average L1 miss demand load latency"""
 
     def compute(self, EV):
-        self.val = L1dMissLatency(EV, 0)
+        try:
+            self.val = L1dMissLatency(EV, 0)
+        except ZeroDivisionError:
+            print "L1dMissLatency zero division"
+            self.val = 0
 
 class Metric_TurboUtilization:
     name = "TurboUtilization"
@@ -1146,7 +1174,11 @@ class Metric_TurboUtilization:
 Average Frequency Utilization relative nominal frequency"""
 
     def compute(self, EV):
-        self.val = TurboUtilization(EV, 0)
+        try:
+            self.val = TurboUtilization(EV, 0)
+        except ZeroDivisionError:
+            print "TurboUtilization zero division"
+            self.val = 0
 
 # Schedule
 

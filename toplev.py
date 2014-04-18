@@ -144,14 +144,16 @@ class Output:
         self.sep = " "
         self.logf = logfile
 
-    def s(self, area, hdr, s, remark="", desc=""):
+    def s(self, area, hdr, s, remark, desc, sample):
         if area:
             hdr = "%-7s %s" % (area, hdr)
         print >>self.logf, "%-42s\t%s %s" % (hdr + ":", s, remark)
         if desc:
             print >>self.logf, "\t" + desc
+        if sample:
+            print >>self.logf, "\t" + "Sampling events: ", sample
 
-    def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, check):
+    def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, check, sample):
         if timestamp:
             self.logf.write("%6.9f%s" % (timestamp, self.sep))
         if title:
@@ -160,17 +162,17 @@ class Output:
             else:
                 self.logf.write("%-5s" % (title))
         if not check or check_ratio(l):
-	    self.s(area, name, fmtnum(l), remark, desc)
+	    self.s(area, name, fmtnum(l), remark, desc, sample)
 	else:
-	    self.s(area, name, fmtnum(0), "mismeasured", "")
+	    self.s(area, name, fmtnum(0), "mismeasured", "", sample)
 
-    def p(self, area, name, l, timestamp, remark, desc, title):
+    def p(self, area, name, l, timestamp, remark, desc, title, sample):
         self.item(area, name, l, timestamp, remark, desc, title,
-                  lambda l: "%5s%%" % ("%2.2f" % (100.0 * l)), True)
+                  lambda l: "%5s%%" % ("%2.2f" % (100.0 * l)), True, sample)
 
     def metric(self, area, name, l, timestamp, desc, title):
-        self.item(area, name, l, timestamp, "", desc, title,
-                  lambda l: "%5s" % ("%3.2f" % (l)), False)
+        self.item(area, name, l, timestamp, "metric", desc, title,
+                  lambda l: "%5s" % ("%3.2f" % (l)), False, "")
 
 class OutputCSV(Output):
     def __init__(self, logfile, csv):
@@ -178,11 +180,11 @@ class OutputCSV(Output):
         self.csv = csv
         self.sep = self.csv
 
-    def s(self, area, hdr, s, remark="", desc=""):
+    def s(self, area, hdr, s, remark, desc, sample):
         remark = self.csv + remark
         desc = self.csv + '"' + desc + '"'
         desc = re.sub(r"\s+", " ", desc)
-        print >>self.logf, '%s%s%s%s%s' % (hdr, self.csv, s.strip(), remark, desc)
+        print >>self.logf, '%s%s%s%s%s%s%s' % (hdr, self.csv, s.strip(), remark, desc, self.csv, sample)
 
 known_cpus = (
     ("snb", (42, )),
@@ -472,13 +474,22 @@ def update_res_map(evnum, objl, base):
             if r in evnum:
                 obj.res_map[lev] = base + evnum.index(r)
 
+class BadEvent:
+    def __init__(self, name):
+        self.event = name
+
 def sample_event(e):
     ev = emap.getevent(e.replace("_PS", ""))
+    if not ev:
+        raise BadEvent(e)
     return "cpu/" + ev.output_newstyle(filter_string()) + "/pp"
 
-def gen_sample_desc(s):
-    return ("\n\tTo sample for potential locations use:\n\tperf record -e " + 
-            ",".join([sample_event(x) for x in s]) + " ...")
+def sample_desc(s):
+    try:
+        return ",".join([sample_event(x) for x in s])
+    except BadEvent as e:
+        #return "Unknown sample event %s" % (e.event)
+        return ""
 
 def get_levels(evlev):
     return map(lambda x: x[1], evlev)
@@ -628,13 +639,12 @@ class Runner:
                             desc,
                             title)
                 else:
-                    if args.sample and obj.sample:
-                        desc += gen_sample_desc(obj.sample)
                     out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
                          obj.name, val, timestamp,
                         "below" if not obj.thresh else "above",
                         desc,
-                        title)
+                        title,
+                        sample_desc(obj.sample) if args.sample and obj.sample else "")
 
 def sysctl(name):
     try:
