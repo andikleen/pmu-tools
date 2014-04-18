@@ -110,6 +110,8 @@ p.add_argument('--level', '-l', help='Measure upto level N (max 5)',
                type=int)
 p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
+p.add_argument('--sample', '-S', help="Suggest commands to sample for bottlenecks (experimential)", 
+        action='store_true')
 args, rest = p.parse_known_args()
 
 print_all = args.verbose or args.csv
@@ -470,6 +472,14 @@ def update_res_map(evnum, objl, base):
             if r in evnum:
                 obj.res_map[lev] = base + evnum.index(r)
 
+def sample_event(e):
+    ev = emap.getevent(e.replace("_PS", ""))
+    return "cpu/" + ev.output_newstyle(filter_string()) + "/pp"
+
+def gen_sample_desc(s):
+    return ("\n\tTo sample for potential locations use:\n\tperf record -e " + 
+            ",".join([sample_event(x) for x in s]) + " ...")
+
 def get_levels(evlev):
     return map(lambda x: x[1], evlev)
 
@@ -611,16 +621,19 @@ class Runner:
                 val = obj.val
                 if not obj.thresh and not dont_hide:
                     val = 0.0
+                desc = obj.desc[1:].replace("\n", "\n\t")
                 if obj.metric:
                     out.metric(obj.area if 'area' in obj.__class__.__dict__ else None,
                             obj.name, val, timestamp, 
-                            obj.desc[1:].replace("\n", "\n\t"),
+                            desc,
                             title)
                 else:
+                    if args.sample and obj.sample:
+                        desc += gen_sample_desc(obj.sample)
                     out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
                          obj.name, val, timestamp,
                         "below" if not obj.thresh else "above",
-                        obj.desc[1:].replace("\n","\n\t"),
+                        desc,
                         title)
 
 def sysctl(name):

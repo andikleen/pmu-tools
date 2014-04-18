@@ -4,6 +4,9 @@ pmu tools is a collection of tools for profile collection and performance
 analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index.php/Main_Page). This uses performance counters in the CPU.
 
 # Recent new features:
+* toplev updated to TopDown 2.5. Supports standard metrics (--metrics)
+and has an experimential feature to suggest sample command lines
+(--sample)
 * ocperf now automatically downloads JSON event lists (3/29/2014)
 This changed various event names. The old CSV files have been removed.
 "PS" events are gone now. Use /p instead. 
