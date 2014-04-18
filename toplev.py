@@ -25,11 +25,6 @@ import ocperf
 
 ingroup_events = frozenset(["cycles", "instructions", "ref-cycles"])
 
-sibling_events = {
-    "UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC",
-    "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC",
-}
-
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
@@ -114,6 +109,7 @@ p.add_argument('--output', '-o', help='Set output file', default=sys.stderr,
 p.add_argument('--level', '-l', help='Measure upto level N (max 5)',
                type=int)
 p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
+p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
 args, rest = p.parse_known_args()
 
 print_all = args.verbose or args.csv
@@ -153,9 +149,7 @@ class Output:
         if desc:
             print >>self.logf, "\t" + desc
 
-    def p(self, area, name, l, timestamp, remark, desc, title):
-        fmtnum = lambda l: "%5s%%" % ("%2.2f" % (100.0 * l))
-
+    def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, check):
         if timestamp:
             self.logf.write("%6.9f%s" % (timestamp, self.sep))
         if title:
@@ -163,10 +157,18 @@ class Output:
                 self.logf.write(title + self.csv)
             else:
                 self.logf.write("%-5s" % (title))
-        if check_ratio(l):
+        if not check or check_ratio(l):
 	    self.s(area, name, fmtnum(l), remark, desc)
 	else:
 	    self.s(area, name, fmtnum(0), "mismeasured", "")
+
+    def p(self, area, name, l, timestamp, remark, desc, title):
+        self.item(area, name, l, timestamp, remark, desc, title,
+                  lambda l: "%5s%%" % ("%2.2f" % (100.0 * l)), True)
+
+    def metric(self, area, name, l, timestamp, desc, title):
+        self.item(area, name, l, timestamp, "", desc, title,
+                  lambda l: "%5s" % ("%3.2f" % (l)), False)
 
 class OutputCSV(Output):
     def __init__(self, logfile, csv):
@@ -431,9 +433,6 @@ def execute(events, runner, out, rest):
 def ev_append(ev, level, obj):
     if not (ev, level) in obj.evlevels:
         obj.evlevels.append((ev, level))
-    # hack for now to handle if else
-    if ev in sibling_events:
-        obj.evlevels.append((sibling_events[ev], level))
     return 1
 
 def canon_event(e):
@@ -491,13 +490,26 @@ class Runner:
         self.olist = []
         self.max_level = max_level
 
-    def run(self, obj):
-	obj.thresh = None
-        if obj.level > self.max_level:
-            return
+    def do_run(self, obj):
         obj.res = None
         obj.res_map = dict()
         self.olist.append(obj)
+
+    def run(self, obj):
+	obj.thresh = False
+        obj.metric = False
+        if obj.level > self.max_level:
+            return
+        self.do_run(obj)
+
+    def metric(self, obj):
+	obj.thresh = True
+        obj.metric = True
+        obj.level = 0
+        obj.sibling = None
+        if not args.metrics:
+            return
+        self.do_run(obj)
 
     def split_groups(self, objl, evlev):
         if len(set(get_levels(evlev))) == 1:
@@ -580,23 +592,36 @@ class Runner:
         if len(res) == 0:
             print "Nothing measured?"
             return
+        # step 1: compute
         for obj in self.olist:
             if obj.res_map:
                 obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj.res_map[(e, level)]))
-                if obj.thresh or print_all:
-                    val = obj.val
-                    if not obj.thresh and not dont_hide:
-                        val = 0.0
-                    out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
-                          obj.name, val, timestamp,
-                          "below" if not obj.thresh else "above",
-                          obj.desc[1:].replace("\n","\n\t"),
-                          title)
-                elif not print_all:
-                    obj.thresh = 0 # hide children too
             else:
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
+
+        # step 2: propagate siblings
+        for obj in self.olist:
+            if obj.thresh and obj.sibling:
+                obj.sibling.thresh = True
+
+        # step 3: print
+        for obj in self.olist:
+            if obj.thresh or print_all:
+                val = obj.val
+                if not obj.thresh and not dont_hide:
+                    val = 0.0
+                if obj.metric:
+                    out.metric(obj.area if 'area' in obj.__class__.__dict__ else None,
+                            obj.name, val, timestamp, 
+                            obj.desc[1:].replace("\n", "\n\t"),
+                            title)
+                else:
+                    out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
+                         obj.name, val, timestamp,
+                        "below" if not obj.thresh else "above",
+                        obj.desc[1:].replace("\n","\n\t"),
+                        title)
 
 def sysctl(name):
     try:
@@ -647,7 +672,10 @@ else:
     import simple_ratios
     ev = simple_ratios.Setup(runner)
 
-print "Using level %d. Change level with -lX" % (max_level)
+print "Using level %d." % (max_level),
+if not args.level:
+    print "Change level with -lX"
+print
 
 runner.collect()
 if csv_mode:

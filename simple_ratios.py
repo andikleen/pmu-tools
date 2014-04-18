@@ -96,3 +96,13 @@ class Setup:
         o["BackendBound"].BadSpeculation = o["BadSpeculation"]
         o["BackendBound"].Retiring = o["Retiring"]
 
+        o["FrontendBound"].sibling = None
+        o["BadSpeculation"].sibling = None
+        o["BackendBound"].sibling = None
+        o["Retiring"].sibling = None
+
+        o["FrontendBound"].sample = []
+        o["BadSpeculation"].sample = []
+        o["BackendBound"].sample = []
+        o["Retiring"].sample = []
+
