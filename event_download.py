@@ -44,8 +44,7 @@ def getdir():
         if not d:
             d = "%s/.cache/pmu-events" % (home)
         if not os.path.isdir(d):
-            os.mkdir("%s/.cache" % (home))
-            os.mkdir(d)
+            os.makedirs(d)
         return d
     except OSError:
         raise Exception('Cannot access ' + d) 
