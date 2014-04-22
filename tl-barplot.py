@@ -106,7 +106,8 @@ for l in levels.keys():
 
     p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
     leg = plt.legend(p, non_null, ncol=3 if len(non_null) > 4 else 2,
-            bbox_to_anchor=(0., 0., -0.07, -0.07), loc=2, prop={'size':8})
+            bbox_to_anchor=(0., 0., -0.07, -0.07), 
+            loc=2, prop={'size':8})
     leg.get_frame().set_alpha(0.5)
     if n != numplots:
         max_legend = max(len(non_null), max_legend)
@@ -116,7 +117,7 @@ for l in levels.keys():
 if len(timestamps) == 1:
     plt.gca().axes.get_xaxis().set_visible(False)
 
-plt.subplots_adjust(hspace=2.5 if max_legend > 6 else 0.9, bottom=0.20,
+plt.subplots_adjust(hspace=1.5 if max_legend > 6 else 0.9, bottom=0.20,
                     top=0.95)
 
 if args.title:
