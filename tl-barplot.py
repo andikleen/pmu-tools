@@ -71,6 +71,14 @@ if args.verbose:
 def valid_row(r):
     s = sum(r)
     return s != 0.0 and s != float('nan')
+
+def get_colors(non_null):
+    if 'brewer2mpl' in globals():
+        num_color = max(min(len(non_null), 11), 3)
+        all_colors = brewer2mpl.get_map('Spectral', 'Diverging', num_color).hex_colors
+    else:
+        all_colors = None
+    return all_colors
     
 n = 1
 numplots = len(levels.keys())
@@ -84,11 +92,7 @@ for l in levels.keys():
         print "nothing in level", l
         n += 1
         continue
-    if 'brewer2mpl' in globals():
-        num_color = max(min(len(non_null), 11), 3)
-        all_colors = brewer2mpl.get_map('Spectral', 'Diverging', num_color).hex_colors
-    else:
-        all_colors = None
+    all_colors = get_colors(non_null)
     ax = fig.add_subplot(numplots, 1, n)
     r = map(lambda x: ratios[x], non_null)
     stack = ax.stackplot(timestamps, colors=all_colors, *r)
