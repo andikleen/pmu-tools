@@ -120,9 +120,9 @@ if args.graph:
     if not args.interval:
         args.interval = 100
     args.csv = ','
-    args.output = os.popen("PATH=$PATH:. ; tl-barplot.py -v /dev/stdin", "w")
+    args.output = os.popen("PATH=$PATH:. ; tl-barplot.py /dev/stdin", "w")
 
-print_all = args.verbose or args.csv
+print_all = args.verbose # or args.csv
 dont_hide = args.verbose
 max_level = args.level if args.level else 1
 detailed_model = (max_level > 1) or args.detailed
