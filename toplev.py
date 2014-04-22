@@ -106,6 +106,8 @@ p.add_argument('--interval', '-I', help='Enable interval mode with ms interval',
                type=int)
 p.add_argument('--output', '-o', help='Set output file', default=sys.stderr,
                type=argparse.FileType('w'))
+p.add_argument('--graph', help='Automatically graph interval output with tl-barplot.py',
+               action='store_true')
 p.add_argument('--level', '-l', help='Measure upto level N (max 5)',
                type=int)
 p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
@@ -113,6 +115,12 @@ p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true
 p.add_argument('--sample', '-S', help="Suggest commands to sample for bottlenecks (experimential)", 
         action='store_true')
 args, rest = p.parse_known_args()
+
+if args.graph:
+    if not args.interval:
+        args.interval = 100
+    args.csv = ','
+    args.output = os.popen("PATH=$PATH:. ; tl-barplot.py -v /dev/stdin", "w")
 
 print_all = args.verbose or args.csv
 dont_hide = args.verbose
@@ -620,6 +628,7 @@ class Runner:
                             lookup_res(res, rev, e, obj.res_map[(e, level)]))
             else:
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
+        out.logf.flush()
 
         # step 2: propagate siblings
         for obj in self.olist:
