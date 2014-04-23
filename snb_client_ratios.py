@@ -69,7 +69,7 @@ would be categorized under Frontend Bound."""
             self.val = EV("IDQ_UOPS_NOT_DELIVERED.CORE", 1)/ SLOTS(EV, 1 )
             self.thresh = (self.val > 0.2)
         except ZeroDivisionError:
-            print "FrontendBound zero division"
+            #print "FrontendBound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -89,7 +89,7 @@ cases the Frontend eventually delivers no uops for some period."""
             self.val = PipelineWidth * EV("IDQ_UOPS_NOT_DELIVERED.CYCLES_0_UOPS_DELIV.CORE", 2)/ SLOTS(EV, 2 )
             self.thresh = (self.val > 0.15) and self.parent.thresh
         except ZeroDivisionError:
-            print "FrontendLatency zero division"
+            #print "FrontendLatency zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -107,7 +107,7 @@ misses. Using large code pages may be considered here."""
             self.val = EV("ITLB_MISSES.WALK_DURATION", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "ITLBmisses zero division"
+            #print "ITLBmisses zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -125,7 +125,7 @@ DSB to MITE pipelines. Optimizing for better DSB hit rate may be considered."""
             self.val = EV("DSB2MITE_SWITCHES.PENALTY_CYCLES", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "DSBswitches zero division"
+            #print "DSBswitches zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -144,7 +144,7 @@ certainly avoid this."""
             self.val = EV("ILD_STALL.LCP", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "LCP zero division"
+            #print "LCP zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -165,7 +165,7 @@ conditions like Floating Point Assists when dealing with Denormals."""
             self.val = MS_SWITCHES_COST * EV("IDQ.MS_SWITCHES", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "MSswitches zero division"
+            #print "MSswitches zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -186,7 +186,7 @@ optimal amount of uops to the Backend."""
             self.val = self.FrontendBound.compute(EV)- self.FrontendLatency.compute(EV )
             self.thresh = (self.val > 0.1) & (IPC(EV, 2) > 2.0) and self.parent.thresh
         except ZeroDivisionError:
-            print "FrontendBandwidth zero division"
+            #print "FrontendBandwidth zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -205,7 +205,7 @@ decoders are categorized here."""
             self.val = ( EV("IDQ.ALL_MITE_CYCLES_ANY_UOPS", 3)- EV("IDQ.ALL_MITE_CYCLES_4_UOPS", 3)) / CLKS(EV, 3 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "MITE zero division"
+            #print "MITE zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -225,7 +225,7 @@ categorized here."""
             self.val = ( EV("IDQ.ALL_DSB_CYCLES_ANY_UOPS", 3)- EV("IDQ.ALL_DSB_CYCLES_4_UOPS", 3)) / CLKS(EV, 3 )
             self.thresh = (self.val > 0.3) and self.parent.thresh
         except ZeroDivisionError:
-            print "DSB zero division"
+            #print "DSB zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -246,7 +246,7 @@ LSD structure."""
             self.val = ( EV("LSD.CYCLES_ACTIVE", 3)- EV("LSD.CYCLES_4_UOPS", 3)) / CLKS(EV, 3 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "LSD zero division"
+            #print "LSD zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -267,7 +267,7 @@ categorized under Bad Speculation category"""
             self.val = ( EV("UOPS_ISSUED.ANY", 1)- EV("UOPS_RETIRED.RETIRE_SLOTS", 1)+ PipelineWidth * EV("INT_MISC.RECOVERY_CYCLES", 1)) / SLOTS(EV, 1 )
             self.thresh = (self.val > 0.1)
         except ZeroDivisionError:
-            print "BadSpeculation zero division"
+            #print "BadSpeculation zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -290,7 +290,7 @@ overloaded are both categorized under Backend Bound."""
             self.val = 1 -(self.FrontendBound.compute(EV)+ self.BadSpeculation.compute(EV)+ self.Retiring.compute(EV))
             self.thresh = (self.val > 0.2)
         except ZeroDivisionError:
-            print "Backend_Bound zero division"
+            #print "Backend_Bound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -317,7 +317,7 @@ thus improving the performance."""
             self.val = EV("UOPS_RETIRED.RETIRE_SLOTS", 1)/ SLOTS(EV, 1 )
             self.thresh = (self.val > 0.7) | self.MicroSequencer.thresh
         except ZeroDivisionError:
-            print "Retiring zero division"
+            #print "Retiring zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -339,7 +339,7 @@ instructions hence this bucket."""
             self.val = self.Retiring.compute(EV)- self.MicroSequencer.compute(EV )
             self.thresh = (self.val > 0.6) and self.parent.thresh
         except ZeroDivisionError:
-            print "BASE zero division"
+            #print "BASE zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -359,7 +359,7 @@ assists used to address some operation modes (like in Floating Point assists).""
             self.val = RetireUopFraction(EV, 2)* EV("IDQ.MS_UOPS", 2)/ SLOTS(EV, 2 )
             self.thresh = (self.val > 0.05)
         except ZeroDivisionError:
-            print "MicroSequencer zero division"
+            #print "MicroSequencer zero division"
             self.val = 0
             self.thresh = False
         return self.val

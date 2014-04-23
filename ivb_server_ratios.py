@@ -92,7 +92,7 @@ would be categorized under Frontend Bound."""
             self.val = EV("IDQ_UOPS_NOT_DELIVERED.CORE", 1)/ SLOTS(EV, 1 )
             self.thresh = (self.val > 0.2)
         except ZeroDivisionError:
-            print "FrontendBound zero division"
+            #print "FrontendBound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -112,7 +112,7 @@ cases the Frontend eventually delivers no uops for some period."""
             self.val = PipelineWidth * EV("IDQ_UOPS_NOT_DELIVERED.CYCLES_0_UOPS_DELIV.CORE", 2)/ SLOTS(EV, 2 )
             self.thresh = (self.val > 0.15) and self.parent.thresh
         except ZeroDivisionError:
-            print "FrontendLatency zero division"
+            #print "FrontendLatency zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -131,7 +131,7 @@ i-cache misses through improved hot code layout."""
             self.val = ( EV("ICACHE.IFETCH_STALL", 3)- EV("ITLB_MISSES.WALK_DURATION", 3)) / CLKS(EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "ICacheMisses zero division"
+            #print "ICacheMisses zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -149,7 +149,7 @@ misses. Using large code pages may be considered here."""
             self.val = EV("ITLB_MISSES.WALK_DURATION", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "ITLBmisses zero division"
+            #print "ITLBmisses zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -170,7 +170,7 @@ predictions might get categorized under Branch Resteers."""
             self.val = ( EV("BR_MISP_RETIRED.ALL_BRANCHES", 3)+ EV("MACHINE_CLEARS.COUNT", 3)+ EV("BACLEARS.ANY", 3)) * AvgRsEmptyPeriodClears(EV, 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "BranchResteers zero division"
+            #print "BranchResteers zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -188,7 +188,7 @@ DSB to MITE pipelines. Optimizing for better DSB hit rate may be considered."""
             self.val = EV("DSB2MITE_SWITCHES.PENALTY_CYCLES", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "DSBswitches zero division"
+            #print "DSBswitches zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -207,7 +207,7 @@ certainly avoid this."""
             self.val = EV("ILD_STALL.LCP", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "LCP zero division"
+            #print "LCP zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -228,7 +228,7 @@ conditions like Floating Point Assists when dealing with Denormals."""
             self.val = MS_SWITCHES_COST * EV("IDQ.MS_SWITCHES", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "MSswitches zero division"
+            #print "MSswitches zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -249,7 +249,7 @@ optimal amount of uops to the Backend."""
             self.val = self.FrontendBound.compute(EV)- self.FrontendLatency.compute(EV )
             self.thresh = (self.val > 0.1) & (IPC(EV, 2) > 2.0) and self.parent.thresh
         except ZeroDivisionError:
-            print "FrontendBandwidth zero division"
+            #print "FrontendBandwidth zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -268,7 +268,7 @@ decoders are categorized here."""
             self.val = ( EV("IDQ.ALL_MITE_CYCLES_ANY_UOPS", 3)- EV("IDQ.ALL_MITE_CYCLES_4_UOPS", 3)) / CLKS(EV, 3 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "MITE zero division"
+            #print "MITE zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -288,7 +288,7 @@ categorized here."""
             self.val = ( EV("IDQ.ALL_DSB_CYCLES_ANY_UOPS", 3)- EV("IDQ.ALL_DSB_CYCLES_4_UOPS", 3)) / CLKS(EV, 3 )
             self.thresh = (self.val > 0.3) and self.parent.thresh
         except ZeroDivisionError:
-            print "DSB zero division"
+            #print "DSB zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -309,7 +309,7 @@ LSD structure."""
             self.val = ( EV("LSD.CYCLES_ACTIVE", 3)- EV("LSD.CYCLES_4_UOPS", 3)) / CLKS(EV, 3 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "LSD zero division"
+            #print "LSD zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -330,7 +330,7 @@ categorized under Bad Speculation category"""
             self.val = ( EV("UOPS_ISSUED.ANY", 1)- EV("UOPS_RETIRED.RETIRE_SLOTS", 1)+ PipelineWidth * EV("INT_MISC.RECOVERY_CYCLES", 1)) / SLOTS(EV, 1 )
             self.thresh = (self.val > 0.1)
         except ZeroDivisionError:
-            print "BadSpeculation zero division"
+            #print "BadSpeculation zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -350,7 +350,7 @@ needs to recover its state from a speculative path."""
             self.val = MispredClearsFraction(EV, 2)* self.BadSpeculation.compute(EV )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "BranchMispredicts zero division"
+            #print "BranchMispredicts zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -371,7 +371,7 @@ Disambiguation) or Self-Modifying-Code (SMC) nukes."""
             self.val = self.BadSpeculation.compute(EV)- self.BranchMispredicts.compute(EV )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "MachineClears zero division"
+            #print "MachineClears zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -394,7 +394,7 @@ overloaded are both categorized under Backend Bound."""
             self.val = 1 -(self.FrontendBound.compute(EV)+ self.BadSpeculation.compute(EV)+ self.Retiring.compute(EV))
             self.thresh = (self.val > 0.2)
         except ZeroDivisionError:
-            print "Backend_Bound zero division"
+            #print "Backend_Bound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -415,7 +415,7 @@ less common cases where stores could imply backpressure on the pipeline."""
             self.val = ( EV("CYCLE_ACTIVITY.STALLS_LDM_PENDING", 2)+ EV("RESOURCE_STALLS.SB", 2)) / CLKS(EV, 2 )
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
-            print "MemoryBound zero division"
+            #print "MemoryBound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -437,7 +437,7 @@ as it accounts for any non-completed load."""
             self.val = ( EV("CYCLE_ACTIVITY.STALLS_LDM_PENDING", 3)- EV("CYCLE_ACTIVITY.STALLS_L1D_PENDING", 3)) / CLKS(EV, 3 )
             self.thresh = ((self.val > 0.07) and self.parent.thresh) | self.DTLB_Overhead.thresh
         except ZeroDivisionError:
-            print "L1Bound zero division"
+            #print "L1Bound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -453,7 +453,7 @@ class DTLB_Overhead:
             self.val = ( MEM_STLB_HIT_COST * EV("DTLB_LOAD_MISSES.STLB_HIT", 4)+ EV("DTLB_LOAD_MISSES.WALK_DURATION", 4)) / CLKS(EV, 4 )
             self.thresh = self.val > 0.0 and self.parent.thresh
         except ZeroDivisionError:
-            print "DTLB_Overhead zero division"
+            #print "DTLB_Overhead zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -469,7 +469,7 @@ class LoadsBlockedbyStoreForwarding:
             self.val = MEM_SFB_COST * EV("LD_BLOCKS.STORE_FORWARD", 4)/ CLKS(EV, 4 )
             self.thresh = self.val > 0.0 and self.parent.thresh
         except ZeroDivisionError:
-            print "LoadsBlockedbyStoreForwarding zero division"
+            #print "LoadsBlockedbyStoreForwarding zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -485,7 +485,7 @@ class SplitLoads:
             self.val = L1dMissLatency(EV, 4)* EV("LD_BLOCKS.NO_SR", 4)/ CLKS(EV, 4 )
             self.thresh = self.val > 0.0 and self.parent.thresh
         except ZeroDivisionError:
-            print "SplitLoads zero division"
+            #print "SplitLoads zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -501,7 +501,7 @@ class G4KAliasing:
             self.val = MEM_4KALIAS_COST * EV("LD_BLOCKS_PARTIAL.ADDRESS_ALIAS", 4)/ CLKS(EV, 4 )
             self.thresh = self.val > 0.0 and self.parent.thresh
         except ZeroDivisionError:
-            print "G4KAliasing zero division"
+            #print "G4KAliasing zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -520,7 +520,7 @@ performance."""
             self.val = ( EV("CYCLE_ACTIVITY.STALLS_L1D_PENDING", 3)- EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3)) / CLKS(EV, 3 )
             self.thresh = (self.val > 0.03) and self.parent.thresh
         except ZeroDivisionError:
-            print "L2Bound zero division"
+            #print "L2Bound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -539,7 +539,7 @@ the latency and increase performance."""
             self.val = MemL3HitFraction(EV, 3)* EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "L3Bound zero division"
+            #print "L3Bound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -555,7 +555,7 @@ class ContestedAccesses:
             self.val = MEM_XSNP_HITM_COST *(EV("MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HITM", 4)+ EV("MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_MISS", 4)) / CLKS(EV, 4 )
             self.thresh = self.val > 0.0 and self.parent.thresh
         except ZeroDivisionError:
-            print "ContestedAccesses zero division"
+            #print "ContestedAccesses zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -571,7 +571,7 @@ class DataSharing:
             self.val = MEM_XSNP_HIT_COST * EV("MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HIT", 4)/ CLKS(EV, 4 )
             self.thresh = self.val > 0.0 and self.parent.thresh
         except ZeroDivisionError:
-            print "DataSharing zero division"
+            #print "DataSharing zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -591,7 +591,7 @@ improve the latency and increase performance."""
             self.val = MEM_XSNP_NONE_COST * EV("MEM_LOAD_UOPS_RETIRED.LLC_HIT", 4)/ CLKS(EV, 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "L3Latency zero division"
+            #print "L3Latency zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -609,7 +609,7 @@ Caching will improve the latency and increase performance."""
             self.val = ( 1 - MemL3HitFraction(EV, 3)) * EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "DRAMBound zero division"
+            #print "DRAMBound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -628,7 +628,7 @@ considered in such case."""
             self.val = EV("OFFCORE_REQUESTS_OUTSTANDING.DEMAND_DATA_RD:cmask=6", 4)/ CLKS(EV, 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "MEMBandwidth zero division"
+            #print "MEMBandwidth zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -647,7 +647,7 @@ main memory (DRAM).  Data layout restructing or using Software Prefetches
             self.val = ( EV("OFFCORE_REQUESTS_OUTSTANDING.CYCLES_WITH_DEMAND_DATA_RD", 4)- EV("OFFCORE_REQUESTS_OUTSTANDING.DEMAND_DATA_RD:cmask=6", 4)) / CLKS(EV, 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "MEMLatency zero division"
+            #print "MEMLatency zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -665,7 +665,7 @@ local memory. Caching will improve the latency and increase performance."""
             self.val = MEM_LOCAL_DRAM_COST * EV("MEM_LOAD_UOPS_LLC_MISS_RETIRED.LOCAL_DRAM", 5)/ CLKS(EV, 5 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "LocalDRAM zero division"
+            #print "LocalDRAM zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -683,7 +683,7 @@ remote memory. This is caused often due to non-optimal NUMA allocations."""
             self.val = MEM_REMOTE_DRAM_COST * EV("MEM_LOAD_UOPS_LLC_MISS_RETIRED.REMOTE_DRAM", 5)/ CLKS(EV, 5 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "RemoteDRAM zero division"
+            #print "RemoteDRAM zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -702,7 +702,7 @@ allocations."""
             self.val = ( MEM_REMOTE_HITM_COST * EV("MEM_LOAD_UOPS_LLC_MISS_RETIRED.REMOTE_HITM", 5)+ MEM_REMOTE_FWD_COST * EV("MEM_LOAD_UOPS_LLC_MISS_RETIRED.REMOTE_FWD", 5)) / CLKS(EV, 5 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "RemoteCache zero division"
+            #print "RemoteCache zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -720,7 +720,7 @@ Tip: consider False Sharing analysis as next step"""
             self.val = self.MemoryBound.compute(EV)-(EV("CYCLE_ACTIVITY.STALLS_LDM_PENDING", 3)/ CLKS(EV, 3))
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
-            print "StoresBound zero division"
+            #print "StoresBound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -738,7 +738,7 @@ Tip: consider False Sharing analysis as next step"""
             self.val = MEM_XSNP_HITM_COST *(EV("MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HITM", 4)+ EV("OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.HITM_OTHER_CORE", 4)) / CLKS(EV, 4 )
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
-            print "FalseSharing zero division"
+            #print "FalseSharing zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -756,7 +756,7 @@ data to the 64-byte cache line granularity."""
             self.val = EV("MEM_UOPS_RETIRED.SPLIT_STORES", 4)/ EV("MEM_UOPS_RETIRED.ALL_STORES", 4 )
             self.thresh = self.val > 0.0 and self.parent.thresh
         except ZeroDivisionError:
-            print "SplitStores zero division"
+            #print "SplitStores zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -778,7 +778,7 @@ used data."""
             self.val = ( MEM_STLB_HIT_COST * EV("DTLB_STORE_MISSES.STLB_HIT", 4)+ EV("DTLB_STORE_MISSES.WALK_DURATION", 4)) / CLKS(EV, 4 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
-            print "DTLBStoreOverhead zero division"
+            #print "DTLBStoreOverhead zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -799,7 +799,7 @@ analysis as next step"""
             self.val = BackendBoundAtEXE(EV, 2)- self.MemoryBound.compute(EV )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "CoreBound zero division"
+            #print "CoreBound zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -815,7 +815,7 @@ class DividerActive:
             self.val = EV("ARITH.FPU_DIV_ACTIVE", 3)/ CLKS(EV, 3 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "DividerActive zero division"
+            #print "DividerActive zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -838,7 +838,7 @@ calculated with same uop."""
             self.val = self.CoreBound.compute(EV)- self.DividerActive.compute(EV )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "PortsUtilization zero division"
+            #print "PortsUtilization zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -856,7 +856,7 @@ port."""
             self.val = ( EV("CYCLE_ACTIVITY.CYCLES_NO_EXECUTE", 4)- EV("RS_EVENTS.EMPTY_CYCLES", 4)) / CLKS(EV, 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "G0_Ports zero division"
+            #print "G0_Ports zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -875,7 +875,7 @@ next step"""
             self.val = ( EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", 4)- EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", 4)) / CLKS(EV, 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "G1_Port zero division"
+            #print "G1_Port zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -896,7 +896,7 @@ are calculated with same uop."""
             self.val = ( EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", 4)- EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", 4)) / CLKS(EV, 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "G2_Ports zero division"
+            #print "G2_Ports zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -915,7 +915,7 @@ analysis-type as next step"""
             self.val = EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", 4)/ CLKS(EV, 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "G3m_Ports zero division"
+            #print "G3m_Ports zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -942,7 +942,7 @@ thus improving the performance."""
             self.val = EV("UOPS_RETIRED.RETIRE_SLOTS", 1)/ SLOTS(EV, 1 )
             self.thresh = (self.val > 0.7) | self.MicroSequencer.thresh
         except ZeroDivisionError:
-            print "Retiring zero division"
+            #print "Retiring zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -964,7 +964,7 @@ instructions hence this bucket."""
             self.val = self.Retiring.compute(EV)- self.MicroSequencer.compute(EV )
             self.thresh = (self.val > 0.6) and self.parent.thresh
         except ZeroDivisionError:
-            print "BASE zero division"
+            #print "BASE zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -982,7 +982,7 @@ the CPU has executed."""
             self.val = self.FP_x87.compute(EV)+ self.FP_Scalar.compute(EV)+ self.FP_Vector.compute(EV )
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
-            print "FP_Arith zero division"
+            #print "FP_Arith zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -1001,7 +1001,7 @@ instruction sets, which typically perform better and feature vectors."""
             self.val = EV("FP_COMP_OPS_EXE.X87", 4)/ EV("UOPS_EXECUTED.THREAD", 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "FP_x87 zero division"
+            #print "FP_x87 zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -1020,7 +1020,7 @@ code."""
             self.val = ( EV("FP_COMP_OPS_EXE.SSE_SCALAR_SINGLE", 4)+ EV("FP_COMP_OPS_EXE.SSE_SCALAR_DOUBLE", 4)) / EV("UOPS_EXECUTED.THREAD", 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
-            print "FP_Scalar zero division"
+            #print "FP_Scalar zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -1038,7 +1038,7 @@ CPU has executed. Tip: check if vector width is expected"""
             self.val = ( EV("FP_COMP_OPS_EXE.SSE_PACKED_DOUBLE", 4)+ EV("FP_COMP_OPS_EXE.SSE_PACKED_SINGLE", 4)+ EV("SIMD_FP_256.PACKED_SINGLE", 4)+ EV("SIMD_FP_256.PACKED_DOUBLE", 4)) / EV("UOPS_EXECUTED.THREAD", 4 )
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
-            print "FP_Vector zero division"
+            #print "FP_Vector zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -1057,7 +1057,7 @@ fraction."""
             self.val = self.BASE.compute(EV)- self.FP_Arith.compute(EV )
             self.thresh = (self.val > 0.3) and self.parent.thresh
         except ZeroDivisionError:
-            print "OTHER zero division"
+            #print "OTHER zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -1077,7 +1077,7 @@ assists used to address some operation modes (like in Floating Point assists).""
             self.val = RetireUopFraction(EV, 2)* EV("IDQ.MS_UOPS", 2)/ SLOTS(EV, 2 )
             self.thresh = (self.val > 0.05)
         except ZeroDivisionError:
-            print "MicroSequencer zero division"
+            #print "MicroSequencer zero division"
             self.val = 0
             self.thresh = False
         return self.val
