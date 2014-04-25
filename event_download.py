@@ -10,10 +10,18 @@ import argparse
 import os
 import string
 from fnmatch import fnmatch
+import argparse
 
 urlpath = 'https://download.01.org/perfmon'
 mapfile = 'mapfile.csv'
 modelpath = urlpath + "/" + mapfile
+
+p = argparse.ArgumentParser(usage='download Intel event files')
+p.add_argument('--all', '-a', help='Download all available event files', action='store_true')
+p.add_argument('--verbose', '-v', help='Be verbose', action='store_true')
+p.add_argument('--mine', help='Print name of current CPU', action='store_true')
+p.add_argument('cpus', help='Cpu strings to download', nargs='*')
+args = p.parse_args()
 
 def get_cpustr():
     f = open('/proc/cpuinfo', 'r')
@@ -61,8 +69,8 @@ def download(match, key="core"):
     found = 0
     dir = getdir()
     try:
-        print >>sys.stderr, "Downloading", modelpath
-        models = urlopen(modelpath)
+        getfile(modelpath, dir, "mapfile.csv")
+        models = open(os.path.join(dir, "mapfile.csv"))
         for j in models:
             cpu, version, name, type  = j.rstrip().split(",")
             if not fnmatch(cpu, match) or type != key:
@@ -97,14 +105,18 @@ def eventlist_name(name=None, key="core"):
 
 if __name__ == '__main__':
     cpustr = get_cpustr()
+    if args.verbose or args.mine:
+        print "My CPU", cpustr
+    if args.mine:
+        sys.exit(0)
     d = getdir()
-    if len(sys.argv) == 1:
-        found = download_current()
-    elif len(sys.argv) == 2 and sys.argv[1] == '-a':
+    if args.all:
         found = download('*')
+    elif len(args.cpus) == 0:
+        found = download_current()
     else:
         found = 0
-        for j in sys.argv[1:]:
+        for j in args.cpus:
             found += download(j)
 
     if found == 0:
