@@ -208,7 +208,7 @@ class Emap:
                 else:
                     e.msrval = msrval
                     e.msr = msrnum
-            if 'overflow' in m:
+            if 'overflow' in m and m['overflow'] in row:
                 e.overflow = get('overflow')
                 #if e.overflow == "0":
                 #    print >>sys.stderr, "Warning: %s has no overflow value" % (name,)
