@@ -130,7 +130,7 @@ def itrace_info():
                        INTEL_BTS = 2),
                   UNInt32("res"),
                   Switch("info",
-                         lambda ctx: ctx.type,
+                         lambda ctx: ctx.iinfo_type,
                          {
                              "UNKNOWN": Pass,
                              "INTEL_PT": itrace_intel_pt(),
