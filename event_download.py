@@ -16,13 +16,6 @@ urlpath = 'https://download.01.org/perfmon'
 mapfile = 'mapfile.csv'
 modelpath = urlpath + "/" + mapfile
 
-p = argparse.ArgumentParser(usage='download Intel event files')
-p.add_argument('--all', '-a', help='Download all available event files', action='store_true')
-p.add_argument('--verbose', '-v', help='Be verbose', action='store_true')
-p.add_argument('--mine', help='Print name of current CPU', action='store_true')
-p.add_argument('cpus', help='Cpu strings to download', nargs='*')
-args = p.parse_args()
-
 def get_cpustr():
     f = open('/proc/cpuinfo', 'r')
     cpu = [None, None, None]
@@ -104,6 +97,13 @@ def eventlist_name(name=None, key="core"):
     return "%s/pmu-events/%s-%s.json" % (cache, name, key)
 
 if __name__ == '__main__':
+    p = argparse.ArgumentParser(usage='download Intel event files')
+    p.add_argument('--all', '-a', help='Download all available event files', action='store_true')
+    p.add_argument('--verbose', '-v', help='Be verbose', action='store_true')
+    p.add_argument('--mine', help='Print name of current CPU', action='store_true')
+    p.add_argument('cpus', help='Cpu strings to download', nargs='*')
+    args = p.parse_args()
+
     cpustr = get_cpustr()
     if args.verbose or args.mine:
         print "My CPU", cpustr
