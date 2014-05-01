@@ -9,15 +9,18 @@ import re
 from collections import defaultdict
 import gen_level
 
-p = argparse.ArgumentParser(usage='plot toplev -v -lN -x, output as bar plot') 
-p.add_argument('file', help='CSV file to plot')
-p.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
-                  nargs='?')
-p.add_argument('--verbose', '-v', help='Print data values', action='store_true')
-p.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
-p.add_argument('--title', help='Set title of plot', nargs='?')
-p.add_argument('--quiet', help='Be quiet', action='store_true')
-args = p.parse_args()
+def parse_args():
+    p = argparse.ArgumentParser(usage='plot toplev -v -lN -x, output as bar plot') 
+    p.add_argument('file', help='CSV file to plot')
+    p.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
+                      nargs='?')
+    p.add_argument('--verbose', '-v', help='Print data values', action='store_true')
+    p.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
+    p.add_argument('--title', help='Set title of plot', nargs='?')
+    p.add_argument('--quiet', help='Be quiet', action='store_true')
+    return p.parse_args()
+
+args = parse_args()
 
 try:
     import brewer2mpl
