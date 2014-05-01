@@ -43,6 +43,8 @@ def flush_vals(ratios, vals):
         else:
             ratios[j].append(float('nan'))
 
+METRIC_LEVEL = 99
+
 ratios = defaultdict(list)
 timestamps = []
 rc = csv.reader(open(args.file, "r"))
@@ -54,7 +56,10 @@ for r in rc:
         continue
     if not re.match(r"\d+(\.\d*)", r[0]):
         r = ["0.0"] + r
-    l = gen_level.get_level(r[1])
+    if r[3] == "metric":
+        l = METRIC_LEVEL # put at end
+    else:
+        l = gen_level.get_level(r[1])
     if r[1] not in levels[l]:
         levels[l].append(r[1])
     t = math.trunc(float(r[0]) * 100) / 100.0
@@ -82,40 +87,49 @@ def get_colors(non_null):
     else:
         all_colors = None
     return all_colors
-    
+
+def set_title(ax, t):
+    try:
+        ax.set_title(t, loc='right')
+    except AttributeError:
+        ax.set_title(t)
+
 n = 1
 numplots = len(levels.keys())
 fig = plt.figure()
 ax = None
 yset = False
 max_legend = 0
-for l in levels.keys():
+print levels.keys()
+for l in sorted(levels.keys()):
     non_null = filter(lambda x: valid_row(ratios[x]), levels[l])
     if not non_null:
-        print "nothing in level", l
+        #print "nothing in level", l
         n += 1
         continue
     all_colors = get_colors(non_null)
     ax = fig.add_subplot(numplots, 1, n)
-    r = map(lambda x: ratios[x], non_null)
-    stack = ax.stackplot(timestamps, colors=all_colors, *r)
-    ax.set_ylim(0, 100)
-    ax.yaxis.set_ticks([0., 50., 100.])
-    try:
-        ax.set_title('Level %d' % (l), loc='right')
-    except AttributeError:
-        ax.set_title('Level %d' % (l))
+    r = [ratios[x] for x in non_null]
+    if l == METRIC_LEVEL:
+        for j, name in zip(r, non_null):
+            stack = ax.plot(timestamps, j, label=name)
+        set_title(ax, "Metrics")
+        leg = plt.legend(ncol=3, loc=2, bbox_to_anchor=(0., 0., -0.07, -0.07), prop={'size':8})
+    else:
+        stack = ax.stackplot(timestamps, colors=all_colors, *r)
+        ax.set_ylim(0, 100)
+        ax.yaxis.set_ticks([0., 50., 100.])
+        set_title(ax, "Level %d" % (l))
+        p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
+        leg = plt.legend(p, non_null, ncol=3 if len(non_null) > 4 else 2,
+                bbox_to_anchor=(0., 0., -0.07, -0.07),
+                loc=2, prop={'size':8})
+    leg.get_frame().set_alpha(0.5)
     for j in ax.get_xticklabels() + ax.get_yticklabels():
         j.set_fontsize(6)
-    if n >= 2 and not yset:
+    if n >= 2 and not yset and l != -1:
         ax.set_ylabel('(% of execution time)')
         yset = True
-
-    p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
-    leg = plt.legend(p, non_null, ncol=3 if len(non_null) > 4 else 2,
-            bbox_to_anchor=(0., 0., -0.07, -0.07), 
-            loc=2, prop={'size':8})
-    leg.get_frame().set_alpha(0.5)
     if n != numplots:
         max_legend = max(len(non_null), max_legend)
     ax.margins(0, 0)
