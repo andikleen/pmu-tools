@@ -274,7 +274,7 @@ class PerfRun:
         outp, inp = pty.openpty()
         n = r.index("--log-fd")
         r[n + 1] = "%d" % (inp)
-        l = map(lambda x: "'" + x + "'" if x.find("{") >= 0 else x,  r)
+        l = ["'" + x + "'" if x.find("{") >= 0 else x for x in r]
         i = l.index('--log-fd')
         del l[i:i+2]
         print " ".join(l)
@@ -309,7 +309,7 @@ def filter_string():
 def add_filter(s):
     f = filter_string()
     if f:
-        s = set(map(lambda x: x + ":" + f, s))
+        s = set([x + ":" + f for x in s])
     return s
 
 def raw_event(i):
@@ -331,15 +331,15 @@ def raw_event(i):
 
 # generate list of converted raw events from events string
 def raw_events(evlist):
-    return map(lambda x: raw_event(x), evlist)
+    return map(raw_event, evlist)
 
 def pwrap(s):
     print "\n".join(textwrap.wrap(s, 60))
 
 def print_header(work, evlist):
-    evnames0 = map(lambda obj: obj.evlist, work)
+    evnames0 = [obj.evlist for obj in work]
     evnames = set(itertools.chain(*evnames0))
-    names = map(lambda obj: obj.__class__.__name__, work)
+    names = [obj.__class__.__name__ for obj in work]
     pwrap(" ".join(names) + ": " + " ".join(evnames).lower() + 
             " [%d_counters]" % (len(evnames - fixed_set)))
 
@@ -500,10 +500,10 @@ def sample_desc(s):
         return ""
 
 def get_levels(evlev):
-    return map(lambda x: x[1], evlev)
+    return [x[1] for x in evlev]
 
 def get_names(evlev):
-    return map(lambda x: x[0], evlev)
+    return [x[0] for x in evlev]
 
 def num_non_fixed(l):
     n = cpu.counters
@@ -580,7 +580,7 @@ class Runner:
         for obj in self.olist:
             obj.evlevels = []
             obj.compute(lambda ev, level: ev_append(ev, level, obj))
-            obj.evlist = map(lambda x: x[0], obj.evlevels)
+            obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist)
             obj.nc = len(set(obj.evnum) - add_filter(ingroup_events))
 
