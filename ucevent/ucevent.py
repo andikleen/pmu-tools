@@ -684,7 +684,7 @@ def measure(evl, argl, equations, evnames):
                 l = f.readline()
                 if not l:
                     break
-            except KeyboardInterrupt, exceptions.IOError:
+            except (KeyboardInterrupt, exceptions.IOError):
                 break
             l = l.strip()
             dbg("perf", l)
