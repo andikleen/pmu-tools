@@ -40,6 +40,7 @@ import re
 import copy
 import textwrap
 import pipes
+import itertools
 from pmudef import *
 
 import msr as msrmod
@@ -321,29 +322,82 @@ class EmapNativeJSON(Emap):
             mapping['desc'] = u'BriefDescription'
         return self.read_table(data, mapping)
 
+    def add_offcore(self, name):
+        data = json.load(open(name, 'rb'))
+        #   {
+        #    "MATRIX_REQUEST": "DEMAND_DATA_RD",
+        #    "MATRIX_RESPONSE": "NULL",
+        #    "MATRIX_VALUE": "0x0000000001",
+        #    "MATRIX_REGISTER": "0,1",
+        #    "DESCRIPTION": "Counts demand data reads that"
+        #   },
+
+        offcore_response = self.getevent("OFFCORE_RESPONSE")
+        if not offcore_response:
+            return
+        requests = []
+        responses = []
+
+        for row in data:
+            if row[u"MATRIX_REQUEST"] != "NULL":
+                requests.append((row[u"MATRIX_REQUEST"], row[u"MATRIX_VALUE"], row[u"DESCRIPTION"]))
+            if row[u"MATRIX_RESPONSE"] != "NULL":
+                responses.append((row[u"MATRIX_RESPONSE"], row[u"MATRIX_VALUE"], row[u"DESCRIPTION"]))
+
+        def create_event(req_name, req_val, req_desc, res_name, res_val, res_desc):
+            oe = copy.deepcopy(offcore_response)
+            oe.name = ("OFFCORE_RESPONSE.%s.%s" % (req_name, res_name)).lower()
+            oe.msrval = int(req_val, 16) | int(res_val, 16)
+            oe.desc = req_desc + " " + res_desc
+            if version.offcore:
+                oe.newextra = ",offcore_rsp=0x%x" % (oe.msrval, )
+            self.add_event(oe)
+
+        for a, b in itertools.product(requests, responses):
+            create_event(*(a + b))
+
+def json_with_offcore(el, need_oc):
+    emap = EmapNativeJSON(event_download.eventlist_name(el, "core"))
+    if not emap:
+        return None
+    oc = event_download.eventlist_name(el, "offcore")
+    if os.path.exists(oc):
+        emap.add_offcore(oc)
+    elif need_oc:
+        return None
+    return emap
+
 def find_emap():
     """Search and read a perfmon event map.
        When the EVENTMAP environment variable is set read that, otherwise
-       read the map for the current CPU.
+       read the map for the current CPU. EVENTMAP can be a CPU specifier 
+       in the map file or a path name.
+       Dito for the OFFCORE environment variable.
+
        Return an emap object that contains the events and can be queried
        or None if nothing is found or the current CPU is unknown."""
     el = os.getenv("EVENTMAP")
     if el and el.find("/") >= 0:
         try:
-            return EmapNativeJSON(el)
+            emap = EmapNativeJSON(el)
+            oc = os.getenv("OFFCORE")
+            if oc:
+                emap.add_offcore(oc)
+            return emap
         except IOError:
             return None
     if not el:
         el = event_download.get_cpustr()
     try:
-        emap = EmapNativeJSON(event_download.eventlist_name(el))
+        # FIXME: always downloads when no offcore file
+        emap = json_with_offcore(el, True)
         if emap:
             return emap
     except IOError:
         pass
     try:
-        event_download.download(el)
-        return EmapNativeJSON(event_download.eventlist_name(el))
+        event_download.download(el, ["core", "offcore"])
+        return json_with_offcore(el, False)
     except IOError:
         pass
     return None

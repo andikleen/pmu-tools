@@ -58,7 +58,7 @@ def getfile(url, dir, fn):
     o.close()
     f.close()
 
-def download(match, key="core"):
+def download(match, key=["core"]):
     found = 0
     dir = getdir()
     try:
@@ -66,11 +66,11 @@ def download(match, key="core"):
         models = open(os.path.join(dir, "mapfile.csv"))
         for j in models:
             cpu, version, name, type  = j.rstrip().split(",")
-            if not fnmatch(cpu, match) or type != key:
+            if not fnmatch(cpu, match) or type not in key:
                 continue
             cpu = sanitize(cpu, string.ascii_letters + '-' + string.digits)
             url = urlpath + name
-            getfile(url, dir, "%s-%s.json" % (cpu, key))
+            getfile(url, dir, "%s-%s.json" % (cpu, type))
             found += 1
         models.close()
         getfile(urlpath + "/readme.txt", dir, "readme.txt")
