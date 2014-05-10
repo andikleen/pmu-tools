@@ -227,7 +227,9 @@ class Emap(object):
                     d += " (Uses PEBS)"
                 else:
                     d = d.replace("(Precise Event)","") + " (Supports PEBS)"
-            e.desc = self.desc[name] = d
+            if get('errata') != "null":
+                d += " Errata: " + get('errata')
+            e.desc = d
             for (flag, name) in extra_flags:
                 if val & flag:
                     e.newextra += ",%s=%d" % (name, (val & flag) >> ffs(flag), )
@@ -292,7 +294,7 @@ class Emap(object):
             else:
                 print >>f, " [%s]" % (self.desc[k],)
 
-# XXX handle Errata, TakenAlone, DataLA
+# XXX handle TakenAlone, DataLA
 class EmapNativeJSON(Emap):
     def __init__(self, name):
         mapping = {
@@ -309,6 +311,7 @@ class EmapNativeJSON(Emap):
             'pebs': u'PEBS',
             'counter': u'Counter',
             'overflow': u'SampleAfterValue',
+            'errata': u'Errata',
         }
         super(EmapNativeJSON, self).__init__()
         if name.find("JKT") >= 0:
