@@ -339,9 +339,9 @@ class EmapNativeJSON(Emap):
         responses = []
 
         for row in data:
-            if row[u"MATRIX_REQUEST"] != "NULL":
+            if row[u"MATRIX_REQUEST"].upper() != "NULL":
                 requests.append((row[u"MATRIX_REQUEST"], row[u"MATRIX_VALUE"], row[u"DESCRIPTION"]))
-            if row[u"MATRIX_RESPONSE"] != "NULL":
+            if row[u"MATRIX_RESPONSE"].upper() != "NULL":
                 responses.append((row[u"MATRIX_RESPONSE"], row[u"MATRIX_VALUE"], row[u"DESCRIPTION"]))
 
         def create_event(req_name, req_val, req_desc, res_name, res_val, res_desc):
