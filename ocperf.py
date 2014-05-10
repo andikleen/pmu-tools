@@ -99,7 +99,7 @@ class Event:
         self.name = name
         self.extra = ""
         self.msr = 0
-        self.msrvalue = 0
+        self.msrval = 0
         self.desc = desc
 
     def output_newstyle(self, newextra=""):
