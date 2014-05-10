@@ -158,13 +158,20 @@ def merge_extra(a, b):
         m = m - set(['p'])
     return m
 
-class Emap:
-    "Read an event table."
-    events = {}
-    codes = {}
-    desc = {}
-    pevents = {}
-    latego = False
+class Emap(object):
+    """Read an event table."""
+
+    def __init__(self):
+        self.events = {}
+        self.codes = {}
+        self.desc = {}
+        self.pevents = {}
+        self.latego = False
+
+    def add_event(self, e):
+        self.events[e.name] = e
+        self.codes[e.val] = e
+        self.desc[e.name] = e.desc
 
     def read_table(self, r, m):
         for row in r:
@@ -189,7 +196,6 @@ class Emap:
                 d = d.encode('utf-8')
             except UnicodeDecodeError:
                 pass
-            self.desc[name] = d
             e = Event(name, val, d)
             counter = get('counter')
             e.pname = "r%x" % (val,)
@@ -214,8 +220,6 @@ class Emap:
                 #    print >>sys.stderr, "Warning: %s has no overflow value" % (name,)
             else:
                 e.overflow = None
-            self.events[name] = e
-            self.codes[val] = e
             e.pebs = get('pebs')
             if e.pebs and int(e.pebs):
                 if name.endswith("_ps"):
@@ -227,6 +231,7 @@ class Emap:
             for (flag, name) in extra_flags:
                 if val & flag:
                     e.newextra += ",%s=%d" % (name, (val & flag) >> ffs(flag), )
+            self.add_event(e)
 
     def getevent(self, e):
         """Retrieve an event with name e. Return Event object or None."""
@@ -305,6 +310,7 @@ class EmapNativeJSON(Emap):
             'counter': u'Counter',
             'overflow': u'SampleAfterValue',
         }
+        super(EmapNativeJSON, self).__init__()
         if name.find("JKT") >= 0:
             self.latego = True
         data = json.load(open(name, 'rb'))
