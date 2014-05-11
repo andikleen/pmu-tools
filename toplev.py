@@ -125,7 +125,7 @@ if args.graph:
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
 max_level = args.level if args.level else 1
-detailed_model = (max_level > 1) or args.detailed or args.metrics
+detailed_model = (max_level > 1) or args.detailed
 csv_mode = args.csv
 interval_mode = args.interval
 force = args.force

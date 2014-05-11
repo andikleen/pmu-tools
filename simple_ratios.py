@@ -12,6 +12,18 @@ def CLKS(EV):
 def SLOTS(EV):
     return PipelineWidth * CLKS(EV)
 
+# Instructions Per Cycle
+def IPC(EV, level):
+    return EV("INST_RETIRED.ANY", level) / CLKS(EV)
+
+# Uops Per Instruction
+def UPI(EV, level):
+    return EV("UOPS_RETIRED.RETIRE_SLOTS", level) / EV("INST_RETIRED.ANY", level)
+
+# Average Frequency Utilization relative nominal frequency
+def TurboUtilization(EV, level):
+    return CLKS(EV) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
+
 class FrontendBound:
     name = "Frontend Bound"
     domain = "Slots"
@@ -79,6 +91,42 @@ eventually get retired."""
              self.thresh = False
          return self.val
 
+class Metric_IPC:
+    name = "IPC"
+    desc = """
+Instructions Per Cycle"""
+
+    def compute(self, EV):
+        try:
+            self.val = IPC(EV, 0)
+        except ZeroDivisionError:
+            print "IPC zero division"
+            self.val = 0
+
+class Metric_UPI:
+    name = "UPI"
+    desc = """
+Uops Per Instruction"""
+
+    def compute(self, EV):
+        try:
+            self.val = UPI(EV, 0)
+        except ZeroDivisionError:
+            print "UPI zero division"
+            self.val = 0
+
+class Metric_TurboUtilization:
+    name = "TurboUtilization"
+    desc = """
+Average Frequency Utilization relative nominal frequency"""
+
+    def compute(self, EV):
+        try:
+            self.val = TurboUtilization(EV, 0)
+        except ZeroDivisionError:
+            print "TurboUtilization zero division"
+            self.val = 0
+
 class Setup:
     def __init__(self, r):
         prev = None
@@ -106,3 +154,8 @@ class Setup:
         o["BackendBound"].sample = []
         o["Retiring"].sample = []
 
+        # user visible metrics
+
+        n = Metric_IPC() ; r.metric(n)
+        n = Metric_UPI() ; r.metric(n)
+        n = Metric_TurboUtilization() ; r.metric(n)
