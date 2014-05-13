@@ -201,6 +201,7 @@ known_cpus = (
     ("ivt", (62, )),
     ("hsw", (60, 70, 69 )),
     ("hsx", (63, )),
+    ("slm", (55, 77)),
 )
 
 class CPU:
@@ -696,6 +697,9 @@ elif cpu.cpu == "snb" and detailed_model:
 elif cpu.cpu == "hsw" and detailed_model:
     import hsw_client_ratios
     ev = hsw_client_ratios.Setup(runner)
+elif cpu.cpu == "slm":
+    import slm_ratios
+    ev = slm_ratios.Setup(runner)
 else:
     if detailed_model:
         print >>sys.stderr, "Sorry, no detailed model for your CPU. Only Level 1 supported."
@@ -705,7 +709,7 @@ else:
     ev = simple_ratios.Setup(runner)
 
 print "Using level %d." % (max_level),
-if not args.level:
+if not args.level and cpu.cpu != "slm":
     print "Change level with -lX"
 print
 
