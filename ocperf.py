@@ -47,6 +47,8 @@ import msr as msrmod
 import latego
 import event_download
 
+force_download = False
+
 fixed_counters = {
     "32": "instructions",
     "33": "cycles",
@@ -389,10 +391,10 @@ def find_emap():
     if not el:
         el = event_download.get_cpustr()
     try:
-        # FIXME: always downloads when no offcore file
-        emap = json_with_offcore(el, True)
-        if emap:
-            return emap
+        if not force_download:
+            emap = json_with_offcore(el, True)
+            if emap:
+                return emap
     except IOError:
         pass
     try:
@@ -474,6 +476,9 @@ def process_args():
     while i < len(sys.argv):
         if sys.argv[i] == "--print":
             print_only = True
+        elif sys.argv[i] == "--force-download":
+            global force_download
+            force_download = True
         elif sys.argv[i][0:2] == '-e':
             event, i, prefix = getarg(i, cmd)
             event, overflow = process_events(event, print_only)
