@@ -22,7 +22,7 @@ its Backend."""
     def compute(self, EV):
          try:
              self.val = EV("NO_ALLOC_CYCLES.NOT_DELIVERED", 1) / EV("CPU_CLK_UNHALTED.CORE", 1)
-             self.thresh = self.val > 0.3897
+             self.thresh = self.val > 0.0
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
@@ -55,7 +55,7 @@ eventually get retired."""
     def compute(self, EV):
          try:
              self.val = (EV("UOPS_RETIRED.ALL", 1) * 0.5)/ EV("CPU_CLK_UNHALTED.CORE", 1)
-             self.thresh = self.val > 0.3939
+             self.thresh = self.val > 0.0
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
