@@ -6,11 +6,11 @@
 
 # Instructions Per Cycle
 def IPC(EV, level):
-    return EV("INST_RETIRED.ANY", level) / EV("CPU_CLK_UNHALTED.THREAD", 1)
+    return EV("INST_RETIRED.ANY", level) / EV("cycles", 1)
 
 # Average Frequency Utilization relative nominal frequency
 def TurboUtilization(EV, level):
-    return EV("CPU_CLK_UNHALTED.THREAD", level) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
+    return EV("cycles", level) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
 
 class FrontendBound:
     name = "Frontend Bound"
@@ -21,8 +21,8 @@ its Backend."""
     level = 1
     def compute(self, EV):
          try:
-             self.val = EV("NO_ALLOC_CYCLES.NOT_DELIVERED", 1) / EV("CPU_CLK_UNHALTED.CORE", 1)
-             self.thresh = self.val > 0.0
+             self.val = EV("NO_ALLOC_CYCLES.NOT_DELIVERED", 1) / EV("cycles", 1)
+             self.thresh = self.val > 0
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
@@ -38,6 +38,7 @@ of required resources for accepting more uops in the Backend of the pipeline.  "
     level = 1
     def compute(self, EV):
          try:
+	     EV("cycles", 1) # hack to force evaluation
              self.val = 1. - self.FrontendBound.val - self.Retiring.val
              self.thresh = self.val > 0.0
          except ZeroDivisionError:
@@ -54,8 +55,8 @@ eventually get retired."""
     level = 1
     def compute(self, EV):
          try:
-             self.val = (EV("UOPS_RETIRED.ALL", 1) * 0.5)/ EV("CPU_CLK_UNHALTED.CORE", 1)
-             self.thresh = self.val > 0.0
+             self.val = (EV("UOPS_RETIRED.ALL", 1) * 0.5)/ EV("cycles", 1)
+             self.thresh = self.val > 0
          except ZeroDivisionError:
              self.val = 0
              self.thresh = False
@@ -101,6 +102,7 @@ class Setup:
 
         o["FrontendBound"].sibling = None
         o["BackendOrBadSpeculation"].sibling = None
+        o["Retiring"].sibling = None
 
         o["FrontendBound"].sample = []
         o["BackendOrBadSpeculation"].sample = []
