@@ -4,6 +4,7 @@ pmu tools is a collection of tools for profile collection and performance
 analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index.php/Main_Page). This uses performance counters in the CPU.
 
 # Recent new features:
+* toplev now supports Silvermont CPUs, with a simple 1 level model.
 * ocperf now outputs all possible offcore event combinations when 
 an offcore file is available
 * toplev now can plot directly with --graph. It can also 
