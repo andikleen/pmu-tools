@@ -679,17 +679,23 @@ if detailed_model:
     if version[0] < 3 or (version[0] == 3 and version[1] < 10):
         print >>sys.stderr, "Older kernel than 3.10. Events may not be correctly scheduled."
 
-if cpu.ht:
-    print >>sys.stderr, "WARNING: HT enabled"
-    print >>sys.stderr, "Measuring multiple processes/threads on the same core may not be reliable."
+def ht_warning():
+    if cpu.ht:
+        print >>sys.stderr, "WARNING: HT enabled"
+        print >>sys.stderr, "Measuring multiple processes/threads on the same core may not be reliable."
    
 runner = Runner(max_level)
 
+need_any = False
 if cpu.cpu == "ivb" and detailed_model:
     import ivb_client_ratios
+    ivb_client_ratios.smt_enabled = cpu.ht
+    need_any = cpu.ht
     ev = ivb_client_ratios.Setup(runner)
 elif cpu.cpu == "ivt" and detailed_model:
     import ivb_server_ratios
+    ivb_server_ratios.smt_enabled = cpu.ht
+    need_any = cpu.ht
     ev = ivb_server_ratios.Setup(runner)
 elif cpu.cpu == "snb" and detailed_model:
     import snb_client_ratios
@@ -701,12 +707,18 @@ elif cpu.cpu == "slm":
     import slm_ratios
     ev = slm_ratios.Setup(runner)
 else:
+    ht_warning()
     if detailed_model:
         print >>sys.stderr, "Sorry, no detailed model for your CPU. Only Level 1 supported."
         if cpu.cpu == "jkt":
             print >>sys.stderr, "Consider using FORCECPU=snb"
     import simple_ratios
     ev = simple_ratios.Setup(runner)
+
+if need_any:
+    print "Running in HyperThreading mode. Will measure complete system."
+    print "May need root or echo -1 > /proc/sys/kernel/perf_paranoid"
+    rest = ["-a"] + rest
 
 print "Using level %d." % (max_level),
 if not args.level and cpu.cpu != "slm":
