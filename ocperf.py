@@ -189,6 +189,10 @@ class Emap(object):
             name = get('name').lower().rstrip()
             code = gethex('code')
             umask = gethex('umask')
+            # hack for now to handle fixed counter 2 correctly
+            if name == 'cpu_clk_unhalted.thread':
+                code = 0x3c
+                umask = 0
             if 'other' in m and m['other'] in row:
                 other = gethex('other') << 16
             else:
