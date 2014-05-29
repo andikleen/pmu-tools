@@ -717,8 +717,8 @@ else:
 
 if need_any:
     print "Running in HyperThreading mode. Will measure complete system."
-    if not (os.geteuid() == 0 or sysctl("kernel.perf_paranoid") == -1):
-        print "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_paranoid"
+    if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1):
+        print "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
     rest = ["-a"] + rest
 
 print "Using level %d." % (max_level),
