@@ -105,7 +105,7 @@ class Event:
         self.msrval = 0
         self.desc = desc
 
-    def output_newstyle(self, newextra=""):
+    def output_newstyle(self, newextra="", noname=False):
         """Format an perf event for output and return as perf event string.
            Always uses new style (cpu/.../)."""
         val = self.val
@@ -113,11 +113,11 @@ class Event:
         if newextra:
             extra += "," + newextra
         e = "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff, extra)
-        if version.has_name:
+        if version.has_name and not noname:
             e += ",name=%s" % (self.name.replace(".", "_"),)
         return e
 
-    def output(self, use_raw=False, flags=""):
+    def output(self, use_raw=False, flags="", noname=False):
         """Format an event for output and return as perf event string.
            use_raw when true return old style perf string (rXXX).
            Otherwise chose between old and new style based on the 
@@ -125,19 +125,24 @@ class Event:
            flags when set add perf flags (e.g. u for user, p for pebs)."""
         val = self.val
         newe = ""
+        print "output", "self.extra", self.extra
         extra = "".join(merge_extra(extra_set(self.extra), extra_set(flags)))
         m = re.search(r"c(mask=)?([0-9]+)", extra)
         if m:
             extra = re.sub(r"c(mask=)?[0-9]+", "", extra)
             val |= int(m.group(2)) << 24
             newe += "cmask=%x" % (int(m.group(2)))
-
+        m = re.search(r"amt1", extra)
+        if m:
+            extra = extra.replace("amt1", "")
+            val |= EVENTSEL_ANY
+            newe += "any=1"
         if version.direct or use_raw:
             ename = "r%x" % (val,) 
             if extra:
                 ename += ":" + extra
         else:
-            ename = "cpu/%s/" % (self.output_newstyle(newextra=newe)) + extra
+            ename = "cpu/%s/" % (self.output_newstyle(newextra=newe, noname=noname)) + extra
         return ename
 
 def ffs(flag):
@@ -151,7 +156,7 @@ def ffs(flag):
 
 def extra_set(e):
     return set(map(lambda x: x[0],
-                   re.findall(r"((p+)|[ukHG]|(c(mask=)?\d+))", e)))
+                   re.findall(r"((p+)|[ukHG]|(c(mask=)?\d+|amt1))", e)))
 
 def merge_extra(a, b):
     m = a | b
