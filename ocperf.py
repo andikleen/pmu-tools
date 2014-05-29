@@ -125,7 +125,6 @@ class Event:
            flags when set add perf flags (e.g. u for user, p for pebs)."""
         val = self.val
         newe = ""
-        print "output", "self.extra", self.extra
         extra = "".join(merge_extra(extra_set(self.extra), extra_set(flags)))
         m = re.search(r"c(mask=)?([0-9]+)", extra)
         if m:
