@@ -326,7 +326,7 @@ def raw_event(i):
             if not force:
                 sys.exit(1)
             return "cycles" # XXX 
-        i = e.output(True, filter_string())
+        i = e.output(flags=filter_string(), noname=True)
         emap.update_event(i, e)
     return i
 
@@ -374,7 +374,7 @@ def print_account(ad):
 def is_event(l, n):
     if len(l) <= n:
         return False
-    return re.match(r"(r[0-9a-f]+|cycles|instructions|ref-cycles)", l[n])
+    return re.match(r"(r[0-9a-f]+|cycles|instructions|ref-cycles|cpu/)", l[n])
 
 def execute(events, runner, out, rest):
     account = defaultdict(Stat)
@@ -459,7 +459,7 @@ def canon_event(e):
     return e.lower()
 
 def lookup_res(res, rev, ev, index):
-    assert canon_event(emap.getperf(rev[index])) == canon_event(ev)
+    #assert canon_event(emap.getperf(rev[index])) == canon_event(ev)
     return res[index]
 
 def add_key(k, x, y):
