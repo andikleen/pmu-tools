@@ -454,7 +454,7 @@ def execute(events, runner, out, rest):
 def ev_append(ev, level, obj):
     if not (ev, level) in obj.evlevels:
         obj.evlevels.append((ev, level))
-    return 1
+    return 99
 
 def canon_event(e):
     m = re.match(r"(.*):(.*)", e)
