@@ -116,6 +116,7 @@ p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
 p.add_argument('--sample', '-S', help="Suggest commands to sample for bottlenecks (experimential)", 
         action='store_true')
+p.add_argument('--raw', '-r', help="Print raw values", action='store_true')
 args, rest = p.parse_known_args()
 
 if args.graph:
@@ -343,8 +344,9 @@ def print_header(work, evlist):
     evnames0 = [obj.evlist for obj in work]
     evnames = set(itertools.chain(*evnames0))
     names = [obj.__class__.__name__ for obj in work]
-    pwrap(" ".join(names) + ": " + " ".join(evnames).lower() + 
-            " [%d_counters]" % (len(evnames - fixed_set)))
+    pwrap(" ".join(names) + ":")
+    pwrap(" ".join(evnames).lower() + 
+          " [%d_counters]" % (len(evnames - fixed_set)))
 
 def setup_perf(events, evstr, rest):
     prun = PerfRun()
@@ -438,6 +440,8 @@ def execute(events, runner, out, rest):
         account[event].total += 1
         res[title].append(val)
         rev[title].append(event)
+        if args.raw:
+            print "raw",title,"event",event,"val",val
     inf.close()
     ret = prun.wait()
     for j in sorted(res.keys()):
