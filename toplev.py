@@ -411,7 +411,9 @@ def execute(events, runner, out, rest):
                         rev = defaultdict(list)
                     prev_interval = interval
         # filter out the empty unit field added by 3.14
-        n = filter(lambda x: x != "", l.split(","))
+        n = filter(lambda x: x != "",
+                re.findall(r"([0-9]+|cpu/.*?/|<.*?>|S[0-9]+|cycles|instructions|ref-cycles|),?", l))
+
         # timestamp is already removed
         # -a --per-socket socket,numcpus,count,event,...
         # -a --per-core core,numcpus,count,event,...
