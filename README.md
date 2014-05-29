@@ -27,8 +27,7 @@ Note this may require setting up https_proxy if you are behind a firewall.
 counter event list for common Intel CPUs. This allows to use all the
 Intel events, not just the builtin events of perf. Can be also used
 as a library from other python programs
-* The "toplev.py" tool to do cycle decomposition for a workload. It can 
-measure where in the CPU pipe line the bottleneck of a workload occurs.
+* The "toplev.py" tool to identify the micro-architectural bottleneck for a workload. 
 This implements the [TopDown](http://software.intel.com/en-us/articles/how-to-tune-applications-using-a-top-down-characterization-of-microarchitectural-issues)
 methology.
 * The "ucevent" tool to manage and compute uncore performance events on Intel Xeon E5 2600 series (SandyBridge EP). Uncore is the part of the CPU that is not core.  Supports many metrics for power management, IO, QPI (interconnect), caches, and others.  ucevent automatically generates event descriptions
@@ -157,12 +156,12 @@ over the CPUs)
 
 ## toplev.py:
 
-Do cycle decomposition on a workload: estimate on which part of the
-CPU pipeline the bottle neck occurs. The bottlenecks are expressed as a tree
-with different levels (max 4). Each bottleneck is only meaningful
-if the parent higher level crossed the threshold (it acts similar to a binary
-search). The tool automatically only prints meaningful ratios,
-unless -v is specified.
+Identify the micro-architectural bottleneck of a workload.
+
+The bottlenecks are expressed as a tree with different levels (max 5).
+Each bottleneck is only meaningful if the parent higher level crossed the
+threshold (it acts similar to a binary search). The tool automatically only
+prints meaningful ratios, unless -v is specified.
 
 This follows the "Top Down" methology. The best description of the method
 is in the "A top-down method for performance analysis and counter architecture"
@@ -173,7 +172,9 @@ in this [article](http://software.intel.com/en-us/articles/how-to-tune-applicati
 A more gentle introduction is in [andi's blog](http://halobates.de/blog/p/262)
 
 toplev.py only supports counting, that is it cannot tell you where in
-the program the problem occurred, just what happened.
+the program the problem occurred, just what happened. There is now
+an experimential --sample option to suggest sampling events for specific
+problems.
 
 Requires an Intel Sandy Bridge, Ivy Bridge, Haswell CPU (Core 2rd, 3rd, 4th generation)
 On Sandy Bridge E/EP (Xeon E5, Core i7 39xx) only level 1 is supported
@@ -181,7 +182,7 @@ currently.
 
 It works best on Ivy Bridge currently.  By default the simple high level model
 is used. The detailed model is selected with -d, and the max level
-specified with -l (max 4, default 2).
+specified with -l (max 5, default 2).
 
 [IVB model] (http://halobates.de/ivb-hierarchy.svg)
 [Simple model] (http://halobates.de/simple-hierarchy.svg)
