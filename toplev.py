@@ -687,12 +687,12 @@ def ht_warning():
 runner = Runner(max_level)
 
 need_any = False
-if cpu.cpu == "ivb" and detailed_model:
+if cpu.cpu == "ivb":
     import ivb_client_ratios
     ivb_client_ratios.smt_enabled = cpu.ht
     need_any = cpu.ht
     ev = ivb_client_ratios.Setup(runner)
-elif cpu.cpu == "ivt" and detailed_model:
+elif cpu.cpu == "ivt":
     import ivb_server_ratios
     ivb_server_ratios.smt_enabled = cpu.ht
     need_any = cpu.ht
