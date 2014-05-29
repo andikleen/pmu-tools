@@ -433,7 +433,10 @@ def process_events(event, print_only):
             end += m.group(3)
             if ev:
                 end += "".join(merge_extra(extra_set(ev.extra), extra_set(m.group(4))))
-            i = ev.output_newstyle()
+                i = ev.output_newstyle()
+            else:
+                start = ""
+                end = ""
         else:
             extra = ""
             m = re.match("([^:]*):(.*)", i)
