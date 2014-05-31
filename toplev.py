@@ -117,6 +117,8 @@ p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true
 p.add_argument('--sample', '-S', help="Suggest commands to sample for bottlenecks (experimential)", 
         action='store_true')
 p.add_argument('--raw', '-r', help="Print raw values", action='store_true')
+p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS, action='store_true')
+p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 args, rest = p.parse_known_args()
 
 if args.graph:
@@ -140,6 +142,10 @@ if args.user:
 if args.user and args.kernel:
     ring_filter = None
 print_group = args.print_group
+if args.no_aggr:
+    rest = ["-A"] + rest
+if args.cpu:
+    rest = ["--cpu", args.cpu] + rest
 
 MAX_ERROR = 0.05
 
@@ -266,7 +272,9 @@ class CPU:
                     self.cpu = i[0]
                     break
         if self.counters == 0:
-            if self.ht:
+            if self.cpu == "slm":
+                self.counters = 2
+            elif self.ht:
                 self.counters = 4
             else:
                 self.counters = 8
@@ -690,7 +698,7 @@ if detailed_model:
 def ht_warning():
     if cpu.ht:
         print >>sys.stderr, "WARNING: HT enabled"
-        print >>sys.stderr, "Measuring multiple processes/threads on the same core may not be reliable."
+        print >>sys.stderr, "Measuring multiple processes/threads on the same core may is not reliable."
    
 runner = Runner(max_level)
 
@@ -725,8 +733,12 @@ else:
 
 if need_any:
     print "Running in HyperThreading mode. Will measure complete system."
+    if args.no_aggr:
+        print >>sys.stderr, "Warning: Hyper Threading mode not compatible with -A/--no-aggr option"
+    if args.cpu:
+        print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1):
-        print "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
+        print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
     rest = ["-a"] + rest
 
 print "Using level %d." % (max_level),
