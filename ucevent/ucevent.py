@@ -694,7 +694,7 @@ def measure(evl, argl, equations, evnames):
                 ts, socket, _, rest = l.split(",", 3)
                 l = ts + "," + rest
             # uncore// contains commas!
-            m = re.match(r"([0-9.]+),([0-9]+|<.*>),(.*)$", l)
+            m = re.match(r"([0-9.]+),([0-9]+|<.*>),?,(.*)$", l)
             if not m:
                 print "PERF-UNREADABLE", l,
                 continue
