@@ -530,6 +530,13 @@ def num_non_fixed(l):
         n += 1
     return n
 
+def full_name(obj):
+    name = obj.name
+    while 'parent' in obj.__dict__ and obj.parent:
+        obj = obj.parent
+        name = obj.name + "." + name
+    return name
+
 class Runner:
     "Schedule measurements of event groups. Try to run multiple in parallel."
     def __init__(self, max_level):
@@ -668,7 +675,7 @@ class Runner:
                             title)
                 else:
                     out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
-                         obj.name, val, timestamp,
+                        full_name(obj), val, timestamp,
                         "below" if not obj.thresh else "above",
                         desc,
                         title,

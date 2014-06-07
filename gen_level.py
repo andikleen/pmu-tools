@@ -15,6 +15,9 @@ class Runner:
 
 def get_level(name):
     name = name.strip()
+    dot = name.find(".")
+    if dot >= 0:
+        name = name[dot:]
     if name in omap:
         return omap[name].level
     return 0
