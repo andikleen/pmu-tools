@@ -25,6 +25,7 @@ import ocperf
 
 ingroup_events = frozenset(["cycles", "instructions", "ref-cycles", 
                             "cpu/event=0x3c,umask=0x00,any=1/",
+                            "cpu/event=0x3c,umask=0x0,any=1/",
                             "cpu/event=0x0,umask=0x1/"])
 
 def works(x):
