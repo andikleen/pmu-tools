@@ -76,6 +76,20 @@ checked out (but it does not need to be the current directory)
 They automatically search for other modules and data files
 in the same directory the script was located in.
 
+# Dependencies
+All tools (except for parser/) should work with a python 2.7
+standard installation.  All need a reasonably recent perf (RHEL5 is too old)
+ocperf.py should work with python 2.6, or likely 2.5 when the json
+module is installed.
+
+Except for the modules in parser/ there are no special
+dependencies outside a standard python install on a recent
+Linux system with perf. 
+
+old. parser/ needs a scipy stack with pandas and pyelftools.
+
+# Tools
+
 ## ocperf:
 
 ocperf is a wrapper to "perf" that provides a full core event list for 
