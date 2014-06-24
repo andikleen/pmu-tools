@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# library and tool to access MSRs (model specific registers)
+# library and tool to access Intel MSRs (model specific registers)
+# Author: Andi Kleen
 import os
 import glob
 import struct
@@ -11,6 +12,8 @@ def writemsr(msr, val):
         os.lseek(f, msr, os.SEEK_SET)
         os.write(f, struct.pack('Q', val))
         os.close(f)
+    else:
+        raise OSError("msr module not loaded (run modprobe msr)")
     
 def readmsr(msr, cpu = 0):
     f = os.open('/dev/cpu/%d/msr' % (cpu,), os.O_RDONLY)
@@ -32,14 +35,33 @@ def changebit(msr, bit, val):
         os.lseek(f, msr, os.SEEK_SET)            
         os.write(f, struct.pack('Q', v))
         os.close(f)
+    else:
+        raise OSError("msr module not loaded (run modprobe msr)")
 
 if __name__ == '__main__':
-    import sys
-    # xxx allow specifying cpu(s) for read
-    if len(sys.argv) == 2:
-        print "%x" % (readmsr(int(sys.argv[1], 16)),)
-    elif len(sys.argv) == 3:
-        writemsr(int(sys.argv[1], 16), int(sys.argv[2], 16))
-    else:
-	print "Usage: msr msrnum [newval]"
+    import argparse, os
 
+    def parse_hex(s):
+        try:
+            return int(s, 16)
+        except ValueError:
+            raise argparse.ArgumentError("Bad hex number %s" % (s))
+
+    if not os.path.exists("/dev/cpu/0/msr"):
+        os.system("/sbin/modprobe msr")
+
+    p = argparse.ArgumentParser(description='Access x86 model specific registers.')
+    p.add_argument('msr', type=parse_hex, help='number of the MSR to access')
+    p.add_argument('value', nargs='?', type=parse_hex, help='value to write (if not specified read)')
+    p.add_argument('--setbit', type=int, help='Bit number to set')
+    p.add_argument('--clearbit', type=int, help='Bit number to clear')
+    p.add_argument('--cpu', type=int, default=0, help='CPU to read on (writes always change all)')
+    args = p.parse_args()
+    if not args.value and not args.setbit and not args.clearbit:
+        print "%x" % (readmsr(args.msr, args.cpu))
+    elif args.setbit:
+        changebit(args.msr, args.setbit, 1)
+    elif args.clearbit:
+        changebit(args.msr, args.clearbit, 0)
+    else:
+        writemsr(args.msr, args.value)
