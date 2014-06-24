@@ -1,8 +1,8 @@
 CFLAGS := -g -Wall
-OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o
+OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o
 KDOC = /usr/src/linux/scripts/kernel-doc
 
-all: libjevents.a
+all: libjevents.a showevent listevents
 
 libjevents.a: ${OBJ}
 	rm -f libjevents.a
@@ -15,7 +15,9 @@ clean:
 resolve: resolve.c
 	$(CC) $(CFLAGS) -DTEST=1 -o $@ $^
 
-test: test.o libjevents.a
+showevent: showevent.o libjevents.a
+
+listevents: listevents.o libjevents.a
 
 DOCFILES := cache.c jevents.c cpustr.c
 
