@@ -35,17 +35,28 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include "jsmn.h"
 #include "json.h"
 #include "jevents.h"
 
 static const char *json_default_name(void)
 {
-	char *cache = getenv("XDG_CACHE_HOME");
+	char *cache;
 	char *idstr = get_cpu_str();
 	char *res = NULL;
 	char *home = NULL;
+	char *emap;
 
+	emap = getenv("EVENTMAP");
+	if (emap) {
+		if (access(emap, R_OK) == 0)
+			return emap;
+		idstr = malloc(strlen(emap) + strlen("-core") + 1);
+		sprintf(idstr, "%s-core", emap);
+	}
+
+	cache = getenv("XDG_CACHE_HOME");
 	if (!cache) {
 		home = getenv("HOME");
 		if (!home || asprintf(&cache, "%s/.cache", home) < 0)
