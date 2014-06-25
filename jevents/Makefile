@@ -10,7 +10,7 @@ libjevents.a: ${OBJ}
 	ranlib libjevents.a
 
 clean:
-	rm -f ${OBJ} libjevents.a resolve test jevents.man jevents.html
+	rm -f ${OBJ} libjevents.a resolve showevent listfiles jevents.man jevents.html
 
 resolve: resolve.c
 	$(CC) $(CFLAGS) -DTEST=1 -o $@ $^
@@ -19,7 +19,7 @@ showevent: showevent.o libjevents.a
 
 listevents: listevents.o libjevents.a
 
-DOCFILES := cache.c jevents.c cpustr.c
+DOCFILES := cache.c jevents.c cpustr.c rawevent.c
 
 html: jevents.html
 

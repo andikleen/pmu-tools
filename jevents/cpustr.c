@@ -4,7 +4,7 @@
 #include "jevents.h"
 
 /**
- * get_cpu_str - Return string describing the current CPU
+ * get_cpu_str - Return string describing the current CPU.
  *
  * Used to store JSON event lists in the cache directory.
  */
