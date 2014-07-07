@@ -180,7 +180,7 @@ class Output:
             if self.csv:
                 self.logf.write(title + self.csv)
             else:
-                self.logf.write("%-5s" % (title))
+                self.logf.write("%-6s" % (title))
         if not check or check_ratio(l):
 	    self.s(area, name, fmtnum(l), remark, desc, sample)
 	else:
