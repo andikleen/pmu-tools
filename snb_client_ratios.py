@@ -496,7 +496,8 @@ class Setup:
         o["MITE"].sibling = None
         o["DSB"].sibling = None
         o["LSD"].sibling = None
-        o["BadSpeculation"].sibling = o["BranchResteers"]
+        #o["BadSpeculation"].sibling = o["BranchResteers"]
+        o["BadSpeculation"].sibling = None
         o["Backend_Bound"].sibling = None
         o["Retiring"].sibling = None
         o["BASE"].sibling = None
