@@ -17,9 +17,14 @@ else:
 class Runner:
     def __init__(self):
         self.olist = []
+
     def run(self, n):
         if n.level <= max_level:
             self.olist.append(n)
+
+    def metric(self, n):
+        pass
+
     def finish(self):
         for n in self.olist:
             if n.parent:
@@ -29,8 +34,11 @@ class Runner:
 
     def fix_parents(self):
 	for obj in self.olist:
-	    if not obj.parent:
+            if 'parent' not in obj.__dict__:
+                obj.parent = None
 	        continue
+            if not obj.parent:
+                continue
 	    if obj.level == 1:
                 obj.parent = None
 	    elif obj.parent.level >= obj.level:
