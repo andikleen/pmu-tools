@@ -131,14 +131,19 @@ class Setup:
     def __init__(self, r):
         prev = None
         o = dict()
-        n = FrontendBound() ; r.run(n) ; n.parent = prev ; prev = n
+        n = FrontendBound() ; r.run(n)
         o["FrontendBound"] = n
-        n = BadSpeculation() ; r.run(n) ; n.parent = prev ; prev = n
+        n = BadSpeculation() ; r.run(n)
         o["BadSpeculation"] = n
-        n = BackendBound() ; r.run(n) ; n.parent = prev ; prev = n
+        n = BackendBound() ; r.run(n)
         o["BackendBound"] = n
-        n = Retiring() ; r.run(n) ; n.parent = prev ; prev = n
+        n = Retiring() ; r.run(n)
         o["Retiring"] = n
+
+        o["FrontendBound"].parent = None
+        o["BadSpeculation"].parent = None
+        o["BackendBound"].parent = None
+        o["Retiring"].parent = None
         
         o["BackendBound"].FrontendBound = o["FrontendBound"]
         o["BackendBound"].BadSpeculation = o["BadSpeculation"]
