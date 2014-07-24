@@ -164,13 +164,18 @@ class Output:
         self.sep = " "
         self.logf = logfile
         self.printed_descs = set()
+        self.hdrlen = 46
+
+    # pass all possible hdrs in advance to compute suitable padding
+    def set_hdr(self, hdr):
+        self.hdrlen = max(len(hdr) + 1, self.hdrlen)
 
     def s(self, area, hdr, s, remark, desc, sample):
         if area:
             hdr = "%-7s %s" % (area, hdr)
         if remark == "above":
             remark = ""
-        print >>self.logf, "%-46s %s %s" % (hdr + ":", s, remark)
+        print >>self.logf, "%-*s %s %s" % (self.hdrlen, hdr + ":", s, remark)
         if desc and not args.no_desc:
             print >>self.logf, "\t" + desc
         if sample:
@@ -657,6 +662,7 @@ class Runner:
             return
         # step 1: compute
         for obj in self.olist:
+            out.set_hdr(full_name(obj))
             if obj.res_map:
                 obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj.res_map[(e, level)]))
