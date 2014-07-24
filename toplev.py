@@ -168,7 +168,7 @@ class Output:
     def s(self, area, hdr, s, remark, desc, sample):
         if area:
             hdr = "%-7s %s" % (area, hdr)
-        print >>self.logf, "%-42s\t%s %s" % (hdr + ":", s, remark)
+        print >>self.logf, "%-46s %s %s" % (hdr + ":", s, remark)
         if desc and not args.no_desc:
             print >>self.logf, "\t" + desc
         if sample:
