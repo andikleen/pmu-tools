@@ -238,8 +238,11 @@ class Emap(object):
                     d += " (Uses PEBS)"
                 else:
                     d = d.replace("(Precise Event)","") + " (Supports PEBS)"
-            if get('errata') != "null":
-                d += " Errata: " + get('errata')
+            try:
+                if get('errata') != "null":
+                    d += " Errata: " + get('errata')
+            except KeyError:
+                pass
             e.desc = d
             for (flag, name) in extra_flags:
                 if val & flag:
