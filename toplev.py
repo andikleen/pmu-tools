@@ -158,11 +158,12 @@ def check_ratio(l):
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
 class Output:
-    """Generate output human readable."""
+    """Generate human readable output."""
     def __init__(self, logfile):
         self.csv = False
         self.sep = " "
         self.logf = logfile
+        self.printed_descs = set()
 
     def s(self, area, hdr, s, remark, desc, sample):
         if area:
@@ -182,6 +183,10 @@ class Output:
             else:
                 self.logf.write("%-6s" % (title))
         if not check or check_ratio(l):
+            if desc in self.printed_descs:
+                desc = ""
+            else:
+                self.printed_descs.add(desc)
 	    self.s(area, name, fmtnum(l), remark, desc, sample)
 	else:
 	    self.s(area, name, fmtnum(0), "mismeasured", "", sample)
