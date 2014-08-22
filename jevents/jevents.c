@@ -272,8 +272,11 @@ int json_events(const char *fn,
 		}
 		if (msr != NULL)
 			addfield(map, &event, ",", msr->pname, msrval);
-		fixname(name);
-		err = func(data, name, event, desc);
+		err = -EIO;
+		if (name && event) {
+			fixname(name);
+			err = func(data, name, event, desc);
+		}
 		free(event);
 		free(desc);
 		free(name);
