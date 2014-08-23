@@ -53,6 +53,8 @@ static const char *json_default_name(void)
 		if (access(emap, R_OK) == 0)
 			return emap;
 		idstr = malloc(strlen(emap) + strlen("-core") + 1);
+		if (!idstr)
+			exit(ENOMEM);
 		sprintf(idstr, "%s-core", emap);
 	}
 
@@ -100,7 +102,12 @@ static void fixname(char *s)
 
 static void fixdesc(char *s)
 {
-	char *e = s + strlen(s);
+	char *e;
+
+	if (!s)
+		return;
+
+	e = s + strlen(s);
 
 	/* Remove trailing dots that look ugly in perf list */
 	--e;
@@ -173,7 +180,7 @@ static int match_field(char *map, jsmntok_t *field, int nz,
 static struct msrmap *lookup_msr(char *map, jsmntok_t *val)
 {
 	jsmntok_t newval = *val;
-	static bool warned;
+	static bool warned = false;
 	int i;
 
 	cut_comma(map, &newval);
@@ -244,7 +251,7 @@ int json_events(const char *fn,
 			} else if (json_streq(map, field, "BriefDescription")) {
 				addfield(map, &desc, "", "", val);
 				fixdesc(desc);
-			} else if (json_streq(map, field, "PEBS") && nz &&
+			} else if (json_streq(map, field, "PEBS") && nz && desc &&
 				   !strstr(desc, "(Precise Event)")) {
 				precise = val;
 			} else if (json_streq(map, field, "MSRIndex") && nz) {

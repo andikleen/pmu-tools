@@ -2,6 +2,7 @@
 #include "jevents.h"
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <linux/perf_event.h>
 
 /**
@@ -29,6 +30,8 @@ static struct event *eventlist;
 static int collect_events(void *data, char *name, char *event, char *desc)
 {
 	struct event *e = malloc(sizeof(struct event));
+	if (!e)
+		exit(ENOMEM);
 	e->next = eventlist;
 	eventlist = e;
 	e->name = strdup(name);
@@ -62,7 +65,7 @@ int read_events(char *fn)
 {
 	if (eventlist)
 		free_events();
-	return json_events(NULL, collect_events, NULL);
+	return json_events(fn, collect_events, NULL);
 }
 
 /**
@@ -79,8 +82,10 @@ int read_events(char *fn)
 int resolve_event(char *name, struct perf_event_attr *attr)
 {
 	struct event *e;
-	if (!eventlist)
-		read_events(NULL);
+	if (!eventlist) {
+		if (read_events(NULL) < 0)
+			return -1;
+	}
 	for (e = eventlist; e; e = e->next) {
 		if (!strcasecmp(e->name, name)) {
 			return jevent_name_to_attr(e->event, attr);
@@ -105,8 +110,10 @@ int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
 		void *data)
 {
 	struct event *e;
-	if (!eventlist)
-		read_events(NULL);
+	if (!eventlist) {
+		if (read_events(NULL) < 0)
+			return -1;
+	}
 	for (e = eventlist; e; e = e->next) {
 		int ret = func(data, e->name, e->event, e->desc);
 		if (ret)
