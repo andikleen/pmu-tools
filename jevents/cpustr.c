@@ -14,7 +14,7 @@ char *get_cpu_str(void)
 	size_t llen = 0;
 	int found = 0, n;
 	char vendor[30];
-	int model, fam;
+	int model = 0, fam = 0;
 	char *res = NULL;
 	FILE *f = fopen("/proc/cpuinfo", "r");
 

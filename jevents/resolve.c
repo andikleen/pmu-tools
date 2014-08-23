@@ -18,6 +18,7 @@ static int read_file(char **val, const char *fmt, ...)
 	va_list ap;
 	int fd;
 	int ret = -1;
+	int len;
 
 	*val = malloc(MAXFILE);	
 	va_start(ap, fmt);
@@ -25,9 +26,13 @@ static int read_file(char **val, const char *fmt, ...)
 	va_end(ap);
 	fd = open(fn, O_RDONLY);
 	free(fn);
-	if (fd >= 0 && read(fd, *val, MAXFILE) > 0)
-		ret = 0;
-	close(fd);
+	if (fd >= 0) {
+		if ((len = read(fd, *val, MAXFILE - 1)) > 0) {
+			ret = 0;
+			(*val)[len] = 0;
+		}
+		close(fd);
+	}
 	if (ret < 0) {
 		free(*val);
 		*val = NULL;
