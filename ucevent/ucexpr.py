@@ -22,6 +22,8 @@ import inspect
 import ucevent
 import ucmsg
 
+dbg = ucmsg.debug_msg
+
 class ParseError(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -98,7 +100,7 @@ def expand_events(s):
     return l
 
 def expect(tl, c):
-    #print "expecting",c
+    dbg("expect", "expecting %s" % (c))
     if not tl:
         raise ParseError("expected %s, got end" % (c))
     if tl[0] != c:
@@ -148,7 +150,7 @@ def has_ev(l):
     return False
 
 def apply_list(o, fl, vl):
-    ucmsg.debug_msg("expr", "apply %s and %s to %s from %s" % 
+    dbg("expr", "apply %s and %s to %s from %s" % 
                    (fl, vl, o, inspect.stack()[1][2:]))
     for j in fl:
         if is_list(j):
@@ -367,17 +369,17 @@ def parse(s, box, quiet=False, user_mode=False, qual=None):
         if not quiet:
             print "Expression", s
         tl = tokenize(s, box, user_mode)
-        ucmsg.debug_msg("tokenize", tl)
+        dbg("tokenize", tl)
         e, tl = expr(tl)
         if len(tl) > 0:
             raise ParseError("unexpected token %s at end" % (tl[0]))
-        ucmsg.debug_msg("expr", e)
+        dbg("expr", e)
         eflat = expr_flat(e)
         if qual:
             eflat = apply_user_qual(eflat, qual)
         res = " ".join(eflat)
         res = expand_events(res)
-        ucmsg.debug_msg("expanded", tl)
+        dbg("expanded", tl)
         return res
     except ParseError as p:
         print "PARSE-ERROR", p.msg
