@@ -716,7 +716,10 @@ def measure(evl, argl, equations, evnames):
                 else:
                     r = "#NA"
             res[socket].append(r)
-            evp[socket].append(m.group(3))
+            p = m.group(3)
+            if p.startswith(","):
+                p = p[1:]
+            evp[socket].append(p)
         f.close()
         if args.mock:
             os.remove(logfile)
