@@ -183,6 +183,10 @@ def parse_term(tl):
         raise ParseError("expected identifier or number in list not %s: %s" %
                             (tl[0], tl[:5]))
     tl = tl[1:]
+    if tl[0] == '.':
+        tl = tl[1:]
+        name = name + "." + tl[0]
+        tl = tl[1:]
     if tl[0] == '=':
         tl = tl[1:]
         if not is_number(tl[0]):
