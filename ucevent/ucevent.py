@@ -775,7 +775,7 @@ def convert_equation(ev, qual, in_group, quiet=False):
         # run equation to collect events
         r = evaluate(p, lambda x, n: ev_append(ovl, x, nl, n))
         if is_error(r) and not args.quiet:
-            print >>sys.stderr, "Cannot evaluate equation"
+            print >>sys.stderr, "Cannot evaluate equation", ev["Equation"]
         nnl.append(nl)
         evl.append(ovl)
         equations.append(p)
