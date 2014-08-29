@@ -35,7 +35,8 @@ def is_number(t):
     return re.match(r"(0x)?[0-9]+", t)
 
 cpu_events = {
-    "INST_RETIRED.ALL": "instructions"
+    "INST_RETIRED.ALL": "instructions",
+    "TOTAL_CORE_CYCLES": "cycles",
 }
 
 def event_expr(v, n):
