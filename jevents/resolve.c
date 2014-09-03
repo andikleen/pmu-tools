@@ -123,7 +123,7 @@ static bool special_attr(char *name, int val, struct perf_event_attr *attr)
 	return false;
 }
 
-static int parse_terms(char *config, struct perf_event_attr *attr, int recur)
+static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, int recur)
 {
 	char *format = NULL;
 	char *term;
@@ -142,12 +142,12 @@ static int parse_terms(char *config, struct perf_event_attr *attr, int recur)
 		if (special_attr(name, val, attr))
 			continue;
 		free(format);
-		if (read_file(&format, "/sys/devices/cpu/format/%s", name) < 0) {
+		if (read_file(&format, "/sys/devices/%s/format/%s", pmu, name) < 0) {
 			char *alias = NULL;
 
 			if (recur == 0 &&
-			    read_file(&alias, "/sys/devices/cpu/events/%s", name) == 0) {
-				if (parse_terms(alias, attr, 1) < 0) {
+			    read_file(&alias, "/sys/devices/%s/events/%s", pmu, name) == 0) {
+				if (parse_terms(pmu, alias, attr, 1) < 0) {
 					free(alias);
 					fprintf(stderr, "Cannot parse kernel event alias %s\n", name);
 					break;
@@ -193,7 +193,7 @@ int jevent_name_to_attr(char *str, struct perf_event_attr *attr)
 
 	if (sscanf(str, "%30[^/]/%200[^/]/%n", pmu, config, &qual_off) < 2)
 		return -1;
-	if (parse_terms(config, attr, 0) < 0)
+	if (parse_terms(pmu, config, attr, 0) < 0)
 		return -1;
 	if (read_qual(str + qual_off, attr) < 0)
 		return -1;
