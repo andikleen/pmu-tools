@@ -1,4 +1,4 @@
-ucevent.man: ucevent.s
+ucevent.man: ucevent.py
 	FORCECPU=jkt help2man --version-string=" " -i ucevent.s -N ./ucevent.py > ucevent.man
 
 ucevent.s:
