@@ -1037,6 +1037,8 @@ or use that CPU for the (very few) events that use core events''', type=int)
     p.add_argument('--check-events', help=argparse.SUPPRESS, action='store_true')
     p.add_argument('--output', '-o', help='Set output file', default=sys.stdout,
                    type=argparse.FileType('w'))
+    p.add_argument('--resolve', action='store_true',
+                   help='Only print resolved event names. Do not run perf.')
     p.add_argument('--debug', help=argparse.SUPPRESS)
     args = p.parse_args()
 
@@ -1079,6 +1081,10 @@ or use that CPU for the (very few) events that use core events''', type=int)
         if len(evl) == 0:
             print >>sys.stderr, "no events to measure"
             sys.exit(1)
+        if args.resolve:
+            for ev, evname in zip(evl, evnames):
+                print evname,"\t",ev
+            sys.exit(0)
         try:
             measure(evl, argl + rest, equations, evnames)       
         except OSError as e:
