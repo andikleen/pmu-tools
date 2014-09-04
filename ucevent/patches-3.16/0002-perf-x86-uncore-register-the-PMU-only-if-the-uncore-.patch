@@ -1,0 +1,91 @@
+From 26eadfb58bfb130254c04bff30fe2e2db775fd08 Mon Sep 17 00:00:00 2001
+From: "Yan, Zheng" <zheng.z.yan@intel.com>
+Date: Wed, 20 Aug 2014 09:50:58 +0800
+Subject: [PATCH 2/2] perf/x86/uncore: register the PMU only if the uncore pci
+ device exists
+
+Current code registers PMUs for all possible uncore pci devices.
+This is not good because, on some machines, one or more uncore pci
+devices can be missing. The missing pci device make corresponding
+PMU unusable. Register the PMU only if the uncore device exists.
+
+Signed-off-by: Yan, Zheng <zheng.z.yan@intel.com>
+Signed-off-by: Andi Kleen <ak@linux.intel.com>
+
+Conflicts:
+	arch/x86/kernel/cpu/perf_event_intel_uncore.c
+---
+ arch/x86/kernel/cpu/perf_event_intel_uncore.c | 19 +++++++++++--------
+ 1 file changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/arch/x86/kernel/cpu/perf_event_intel_uncore.c b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+index f538bcf..ab7c597 100644
+--- a/arch/x86/kernel/cpu/perf_event_intel_uncore.c
++++ b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+@@ -4382,6 +4382,7 @@ static int uncore_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id
+ 	struct intel_uncore_box *box;
+ 	struct intel_uncore_type *type;
+ 	int phys_id;
++	bool first_box = false;
+ 
+ 	phys_id = pcibus_to_physid[pdev->bus->number];
+ 	if (phys_id < 0)
+@@ -4415,9 +4416,13 @@ static int uncore_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id
+ 	pci_set_drvdata(pdev, box);
+ 
+ 	raw_spin_lock(&uncore_box_lock);
++	if (list_empty(&pmu->box_list))
++		first_box = true;
+ 	list_add_tail(&box->list, &pmu->box_list);
+ 	raw_spin_unlock(&uncore_box_lock);
+ 
++	if (first_box)
++		uncore_pmu_register(pmu);
+ 	return 0;
+ }
+ 
+@@ -4426,6 +4431,7 @@ static void uncore_pci_remove(struct pci_dev *pdev)
+ 	struct intel_uncore_box *box = pci_get_drvdata(pdev);
+ 	struct intel_uncore_pmu *pmu;
+ 	int i, cpu, phys_id = pcibus_to_physid[pdev->bus->number];
++	bool last_box = false;
+ 
+ 	box = pci_get_drvdata(pdev);
+ 	if (!box) {
+@@ -4447,6 +4453,8 @@ static void uncore_pci_remove(struct pci_dev *pdev)
+ 
+ 	raw_spin_lock(&uncore_box_lock);
+ 	list_del(&box->list);
++	if (list_empty(&pmu->box_list))
++		last_box = true;
+ 	raw_spin_unlock(&uncore_box_lock);
+ 
+ 	for_each_possible_cpu(cpu) {
+@@ -4458,6 +4466,9 @@ static void uncore_pci_remove(struct pci_dev *pdev)
+ 
+ 	WARN_ON_ONCE(atomic_read(&box->refcnt) != 1);
+ 	kfree(box);
++
++	if (last_box)
++		perf_pmu_unregister(&pmu->pmu);
+ }
+ 
+ static int __init uncore_pci_init(void)
+@@ -4838,14 +4849,6 @@ static int __init uncore_pmus_register(void)
+ 		}
+ 	}
+ 
+-	for (i = 0; pci_uncores[i]; i++) {
+-		type = pci_uncores[i];
+-		for (j = 0; j < type->num_boxes; j++) {
+-			pmu = &type->pmus[j];
+-			uncore_pmu_register(pmu);
+-		}
+-	}
+-
+ 	return 0;
+ }
+ 
+-- 
+1.8.4.5
+

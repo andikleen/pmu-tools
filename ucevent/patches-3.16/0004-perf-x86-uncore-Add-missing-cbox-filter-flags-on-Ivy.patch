@@ -1,0 +1,51 @@
+From 84082496a8e87327e4c6c486742436db5304b470 Mon Sep 17 00:00:00 2001
+From: Andi Kleen <ak@linux.intel.com>
+Date: Fri, 5 Sep 2014 07:17:41 -0700
+Subject: [PATCH 1/3] perf, x86, uncore: Add missing cbox filter flags on
+ IvyBridge-EP uncore driver
+
+The IvyBridge-EP uncore driver was missing three filter flags:
+NC, ISOC, C6 which are useful in some cases. Support them in the same way
+as the Haswell EP driver, by allowing to set them and exposing
+them in the sysfs formats.
+
+Also fix a typo in a define.
+
+Relies on the Haswell EP driver to be applied earlier.
+
+Signed-off-by: Andi Kleen <ak@linux.intel.com>
+---
+ arch/x86/kernel/cpu/perf_event_intel_uncore.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/x86/kernel/cpu/perf_event_intel_uncore.c b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+index ab7c597..8de876a 100644
+--- a/arch/x86/kernel/cpu/perf_event_intel_uncore.c
++++ b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+@@ -1191,6 +1191,9 @@ static struct attribute *ivt_uncore_cbox_formats_attr[] = {
+ 	&format_attr_filter_state2.attr,
+ 	&format_attr_filter_nid2.attr,
+ 	&format_attr_filter_opc2.attr,
++	&format_attr_filter_nc.attr,
++	&format_attr_filter_c6.attr,
++	&format_attr_filter_isoc.attr,
+ 	NULL,
+ };
+ 
+@@ -1328,8 +1331,12 @@ static u64 ivt_cbox_filter_mask(int fields)
+ 		mask |= IVT_CB0_MSR_PMON_BOX_FILTER_STATE;
+ 	if (fields & 0x8)
+ 		mask |= IVT_CB0_MSR_PMON_BOX_FILTER_NID;
+-	if (fields & 0x10)
++	if (fields & 0x10) {
+ 		mask |= IVT_CB0_MSR_PMON_BOX_FILTER_OPC;
++		mask |= IVBEP_CB0_MSR_PMON_BOX_FILTER_NC;
++		mask |= IVBEP_CB0_MSR_PMON_BOX_FILTER_C6;
++		mask |= IVBEP_CB0_MSR_PMON_BOX_FILTER_ISOC;
++	}
+ 
+ 	return mask;
+ }
+-- 
+1.9.3
+

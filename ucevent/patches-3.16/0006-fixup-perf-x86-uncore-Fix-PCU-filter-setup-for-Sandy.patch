@@ -1,0 +1,26 @@
+From 8074b652feb213fa32d45b27ba5b2fa44e548f64 Mon Sep 17 00:00:00 2001
+From: Andi Kleen <ak@linux.intel.com>
+Date: Fri, 5 Sep 2014 07:19:41 -0700
+Subject: [PATCH 3/3] fixup! perf, x86, uncore: Fix PCU filter setup for
+ Sandy/Ivy/Haswell EP
+
+---
+ arch/x86/kernel/cpu/perf_event_intel_uncore.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/x86/kernel/cpu/perf_event_intel_uncore.c b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+index f5d6f95..c41cb1c 100644
+--- a/arch/x86/kernel/cpu/perf_event_intel_uncore.c
++++ b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+@@ -1919,7 +1919,7 @@ static int hswep_pcu_hw_config(struct intel_uncore_box *box, struct perf_event *
+ 	if (ev_sel >= 0xb && ev_sel <= 0xe) {
+ 		reg1->reg = HSWEP_PCU_MSR_PMON_BOX_FILTER;
+ 		reg1->idx = ev_sel - 0xb;
+-		reg1->config = event->attr.config1 & (0xff << reg1->idx);
++		reg1->config = event->attr.config1 & (0xff << (reg1->idx * 8));
+ 	}
+ 	return 0;
+ }
+-- 
+1.9.3
+
