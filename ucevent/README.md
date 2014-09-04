@@ -25,7 +25,9 @@ report trends over time.
 # Supported systems and configurations
 
 ucevent currently only supports Intel Xeon E5 2600 series (codename Sandy
-Bridge EP) 
+Bridge EP), Intel Xeon E5/E7 v2 series (codename Ivy Bridge EP),
+Intel Xeon E5/E7 v3 Series (codename Haswell EP) and various
+derivatives.
 
 For the QPI and memory controller metrics the BIOS also needs to
 expose the uncore monitoring PCI devices (this is often disabled by default
@@ -50,9 +52,13 @@ in /sys/devices/
 	# ls -d /sys/devices/uncore_*
 
 The monitoring works best with a 3.10+ kernel with the patches in
-patches-3.10 applied. Later kernels may already include some/all of
+patches-3.10 applied. Later kernels include some/all of
 them.  The perf tool should be installed in a new enough version.
 Without the right patches there will be various problems.
+
+For Haswell EP support a 3.16+ kernel with the patches in
+patches-3.16 applied are needed. Future kernels should also
+support this by default.
 
 # Tutorial / Examples
 
