@@ -71,7 +71,7 @@ static int read_file(char **val, const char *fmt, ...)
 
 #define BITS(x) ((1U << (x)) - 1)
 
-static bool try_parse(char *format, char *fmt, int val, __u64 *config)
+static bool try_parse(char *format, char *fmt, __u64 val, __u64 *config)
 {
 	int start, end;
 	int n = sscanf(format, fmt, &start, &end);
@@ -79,7 +79,7 @@ static bool try_parse(char *format, char *fmt, int val, __u64 *config)
 		end = start + 1;
 	if (n == 0)
 		return false;
-	*config |= (val & BITS(end - start)) << start;
+	*config |= (val & BITS(end - start + 1)) << start;
 	return true;
 }
 
