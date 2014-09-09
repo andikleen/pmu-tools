@@ -34,7 +34,7 @@ as a library from other python programs
 * The "toplev.py" tool to identify the micro-architectural bottleneck for a workload. 
 This implements the [TopDown](http://software.intel.com/en-us/articles/how-to-tune-applications-using-a-top-down-characterization-of-microarchitectural-issues)
 methology.
-* The "ucevent" tool to manage and compute uncore performance events on Intel Xeon E5 2600 series (SandyBridge EP). Uncore is the part of the CPU that is not core.  Supports many metrics for power management, IO, QPI (interconnect), caches, and others.  ucevent automatically generates event descriptions
+* The "ucevent" tool to manage and compute uncore performance events. Uncore is the part of the CPU that is not core.  Supports many metrics for power management, IO, QPI (interconnect), caches, and others.  ucevent automatically generates event descriptions
 for the perf uncore driver and pretty prints the output. It also supports
 computing higher level metrics derived from multiple events. 
 * A library to resolve named intel events (like INST_RETIRED.ANY) 
