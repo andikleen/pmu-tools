@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2011-2013, Intel Corporation
+# Copyright (c) 2011-2014, Intel Corporation
 # Author: Andi Kleen
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
 # Features:
 # - map intel events to raw perf events
 # - enable disable workarounds for specific events
+# - resolve uncore events
 # - handle offcore event on older kernels
 # For the later must run as root and only as a single instance per machine 
 # Normal events (mainly not OFFCORE) can be handled unprivileged 
@@ -28,8 +29,12 @@
 # env variables:
 # PERF=... perf binary to use (default "perf")
 # EVENTMAP=eventmap
+# OFFCORE=eventmap
+# UNCORE=eventmap
+# eventmap is a path name to a json file
 # When eventmap is not specified, look in ~/.events
 # The eventmap is automatically downloaded there
+# eventmap can be also a CPU specified (GenuineIntel-FAMILY-MODEL, like GenuineIntel-06-37)
 #
 import sys
 import os
@@ -151,6 +156,53 @@ class Event:
             ename = "cpu/%s/" % (self.output_newstyle(newextra=newe, noname=noname)) + extra
         return ename
 
+box_to_perf = {
+    "cbo": "cbox",
+    "qpi_ll": "qpi",
+    "sbo": "sbox",
+}
+
+class UncoreEvent:
+    def __init__(self, name, row):
+        self.name = name
+        e = self
+        e.desc = row['Description'].strip()
+        e.code = int(row['EventCode'], 16)
+        if 'Internal' in row and int(row['Internal']) != 0:
+            e.code |= int(row['Internal']) << 21
+        e.umask = int(row['UMask'], 16)
+        e.cmask = int(row['CounterMask'])
+        e.inv = int(row['Invert'])
+        e.edge = int(row['EdgeDetect'])
+        e.unit = row['Unit'].lower()
+        # xxx subctr
+        if e.unit in box_to_perf:
+            e.unit = box_to_perf[e.unit]
+        e.msr = None
+        e.overflow = 0
+
+    #  {
+    # "Unit": "CBO",
+    # "EventCode": "0x22",
+    # "UMask": "0x21",
+    # "EventName": "UNC_CBO_XSNP_RESPONSE.MISS_EXTERNAL",
+    # "Description": "An external snoop misses in some processor core.",
+    # "Counter": "0,1",
+    # "CounterMask": "0",
+    # "Invert": "0",
+    # "EdgeDetect": "0"
+    # },
+    def output_newstyle(self):
+        # xxx multiply boxes
+        e = self
+        o = "uncore_%s/event=%#x,umask=%#x" % (e.unit, e.code, e.umask)
+        # xxx subctr, occ_sel, filters
+        o += "/"
+        return o
+
+    def output(self, flags):
+        return self.output_newstyle()
+
 def ffs(flag):
     assert flag != 0
     m = 1
@@ -172,6 +224,13 @@ def merge_extra(a, b):
         m = m - set(['p'])
     return m
 
+def print_event(name, desc, f, human, wrap):
+    print >>f,"  %-42s" % (name,),
+    if human:
+        print >>f, "\n%s" % (wrap.fill(desc),)
+    else:
+        print >>f, " [%s]" % (desc,)
+
 class Emap(object):
     """Read an event table."""
 
@@ -181,6 +240,7 @@ class Emap(object):
         self.desc = {}
         self.pevents = {}
         self.latego = False
+        self.uncore_events = {}
 
     def add_event(self, e):
         self.events[e.name] = e
@@ -281,6 +341,8 @@ class Emap(object):
             return self.getevent(e.replace("_0","").replace("_1","") + edelim + extra)
         elif e.startswith("offcore") and (e + "_0") in self.events:
             return self.getevent(e + "_0" + edelim + extra)
+        elif e in self.uncore_events:
+            return self.uncore_events[e]
         return None
 
     def update_event(self, e, ev):
@@ -305,15 +367,14 @@ class Emap(object):
     def dumpevents(self, f=sys.stdout, human=True):
         """Print all events with descriptions to the file descriptor f.
            When human is true word wrap all the descriptions."""
+        wrap = None
         if human:
             wrap = textwrap.TextWrapper(initial_indent="     ",
                                         subsequent_indent="     ")            
-        for k in sorted(self.desc.keys()):
-            print >>f,"  %-42s" % (k,),
-            if human:
-                print >>f, "\n%s" % (wrap.fill(self.desc[k]),)
-            else:
-                print >>f, " [%s]" % (self.desc[k],)
+        for k in sorted(self.events.keys()):
+            print_event(k, self.desc[k], f, human, wrap)
+        for k in sorted(self.uncore_events.keys()):
+            print_event(k, self.uncore_events[k].desc, f, human, wrap)
 
 # XXX handle TakenAlone, DataLA
 class EmapNativeJSON(Emap):
@@ -376,15 +437,36 @@ class EmapNativeJSON(Emap):
         for a, b in itertools.product(requests, responses):
             create_event(*(a + b))
 
-def json_with_offcore(el, need_oc):
+    def add_uncore(self, name):
+        if len(self.uncore_events) > 0:
+            return
+        data = json.load(open(name, "rb"))
+        for row in data:
+            name = (row['Unit'] + "." + row['EventName']).lower()
+            self.uncore_events[name] = UncoreEvent(name, row)
+
+def json_with_extra(el):
     emap = EmapNativeJSON(event_download.eventlist_name(el, "core"))
     if not emap:
         return None
-    oc = event_download.eventlist_name(el, "offcore")
-    if os.path.exists(oc):
+    add_extra_env(emap, el)
+    return emap
+
+def add_extra_env(emap, el):
+    oc = os.getenv("OFFCORE")
+    if oc:
         emap.add_offcore(oc)
-    elif need_oc:
-        return None
+    else:
+        oc = event_download.eventlist_name(el, "offcore")
+        if os.path.exists(oc):
+            emap.add_offcore(oc)
+    uc = os.getenv("UNCORE")
+    if uc:
+        emap.add_uncore(uc)
+    else:
+        uc = event_download.eventlist_name(el, "uncore")
+        if os.path.exists(uc):
+            emap.add_uncore(uc)
     return emap
 
 def find_emap():
@@ -392,32 +474,36 @@ def find_emap():
        When the EVENTMAP environment variable is set read that, otherwise
        read the map for the current CPU. EVENTMAP can be a CPU specifier 
        in the map file or a path name.
-       Dito for the OFFCORE environment variable.
+       Dito for the OFFCORE and UNCORE environment variables.
 
        Return an emap object that contains the events and can be queried
        or None if nothing is found or the current CPU is unknown."""
     el = os.getenv("EVENTMAP")
-    if el and el.find("/") >= 0:
+    if not el:
+        el = event_download.get_cpustr()
+    if el.find("/") >= 0:
         try:
             emap = EmapNativeJSON(el)
-            oc = os.getenv("OFFCORE")
-            if oc:
-                emap.add_offcore(oc)
+            if emap:
+                add_extra_env(emap, el)
             return emap
         except IOError:
             return None
-    if not el:
-        el = event_download.get_cpustr()
     try:
         if not force_download:
-            emap = json_with_offcore(el, True)
+            emap = json_with_extra(el)
             if emap:
                 return emap
     except IOError:
         pass
     try:
-        event_download.download(el, ["core", "offcore"])
-        return json_with_offcore(el, False)
+        toget = ["core"]
+        if not os.getenv("OFFCORE"):
+            toget.append("offcore")
+        if not os.getenv("UNCORE"):
+            toget.append("uncore")
+        event_download.download(el, toget)
+        return json_with_extra(el)
     except IOError:
         pass
     return None
@@ -440,7 +526,7 @@ def process_events(event, print_only):
             end = "}"
             i = i[:-1]
         i = i.strip()
-        m = re.match(r"(cpu/)([^/#]+)([^/]+/)([^,]*)", i)
+        m = re.match(r"((cpu|uncore_[^/]+)/)([^/#]+)([^/]+/)([^,]*)", i)
         if m:
             start += m.group(1)
             ev = emap.getevent(m.group(2))
