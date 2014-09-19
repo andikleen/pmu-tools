@@ -421,6 +421,8 @@ ucevent has some undocumented options for debugging. If something goes wrong
 
 [Xeon E5 2600 series uncore guide](http://www.intel.com/content/dam/www/public/us/en/documents/design-guides/xeon-e5-2600-uncore-guide.pdf)
 
+[Xeon v3 series uncore guide](http://www.intel.com/content/www/us/en/processors/xeon/xeon-e5-v3-uncore-performance-monitoring.html)
+
 # Support
 
 Please contact linux-perf-users@vger.kernel.org
