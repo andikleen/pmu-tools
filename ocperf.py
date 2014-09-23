@@ -439,6 +439,7 @@ def process_events(event, print_only):
         if i.endswith('}'):
             end = "}"
             i = i[:-1]
+        i = i.strip()
         m = re.match(r"(cpu/)([^/#]+)([^/]+/)([^,]*)", i)
         if m:
             start += m.group(1)
