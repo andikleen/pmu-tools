@@ -4,6 +4,10 @@ pmu tools is a collection of tools for profile collection and performance
 analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index.php/Main_Page). This uses performance counters in the CPU.
 
 # Recent new features:
+* toplev now supports a --no-multiplex mode to avoid multiplexing errors
+on very reproducible workloads.
+* toplev now supports a --no-group mode to work around bugs on older kernels
+(such as RHEL/CentOS 6)
 * ucevent now supports Haswell server
 * toplev now supports measurements with HyperThreading enabled
 on IvyBridge system (but may need patching the kernel with this

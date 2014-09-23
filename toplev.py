@@ -123,6 +123,7 @@ p.add_argument('--raw', '-r', help="Print raw values", action='store_true')
 p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 p.add_argument('--no-group', help='Dont use groups', action='store_true')
+p.add_argument('--no-multiplex', help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.', action='store_true')
 args, rest = p.parse_known_args()
 
 if args.graph:
@@ -404,11 +405,32 @@ def is_event(l, n):
         return False
     return re.match(r"(r[0-9a-f]+|cycles|instructions|ref-cycles|cpu/)", l[n])
 
-def execute(runner, out, rest):
-    account = defaultdict(Stat)
-    inf, prun = setup_perf(runner.evstr, rest)
+def execute_no_multiplex(runner, out, rest):
+    if args.interval: # XXX
+        sys.exit('--no-multiplex is not supported with interval mode')
+    groups = runner.evgroups
+    n = 1
     res = defaultdict(list)
     rev = defaultdict(list)
+    for g in groups:
+        print "RUN #%d of %d" % (n, len(groups))
+        ret, res, rev, interval = do_execute(runner, g, out, rest, res, rev)
+        n += 1
+    for j in sorted(res.keys()):
+        runner.print_res(res[j], rev[j], out, interval, j)
+    return ret
+
+def execute(runner, out, rest):
+    ret, res, rev, interval = do_execute(runner, ",".join(runner.evgroups), out, rest,
+                                         defaultdict(list),
+                                         defaultdict(list))
+    for j in sorted(res.keys()):
+        runner.print_res(res[j], rev[j], out, interval, j)
+    return ret
+
+def do_execute(runner, evstr, out, rest, res, rev):
+    account = defaultdict(Stat)
+    inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
     interval = None
     title = ""
@@ -470,10 +492,8 @@ def execute(runner, out, rest):
             print "raw",title,"event",event,"val",val
     inf.close()
     ret = prun.wait()
-    for j in sorted(res.keys()):
-        runner.print_res(res[j], rev[j], out, interval, j)
     print_account(account)
-    return ret
+    return ret, res, rev, interval
 
 def ev_append(ev, level, obj):
     if not (ev, level) in obj.evlevels:
@@ -555,7 +575,7 @@ class Runner:
     "Schedule measurements of event groups. Try to run multiple in parallel."
     def __init__(self, max_level):
         self.evnum = [] # flat global list
-        self.evstr = ""
+        self.evgroups = list()
         self.olist = []
         self.max_level = max_level
 
@@ -606,9 +626,7 @@ class Runner:
         evnum, evlev = dedup2(evnum, evlev)
         update_res_map(evnum, objl, base)
         self.evnum += evnum
-        if self.evstr:
-            self.evstr += ","
-        self.evstr += feat.event_group(evnum)
+        self.evgroups.append(feat.event_group(evnum))
         if print_group:
             print_header(objl, get_names(evlev))
 
@@ -776,4 +794,6 @@ if csv_mode:
 else:
     out = Output(args.output)
 runner.schedule(out)
+if args.no_multiplex:
+    sys.exit(execute_no_multiplex(runner, out, rest))
 sys.exit(execute(runner, out, rest))
