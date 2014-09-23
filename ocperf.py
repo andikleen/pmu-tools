@@ -64,7 +64,14 @@ def has_format(s):
 class PerfVersion:
     def __init__(self):
         minor = 0
-        version = subprocess.Popen(["perf","--version"], stdout=subprocess.PIPE).communicate()[0]
+        perf = os.getenv("PERF")
+        if not perf:
+            perf = "perf"
+        try:
+            version = subprocess.Popen([perf, "--version"], stdout=subprocess.PIPE).communicate()[0]
+        except OSError:
+            print "Cannot run", perf
+            version = ""
         m = re.match(r"perf version (\d+)\.(\d+)\.", version)
         if m:
             major = m.group(1)
