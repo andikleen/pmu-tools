@@ -43,7 +43,7 @@ class PerfFeatures:
     def event_group(self, evlist):
         need_counters = set(evlist) - add_filter(ingroup_events)
 	e = ",".join(evlist)
-        if 1 < len(need_counters) <= cpu.counters:
+        if not args.no_group and 1 < len(need_counters) <= cpu.counters:
             e = "{%s}" % (e,)
         return e
  
@@ -122,6 +122,7 @@ p.add_argument('--sample', '-S', help="Suggest commands to sample for bottleneck
 p.add_argument('--raw', '-r', help="Print raw values", action='store_true')
 p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
+p.add_argument('--no-group', help='Dont use groups', action='store_true')
 args, rest = p.parse_known_args()
 
 if args.graph:
