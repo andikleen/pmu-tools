@@ -372,7 +372,7 @@ def print_header(work, evlist):
     pwrap(" ".join(evnames).lower() + 
           " [%d_counters]" % (len(evnames - fixed_set)))
 
-def setup_perf(events, evstr, rest):
+def setup_perf(evstr, rest):
     prun = PerfRun()
     perf = os.getenv("PERF")
     if not perf:
@@ -404,9 +404,9 @@ def is_event(l, n):
         return False
     return re.match(r"(r[0-9a-f]+|cycles|instructions|ref-cycles|cpu/)", l[n])
 
-def execute(events, runner, out, rest):
+def execute(runner, out, rest):
     account = defaultdict(Stat)
-    inf, prun = setup_perf(events, runner.evstr, rest)
+    inf, prun = setup_perf(runner.evstr, rest)
     res = defaultdict(list)
     rev = defaultdict(list)
     prev_interval = 0.0
@@ -776,4 +776,4 @@ if csv_mode:
 else:
     out = Output(args.output)
 runner.schedule(out)
-sys.exit(execute(runner.evnum, runner, out, rest))
+sys.exit(execute(runner, out, rest))
