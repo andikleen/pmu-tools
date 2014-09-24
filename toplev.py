@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright (c) 2012-2013, Intel Corporation
+# Copyright (c) 2012-2014, Intel Corporation
 # Author: Andi Kleen
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -74,14 +74,14 @@ measure whole system for X seconds
 measure pid PID, outputting in CSV format
 ''', epilog='''
 Other perf arguments allowed (see the perf documentation)
-After -- perf arguments conflicting with toplevel can be used.
+After -- perf arguments conflicting with toplev can be used.
 
 Some caveats:
 
 The lower levels of the measurement tree are less reliable
 than the higher levels.  They also rely on counter multi-plexing,
 and can not run each equation in a single group, which can cause larger
-measurement errors with non steady state workloads.
+measurement errors with non steady state workloads
 
 (If you don't understand this terminology; it means measurements
 in higher levels are less accurate and it works best with programs that primarily
@@ -91,8 +91,24 @@ In this case it's recommended to measure the program only after
 the startup phase by profiling globally or attaching later.
 level 1 or running without -d is generally the most reliable.
 
+If the program is very reproducible -- such as a simple kernel --
+it is also possible to use --no-multiplex. In this case the
+workload is rerun multiple times until all data is collected.
+Do not use together with sleep.
+
 One of the events (even used by level 1) requires a recent enough
 kernel that understands its counter constraints.  3.10+ is safe.
+
+Various older kernels (such as 2.6.32) can not schedule all groups
+used by toplev correctly. In this case use --no-group (may cause
+additional measurement errors)
+
+In Hyper Threading mode toplev defaults to measuring the whole
+system.
+
+Recent kernels do not allow all events needed by level 3 or larger
+in Hyper Threading mode due to a bug workaround. If that is needed
+please see the github site for a kernel patch.
 
 Other CPUs can be forced with FORCECPU=name
 ''',
