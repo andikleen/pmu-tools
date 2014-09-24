@@ -142,6 +142,10 @@ p.add_argument('--no-group', help='Dont use groups', action='store_true')
 p.add_argument('--no-multiplex', help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.', action='store_true')
 args, rest = p.parse_known_args()
 
+if len(rest) == 0:
+    p.print_help()
+    sys.exit(0)
+
 if args.graph:
     if not args.interval:
         args.interval = 100
