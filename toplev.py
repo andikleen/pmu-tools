@@ -752,9 +752,9 @@ if cpu.cpu == None:
     print >>sys.stderr, "Unsupported CPU model %d" % (cpu.model,)
     sys.exit(1)
 
+kernel_version = map(int, platform.release().split(".")[:2])
 if detailed_model:
-    version = map(int, platform.release().split(".")[:2])
-    if version[0] < 3 or (version[0] == 3 and version[1] < 10):
+    if kernel_version[0] < 3 or (kernel_version[0] == 3 and kernel_version[1] < 10):
         print >>sys.stderr, "Older kernel than 3.10. Events may not be correctly scheduled."
 
 def ht_warning():
@@ -801,6 +801,8 @@ if need_any:
         print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1):
         print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
+    if kernel_version[0] == 3 and kernel_version[1] >= 10 and max_level >= 3:
+        print >>sys.stderr, "Warning: kernel may need to be patched to schedule all events with level %d in HT mode" % (max_level)
     rest = ["-a"] + rest
 
 print "Using level %d." % (max_level),
