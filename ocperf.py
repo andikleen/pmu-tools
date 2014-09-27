@@ -162,6 +162,15 @@ box_to_perf = {
     "sbo": "sbox",
 }
 
+def int_or_zero(row, name):
+    if name in row:
+        if row[name] == 'False':
+            return 0
+        if row[name] == 'True':
+            return 1
+        return int(row[name])
+    return 0
+
 class UncoreEvent:
     def __init__(self, name, row):
         self.name = name
@@ -171,9 +180,9 @@ class UncoreEvent:
         if 'Internal' in row and int(row['Internal']) != 0:
             e.code |= int(row['Internal']) << 21
         e.umask = int(row['UMask'], 16)
-        e.cmask = int(row['CounterMask'])
-        e.inv = int(row['Invert'])
-        e.edge = int(row['EdgeDetect'])
+        e.cmask = int_or_zero(row, 'CounterMask')
+        e.inv = int_or_zero(row, 'Invert')
+        e.edge = int_or_zero(row, 'EdgeDetect')
         e.unit = row['Unit'].lower()
         # xxx subctr
         if e.unit in box_to_perf:
