@@ -162,6 +162,14 @@ box_to_perf = {
     "sbo": "sbox",
 }
 
+box_cache = dict()
+
+def box_exists(box):
+    n = "/sys/devices/uncore_%s" % (box)
+    if n not in box_cache:
+        box_cache[n] = os.path.exists(n)
+    return box_cache[n]
+
 def int_or_zero(row, name):
     if name in row:
         if row[name] == 'False':
@@ -201,13 +209,25 @@ class UncoreEvent:
     # "Invert": "0",
     # "EdgeDetect": "0"
     # },
-    def output_newstyle(self):
+    # XXX cannot separate sockets
+    def output_newstyle(self, extra="", noname=False):
         # xxx multiply boxes
         e = self
-        o = "uncore_%s/event=%#x,umask=%#x" % (e.unit, e.code, e.umask)
+        o = "/event=%#x,umask=%#x" % (e.code, e.umask)
         # xxx subctr, occ_sel, filters
-        o += "/"
-        return o
+        if version.has_name and not noname:
+            o += ",name=" + e.name.replace(".", "_") + "_NUM"
+        o += "/" + extra
+
+        # explode boxes if needed
+        def box_name(n):
+            return "uncore_%s_%d" % (e.unit, n)
+        def box_n_exists(n):
+            return box_exists(box_name(n))
+        if not box_exists(e.unit) and box_n_exists(0):
+            return ",".join([box_name(x) + o.replace("_NUM", "_%d" % (x)) for x in
+                             itertools.takewhile(box_n_exists, itertools.count())])
+        return "uncore_%s%s" % (e.unit, o.replace("_NUM", ""))
 
     def output(self, flags):
         return self.output_newstyle()
