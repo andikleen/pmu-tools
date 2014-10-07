@@ -769,21 +769,21 @@ if cpu.cpu == "ivb":
     import ivb_client_ratios
     ivb_client_ratios.smt_enabled = cpu.ht
     need_any = cpu.ht
-    ev = ivb_client_ratios.Setup(runner)
+    ivb_client_ratios.Setup(runner)
 elif cpu.cpu == "ivt":
     import ivb_server_ratios
     ivb_server_ratios.smt_enabled = cpu.ht
     need_any = cpu.ht
-    ev = ivb_server_ratios.Setup(runner)
+    ivb_server_ratios.Setup(runner)
 elif cpu.cpu == "snb" and detailed_model:
     import snb_client_ratios
-    ev = snb_client_ratios.Setup(runner)
+    snb_client_ratios.Setup(runner)
 elif cpu.cpu == "hsw" and detailed_model:
     import hsw_client_ratios
-    ev = hsw_client_ratios.Setup(runner)
+    hsw_client_ratios.Setup(runner)
 elif cpu.cpu == "slm":
     import slm_ratios
-    ev = slm_ratios.Setup(runner)
+    slm_ratios.Setup(runner)
 else:
     ht_warning()
     if detailed_model:
@@ -791,7 +791,7 @@ else:
         if cpu.cpu == "jkt":
             print >>sys.stderr, "Consider using FORCECPU=snb"
     import simple_ratios
-    ev = simple_ratios.Setup(runner)
+    simple_ratios.Setup(runner)
 
 if need_any:
     print "Running in HyperThreading mode. Will measure complete system."
