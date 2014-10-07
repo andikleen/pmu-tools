@@ -6,11 +6,9 @@
 # event_download.py cpustr...  Download for specific CPU
 import sys
 from urllib2 import urlopen, URLError
-import argparse
 import os
 import string
 from fnmatch import fnmatch
-import argparse
 
 urlpath = 'https://download.01.org/perfmon'
 mapfile = 'mapfile.csv'
@@ -97,6 +95,9 @@ def eventlist_name(name=None, key="core"):
     return "%s/pmu-events/%s-%s.json" % (cache, name, key)
 
 if __name__ == '__main__':
+    # only import argparse when actually called from command line
+    # this makes ocperf work on older python versions without it.
+    import argparse
     p = argparse.ArgumentParser(usage='download Intel event files')
     p.add_argument('--all', '-a', help='Download all available event files', action='store_true')
     p.add_argument('--verbose', '-v', help='Be verbose', action='store_true')
