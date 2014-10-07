@@ -74,6 +74,11 @@ def download(match, key=["core"]):
         getfile(urlpath + "/readme.txt", dir, "readme.txt")
     except URLError as e:
         print >>sys.stderr, "Cannot access event server:", e
+        print >>sys.stderr, "If you need a proxy to access the internet please set it with:"
+        print >>sys.stderr, "\texport https_proxy=http://proxyname..."
+        print >>sys.stderr, "If you are not connected to the internet please run this on a connected system:"
+        print >>sys.stderr, "\tevent_download.py %s" % (match)
+        print >>sys.stderr, "and then copy ~/.cache/pmu-events to the system under test"
     except OSError as e:
         print >>sys.stderr, "Cannot write events file:", e
     return found
