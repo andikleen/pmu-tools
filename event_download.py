@@ -1,5 +1,17 @@
 #!/usr/bin/python
-# automatically download json event files
+# Copyright (c) 2014, Intel Corporation
+# Author: Andi Kleen
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms and conditions of the GNU General Public License,
+# version 2, as published by the Free Software Foundation.
+#
+# This program is distributed in the hope it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+#
+# Automatic event list downloader
 #
 # event_download.py         download for current cpu
 # event_download.py -a      download all
@@ -46,7 +58,7 @@ def getdir():
             os.makedirs(d)
         return d
     except OSError:
-        raise Exception('Cannot access ' + d) 
+        raise Exception('Cannot access ' + d)
 
 def getfile(url, dir, fn):
     print "Downloading", url, "to", fn
