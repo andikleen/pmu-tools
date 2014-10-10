@@ -664,7 +664,7 @@ class Runner:
 
     # fit events into available counters
     # simple first fit algorithm
-    def schedule(self, out):
+    def schedule(self):
         curobj = []
         curev = []
         curlev = []
@@ -815,7 +815,7 @@ if csv_mode:
     out = OutputCSV(args.output, csv_mode)
 else:
     out = Output(args.output)
-runner.schedule(out)
+runner.schedule()
 if args.no_multiplex:
     sys.exit(execute_no_multiplex(runner, out, rest))
 sys.exit(execute(runner, out, rest))
