@@ -82,7 +82,7 @@ class PerfVersion:
             major = m.group(1)
             minor = m.group(2)
             if re.match("[0-9]+", minor):
-                minor = int(minor, 16)
+                minor = int(minor, 10)
             if re.match("[0-9]+", major) and int(major) > 3:
                 minor = 100 # infinity
 
