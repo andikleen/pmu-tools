@@ -476,7 +476,7 @@ def do_execute(runner, evstr, out, rest, res, rev):
                         res = defaultdict(list)
                         rev = defaultdict(list)
                     prev_interval = interval
-        n = re.findall(r"(\d+|cpu/.*?/|<.*?>|S\d+-C\d+?|S\d+|cycles|instructions|ref-cycles|raw 0x[0-9a-f]+|),?", l)
+        n = re.findall(r"(\d+|cpu/.*?/|<.*?>|S\d+-C\d+?|S\d+|cycles|instructions|ref-cycles|raw 0x[0-9a-f]+|r[0-9a-fA-F]+|),?", l)
         # filter out the empty unit field added by 3.14
         n = filter(lambda x: x != "", n)
 
