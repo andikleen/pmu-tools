@@ -40,12 +40,12 @@ class PerfFeatures:
 	    print >>sys.stderr, "perf binary is too old. please upgrade"
 	    sys.exit(1)
 
-    def event_group(self, evlist):
-        need_counters = set(evlist) - add_filter(ingroup_events)
-	e = ",".join(evlist)
-        if not args.no_group and 1 < len(need_counters) <= cpu.counters:
-            e = "{%s}" % (e,)
-        return e
+def event_group(evlist):
+    need_counters = set(evlist) - add_filter(ingroup_events)
+    e = ",".join(evlist)
+    if not args.no_group and 1 < len(need_counters) <= cpu.counters:
+        e = "{%s}" % (e,)
+    return e
  
 feat = PerfFeatures()
 emap = ocperf.find_emap()
@@ -646,7 +646,7 @@ class Runner:
         evnum, evlev = dedup2(evnum, evlev)
         update_res_map(evnum, objl, base)
         self.evnum += evnum
-        self.evgroups.append(feat.event_group(evnum))
+        self.evgroups.append(event_group(evnum))
         if print_group:
             print_header(objl, get_names(evlev))
 
