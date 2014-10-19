@@ -19,13 +19,16 @@ EOL
 LOAD="gcc -o /dev/null hello.c"
 
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py $LOAD
+DIRECT_MSR=1 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -v -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -x, -v -d -l4 $LOAD
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py --metrics -x, -v -d -l4 $LOAD
 EVENTMAP=${cpus[ivt]} FORCECPU=ivt ./toplev.py -d -l4 $LOAD
 EVENTMAP=${cpus[snb]} FORCECPU=snb ./toplev.py -d -l4 $LOAD
 EVENTMAP=${cpus[jkt]} FORCECPU=jkt ./toplev.py -d -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw ./toplev.py -d -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw ./toplev.py -d --metrics -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -d -l4 -I 1000 sleep 3
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -d -l4 --user $LOAD | tee log
 grep :u log
