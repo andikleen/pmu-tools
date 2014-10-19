@@ -129,6 +129,8 @@ p.add_argument('--output', '-o', help='Set output file', default=sys.stderr,
                type=argparse.FileType('w'))
 p.add_argument('--graph', help='Automatically graph interval output with tl-barplot.py',
                action='store_true')
+p.add_argument('--title', help='Set title of graph')
+p.add_argument('--xkcd', help='Use xkcd plotting mode for graph', action='store_true')
 p.add_argument('--level', '-l', help='Measure upto level N (max 5)',
                type=int)
 p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
@@ -149,8 +151,14 @@ if len(rest) == 0:
 if args.graph:
     if not args.interval:
         args.interval = 100
+    extra = ""
+    if args.title:
+        extra += '--title "' + args.title + '" '
+    if args.xkcd:
+        extra += '--xkcd '
     args.csv = ','
-    args.output = os.popen("PATH=$PATH:. ; tl-barplot.py /dev/stdin", "w")
+    cmd = "PATH=$PATH:. ; tl-barplot.py " + extra + "/dev/stdin"
+    args.output = os.popen(cmd, "w")
 
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
