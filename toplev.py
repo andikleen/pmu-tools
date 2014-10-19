@@ -23,6 +23,16 @@ from collections import defaultdict, Counter
 #sys.path.append("../pmu-tools")
 import ocperf
 
+known_cpus = (
+    ("snb", (42, )),
+    ("jkt", (45, )),
+    ("ivb", (58, )),
+    ("ivt", (62, )),
+    ("hsw", (60, 70, 69 )),
+    ("hsx", (63, )),
+    ("slm", (55, 77)),
+)
+
 ingroup_events = frozenset(["cycles", "instructions", "ref-cycles", 
                             "cpu/event=0x3c,umask=0x00,any=1/",
                             "cpu/event=0x3c,umask=0x0,any=1/",
@@ -111,7 +121,7 @@ in Hyper Threading mode due to a bug workaround. If that is needed
 please see the github site for a kernel patch.
 
 Other CPUs can be forced with FORCECPU=name
-''',
+Valid CPU names: ''' + reduce(lambda x,y: x + " " + y, [x[0] for x in known_cpus]),
 formatter_class=argparse.RawDescriptionHelpFormatter)
 p.add_argument('--verbose', '-v', help='Print all results even when below threshold',
                action='store_true')
@@ -249,16 +259,6 @@ class OutputCSV(Output):
         desc = self.csv + '"' + desc + '"'
         desc = re.sub(r"\s+", " ", desc)
         print >>self.logf, '%s%s%s%s%s%s%s' % (hdr, self.csv, s.strip(), remark, desc, self.csv, sample)
-
-known_cpus = (
-    ("snb", (42, )),
-    ("jkt", (45, )),
-    ("ivb", (58, )),
-    ("ivt", (62, )),
-    ("hsw", (60, 70, 69 )),
-    ("hsx", (63, )),
-    ("slm", (55, 77)),
-)
 
 class CPU:
     # overrides for easy regression tests
