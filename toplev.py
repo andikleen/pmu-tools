@@ -39,6 +39,11 @@ ingroup_events = frozenset(["cycles", "instructions", "ref-cycles",
                             "cpu/event=0x00,umask=0x1/",
                             "cpu/event=0x0,umask=0x1/"])
 
+outgroup_events = frozenset(["power/energy-cores/",
+                             "power/energy-pkg/",
+                             "power/energy-ram/",
+                             "power/energy-gpu/"])
+
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
@@ -151,6 +156,7 @@ p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 p.add_argument('--no-group', help='Dont use groups', action='store_true')
 p.add_argument('--no-multiplex', help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.', action='store_true')
+p.add_argument('--power', help='Display power metrics', action='store_true')
 args, rest = p.parse_known_args()
 
 if len(rest) == 0:
@@ -243,8 +249,8 @@ class Output:
         self.item(area, name, l, timestamp, remark, desc, title,
                   lambda l: "%5s%%" % ("%2.2f" % (100.0 * l)), True, sample)
 
-    def metric(self, area, name, l, timestamp, desc, title):
-        self.item(area, name, l, timestamp, "metric", desc, title,
+    def metric(self, area, name, l, timestamp, desc, title, unit):
+        self.item(area, name, l, timestamp, unit, desc, title,
                   lambda l: "%5s" % ("%3.2f" % (l)), False, "")
 
 class OutputCSV(Output):
@@ -429,10 +435,16 @@ def print_account(ad):
         for e in a.errors:
             print_not(a, a.errors[e], e, j)
 
+valid_events = (r"cpu/.*?/", "cycles", "instructions", "ref-cycles", r"power/.*?/",
+                r"r[0-9a-fA-F]+")
+
+def event_regexp():
+    return reduce(lambda x, y: x + "|" + y, valid_events)
+
 def is_event(l, n):
     if len(l) <= n:
         return False
-    return re.match(r"(r[0-9a-f]+|cycles|instructions|ref-cycles|cpu/)", l[n])
+    return re.match(event_regexp(), l[n])
 
 def execute_no_multiplex(runner, out, rest):
     if args.interval: # XXX
@@ -485,9 +497,18 @@ def do_execute(runner, evstr, out, rest, res, rev):
                         res = defaultdict(list)
                         rev = defaultdict(list)
                     prev_interval = interval
-        n = re.findall(r"(\d+|cpu/.*?/|<.*?>|S\d+-C\d+?|S\d+|cycles|instructions|ref-cycles|raw 0x[0-9a-f]+|r[0-9a-fA-F]+|),?", l)
+        # cannot just split on commas, as they are inside cpu/..../
+        n = re.findall(r"([0-9.]+ | " +
+                       event_regexp() + "|"
+                       r"<.*?> | " +
+                       r"S\d+-C\d+? | " +
+                       r"S\d+ | " +
+                       r"raw 0x[0-9a-f]+ | " +
+                       r"Joules | " +
+                       r"" +
+                       r"),?", l, re.X)
         # filter out the empty unit field added by 3.14
-        n = filter(lambda x: x != "", n)
+        n = filter(lambda x: x != "" and x != "Joules", n)
 
         # timestamp is already removed
         # -a --per-socket socket,numcpus,count,event,...
@@ -682,6 +703,9 @@ class Runner:
         # try to fit each objects events into groups
         # that fit into the available CPU counters
         for obj in solist:
+            if obj.evnum[0] in outgroup_events:
+                self.add([obj], obj.evnum, obj.evlevels)
+                continue
             # try adding another object to the current group
             newev = curev + obj.evnum
             newlev = curlev + obj.evlevels
@@ -734,7 +758,8 @@ class Runner:
                     out.metric(obj.area if 'area' in obj.__class__.__dict__ else None,
                             obj.name, val, timestamp, 
                             desc,
-                            title)
+                            title,
+                            obj.unit if 'unit' in obj.__class__.__dict__ else "metric")
                 else:
                     out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
                         full_name(obj), val, timestamp,
@@ -800,6 +825,16 @@ else:
     import simple_ratios
     simple_ratios.Setup(runner)
 
+if args.power:
+    import power_metrics
+    old_metrics = args.metrics
+    args.metrics = True
+    power_metrics.Setup(runner)
+    args.metrics = old_metrics
+    print "Running with --power. Will measure complete system."
+    if "-a" not in rest:
+        rest = ["-a"] + rest
+
 if need_any:
     print "Running in HyperThreading mode. Will measure complete system."
     if args.no_aggr:
@@ -810,7 +845,8 @@ if need_any:
         print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
     if kernel_version[0] == 3 and kernel_version[1] >= 10 and max_level >= 3:
         print >>sys.stderr, "Warning: kernel may need to be patched to schedule all events with level %d in HT mode" % (max_level)
-    rest = ["-a"] + rest
+    if "-a" not in rest:
+        rest = ["-a"] + rest
 
 print "Using level %d." % (max_level),
 if not args.level and cpu.cpu != "slm":

@@ -26,6 +26,7 @@ This changed various event names. The old CSV files have been removed.
 Note this may require setting up https_proxy if you are behind a firewall.
 * New jevents library to resolve event lists from C (3/28/2014)
 * ucevent now supports Xeon E5/E7 v2 (IvyBridge Server) (old news)
+* toplev now supports power measurements with --power.
 
 # All features:
 
