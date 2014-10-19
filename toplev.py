@@ -171,7 +171,7 @@ if args.graph:
         extra += '--title "' + args.title + '" '
     if args.xkcd:
         extra += '--xkcd '
-    if args.output:
+    if args.output != sys.stderr:
         extra += '--output "' + args.output.name + '" '
     args.csv = ','
     cmd = "PATH=$PATH:. ; tl-barplot.py " + extra + "/dev/stdin"
