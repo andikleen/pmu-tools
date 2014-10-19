@@ -47,8 +47,7 @@ class PerfFeatures:
     def __init__(self):
         self.logfd_supported = works("perf stat --log-fd 3 3>/dev/null true")
         if not self.logfd_supported:
-	    print >>sys.stderr, "perf binary is too old. please upgrade"
-	    sys.exit(1)
+	    sys.exit("perf binary is too old. please upgrade")
 
 def event_group(evlist):
     need_counters = set(evlist) - add_filter(ingroup_events)
@@ -755,12 +754,10 @@ def sysctl(name):
 
 # check nmi watchdog
 if sysctl("kernel.nmi_watchdog") != 0:
-    print >>sys.stderr,"Please disable nmi watchdog (echo 0 > /proc/sys/kernel/nmi_watchdog)"
-    sys.exit(1)
+    sys.exit("Please disable nmi watchdog (echo 0 > /proc/sys/kernel/nmi_watchdog)")
 
 if cpu.cpu == None:
-    print >>sys.stderr, "Unsupported CPU model %d" % (cpu.model,)
-    sys.exit(1)
+    sys.exit("Unsupported CPU model %d" % (cpu.model,))
 
 kernel_version = map(int, platform.release().split(".")[:2])
 if detailed_model:
@@ -827,5 +824,7 @@ else:
     out = Output(args.output)
 runner.schedule()
 if args.no_multiplex:
-    sys.exit(execute_no_multiplex(runner, out, rest))
-sys.exit(execute(runner, out, rest))
+    ret = execute_no_multiplex(runner, out, rest)
+else:
+    ret = execute(runner, out, rest)
+sys.exit(ret)
