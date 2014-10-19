@@ -74,6 +74,13 @@ checkev snb-client IDQ.DSB_CYCLES r1000879
 checkev bnl snoop_stall_drv.self r407e
 checkev ivt uops_issued.core_stall_cycles r1a0010e
 
+checkuc()
+{
+	EVENTMAP=${cpus[$1]} UNCORE=$2 $WRAP ./ocperf.py stat -e $3 /bin/true | egrep -- "-e $4"
+}
+
+checkuc hsw test-uncore.json ha.unc_h_directory_lookup.no_snp uncore_ha/event=0xc,umask=0x2,name=ha_unc_h_directory_lookup_no_snp/
+
 checkmsr2()
 {
 	EVENTMAP=${cpus[$1]} DIRECT_MSR=1 $WRAP ./ocperf.py --print stat -e $2 /bin/true | grep "$3"

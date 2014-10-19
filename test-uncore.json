@@ -1,0 +1,46 @@
+[
+  {
+    "Unit": "CBO",
+    "EventCode": "0x34",
+    "UMask": "0x9",
+    "EventName": "UNC_C_LLC_LOOKUP.REMOTE_SNOOP",
+    "Description": "tbd",
+    "Counter": "0,1",
+    "MSRValue": "0",
+    "Filter": "CBoFilter[22:18]",
+    "Internal": "0"
+  },
+  {
+    "Unit": "HA",
+    "EventCode": "0xc",
+    "UMask": "0x2",
+    "EventName": "UNC_H_DIRECTORY_LOOKUP.NO_SNP",
+    "Description": "tbd",
+    "Counter": "0,1,2,3",
+    "MSRValue": "0",
+    "Filter": "null",
+    "Internal": "0"
+  },
+  {
+    "Unit": "iMC",
+    "EventCode": "0x5",
+    "UMask": "0x4",
+    "EventName": "UNC_M_DRAM_REFRESH.HIGH",
+    "Description": "tbd",
+    "Counter": "0,1,2,3",
+    "MSRValue": "0",
+    "Filter": "null",
+    "Internal": "0"
+  },
+  {
+    "Unit": "UBOX",
+    "EventCode": "0x0",
+    "UMask": "0x0",
+    "EventName": "UNC_U_CLOCKTICKS",
+    "Description": "tbd",
+    "Counter": "0",
+    "MSRValue": "0",
+    "Filter": "null",
+    "Internal": "0"
+  }
+]
