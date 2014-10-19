@@ -16,7 +16,7 @@ int main() {
 }
 EOL
 
-LOAD="gcc -o /dev/null hello.c"
+LOAD="-- gcc -o /dev/null hello.c"
 
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py $LOAD
 DIRECT_MSR=1 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py $LOAD
@@ -29,6 +29,7 @@ EVENTMAP=${cpus[snb]} FORCECPU=snb ./toplev.py -d -l4 $LOAD
 EVENTMAP=${cpus[jkt]} FORCECPU=jkt ./toplev.py -d -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw ./toplev.py -d -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw ./toplev.py -d --metrics -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw ./toplev.py --graph -o x.png -d --metrics -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -d -l4 -I 1000 sleep 3
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -d -l4 --user $LOAD | tee log
 grep :u log

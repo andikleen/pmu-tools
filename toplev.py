@@ -156,6 +156,8 @@ if args.graph:
         extra += '--title "' + args.title + '" '
     if args.xkcd:
         extra += '--xkcd '
+    if args.output:
+        extra += '--output "' + args.output.name + '" '
     args.csv = ','
     cmd = "PATH=$PATH:. ; tl-barplot.py " + extra + "/dev/stdin"
     args.output = os.popen(cmd, "w")
