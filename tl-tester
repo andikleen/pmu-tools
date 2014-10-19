@@ -6,6 +6,8 @@
 set -e
 set -x
 
+. ./cpumap.sh
+
 cat >hello.c <<EOL
 #include <stdio.h>
 int main() {
@@ -16,23 +18,23 @@ EOL
 
 LOAD="gcc -o /dev/null hello.c"
 
-EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py $LOAD
-EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -d -l4 $LOAD
-EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -v -d -l4 $LOAD
-EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -x, -v -d -l4 $LOAD
-EVENTMAP=ivt.csv FORCECPU=ivt ./toplev.py -d -l4 $LOAD
-EVENTMAP=snb-client.csv FORCECPU=snb ./toplev.py -d -l4 $LOAD
-EVENTMAP=snb-ep.csv FORCECPU=jkt ./toplev.py -d -l4 $LOAD
-EVENTMAP=hsw.csv FORCECPU=hsw ./toplev.py -d -l4 $LOAD
-EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -d -l4 -I 1000 sleep 3
-EVENTMAP=ivb-client.csv FORCECPU=ivb ./toplev.py -d -l4 --user $LOAD | tee log
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py $LOAD
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -d -l4 $LOAD
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -v -d -l4 $LOAD
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -x, -v -d -l4 $LOAD
+EVENTMAP=${cpus[ivt]} FORCECPU=ivt ./toplev.py -d -l4 $LOAD
+EVENTMAP=${cpus[snb]} FORCECPU=snb ./toplev.py -d -l4 $LOAD
+EVENTMAP=${cpus[jkt]} FORCECPU=jkt ./toplev.py -d -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw ./toplev.py -d -l4 $LOAD
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -d -l4 -I 1000 sleep 3
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb ./toplev.py -d -l4 --user $LOAD | tee log
 grep :u log
 
 # need new perf
 # test other perf output formats
-EVENTMAP=hsw.csv FORCECPU=hsw ./toplev.py -d -l4 -I 1000 -a --per-core sleep 1
-EVENTMAP=hsw.csv FORCECPU=hsw ./toplev.py -d -l4 -I 1000 -a --per-socket sleep 1
-EVENTMAP=hsw.csv FORCECPU=hsw ./toplev.py -d -l4 -I 1000 -a -A sleep 1
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw ./toplev.py -d -l4 -I 1000 -a --per-core sleep 1
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw ./toplev.py -d -l4 -I 1000 -a --per-socket sleep 1
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw ./toplev.py -d -l4 -I 1000 -a -A sleep 1
 
 echo 
 echo "SUCCEEDED"
