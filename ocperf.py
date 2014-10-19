@@ -457,6 +457,7 @@ class EmapNativeJSON(Emap):
         def create_event(req_name, req_val, req_desc, res_name, res_val, res_desc):
             oe = copy.deepcopy(offcore_response)
             oe.name = ("OFFCORE_RESPONSE.%s.%s" % (req_name, res_name)).lower()
+            oe.msr = 0x1a6
             oe.msrval = int(req_val, 16) | int(res_val, 16)
             oe.desc = req_desc + " " + res_desc
             if version.offcore:
