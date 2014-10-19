@@ -4,6 +4,7 @@
 set -x
 
 PERF=${PERF:-perf}
+WRAP=${WRAP:-}
 
 . ./cpumap.sh
 
@@ -21,10 +22,10 @@ checklist()
 	echo cpu $1 = ${cpus[$1]}
 
 	# just see that it doesn't fail
-	EVENTMAP=${cpus[$1]} ./ocperf.py list > /dev/null
+	EVENTMAP=${cpus[$1]} $WRAP ./ocperf.py list > /dev/null
 
 	# see if all events are visible
-	R=$(EVENTMAP=${cpus[$1]} ./ocperf.py list | wc -l)
+	R=$(EVENTMAP=${cpus[$1]} $WRAP ./ocperf.py list | wc -l)
 	if [ $[$R - $BASELEN] -lt $2 ]; then
 		echo $1 list mismatch $[$R - $BASELEN]
 		exit 1
@@ -46,12 +47,12 @@ checklist ivt 100
 checklist slm 100
 
 set -e
-./ocperf.py stat -e inst_retired.any /bin/true
+$WRAP ./ocperf.py stat -e inst_retired.any /bin/true
 
 # xxx cover new syntax too
 checkmsr()
 {
-	DIRECT_MSR=1 EVENTMAP=${cpus[$1]} ./ocperf.py --print stat -e $2 /bin/true | grep "msr 1a6 ="
+	DIRECT_MSR=1 EVENTMAP=${cpus[$1]} $WRAP ./ocperf.py --print stat -e $2 /bin/true | grep "msr 1a6 ="
 }
 
 checkmsr wsm-dp OFFCORE_RESPONSE.ANY_DATA.ANY_CACHE_DRAM
@@ -61,7 +62,7 @@ checkmsr hsw offcore_response.demand_data_rd.l3_hit.hit_other_core_no_fwd
 
 checkev()
 {
-	DIRECT_MSR=1 EVENTMAP=${cpus[$1]} ./ocperf.py stat -e $2 /bin/true | egrep -- "-e $3"
+	DIRECT_MSR=1 EVENTMAP=${cpus[$1]} $WRAP ./ocperf.py stat -e $2 /bin/true | egrep -- "-e $3"
 }
 checkev nhm-ep L1D.M_EVICT '(r451|cpu/event=0x51,umask=0x4/)'
 checkev nhm-ep L1D.M_EVICT:c4 r4000451
@@ -75,7 +76,7 @@ checkev ivt uops_issued.core_stall_cycles r1a0010e
 
 checkmsr2()
 {
-	EVENTMAP=${cpus[$1]} DIRECT_MSR=1 ./ocperf.py --print stat -e $2 /bin/true | grep "$3"
+	EVENTMAP=${cpus[$1]} DIRECT_MSR=1 $WRAP ./ocperf.py --print stat -e $2 /bin/true | grep "$3"
 }
 
 checkmsr2 wsm-sp offcore_response.pf_rfo.remote_cache_hitm_1 "msr 1a7 = 820"
@@ -88,7 +89,7 @@ checkmsr2 slm offcore_response.any_request.any_response "msr 1a6 = 18008"
 # parser checks
 checkp() 
 {
-	./ocperf.py --print stat -e "$1"  | grep -q "$2"
+	$WRAP ./ocperf.py --print stat -e "$1"  | grep -q "$2"
 }
 export EVENTMAP=${cpus[hsw]}
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL 'r1c4$'
