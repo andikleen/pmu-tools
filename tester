@@ -6,6 +6,12 @@ set -x
 PERF=${PERF:-perf}
 WRAP=${WRAP:-}
 
+
+failed() {
+	echo FAILED
+}
+trap failed ERR 0
+
 . ./cpumap.sh
 
 #for j in ${cpus[@]} ; do
@@ -112,5 +118,7 @@ checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/ppu  'event=0xc4,umask=0x1,name=b
 export EVENTMAP=${cpus[wsm-sp]}
 DIRECT_MSR=1 checkp l2_write.rfo.m_state:c4 'r4000827'
 #checkp l2_write.rfo.m_state:c4 'cpu/event=0x27,umask=0x8,cmask=4,name=l2_write_rfo_m_state/'
+
+trap "" ERR 0
 
 echo SUCCEEDED

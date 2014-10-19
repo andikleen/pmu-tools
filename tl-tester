@@ -1,6 +1,6 @@
 #!/bin/sh
 # simple regression tester for toplev
-# this just tests if all events resolve etc, as it would 
+# this just tests if all events resolve etc, as it would
 # need the individual CPUs.
 
 set -e
@@ -8,13 +8,18 @@ set -x
 
 WRAP=${WRAP:-}
 
+failed() {
+	echo FAILED
+}
+trap failed ERR 0
+
 . ./cpumap.sh
 
 cat >hello.c <<EOL
 #include <stdio.h>
 int main() {
 	printf("Hello world\n");
-	return 0; 
+	return 0;
 }
 EOL
 
@@ -42,5 +47,7 @@ EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d -l4 -I 1000 -a --per-cor
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d -l4 -I 1000 -a --per-socket sleep 1
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d -l4 -I 1000 -a -A sleep 1
 
-echo 
+trap "" ERR 0
+
+echo
 echo "SUCCEEDED"
