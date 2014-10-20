@@ -155,7 +155,9 @@ p.add_argument('--raw', '-r', help="Print raw values", action='store_true')
 p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 p.add_argument('--no-group', help='Dont use groups', action='store_true')
-p.add_argument('--no-multiplex', help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.', action='store_true')
+p.add_argument('--no-multiplex',
+               help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
+               action='store_true')
 p.add_argument('--power', help='Display power metrics', action='store_true')
 args, rest = p.parse_known_args()
 
@@ -831,7 +833,7 @@ if args.power:
     args.metrics = True
     power_metrics.Setup(runner)
     args.metrics = old_metrics
-    print "Running with --power. Will measure complete system."
+    print >>sys.stderr, "Running with --power. Will measure complete system."
     if "-a" not in rest:
         rest = ["-a"] + rest
 
