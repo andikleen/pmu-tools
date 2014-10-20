@@ -97,6 +97,12 @@ def set_title(ax, t):
     except AttributeError:
         ax.set_title(t)
 
+def suffix(x):
+    dot = x.rfind('.')
+    if dot >= 0:
+        return x[dot+1:]
+    return x
+
 n = 1
 numplots = len(levels.keys())
 fig = plt.figure()
@@ -125,7 +131,7 @@ for l in sorted(levels.keys()):
         ax.yaxis.set_ticks([0., 50., 100.])
         set_title(ax, "Level %d" % (l))
         p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
-        leg = plt.legend(p, non_null, ncol=3 if len(non_null) > 4 else 2,
+        leg = plt.legend(p, map(suffix, non_null), ncol=3 if len(non_null) > 4 else 2,
                 bbox_to_anchor=(0., 0., -0.07, -0.07),
                 loc=2, prop={'size':8})
     leg.get_frame().set_alpha(0.5)
