@@ -18,6 +18,11 @@ simple-model.svg: simple.dot
 simple-model.png: simple.dot
 	dot -Tpng $^ > $@
 
+man: toplev.man
+
+toplev.man: toplev.py
+	help2man -N ./toplev.py > toplev.man
+
 clean:
 	rm -f simple.dot ivb.dot ivb-model.svg simple-model.svg simple.png ivb-model.png
 

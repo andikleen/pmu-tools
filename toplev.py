@@ -159,7 +159,12 @@ p.add_argument('--no-multiplex',
                help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
                action='store_true')
 p.add_argument('--power', help='Display power metrics', action='store_true')
+p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 args, rest = p.parse_known_args()
+
+if args.version:
+    print "toplev"
+    sys.exit(0)
 
 if len(rest) == 0:
     p.print_help()
