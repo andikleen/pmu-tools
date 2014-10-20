@@ -182,7 +182,7 @@ if args.graph:
         extra += '--output "' + args.output.name + '" '
     args.csv = ','
     cmd = "PATH=$PATH:. ; tl-barplot.py " + extra + "/dev/stdin"
-    args.output = os.popen(cmd, "w")
+    args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
 
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
