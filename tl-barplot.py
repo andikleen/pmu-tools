@@ -46,18 +46,21 @@ def flush_vals(ratios, vals):
 METRIC_LEVEL = 99
 TURBO_LEVEL = 98
 LAT_LEVEL = 97
-POWER_LEVEL = 96
+ITB_LEVEL = 96
+POWER_LEVEL = 95
 
 metric_name = {
     METRIC_LEVEL: "Metrics",
     POWER_LEVEL: "Power (J)",
     TURBO_LEVEL: "Frequency" ,
     LAT_LEVEL: "Latencies (cyc)",
+    ITB_LEVEL: "Insn / Branch",
 }
 
 metric_columns = {
     "TurboUtilization": TURBO_LEVEL,
     "L1dMissLatency": LAT_LEVEL,
+    "InstPerTakenBranch": ITB_LEVEL,
 }
 
 ratios = defaultdict(list)
