@@ -11,8 +11,8 @@
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
 # more details.
 #
-# Do cycle decomposition on a workload: estimate on which part of the
-# CPU pipeline it bottlenecks.
+# Measure a workload using the topdown performance model:
+# estimate on which part of the CPU pipeline it bottlenecks.
 #
 # must find ocperf in python module path. add to paths below if needed.
 # Handles a variety of perf versions, but older ones have various limitations.
@@ -777,9 +777,8 @@ class Runner:
 
 def sysctl(name):
     try:
-        f = open("/proc/sys/" + name.replace(".","/"), "r")
-        val = int(f.readline())
-        f.close()
+        with open("/proc/sys/" + name.replace(".","/"), "r") as f:
+            val = int(f.readline())
     except IOError:
         return 0
     return val
