@@ -44,6 +44,7 @@ def flush_vals(ratios, vals):
             ratios[j].append(float('nan'))
 
 METRIC_LEVEL = 99
+POWER_LEVEL = 98
 
 ratios = defaultdict(list)
 timestamps = []
@@ -58,6 +59,8 @@ for r in rc:
         r = ["0.0"] + r
     if r[3] == "metric":
         l = METRIC_LEVEL # put at end
+    elif r[3] == "Joules":
+        l = POWER_LEVEL
     else:
         l = gen_level.get_level(r[1])
     if r[1] not in levels[l]:
@@ -110,10 +113,11 @@ for l in sorted(levels.keys()):
     all_colors = get_colors(non_null)
     ax = fig.add_subplot(numplots, 1, n)
     r = [ratios[x] for x in non_null]
-    if l == METRIC_LEVEL:
+    if l == METRIC_LEVEL or l == POWER_LEVEL:
         for j, name in zip(r, non_null):
             stack = ax.plot(timestamps, j, label=name)
-        set_title(ax, "Metrics")
+        metric_name = { METRIC_LEVEL: "Metrics", POWER_LEVEL: "Power (J)" }
+        set_title(ax, metric_name[l])
         leg = plt.legend(ncol=3, loc=2, bbox_to_anchor=(0., 0., -0.07, -0.07), prop={'size':8})
     else:
         stack = ax.stackplot(timestamps, colors=all_colors, *r)
