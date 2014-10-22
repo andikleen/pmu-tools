@@ -152,7 +152,7 @@ p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
 p.add_argument('--sample', '-S', help="Suggest commands to sample for bottlenecks (experimential)", 
         action='store_true')
-p.add_argument('--raw', '-r', help="Print raw values", action='store_true')
+p.add_argument('--raw', help="Print raw values", action='store_true')
 p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
 p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
