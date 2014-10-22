@@ -18,7 +18,7 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, types, platform, pty, subprocess
-import exceptions, argparse
+import exceptions, argparse, time
 from collections import defaultdict, Counter
 #sys.path.append("../pmu-tools")
 import ocperf
@@ -39,10 +39,11 @@ ingroup_events = frozenset(["cycles", "instructions", "ref-cycles",
                             "cpu/event=0x00,umask=0x1/",
                             "cpu/event=0x0,umask=0x1/"])
 
-outgroup_events = frozenset(["power/energy-cores/",
-                             "power/energy-pkg/",
-                             "power/energy-ram/",
-                             "power/energy-gpu/"])
+outgroup_events = set()
+
+nonperf_events = set(["interval-ns"])
+
+valid_events = [r"cpu/.*?/", r"r[0-9a-fA-F]+", "cycles", "instructions", "ref-cycles"]
 
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
@@ -152,6 +153,7 @@ p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true
 p.add_argument('--sample', '-S', help="Suggest commands to sample for bottlenecks (experimential)", 
         action='store_true')
 p.add_argument('--raw', '-r', help="Print raw values", action='store_true')
+p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
 p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 p.add_argument('--no-group', help='Dont use groups', action='store_true')
@@ -442,9 +444,6 @@ def print_account(ad):
         for e in a.errors:
             print_not(a, a.errors[e], e, j)
 
-valid_events = (r"cpu/.*?/", "cycles", "instructions", "ref-cycles", r"power/.*?/",
-                r"r[0-9a-fA-F]+")
-
 def event_regexp():
     return reduce(lambda x, y: x + "|" + y, valid_events)
 
@@ -453,6 +452,11 @@ def is_event(l, n):
         return False
     return re.match(event_regexp(), l[n])
 
+def set_interval(env, d):
+    env['interval-ns'] = d * 1E+3
+    if args.raw:
+        print "interval-ns val", env['interval-ns']
+
 def execute_no_multiplex(runner, out, rest):
     if args.interval: # XXX
         sys.exit('--no-multiplex is not supported with interval mode')
@@ -460,28 +464,32 @@ def execute_no_multiplex(runner, out, rest):
     n = 1
     res = defaultdict(list)
     rev = defaultdict(list)
+    env = dict()
     for g in groups:
         print "RUN #%d of %d" % (n, len(groups))
-        ret, res, rev, interval = do_execute(runner, g, out, rest, res, rev)
+        ret, res, rev, interval = do_execute(runner, g, out, rest, res, rev, env)
         n += 1
     for j in sorted(res.keys()):
-        runner.print_res(res[j], rev[j], out, interval, j)
+        runner.print_res(res[j], rev[j], out, interval, j, env)
     return ret
 
 def execute(runner, out, rest):
+    env = dict()
     ret, res, rev, interval = do_execute(runner, ",".join(runner.evgroups), out, rest,
                                          defaultdict(list),
-                                         defaultdict(list))
+                                         defaultdict(list),
+                                         env)
     for j in sorted(res.keys()):
-        runner.print_res(res[j], rev[j], out, interval, j)
+        runner.print_res(res[j], rev[j], out, interval, j, env)
     return ret
 
-def do_execute(runner, evstr, out, rest, res, rev):
+def do_execute(runner, evstr, out, rest, res, rev, env):
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
     interval = None
     title = ""
+    start = time.time()
     while True:
         try:
             l = inf.readline()
@@ -499,8 +507,9 @@ def do_execute(runner, evstr, out, rest, res, rev):
                 l = m.group(2)
                 if interval != prev_interval:
                     if res:
+                        set_interval(env, interval - prev_interval)
                         for j in sorted(res.keys()):
-                            runner.print_res(res[j], rev[j], out, prev_interval, j)
+                            runner.print_res(res[j], rev[j], out, prev_interval, j, env)
                         res = defaultdict(list)
                         rev = defaultdict(list)
                     prev_interval = interval
@@ -550,11 +559,19 @@ def do_execute(runner, evstr, out, rest, res, rev):
     inf.close()
     ret = prun.wait()
     print_account(account)
+    if 'interval-ns' not in env:
+        set_interval(env, (time.time() - start))
     return ret, res, rev, interval
 
 def ev_append(ev, level, obj):
+    if ev in nonperf_events:
+        return 99
     if not (ev, level) in obj.evlevels:
         obj.evlevels.append((ev, level))
+    if 'nogroup' in obj.__class__.__dict__ and obj.nogroup:
+        outgroup_events.add(ev)
+    if not ev.startswith("cpu"):
+        valid_events.append(ev)
     return 99
 
 def canon_event(e):
@@ -567,7 +584,10 @@ def canon_event(e):
         e = e[:-2]
     return e.lower()
 
-def lookup_res(res, rev, ev, index):
+def lookup_res(res, rev, ev, obj, env, level):
+    if ev in env:
+        return env[ev]
+    index = obj.res_map[(ev, level)]
     #assert canon_event(emap.getperf(rev[index])) == canon_event(ev)
     return res[index]
 
@@ -735,7 +755,7 @@ class Runner:
         if curobj:
             self.add(curobj, curev, curlev)
 
-    def print_res(self, res, rev, out, timestamp, title=""):
+    def print_res(self, res, rev, out, timestamp, title, env):
         if len(res) == 0:
             print "Nothing measured?"
             return
@@ -744,10 +764,11 @@ class Runner:
             out.set_hdr(full_name(obj))
             if obj.res_map:
                 obj.compute(lambda e, level:
-                            lookup_res(res, rev, e, obj.res_map[(e, level)]))
+                            lookup_res(res, rev, e, obj, env, level))
             else:
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
         out.logf.flush()
+        del env['interval-ns']
 
         # step 2: propagate siblings
         for obj in self.olist:
@@ -831,15 +852,22 @@ else:
     import simple_ratios
     simple_ratios.Setup(runner)
 
-if args.power:
-    import power_metrics
+def setup_with_metrics(p, runner):
     old_metrics = args.metrics
     args.metrics = True
-    power_metrics.Setup(runner)
+    p.Setup(runner)
     args.metrics = old_metrics
+
+if args.power:
+    import power_metrics
+    setup_with_metrics(power_metrics, runner)
     print >>sys.stderr, "Running with --power. Will measure complete system."
     if "-a" not in rest:
         rest = ["-a"] + rest
+
+if args.sw:
+    import linux_metrics
+    setup_with_metrics(linux_metrics, runner)
 
 if need_any:
     print "Running in HyperThreading mode. Will measure complete system."

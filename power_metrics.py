@@ -7,6 +7,7 @@ class EnergyPackage:
     desc = """
 Package Energy over measurement period in Joules"""
     unit = "Joules"
+    nogroup = True
     def compute(self, EV):
         self.val = EV("power/energy-pkg/", 1)
 
@@ -15,6 +16,7 @@ class EnergyCores:
     desc = """
 Cores Energy over measurement period in Joules"""
     unit = "Joules"
+    nogroup = True
     def compute(self, EV):
         self.val = EV("power/energy-cores/", 1)
 
@@ -23,6 +25,7 @@ class EnergyRAM:
     desc = """
 RAM Energy over measurement period in Joules"""
     unit = "Joules"
+    nogroup = True
     def compute(self, EV):
         self.val = EV("power/energy-ram/", 1)
 
@@ -31,6 +34,7 @@ class EnergyGPU:
     desc = """
 GPU Energy over measurement period in Joules"""
     unit = "Joules"
+    nogroup = True
     def compute(self, EV):
         self.val = EV("power/energy-gpu/", 1)
 

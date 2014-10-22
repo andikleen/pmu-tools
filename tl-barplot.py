@@ -44,10 +44,12 @@ def flush_vals(ratios, vals):
             ratios[j].append(float('nan'))
 
 METRIC_LEVEL = 99
-TURBO_LEVEL = 98
-LAT_LEVEL = 97
-ITB_LEVEL = 96
-POWER_LEVEL = 95
+SW_LEVEL = 98
+TURBO_LEVEL = 97
+LAT_LEVEL = 96
+ITB_LEVEL = 95
+POWER_LEVEL = 94
+CPU_LEVEL = 93
 
 metric_name = {
     METRIC_LEVEL: "Metrics",
@@ -55,12 +57,21 @@ metric_name = {
     TURBO_LEVEL: "Frequency" ,
     LAT_LEVEL: "Latencies (cyc)",
     ITB_LEVEL: "Insn / Branch",
+    SW_LEVEL: "OS metrics",
+    CPU_LEVEL: "CPU utilization",
 }
 
 metric_columns = {
     "TurboUtilization": TURBO_LEVEL,
     "L1dMissLatency": LAT_LEVEL,
     "InstPerTakenBranch": ITB_LEVEL,
+    "Context switches": SW_LEVEL,
+    "Minor faults": SW_LEVEL,
+    "Major faults": SW_LEVEL,
+    "Migrations": SW_LEVEL,
+    "Syscalls": SW_LEVEL,
+    "Interrupts": SW_LEVEL,
+    "CPU utilization": CPU_LEVEL,
 }
 
 ratios = defaultdict(list)
