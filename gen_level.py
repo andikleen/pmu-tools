@@ -4,6 +4,7 @@
 import ivb_server_ratios
 import hsw_client_ratios
 import power_metrics
+import linux_metrics
 import re
 
 omap = dict()
@@ -11,13 +12,10 @@ metric = dict()
 
 class Runner:
     def run(self, n):
-        #print "name |%s|" % (n.name)
         omap[n.name] = n
 
     def metric(self, n):
         metric[n.name] = n
-        #print "metric |%s|" % (n.name)
-        pass
 
 def clean_name(name):
     name = name.strip()
@@ -59,3 +57,4 @@ runner = Runner()
 ivb_server_ratios.Setup(runner)
 hsw_client_ratios.Setup(runner)
 power_metrics.Setup(runner)
+linux_metrics.Setup(runner)
