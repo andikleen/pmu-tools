@@ -44,34 +44,23 @@ def flush_vals(ratios, vals):
             ratios[j].append(float('nan'))
 
 METRIC_LEVEL = 99
-SW_LEVEL = 98
+LAT_LEVEL = 98
 TURBO_LEVEL = 97
-LAT_LEVEL = 96
-ITB_LEVEL = 95
-POWER_LEVEL = 94
-CPU_LEVEL = 93
+ITB_LEVEL = 96
+new_level = 95
 
 metric_name = {
     METRIC_LEVEL: "Metrics",
-    POWER_LEVEL: "Power (J)",
     TURBO_LEVEL: "Frequency" ,
     LAT_LEVEL: "Latencies (cyc)",
     ITB_LEVEL: "Insn / Branch",
-    SW_LEVEL: "OS metrics",
-    CPU_LEVEL: "CPU utilization",
 }
 
+# XXX move into model as subplot
 metric_columns = {
     "TurboUtilization": TURBO_LEVEL,
     "L1dMissLatency": LAT_LEVEL,
     "InstPerTakenBranch": ITB_LEVEL,
-    "Context switches": SW_LEVEL,
-    "Minor faults": SW_LEVEL,
-    "Major faults": SW_LEVEL,
-    "Migrations": SW_LEVEL,
-    "Syscalls": SW_LEVEL,
-    "Interrupts": SW_LEVEL,
-    "CPU utilization": CPU_LEVEL,
 }
 
 ratios = defaultdict(list)
@@ -80,18 +69,25 @@ rc = csv.reader(open(args.file, "r"))
 ts = None
 levels = defaultdict(list)
 vals = None
+subplots = dict()
 for r in rc:
     if len(r) < 4:
         continue
     if not re.match(r"\d+(\.\d*)", r[0]):
         r = ["0.0"] + r
-    if r[3] == "metric":
+    sp = gen_level.get_subplot(r[1])
+    if sp:
+        if sp in subplots:
+            l = subplots[sp]
+        else:
+            l = new_level
+            new_level -= 1
+            subplots[sp] = l
+    elif gen_level.is_metric(r[1]):
         if r[1] in metric_columns:
             l = metric_columns[r[1]]
         else:
             l = METRIC_LEVEL
-    elif r[3] == "Joules":
-        l = POWER_LEVEL
     else:
         l = gen_level.get_level(r[1])
     if r[1] not in levels[l]:
@@ -104,6 +100,9 @@ for r in rc:
         vals = dict()
     vals[r[1]] = float(r[2].replace("%",""))
 flush_vals(ratios, vals)
+
+for j in subplots.keys():
+    metric_name[subplots[j]] = j
 
 if args.verbose:
     print "time", len(timestamps), timestamps

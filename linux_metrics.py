@@ -8,6 +8,7 @@ class CPU_Utilization:
     name = "CPU utilization"
     desc = " Number of CPUs used"
     nogroup = True
+    subplot = "CPU Utilization"
     def compute(self, EV):
         try:
             self.val = EV("task-clock", 1) / EV("interval-ns", 1)
@@ -18,6 +19,7 @@ class CS:
     name = "Context switches"
     desc = " Number of context switches"
     nogroup = True
+    subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("cs", 1)
 
@@ -25,6 +27,7 @@ class MinorFaults:
     name = "Minor faults"
     desc = " Page faults not leading to disk IO (such as allocation of memory)."
     nogroup = True
+    subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("minor-faults", 1)
 
@@ -32,6 +35,7 @@ class MajorFaults:
     name = "Major faults"
     desc = " Page faults leading to disk IO."
     nogroup = True
+    subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("major-faults", 1)
 
@@ -39,6 +43,7 @@ class Migrations:
     name = "Migrations"
     desc = " Number of thread migrations to another CPU."
     nogroup = True
+    subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("migrations", 1)
 
@@ -46,6 +51,7 @@ class Syscalls:
     name = "Syscalls"
     desc = " Number of syscalls."
     nogroup = True
+    subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("raw_syscalls:sys_enter", 1)
 
@@ -53,6 +59,7 @@ class Interrupts:
     name = "Interrupts"
     desc = " Number of interrupts."
     nogroup = True
+    subplot = "OS metrics"
     # can overcount with shared vectors
     def compute(self, EV):
         self.val = EV("irq:irq_handler_entry", 1) + EV("nmi:nmi_handler", 1)
@@ -61,6 +68,7 @@ class Workqueues:
     name = "Workqueues"
     desc = " Work queue item executions."
     nogroup = True
+    subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("workqueue:workqueue_execute_start", 1)
 

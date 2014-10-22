@@ -19,21 +19,41 @@ class Runner:
         #print "metric |%s|" % (n.name)
         pass
 
-def get_level(name):
+def clean_name(name):
     name = name.strip()
     dot = name.rfind(".")
     if dot >= 0:
         name = name[dot + 1:]
-    oname = name
+    return name
+
+def find_obj(name):
     if name in omap:
-        return omap[name].level
+        return omap[name], name
     name = re.sub(r"([a-z])([A-Z])", r"\1 \2", name, 999)
     name = name.replace(" ", "_")
     if name in omap:
-        return omap[name].level
-    if name not in metric and oname not in metric:
-        print "level for %s not found" % (oname)
+        return omap[name], name
+    return None, name
+
+def get_level(name):
+    name = clean_name(name)
+    oname = name
+    obj, name = find_obj(name)
+    if obj:
+        return obj.level
+    #if name not in metric and oname not in metric:
+    #    print "level for %s not found" % (oname)
     return 0
+
+def get_subplot(name):
+    if name in metric:
+        obj = metric[name]
+        if 'subplot' in obj.__class__.__dict__:
+            return metric[name].subplot
+    return None
+
+def is_metric(name):
+    return name in metric
 
 runner = Runner()
 ivb_server_ratios.Setup(runner)
