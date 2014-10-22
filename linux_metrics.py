@@ -146,6 +146,7 @@ class Setup:
         if os.path.exists("/sys/kernel/debug/tracing/events"):
             r.metric(Syscalls())
             r.metric(Interrupts())
+            r.metric(IPIs())
             r.metric(Workqueues())
             r.metric(BlockIOs())
             r.metric(NetworkTX())
