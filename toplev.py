@@ -768,7 +768,8 @@ class Runner:
             else:
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
         out.logf.flush()
-        del env['interval-ns']
+        if 'interval-ns' in env:
+            del env['interval-ns']
 
         # step 2: propagate siblings
         for obj in self.olist:

@@ -46,10 +46,6 @@ EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 sleep 1
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 --user $LOAD | tee log
 grep :u log
 
-# L1 should be only one group
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d -l1 $LOAD | grep -q '{[^{]+$'
-EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l1 $LOAD | grep -q '{[^{]+$'
-
 # need new perf
 # test other perf output formats
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d -l4 -I 1000 -a --per-core sleep 1
