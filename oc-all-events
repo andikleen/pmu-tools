@@ -11,6 +11,11 @@ cpu()
 	./list-events.py | parallel -n1 ./ocperf.py --print stat -e  > /dev/null
 }
 
+if [ "$1" != "" ] ; then
+	cpu $1
+	exit 0
+fi
+
 cpu bnl
 cpu hsw
 cpu ivb
