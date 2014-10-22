@@ -50,9 +50,9 @@ def sanitize(s, a):
 
 def getdir():
     try:
-        d = os.getenv("CACHEDIR")
-        home = os.getenv("HOME")
+        d = os.getenv("XDG_CACHE_HOME")
         if not d:
+            home = os.getenv("HOME")
             d = "%s/.cache/pmu-events" % (home)
         if not os.path.isdir(d):
             os.makedirs(d)
