@@ -5,6 +5,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now has a simple TSX metrics model with --tsx on Haswell/Broadwell
+CPUs.
 * toplev now supports some Linux software metrics with --sw. The trace
 point based events may require running as root.
 * toplev now supports power measurements with --power.

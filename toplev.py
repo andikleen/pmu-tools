@@ -156,6 +156,7 @@ p.add_argument('--raw', help="Print raw values", action='store_true')
 p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
 p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
+p.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
 p.add_argument('--no-group', help='Dont use groups', action='store_true')
 p.add_argument('--no-multiplex',
                help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
@@ -869,6 +870,10 @@ if args.power:
 if args.sw:
     import linux_metrics
     setup_with_metrics(linux_metrics, runner)
+
+if args.tsx:
+    import tsx_metrics
+    setup_with_metrics(tsx_metrics, runner)
 
 if need_any:
     print "Running in HyperThreading mode. Will measure complete system."
