@@ -69,9 +69,8 @@ if not emap:
 
 p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
 description='''
-Do cycle decomposition on a workload: estimate on which part of the
-CPU pipeline it bottlenecks. The bottlenecks are expressed as a tree
-with different levels.
+Estimate on which part of the CPU pipeline a workload bottlenecks using the TopDown model.
+The bottlenecks are expressed as a tree with different levels.
 
 Requires an Intel Sandy, Ivy Bridge, Haswell CPU.
 It works best on Ivy Bridge currently.
