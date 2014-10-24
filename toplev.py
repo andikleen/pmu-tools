@@ -45,6 +45,10 @@ nonperf_events = set(["interval-ns"])
 
 valid_events = [r"cpu/.*?/", r"r[0-9a-fA-F]+", "cycles", "instructions", "ref-cycles"]
 
+event_fixes = {
+    "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC"
+}
+
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
@@ -394,10 +398,13 @@ def raw_event(i):
             return i
         e = emap.getevent(i)
         if e == None:
-            print >>sys.stderr, "%s not found" % (i,)
-            if not force:
-                sys.exit(1)
-            return "cycles" # XXX 
+            if i in event_fixes:
+                e = emap.getevent(event_fixes[i])
+                if e == None:
+                    print >>sys.stderr, "%s not found" % (i,)
+                    if not force:
+                        sys.exit(1)
+                    return "cycles" # XXX
         i = e.output(flags=filter_string(), noname=True)
         emap.update_event(i, e)
     return i
