@@ -43,7 +43,7 @@ outgroup_events = set()
 
 nonperf_events = set(["interval-ns"])
 
-valid_events = [r"cpu/.*?/", r"r[0-9a-fA-F]+", "cycles", "instructions", "ref-cycles"]
+valid_events = [r"cpu/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions"]
 
 event_fixes = {
     "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC"
@@ -504,6 +504,15 @@ def execute(runner, out, rest):
         runner.print_res(res[j], rev[j], out, interval, j, env)
     return ret
 
+perf_fields = [
+    r"[0-9.]+",
+    r"<.*?>",
+    r"S\d+-C\d+?",
+    r"S\d+",
+    r"raw 0x[0-9a-f]+",
+    r"Joules",
+    ""]
+
 def do_execute(runner, evstr, out, rest, res, rev, env):
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
@@ -535,15 +544,8 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
                         rev = defaultdict(list)
                     prev_interval = interval
         # cannot just split on commas, as they are inside cpu/..../
-        n = re.findall(r"([0-9.]+ | " +
-                       event_regexp() + "|"
-                       r"<.*?> | " +
-                       r"S\d+-C\d+? | " +
-                       r"S\d+ | " +
-                       r"raw 0x[0-9a-f]+ | " +
-                       r"Joules | " +
-                       r"" +
-                       r"),?", l, re.X)
+        fields = "(" + "|".join(valid_events + perf_fields) + "),?"
+        n = re.findall(fields, l)
         # filter out the empty unit field added by 3.14
         n = filter(lambda x: x != "" and x != "Joules", n)
 
@@ -591,7 +593,7 @@ def ev_append(ev, level, obj):
         obj.evlevels.append((ev, level))
     if 'nogroup' in obj.__class__.__dict__ and obj.nogroup:
         outgroup_events.add(ev)
-    if not ev.startswith("cpu"):
+    if re.match(r'^[a-z]', ev):
         valid_events.append(ev)
     return 99
 
