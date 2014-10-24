@@ -151,5 +151,5 @@ class Setup:
             r.metric(BlockIOs())
             r.metric(NetworkTX())
             r.metric(NetworkRX())
-        else:
+        elif sys.argv[0].find("toplev") >= 0:
             print >>sys.stderr, "Need to be root for trace point Linux software metrics."
