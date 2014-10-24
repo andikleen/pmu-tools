@@ -33,7 +33,7 @@ class AverageRTM:
     name = "Average RTM transaction length"
     desc = """
 Average RTM transaction length. Assumes most transactions are RTM.
-When low consider increasing the size of the critical sections of the loops to lower overhead."""
+When low consider increasing the size of the critical sections to lower overhead."""
     subplot = "TSX"
     unit = "cycles"
     def compute(self, EV):
@@ -48,7 +48,7 @@ class AverageHLE:
     name = "Average HLE transaction length"
     desc = """
 Average HLE transaction length. Assumes most transactions are HLE.
-When low consider increasing the size of the critical sections of the loops to lower overhead."""
+When low consider increasing the size of the critical sections to lower overhead."""
     subplot = "TSX"
     unit = "cycles"
     def compute(self, EV):
