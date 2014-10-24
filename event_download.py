@@ -53,7 +53,8 @@ def getdir():
         d = os.getenv("XDG_CACHE_HOME")
         if not d:
             home = os.getenv("HOME")
-            d = "%s/.cache/pmu-events" % (home)
+            d = "%s/.cache" % (home)
+        d += "/pmu-events"
         if not os.path.isdir(d):
             os.makedirs(d)
         return d
@@ -103,13 +104,8 @@ def download_current():
 def eventlist_name(name=None, key="core"):
     if not name:
         name = get_cpustr()
-    cache = os.getenv("XDG_CACHE_HOME")
-    if not cache:
-        cache = os.getenv("HOME")
-        if not cache:
-            return None
-        cache += "/.cache"
-    return "%s/pmu-events/%s-%s.json" % (cache, name, key)
+    cache = getdir()
+    return "%s/%s-%s.json" % (cache, name, key)
 
 if __name__ == '__main__':
     # only import argparse when actually called from command line
