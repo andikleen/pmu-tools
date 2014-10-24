@@ -416,11 +416,11 @@ def raw_event(i):
         if e == None:
             if i in event_fixes:
                 e = emap.getevent(event_fixes[i])
-                if e == None:
-                    print >>sys.stderr, "%s not found" % (i,)
-                    if not force:
-                        sys.exit(1)
-                    return "cycles" # XXX
+        if e == None:
+            print >>sys.stderr, "%s not found" % (i,)
+            if not force:
+                sys.exit(1)
+            return "cycles" # XXX
         i = e.output(flags=filter_string(), noname=True)
         emap.update_event(e.output(noname=True), e)
     return i
