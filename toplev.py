@@ -155,7 +155,7 @@ p.add_argument('--graph', help='Automatically graph interval output with tl-barp
 p.add_argument('--title', help='Set title of graph')
 p.add_argument('--xkcd', help='Use xkcd plotting mode for graph', action='store_true')
 p.add_argument('--level', '-l', help='Measure upto level N (max 5)',
-               type=int)
+               type=int, default=1)
 p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
 p.add_argument('--sample', '-S', help="Suggest commands to sample for bottlenecks (experimental)",
@@ -205,8 +205,7 @@ if args.graph:
 
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
-max_level = args.level if args.level else 1
-detailed_model = (max_level > 1) or args.detailed
+detailed_model = (args.level > 1) or args.detailed
 csv_mode = args.csv
 interval_mode = args.interval
 force = args.force
@@ -845,7 +844,7 @@ def ht_warning():
         print >>sys.stderr, "WARNING: HT enabled"
         print >>sys.stderr, "Measuring multiple processes/threads on the same core may is not reliable."
    
-runner = Runner(max_level)
+runner = Runner(args.level)
 
 need_any = False
 if cpu.cpu == "ivb":
@@ -905,12 +904,12 @@ if need_any:
         print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1):
         print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
-    if kernel_version[0] == 3 and kernel_version[1] >= 10 and max_level >= 3:
-        print >>sys.stderr, "Warning: kernel may need to be patched to schedule all events with level %d in HT mode" % (max_level)
+    if kernel_version[0] == 3 and kernel_version[1] >= 10 and args.level >= 3:
+        print >>sys.stderr, "Warning: kernel may need to be patched to schedule all events with level %d in HT mode" % (args.level)
     if "-a" not in rest:
         rest = ["-a"] + rest
 
-print "Using level %d." % (max_level),
+print "Using level %d." % (args.level),
 if not args.level and cpu.cpu != "slm":
     print "Change level with -lX"
 print
