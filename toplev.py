@@ -423,7 +423,7 @@ def raw_event(i):
                         sys.exit(1)
                     return "cycles" # XXX
         i = e.output(flags=filter_string(), noname=True)
-        emap.update_event(i, e)
+        emap.update_event(e.output(noname=True), e)
     return i
 
 # generate list of converted raw events from events string
@@ -611,7 +611,7 @@ def lookup_res(res, rev, ev, obj, env, level):
     if ev in env:
         return env[ev]
     index = obj.res_map[(ev, level)]
-    #assert canon_event(emap.getperf(rev[index])) == canon_event(ev)
+    assert canon_event(emap.getperf(rev[index])) == canon_event(ev)
     return res[index]
 
 def add_key(k, x, y):
