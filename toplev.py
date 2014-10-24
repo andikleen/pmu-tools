@@ -892,7 +892,7 @@ if args.sw:
     import linux_metrics
     setup_with_metrics(linux_metrics, runner)
 
-if args.tsx and cpu.has_tsx:
+if args.tsx and cpu.has_tsx and cpu.cpu not in ("ivt", "jkt", "snb", "ivb", "slm"):
     import tsx_metrics
     setup_with_metrics(tsx_metrics, runner)
 
