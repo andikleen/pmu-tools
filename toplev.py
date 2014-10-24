@@ -619,7 +619,7 @@ def lookup_res(res, rev, ev, obj, env, level):
     if ev in env:
         return env[ev]
     index = obj.res_map[(ev, level)]
-    assert event_rmap(rev[index]) == canon_event(ev)
+    #assert event_rmap(rev[index]) == canon_event(ev)
     return res[index]
 
 def add_key(k, x, y):
