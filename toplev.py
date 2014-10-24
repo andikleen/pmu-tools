@@ -62,6 +62,7 @@ class PerfFeatures:
         self.logfd_supported = works(perf + " stat --log-fd 3 3>/dev/null true")
         if not self.logfd_supported:
 	    sys.exit("perf binary is too old. please upgrade")
+        self.supports_power = works(perf + " list  | grep -q power/")
 
 def event_group(evlist):
     need_counters = set(evlist) - add_filter(ingroup_events)
@@ -164,6 +165,7 @@ p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
 p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 p.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
+p.add_argument('--all', help="Measure everything available", action='store_true')
 p.add_argument('--no-group', help='Dont use groups', action='store_true')
 p.add_argument('--no-multiplex',
                help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
@@ -179,6 +181,13 @@ if args.version:
 if len(rest) == 0:
     p.print_help()
     sys.exit(0)
+
+if args.all:
+    args.tsx = True
+    args.power = True
+    args.sw = True
+    args.metrics = True
+    args.level = 5
 
 if args.graph:
     if not args.interval:
@@ -307,6 +316,7 @@ class CPU:
         self.cpu = None
         self.ht = False
         self.counters = 0
+        self.has_tsx = False
         forced_cpu = self.force_cpu()
         self.force_counters()
         cores = {}
@@ -335,7 +345,10 @@ class CPU:
                         cores[key] = 1
                     if cores[key] > 1:
                         self.ht = True
-        if ok >= 3 and not forced_cpu:
+                elif n[0] == "flags":
+                    ok += 1
+                    self.has_tsx = n.count("rtm") > 0
+        if ok >= 4 and not forced_cpu:
             for i in known_cpus:
                 if self.model in i[1]:
                     self.cpu = i[0]
@@ -867,7 +880,7 @@ def setup_with_metrics(p, runner):
     p.Setup(runner)
     args.metrics = old_metrics
 
-if args.power:
+if args.power and feat.supports_power:
     import power_metrics
     setup_with_metrics(power_metrics, runner)
     print >>sys.stderr, "Running with --power. Will measure complete system."
@@ -878,7 +891,7 @@ if args.sw:
     import linux_metrics
     setup_with_metrics(linux_metrics, runner)
 
-if args.tsx:
+if args.tsx and cpu.has_tsx:
     import tsx_metrics
     setup_with_metrics(tsx_metrics, runner)
 
