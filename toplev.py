@@ -45,6 +45,7 @@ nonperf_events = set(["interval-ns"])
 
 valid_events = [r"cpu/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions"]
 
+# workaround for broken event files for now
 event_fixes = {
     "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC"
 }
@@ -606,11 +607,19 @@ def canon_event(e):
         e = e[:-2]
     return e.lower()
 
+fixes = dict(zip(event_fixes.values(), event_fixes.keys()))
+
+def event_rmap(e):
+    n = canon_event(emap.getperf(e))
+    if n.upper() in fixes:
+        n = fixes[n.upper()].lower()
+    return n
+
 def lookup_res(res, rev, ev, obj, env, level):
     if ev in env:
         return env[ev]
     index = obj.res_map[(ev, level)]
-    assert canon_event(emap.getperf(rev[index])) == canon_event(ev)
+    assert event_rmap(rev[index]) == canon_event(ev)
     return res[index]
 
 def add_key(k, x, y):
