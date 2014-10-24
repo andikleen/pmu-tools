@@ -134,7 +134,7 @@ in Hyper Threading mode due to a bug workaround. If that is needed
 please see the github site for a kernel patch.
 
 Other CPUs can be forced with FORCECPU=name
-Valid CPU names: ''' + reduce(lambda x,y: x + " " + y, [x[0] for x in known_cpus]),
+Valid CPU names: ''' + " ".join([x[0] for x in known_cpus]),
 formatter_class=argparse.RawDescriptionHelpFormatter)
 p.add_argument('--verbose', '-v', help='Print all results even when below threshold',
                action='store_true')
@@ -466,7 +466,7 @@ def print_account(ad):
             print_not(a, a.errors[e], e, j)
 
 def event_regexp():
-    return reduce(lambda x, y: x + "|" + y, valid_events)
+    return "|".join(valid_events)
 
 def is_event(l, n):
     if len(l) <= n:
