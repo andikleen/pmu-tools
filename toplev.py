@@ -49,13 +49,17 @@ event_fixes = {
     "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC"
 }
 
+perf = os.getenv("PERF")
+if not perf:
+    perf = "perf"
+
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
 class PerfFeatures:
     "Adapt to the quirks of various perf versions."
     def __init__(self):
-        self.logfd_supported = works("perf stat --log-fd 3 3>/dev/null true")
+        self.logfd_supported = works(perf + " stat --log-fd 3 3>/dev/null true")
         if not self.logfd_supported:
 	    sys.exit("perf binary is too old. please upgrade")
 
@@ -426,9 +430,6 @@ def print_header(work, evlist):
 
 def setup_perf(evstr, rest):
     prun = PerfRun()
-    perf = os.getenv("PERF")
-    if not perf:
-        perf = "perf"
     add = []
     if interval_mode:
         add += ['-I', str(interval_mode)]
