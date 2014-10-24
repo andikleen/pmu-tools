@@ -15,7 +15,7 @@ does not use locks (or other transactions), or the locks are not enabled with lo
     sample = ["mem_uops_retired.lock_loads"]
     def compute(self, EV):
         self.val = (EV("cpu/cycles-t/", 1) / EV("cycles", 1)) * 100.
-        self.thresh = (self.val > 0)
+        self.thresh = (self.val >= 0.01)
 
 class AbortedCycles:
     name = "Aborted cycles"
@@ -27,7 +27,7 @@ start sampling for abort causes."""
     sample = ["cpu/tx-abort/pp", "cpu/hle-abort/pp"]
     def compute(self, EV):
         self.val = ((EV("cpu/cycles-t/", 1) - EV("cpu/cycles-ct/", 1)) / EV("cycles", 1)) * 100.
-        self.thresh = (self.val > 0)
+        self.thresh = (self.val >= 0.01)
 
 class AverageRTM:
     name = "Average RTM transaction length"

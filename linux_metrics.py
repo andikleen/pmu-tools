@@ -26,6 +26,7 @@ class CS:
     subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("cs", 1)
+        self.thresh = self.val > 0
 
 class MinorFaults:
     name = "Minor faults"
@@ -34,6 +35,7 @@ class MinorFaults:
     subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("minor-faults", 1)
+        self.thresh = self.val > 0
 
 class MajorFaults:
     name = "Major faults"
@@ -43,6 +45,7 @@ Page faults leading to disk IO, such as loading executable text or do mmap'ed IO
     subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("major-faults", 1)
+        self.thresh = self.val > 0
 
 class Migrations:
     name = "Migrations"
@@ -51,6 +54,7 @@ class Migrations:
     subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("migrations", 1)
+        self.thresh = self.val > 0
 
 # The events below require trace points, so typically root.
 
@@ -61,6 +65,7 @@ class Syscalls:
     subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("raw_syscalls:sys_enter", 1)
+        self.thresh = self.val > 0
 
 class Interrupts:
     name = "Interrupts"
@@ -72,6 +77,7 @@ typically to indicate IO. This includes performance counter sampling interrupts.
     # can overcount with shared vectors
     def compute(self, EV):
         self.val = EV("irq:irq_handler_entry", 1) + EV("nmi:nmi_handler", 1)
+        self.thresh = self.val > 0
 
 # XXX on older kernels will not count TLB flushes, when they still had an
 # own vector
@@ -88,6 +94,7 @@ or force reschedules."""
         self.val = (EV("irq_vectors:call_function_entry", 1) +
                     EV("irq_vectors:call_function_single_entry", 1) +
                     EV("irq_vectors:reschedule_entry", 1))
+        self.thresh = self.val > 0
 
 class Workqueues:
     name = "Workqueues"
@@ -96,6 +103,7 @@ class Workqueues:
     subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("workqueue:workqueue_execute_start", 1)
+        self.thresh = self.val > 0
 
 class BlockIOs:
     name = "BlockIOs"
@@ -104,6 +112,7 @@ class BlockIOs:
     subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("block:block_rq_insert", 1)
+        self.thresh = self.val > 0
 
 class NetworkTX:
     name = "NetworkTX"
@@ -112,6 +121,7 @@ class NetworkTX:
     subplot = "OS metrics"
     def compute(self, EV):
         self.val = EV("net:net_dev_start_xmit", 1)
+        self.thresh = self.val > 0
 
 class NetworkRX:
     name = "NetworkRX"
@@ -123,6 +133,7 @@ class NetworkRX:
                     EV("net:netif_receive_skb", 1) +
                     EV("net:napi_gro_receive_entry", 1) +
                     EV("net:napi_gro_frags_entry", 1))
+        self.thresh = self.val > 0
 
 # trace events
 # sched wakeup
