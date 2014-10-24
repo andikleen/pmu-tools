@@ -5,6 +5,7 @@ import ivb_server_ratios
 import hsw_client_ratios
 import power_metrics
 import linux_metrics
+import tsx_metrics
 import re
 
 omap = dict()
@@ -58,3 +59,4 @@ ivb_server_ratios.Setup(runner)
 hsw_client_ratios.Setup(runner)
 power_metrics.Setup(runner)
 linux_metrics.Setup(runner)
+tsx_metrics.Setup(runner)
