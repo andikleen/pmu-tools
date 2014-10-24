@@ -611,6 +611,8 @@ fixes = dict(zip(event_fixes.values(), event_fixes.keys()))
 
 def event_rmap(e):
     n = canon_event(emap.getperf(e))
+    if emap.getevent(n):
+        return n
     if n.upper() in fixes:
         n = fixes[n.upper()].lower()
     return n
@@ -619,7 +621,7 @@ def lookup_res(res, rev, ev, obj, env, level):
     if ev in env:
         return env[ev]
     index = obj.res_map[(ev, level)]
-    #assert event_rmap(rev[index]) == canon_event(ev)
+    assert event_rmap(rev[index]) == canon_event(ev)
     return res[index]
 
 def add_key(k, x, y):
