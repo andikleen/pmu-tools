@@ -123,7 +123,7 @@ def get_colors(non_null):
 
 def set_title(ax, t):
     try:
-        ax.set_title(t, loc='right')
+        ax.set_title(t, { 'fontsize': 10 }, loc='right')
     except AttributeError:
         ax.set_title(t)
 
