@@ -33,6 +33,8 @@ known_cpus = (
     ("slm", (55, 77)),
 )
 
+tsx_cpus = ("hsw", "hsx")
+
 ingroup_events = frozenset(["cycles", "instructions", "ref-cycles", 
                             "cpu/event=0x3c,umask=0x00,any=1/",
                             "cpu/event=0x3c,umask=0x0,any=1/",
@@ -903,7 +905,7 @@ if args.sw:
     import linux_metrics
     setup_with_metrics(linux_metrics, runner)
 
-if args.tsx and cpu.has_tsx and cpu.cpu not in ("ivt", "jkt", "snb", "ivb", "slm"):
+if args.tsx and cpu.has_tsx and cpu.cpu in tsx_cpus:
     import tsx_metrics
     setup_with_metrics(tsx_metrics, runner)
 
