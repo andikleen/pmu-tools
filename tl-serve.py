@@ -7,6 +7,9 @@ import string
 import argparse
 import BaseHTTPServer
 import csv
+import gen_level
+import re
+from collections import defaultdict
 
 ap = argparse.ArgumentParser(usage="Serve toplev csv file as http")
 ap.add_argument('csvfile', help='toplev csv file to serve', type=argparse.FileType('r'))
@@ -14,14 +17,15 @@ ap.add_argument('host', nargs='?', default="localhost", help='Hostname to bind t
 ap.add_argument('port', nargs='?', default="9001", type=int, help='Port to bind to (default 9001)')
 args = ap.parse_args()
 
-T = string.template
+T = string.Template
 
 class Data:
     def __init__(self, f):
         self.times = []
         self.vals = []
         self.csv = csv.reader(f)
-        self.headers = set()
+        self.headers = dict()
+        self.levels = defaultdict(set)
 
     def update(self):
         prevts = None
@@ -33,7 +37,12 @@ class Data:
                 self.vals.append(val)
                 val = dict()
             val[name] = pct
-            self.headers.add(name)
+            if name not in self.headers:
+                n = gen_level.get_subplot(name)
+                if not n:
+                    n = str(gen_level.get_level(name))
+                self.headers[name] = n
+                self.levels[n].add(name)
             prevts = ts
 
 data = Data(args.csvfile)
@@ -45,6 +54,12 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_header('Content-Type', type)
         self.end_headers()
 
+    def bad(self):
+        self.send_response(401)
+        self.send_header('Content-Type', 'text/html')
+        self.end_headers()
+        self.wfile.write("%s not found" % (self.path))
+
     def do_GET(self):
         if self.path == "/":
             self.header("text/html")
@@ -54,14 +69,18 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 </head>
 <body>""")
             graph = ""
-            graph += T("""
-<div id="$name"></div>
+            for j in sorted(data.levels.keys()):
+                graph += T("""
+<h1>$name</h1>
+<p>
+<div id="lev$name"></div>
 <script type="text/javascript">
-    g = new Dygraph(document.getElementById("$name"),
+    g = new Dygraph(document.getElementById("lev$name"),
                     "/$file.csv",
                     {stackedGraph: 1})
 </script>
-            """).substitute({"name": "graph1", "file": "data"})
+</p>
+                """).substitute({"name": j, "file": j})
             self.wfile.write(graph + """
 </body>
 </html>""")
@@ -69,18 +88,19 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             with open("dygraph-combined.js", "r") as f:
                 self.header("text/javascript")
                 self.wfile.write(f.read())
-        elif self.path == "/data.csv":
+        elif self.path.endswith(".csv"):
+            l = re.sub(r"\.csv$", "", self.path[1:])
+            if l not in data.levels:
+                self.bad()
+                return
             self.header("text/csv")
-            hdr = sorted(data.headers)
+            hdr = sorted(data.levels[l])
             wr = csv.writer(self.wfile)
             wr.writerow(["Timestamp"] + hdr)
             for v, t in zip(data.vals, data.times):
                 wr.writerow([t] + [v[x] if x in v else "" for x in hdr])
         else:
-            self.send_response(401)
-            self.send_header('Content-Type', 'text/html')
-            self.end_headers()
-            self.wfile.write("%s not found" % (self.path))
+            self.bad()
 
 httpd = BaseHTTPServer.HTTPServer((args.host, args.port), TLHandler)
 
