@@ -38,15 +38,30 @@ class Data:
                 val = dict()
             val[name] = pct
             if name not in self.headers:
-                n = gen_level.get_subplot(name)
-                if not n:
-                    n = str(gen_level.get_level(name))
+                if name.count(".") > 0:
+                    f = name.split(".")[:-1]
+                    n = ".".join(f)
+                elif gen_level.is_metric(name):
+                    n = gen_level.get_subplot(name)
+                    if not n:
+                        n = "METRIC"
+                else:
+                    n = "Level1"
+                n = n.replace(" ", "_")
                 self.headers[name] = n
                 self.levels[n].add(name)
             prevts = ts
 
+
 data = Data(args.csvfile)
 data.update()
+
+def cmp_level(a, b):
+    if a == "Level1":
+        return -1
+    if b == "Level1":
+        return +1
+    return cmp(a, b)
 
 class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def header(self, type):
@@ -69,7 +84,7 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 </head>
 <body>""")
             graph = ""
-            for j in sorted(data.levels.keys()):
+            for j in sorted(data.levels.keys(), cmp=cmp_level):
                 graph += T("""
 <h1>$name</h1>
 <p>
