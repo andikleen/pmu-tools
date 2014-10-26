@@ -34,7 +34,7 @@ for row in rc:
     # 1.354075473,0,cpu-migrations                                  old perf
     # 0.799553738,137765150,,branches                               new perf with unit
     # 0.200584389,FrontendBound.Branch Resteers,15.87%,above,"",    toplev
-    ts = row[0]
+    ts = row[0].strip()
     if is_number(row[2]):
         ev, val = row[1], row[2]
     elif is_number(row[1]):
