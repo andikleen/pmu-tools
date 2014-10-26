@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # convert perf stat -Ixxx -x, / toplev -Ixxx -x, output to normalized output
+# this version buffers all data in memory
 # t1,ev1,num1
 # t1,ev2,num1
 # t2,ev1,num3
