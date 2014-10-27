@@ -15,6 +15,7 @@ ap = argparse.ArgumentParser(usage="Serve toplev csv file as http")
 ap.add_argument('csvfile', help='toplev csv file to serve', type=argparse.FileType('r'))
 ap.add_argument('host', nargs='?', default="localhost", help='Hostname to bind to (default localhost)')
 ap.add_argument('port', nargs='?', default="9001", type=int, help='Port to bind to (default 9001)')
+ap.add_argument('--verbose', '-v', action='store_true', help='Display all metrics, even if below threshold')
 args = ap.parse_args()
 
 T = string.Template
@@ -40,6 +41,8 @@ class Data:
         val = dict()
         for r in self.csv:
             ts, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4]
+            if state == "below" and not args.verbose:
+                continue
             if prevts and ts != prevts:
                 self.times.append(prevts)
                 self.vals.append(val)
