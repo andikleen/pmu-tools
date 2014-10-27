@@ -22,9 +22,17 @@ T = string.Template
 
 # XXX
 metric_levels = {
-    "TurboUtilization": "Frequency",
+    "TurboUtilization": "Turbo",
     "L1dMissLatency": "Latencies",
     "InstPerTakenBranch": "Branches",
+}
+
+metric_axis = {
+    "Turbo": "vs nominal Freq",
+    "Latencies": "Cycles",
+    "Branches": "Basic block length",
+    "CPU_Utilization": "CPUs",
+    "Power_(J)": "Joules",
 }
 
 class Data:
@@ -56,7 +64,7 @@ class Data:
                 elif gen_level.is_metric(name):
                     n = gen_level.get_subplot(name)
                     if not n:
-                        n = metric_levels[name] if name in metric_levels else "METRIC" 
+                        n = metric_levels[name] if name in metric_levels else "CPU-METRIC" 
                     n = n.replace(" ", "_")
                     self.metrics.add(n)
                 else:
@@ -74,6 +82,10 @@ def cmp_level(a, b):
         return -1
     if b == "TopLevel":
         return +1
+    if a in data.metrics:
+        return +1
+    if b in data.metrics:
+        return -1
     return cmp(a, b)
 
 class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -98,19 +110,23 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 <body>""")
             graph = ""
             for j in sorted(data.levels.keys(), cmp=cmp_level):
-                if j in data.metrics:
-                    opts = {}
-                else:
-                    opts = {"stackedGraph": 1}
+                opts = dict()
+                if j not in data.metrics:
+                    opts["stackedGraph"] = 1
+                    opts["ylabel"] = "% CPU time"
+                    opts["valueRange"] = [-5, 110]
+                elif j in metric_axis:
+                    opts["ylabel"] = metric_axis[j]
+                opts["title"] = j
+                opts["width"] = 1000
+                opts["height"] = 180
+                #opts["xlabel"] = "time"
                 graph += T("""
-<h1>$name</h1>
-<p>
 <div id="d$name"></div>
 <script type="text/javascript">
     g = new Dygraph(document.getElementById("d$name"),
                     "/$file.csv", $opts)
 </script>
-</p>
                 """).substitute({"name": j, "file": j, "opts": opts})
             self.wfile.write(graph + """
 </body>
