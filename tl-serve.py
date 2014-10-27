@@ -53,7 +53,7 @@ class Data:
                 elif gen_level.is_metric(name):
                     n = gen_level.get_subplot(name)
                     if not n:
-                        n = metric_levels[n] if n in metric_levels else "METRIC" 
+                        n = metric_levels[name] if name in metric_levels else "METRIC" 
                     n = n.replace(" ", "_")
                     self.metrics.add(n)
                 else:
