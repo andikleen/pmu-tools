@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* The new tl-serve.py tool displays toplev output in a web browser.
 * toplev now has a new --all option to enable all features.
 * toplev now has a simple TSX metrics model with --tsx on Haswell/Broadwell
 CPUs.
@@ -310,6 +311,21 @@ With a new enough matplotlib you can also enable xkcd mode
 	toplev.py -I 100 -l2 --title "povray" --xkcd povray --benchmark
 
 ![tl-barplot-xkcd] (http://halobates.de/povray.2.png)
+
+## tl-serve:
+
+Display toplev.py output in a web browser.
+
+Download dygraphs. Only needs to be done once.
+
+	wget http://dygraphs.com/1.0.1/dygraph-combined.js
+
+Run toplev:
+
+	toplev.py --all -I 100 -o x.csv ... 
+	tl-serve.py x.csv
+	
+Then browse http://localhost:9001/ in your web browser.
 
 ## self: 
 
