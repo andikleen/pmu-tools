@@ -19,6 +19,13 @@ args = ap.parse_args()
 
 T = string.Template
 
+# XXX
+metric_levels = {
+    "TurboUtilization": "Frequency",
+    "L1dMissLatency": "Latencies",
+    "InstPerTakenBranch": "Branches",
+}
+
 class Data:
     def __init__(self, f):
         self.times = []
@@ -26,6 +33,7 @@ class Data:
         self.csv = csv.reader(f)
         self.headers = dict()
         self.levels = defaultdict(set)
+        self.metrics = set()
 
     def update(self):
         prevts = None
@@ -41,13 +49,15 @@ class Data:
                 if name.count(".") > 0:
                     f = name.split(".")[:-1]
                     n = ".".join(f)
+                    n = n.replace(" ", "_")
                 elif gen_level.is_metric(name):
                     n = gen_level.get_subplot(name)
                     if not n:
-                        n = "METRIC"
+                        n = metric_levels[n] if n in metric_levels else "METRIC" 
+                    n = n.replace(" ", "_")
+                    self.metrics.add(n)
                 else:
-                    n = "Level1"
-                n = n.replace(" ", "_")
+                    n = "TopLevel"
                 self.headers[name] = n
                 self.levels[n].add(name)
             prevts = ts
@@ -57,9 +67,9 @@ data = Data(args.csvfile)
 data.update()
 
 def cmp_level(a, b):
-    if a == "Level1":
+    if a == "TopLevel":
         return -1
-    if b == "Level1":
+    if b == "TopLevel":
         return +1
     return cmp(a, b)
 
@@ -85,17 +95,20 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 <body>""")
             graph = ""
             for j in sorted(data.levels.keys(), cmp=cmp_level):
+                if j in data.metrics:
+                    opts = {}
+                else:
+                    opts = {"stackedGraph": 1}
                 graph += T("""
 <h1>$name</h1>
 <p>
-<div id="lev$name"></div>
+<div id="d$name"></div>
 <script type="text/javascript">
-    g = new Dygraph(document.getElementById("lev$name"),
-                    "/$file.csv",
-                    {stackedGraph: 1})
+    g = new Dygraph(document.getElementById("d$name"),
+                    "/$file.csv", $opts)
 </script>
 </p>
-                """).substitute({"name": j, "file": j})
+                """).substitute({"name": j, "file": j, "opts": opts})
             self.wfile.write(graph + """
 </body>
 </html>""")
