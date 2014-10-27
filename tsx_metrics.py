@@ -5,6 +5,9 @@
 # XXX force all these into a single group
 # XXX: force % in caller
 
+def TXCycles(EV, level):
+    return EV("cpu/cycles-t/", level) / EV("cycles", level)
+
 class TransactionalCycles:
     name = "Transactional cycles"
     desc = """
@@ -15,7 +18,7 @@ does not use locks (or other transactions), or the locks are not enabled with lo
     sample = ["mem_uops_retired.lock_loads"]
     def compute(self, EV):
         try:
-            self.val = (EV("cpu/cycles-t/", 1) / EV("cycles", 1)) * 100.
+            self.val = TXCycles(EV, 1) * 100.
             self.thresh = (self.val >= 0.01)
         except ZeroDivisionError:
             self.val = 0
@@ -42,12 +45,12 @@ class AverageRTM:
     desc = """
 Average RTM transaction length. Assumes most transactions are RTM.
 When low consider increasing the size of the critical sections to lower overhead."""
-    subplot = "TSX"
+    subplot = "TSX Latencies"
     unit = "cycles"
     def compute(self, EV):
         try:
             self.val = EV("cpu/cycles-t/", 1) / EV("RTM_RETIRED.START", 1)
-            self.thresh = (self.val > 0)
+            self.thresh = TXCycles(EV, 1) >= 0.01 and self.val > 0
         except ZeroDivisionError:
             self.val = 0
             self.thresh = False
@@ -57,12 +60,12 @@ class AverageHLE:
     desc = """
 Average HLE transaction length. Assumes most transactions are HLE.
 When low consider increasing the size of the critical sections to lower overhead."""
-    subplot = "TSX"
+    subplot = "TSX Latencies"
     unit = "cycles"
     def compute(self, EV):
         try:
             self.val = EV("cpu/cycles-t/", 1) / EV("HLE_RETIRED.START", 1)
-            self.thresh = (self.val > 0)
+            self.thresh = TXCycles(EV, 1) >= 0.01 and self.val > 0
         except ZeroDivisionError:
             self.val = 0
             self.thresh = False
