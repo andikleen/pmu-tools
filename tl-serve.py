@@ -24,15 +24,14 @@ T = string.Template
 metric_levels = {
     "TurboUtilization": "Turbo",
     "L1dMissLatency": "Latencies",
-    "InstPerTakenBranch": "Branches",
+    "InstPerTakenBranch": "Basic Block Length",
 }
 
-metric_axis = {
+metric_unit = {
     "Turbo": "vs nominal Freq",
     "Latencies": "Cycles",
-    "Branches": "Basic block length",
-    "CPU_Utilization": "CPUs",
-    "Power_(J)": "Joules",
+    "Basic_Block_Length": "Insns",
+    "CPU_Utilization": "CPUs"
 }
 
 class Data:
@@ -120,8 +119,8 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     opts["stackedGraph"] = 1
                     opts["ylabel"] = "% CPU time"
                     opts["valueRange"] = [-5, 110]
-                elif j in metric_axis:
-                    opts["ylabel"] = metric_axis[j]
+                elif j in metric_unit:
+                    opts["ylabel"] = metric_unit[j]
                 opts["title"] = j
                 opts["width"] = 1000
                 opts["height"] = 180

@@ -8,7 +8,7 @@ class EnergyPackage:
 Package Energy over measurement period in Joules"""
     unit = "Joules"
     nogroup = True
-    subplot = "Power (J)"
+    subplot = "Power"
     def compute(self, EV):
         self.val = EV("power/energy-pkg/", 1)
         self.thresh = self.val > 0
@@ -19,7 +19,7 @@ class EnergyCores:
 Cores Energy over measurement period in Joules"""
     unit = "Joules"
     nogroup = True
-    subplot = "Power (J)"
+    subplot = "Power"
     def compute(self, EV):
         self.val = EV("power/energy-cores/", 1)
         self.thresh = self.val > 0
@@ -30,7 +30,7 @@ class EnergyRAM:
 RAM Energy over measurement period in Joules"""
     unit = "Joules"
     nogroup = True
-    subplot = "Power (J)"
+    subplot = "Power"
     def compute(self, EV):
         self.val = EV("power/energy-ram/", 1)
         self.thresh = self.val > 0
@@ -41,7 +41,7 @@ class EnergyGPU:
 GPU Energy over measurement period in Joules"""
     unit = "Joules"
     nogroup = True
-    subplot = "Power (J)"
+    subplot = "Power"
     def compute(self, EV):
         self.val = EV("power/energy-gpu/", 1)
         self.thresh = self.val > 1
