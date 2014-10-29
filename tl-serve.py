@@ -87,6 +87,45 @@ def cmp_level(a, b):
         return -1
     return cmp(a, b)
 
+def gen_html():
+    graph = """
+<html><head><title>Toplev</title>
+<script type="text/javascript" src="dygraph-combined.js"></script>
+</head>
+<body>
+"""
+    for j in sorted(data.levels.keys(), cmp=cmp_level):
+        opts = dict()
+        if j not in data.metrics:
+            opts["stackedGraph"] = 1
+            opts["stackedGraphNaNFill"] = "none"
+            opts["ylabel"] = "% CPU time"
+            opts["valueRange"] = [-5, 110]
+        elif j in metric_unit:
+            opts["ylabel"] = metric_unit[j]
+        opts["title"] = j
+        opts["width"] = 1000
+        opts["height"] = 180
+        #opts["xlabel"] = "time"
+        graph += T("""
+<div id="d$name"></div>
+<script type="text/javascript">
+    g = new Dygraph(document.getElementById("d$name"),
+                    "/$file.csv", $opts)
+</script>
+                """).substitute({"name": j, "file": j, "opts": opts})
+    graph + """
+</body>
+</html>"""
+    return graph
+
+def gencsv(wfile, l):
+    hdr = sorted(data.levels[l])
+    wr = csv.writer(wfile)
+    wr.writerow(["Timestamp"] + hdr)
+    for v, t in zip(data.vals, data.times):
+        wr.writerow([t] + [v[x] if x in v else "" for x in hdr])
+
 class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def header(self, type):
         self.send_response(200)
@@ -107,35 +146,7 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/":
             self.header("text/html")
-            self.wfile.write("""
-<html><head><title>Toplev</title>
-<script type="text/javascript" src="dygraph-combined.js"></script>
-</head>
-<body>""")
-            graph = ""
-            for j in sorted(data.levels.keys(), cmp=cmp_level):
-                opts = dict()
-                if j not in data.metrics:
-                    opts["stackedGraph"] = 1
-                    opts["stackedGraphNaNFill"] = "none"
-                    opts["ylabel"] = "% CPU time"
-                    opts["valueRange"] = [-5, 110]
-                elif j in metric_unit:
-                    opts["ylabel"] = metric_unit[j]
-                opts["title"] = j
-                opts["width"] = 1000
-                opts["height"] = 180
-                #opts["xlabel"] = "time"
-                graph += T("""
-<div id="d$name"></div>
-<script type="text/javascript">
-    g = new Dygraph(document.getElementById("d$name"),
-                    "/$file.csv", $opts)
-</script>
-                """).substitute({"name": j, "file": j, "opts": opts})
-            self.wfile.write(graph + """
-</body>
-</html>""")
+            self.wfile.write(gen_html())
         elif self.path == "/dygraph-combined.js":
             self.serve_file("dygraph-combined.js", "text/javascript")
         elif self.path == "/favicon.ico":
@@ -146,11 +157,7 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.bad()
                 return
             self.header("text/csv")
-            hdr = sorted(data.levels[l])
-            wr = csv.writer(self.wfile)
-            wr.writerow(["Timestamp"] + hdr)
-            for v, t in zip(data.vals, data.times):
-                wr.writerow([t] + [v[x] if x in v else "" for x in hdr])
+            gencsv(self.wfile, l)
         else:
             self.bad()
 
