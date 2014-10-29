@@ -100,6 +100,11 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write("%s not found" % (self.path))
 
+    def serve_file(self, fn, mime):
+        with open(fn, "r") as f:
+            self.header(mime)
+            self.wfile.write(f.read())
+
     def do_GET(self):
         if self.path == "/":
             self.header("text/html")
@@ -132,9 +137,9 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 </body>
 </html>""")
         elif self.path == "/dygraph-combined.js":
-            with open("dygraph-combined.js", "r") as f:
-                self.header("text/javascript")
-                self.wfile.write(f.read())
+            self.serve_file("dygraph-combined.js", "text/javascript")
+        elif self.path == "/favicon.ico":
+            self.serve_file("toplev.ico", "image/x-icon")
         elif self.path.endswith(".csv"):
             l = re.sub(r"\.csv$", "", self.path[1:])
             if l not in data.levels:
