@@ -117,6 +117,7 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 opts = dict()
                 if j not in data.metrics:
                     opts["stackedGraph"] = 1
+                    opts["stackedGraphNaNFill"] = "none"
                     opts["ylabel"] = "% CPU time"
                     opts["valueRange"] = [-5, 110]
                 elif j in metric_unit:
