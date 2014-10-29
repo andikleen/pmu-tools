@@ -9,6 +9,8 @@ import BaseHTTPServer
 import csv
 import gen_level
 import re
+import sys
+import os
 from collections import defaultdict
 
 ap = argparse.ArgumentParser(usage="Serve toplev csv file as http")
@@ -16,6 +18,7 @@ ap.add_argument('csvfile', help='toplev csv file to serve', type=argparse.FileTy
 ap.add_argument('host', nargs='?', default="localhost", help='Hostname to bind to (default localhost)')
 ap.add_argument('port', nargs='?', default="9001", type=int, help='Port to bind to (default 9001)')
 ap.add_argument('--verbose', '-v', action='store_true', help='Display all metrics, even if below threshold')
+ap.add_argument('--gen', help='Generate HTML files in specified directory')
 args = ap.parse_args()
 
 T = string.Template
@@ -160,6 +163,24 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             gencsv(self.wfile, l)
         else:
             self.bad()
+
+def copyfile(a, b):
+    with open(a, "r") as af:
+        with open(b, "w") as bf:
+            bf.write(af.read())
+
+if args.gen:
+    if not os.path.isdir(args.gen):
+        os.makedirs(args.gen)
+    genfn = os.path.join
+    with open(genfn(args.gen, "index.html"), 'w') as f:
+        f.write(gen_html())
+    copyfile('dygraph-combined.js', genfn(args.gen, 'dygraph-combined.js'))
+    copyfile('toplev.ico', genfn(args.gen, 'favicon.ico'))
+    for l in data.levels:
+        with open(genfn(args.gen, l + ".csv"), 'w') as f:
+            gencsv(f, l)
+    sys.exit(0)
 
 httpd = BaseHTTPServer.HTTPServer((args.host, args.port), TLHandler)
 
