@@ -54,6 +54,25 @@ def get_subplot(name):
 def is_metric(name):
     return name in metric
 
+# XXX: move to model
+metric_levels = {
+    "L1dMissLatency": "Latencies",
+    "InstPerTakenBranch": "Basic Block Length",
+}
+
+def level_name(name):
+    if name.count(".") > 0:
+        f = name.split(".")[:-1]
+        n = ".".join(f)
+    elif is_metric(name):
+        n = get_subplot(name)
+        if not n:
+            n = metric_levels[name] if name in metric_levels else "CPU-METRIC"
+    else:
+        n = "TopLevel"
+    n = n.replace(" ", "_")
+    return n
+
 runner = Runner()
 ivb_server_ratios.Setup(runner)
 hsw_client_ratios.Setup(runner)

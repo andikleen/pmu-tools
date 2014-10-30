@@ -22,12 +22,6 @@ args = ap.parse_args()
 
 T = string.Template
 
-# XXX
-metric_levels = {
-    "L1dMissLatency": "Latencies",
-    "InstPerTakenBranch": "Basic Block Length",
-}
-
 metric_unit = {
     "Latencies": "Cycles",
     "Basic_Block_Length": "Insns",
@@ -39,7 +33,6 @@ class Data:
         self.times = []
         self.vals = []
         self.fn = fn
-        self.headers = dict()
         self.levels = defaultdict(set)
         self.metrics = set()
         self.mtime = None
@@ -61,21 +54,10 @@ class Data:
                 self.vals.append(val)
                 val = dict()
             val[name] = pct
-            if name not in self.headers:
-                if name.count(".") > 0:
-                    f = name.split(".")[:-1]
-                    n = ".".join(f)
-                    n = n.replace(" ", "_")
-                elif gen_level.is_metric(name):
-                    n = gen_level.get_subplot(name)
-                    if not n:
-                        n = metric_levels[name] if name in metric_levels else "CPU-METRIC"
-                    n = n.replace(" ", "_")
-                    self.metrics.add(n)
-                else:
-                    n = "TopLevel"
-                self.headers[name] = n
-                self.levels[n].add(name)
+            n = gen_level.level_name(name)
+            if gen_level.is_metric(n):
+                self.metrics.add(n)
+            self.levels[n].add(name)
             prevts = ts
 
 
