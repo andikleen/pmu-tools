@@ -101,9 +101,9 @@ def gen_html():
 </head>
 <body>
 <script type="text/javascript">
-function enable(flag) {
+function enable(el) {
     p = document.getElementById(el.name)
-    p.style.display = flag ? 'block' : 'none';
+    p.style.display = el.checked ? 'block' : 'none';
 }
 
 function change_all(flag) {
@@ -125,7 +125,7 @@ function change_all(flag) {
     graph += "<b>Display:</b>\n"
     for j, id in zip(lev, range(len(lev))):
         graph += T("""
-<input id="$id" class="toggles" type=checkbox name="d_$name" onClick="enable(this.checked)" checked>
+<input id="$id" class="toggles" type=checkbox name="d_$name" onClick="enable(this)" checked>
 <label for="$id">$name</label>
         """).substitute({"id": id, "name": j})
     graph += """
