@@ -88,32 +88,38 @@ def cmp_level(a, b):
     return cmp(a, b)
 
 def gen_html():
+    lev = sorted(data.levels.keys(), cmp=cmp_level)
     graph = """
 <html><head><title>Toplev</title>
 <script type="text/javascript" src="dygraph-combined.js"></script>
 </head>
 <body>
 <script type="text/javascript">
-function enable(el) {
+function enable(flag) {
     p = document.getElementById(el.name)
-    if (el.checked) {
-        p.style.display = 'block';
-    } else {
-        p.style.display = 'none';
+    p.style.display = flag ? 'block' : 'none';
+}
+
+function change_all(flag) {
+    all_displays = document.getElementsByClassName("disp")
+    for (i = 0; i < all_displays.length; i++) {
+        p = all_displays[i];
+        p.style.display = flag ? 'block' : 'none';
     }
 }
 </script>
 
 <div><p>
 """
-    lev = sorted(data.levels.keys(), cmp=cmp_level)
     graph += "<b>Display:</b>\n"
     for j, id in zip(lev, range(len(lev))):
         graph += T("""
-<input id="$id" type=checkbox name="d$name" onClick="enable(this)" checked>
+<input id="$id" type=checkbox name="d_$name" onClick="enable(this.checked)" checked>
 <label for="$id">$name</label>
         """).substitute({"id": id, "name": j})
     graph += """
+<input id="all" type=checkbox name="dall" onClick="change_all(this.checked)" checked>
+<label for="all">Toggle all</label>
 </p></div>
 """
     for j in lev:
@@ -130,9 +136,9 @@ function enable(el) {
         opts["height"] = 180
         #opts["xlabel"] = "time"
         graph += T("""
-<div id="d$name"></div>
+<div id="d_$name" class="disp"></div>
 <script type="text/javascript">
-    g = new Dygraph(document.getElementById("d$name"),
+    g = new Dygraph(document.getElementById("d_$name"),
                     "/$file.csv", $opts)
 </script>
                 """).substitute({"name": j, "file": j, "opts": opts})
