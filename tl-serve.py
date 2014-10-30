@@ -9,11 +9,10 @@ import BaseHTTPServer
 import csv
 import gen_level
 import re
-import sys
 import os
 from collections import defaultdict
 
-ap = argparse.ArgumentParser(usage="Serve toplev csv file as http")
+ap = argparse.ArgumentParser(usage="Serve toplev csv file as http or generate in directory")
 ap.add_argument('csvfile', help='toplev csv file to serve', type=argparse.FileType('r'))
 ap.add_argument('host', nargs='?', default="localhost", help='Hostname to bind to (default localhost)')
 ap.add_argument('port', nargs='?', default="9001", type=int, help='Port to bind to (default 9001)')
@@ -64,7 +63,7 @@ class Data:
                 elif gen_level.is_metric(name):
                     n = gen_level.get_subplot(name)
                     if not n:
-                        n = metric_levels[name] if name in metric_levels else "CPU-METRIC" 
+                        n = metric_levels[name] if name in metric_levels else "CPU-METRIC"
                     n = n.replace(" ", "_")
                     self.metrics.add(n)
                 else:
@@ -178,12 +177,12 @@ if args.gen:
     for l in data.levels:
         with open(genfn(args.gen, l + ".csv"), 'w') as f:
             gencsv(f, l)
-    sys.exit(0)
+    print "Please browse", args.gen, "through a web server, not through file:"
+else:
+    httpd = BaseHTTPServer.HTTPServer((args.host, args.port), TLHandler)
 
-httpd = BaseHTTPServer.HTTPServer((args.host, args.port), TLHandler)
-
-print "serving at",args.host,"port",args.port,"until Ctrl-C"
-try:
-    httpd.serve_forever()
-except KeyboardInterrupt:
-    httpd.socket.close()
+    print "serving at",args.host,"port",args.port,"until Ctrl-C"
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        httpd.socket.close()
