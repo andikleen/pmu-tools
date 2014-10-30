@@ -319,6 +319,7 @@ class CPU:
         self.ht = False
         self.counters = 0
         self.has_tsx = False
+        self.freq = 0.0
         forced_cpu = self.force_cpu()
         self.force_counters()
         cores = {}
@@ -337,6 +338,10 @@ class CPU:
                 elif (n[0], n[1]) == ("model", ":") and ok == 2:
                     ok += 1
                     self.model = int(n[2])
+                elif (n[0], n[1]) == ("model", "name"):
+                    m = re.search(r"@ (\d+\.\d+)Ghz", l)
+                    if m:
+                        self.freq = float(m.group(1))
                 elif (n[0], n[1]) == ("physical", "id"):
                     physid = int(n[3])
                 elif (n[0], n[1]) == ("core", "id"):
@@ -908,6 +913,12 @@ if args.sw:
 if args.tsx and cpu.has_tsx and cpu.cpu in tsx_cpus:
     import tsx_metrics
     setup_with_metrics(tsx_metrics, runner)
+
+import frequency
+old_metrics = args.metrics
+args.metrics = True
+frequency.SetupCPU(runner, cpu)
+args.metrics = old_metrics
 
 if need_any:
     print "Running in HyperThreading mode. Will measure complete system."

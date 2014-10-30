@@ -45,20 +45,17 @@ def flush_vals(ratios, vals):
 
 METRIC_LEVEL = 99
 LAT_LEVEL = 98
-TURBO_LEVEL = 97
 ITB_LEVEL = 96
 new_level = 95
 
 metric_name = {
     METRIC_LEVEL: "Metrics",
-    TURBO_LEVEL: "Frequency" ,
     LAT_LEVEL: "Latencies (cyc)",
     ITB_LEVEL: "Insn / Branch",
 }
 
 # XXX move into model as subplot
 metric_columns = {
-    "TurboUtilization": TURBO_LEVEL,
     "L1dMissLatency": LAT_LEVEL,
     "InstPerTakenBranch": ITB_LEVEL,
 }

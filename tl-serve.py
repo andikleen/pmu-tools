@@ -25,13 +25,11 @@ T = string.Template
 
 # XXX
 metric_levels = {
-    "TurboUtilization": "Turbo",
     "L1dMissLatency": "Latencies",
     "InstPerTakenBranch": "Basic Block Length",
 }
 
 metric_unit = {
-    "Turbo": "vs nominal Freq",
     "Latencies": "Cycles",
     "Basic_Block_Length": "Insns",
     "CPU_Utilization": "CPUs"
