@@ -93,8 +93,30 @@ def gen_html():
 <script type="text/javascript" src="dygraph-combined.js"></script>
 </head>
 <body>
+<script type="text/javascript">
+function enable(el) {
+    p = document.getElementById(el.name)
+    if (el.checked) {
+        p.style.display = 'block';
+    } else {
+        p.style.display = 'none';
+    }
+}
+</script>
+
+<div><p>
 """
-    for j in sorted(data.levels.keys(), cmp=cmp_level):
+    lev = sorted(data.levels.keys(), cmp=cmp_level)
+    graph += "<b>Display:</b>\n"
+    for j, id in zip(lev, range(len(lev))):
+        graph += T("""
+<input id="$id" type=checkbox name="d$name" onClick="enable(this)" checked>
+<label for="$id">$name</label>
+        """).substitute({"id": id, "name": j})
+    graph += """
+</p></div>
+"""
+    for j in lev:
         opts = dict()
         if j not in data.metrics:
             opts["stackedGraph"] = 1
