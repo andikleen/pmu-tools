@@ -13,7 +13,7 @@ import os
 from collections import defaultdict
 
 ap = argparse.ArgumentParser(usage="Serve toplev csv file as http or generate in directory")
-ap.add_argument('csvfile', help='toplev csv file to serve', type=argparse.FileType('r'))
+ap.add_argument('csvfile', help='toplev csv file to serve')
 ap.add_argument('host', nargs='?', default="localhost", help='Hostname to bind to (default localhost)')
 ap.add_argument('port', nargs='?', default="9001", type=int, help='Port to bind to (default 9001)')
 ap.add_argument('--verbose', '-v', action='store_true', help='Display all metrics, even if below threshold')
@@ -35,18 +35,24 @@ metric_unit = {
 }
 
 class Data:
-    def __init__(self, f):
+    def __init__(self, fn):
         self.times = []
         self.vals = []
-        self.csv = csv.reader(f)
+        self.fn = fn
         self.headers = dict()
         self.levels = defaultdict(set)
         self.metrics = set()
+        self.mtime = None
 
     def update(self):
+        mtime = os.path.getmtime(self.fn)
+        if self.mtime and self.mtime == mtime:
+            return
+        self.mtime = mtime
+        csvf = csv.reader(open(self.fn, 'r'))
         prevts = None
         val = dict()
-        for r in self.csv:
+        for r in csvf:
             ts, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4]
             if state == "below" and not args.verbose:
                 continue
@@ -185,6 +191,7 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         elif self.path == "/favicon.ico":
             self.serve_file("toplev.ico", "image/x-icon")
         elif self.path.endswith(".csv"):
+            data.update()
             l = re.sub(r"\.csv$", "", self.path[1:])
             if l not in data.levels:
                 self.bad()
