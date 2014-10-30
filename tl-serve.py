@@ -55,7 +55,7 @@ class Data:
                 val = dict()
             val[name] = pct
             n = gen_level.level_name(name)
-            if gen_level.is_metric(n):
+            if gen_level.is_metric(name):
                 self.metrics.add(n)
             self.levels[n].add(name)
             prevts = ts
