@@ -83,6 +83,11 @@ def gen_html():
 </head>
 <body>
 <script type="text/javascript">
+
+var graphs = []
+var goptions = []
+var num_graphs = 0
+
 function enable(el) {
     p = document.getElementById(el.name)
     p.style.display = el.checked ? 'block' : 'none';
@@ -100,6 +105,15 @@ function change_all(flag) {
         p.checked = flag;
     }
 }
+
+function enable_refresh(el) {
+    p = document.getElementById("refresh_rate")
+    setInterval(function () {
+                    for (i = 0; i < num_graphs; i++) {
+                        graphs[i].updateOptions(goptions[i])
+                    }
+                }, Number(p.value))
+}
 </script>
 
 <div><p>
@@ -107,12 +121,16 @@ function change_all(flag) {
     graph += "<b>Display:</b>\n"
     for j, id in zip(lev, range(len(lev))):
         graph += T("""
-<input id="$id" class="toggles" type=checkbox name="d_$name" onClick="enable(this)" checked>
+<input id="$id" class="toggles" type=checkbox name="d_$name" onClick="enable(this)" checked />
 <label for="$id">$name</label>
         """).substitute({"id": id, "name": j})
     graph += """
-<input id="all" type=checkbox name="dall" onClick="change_all(this.checked)" checked>
+<input id="all" type=checkbox name="dall" onClick="change_all(this.checked)" checked />
 <label for="all">Toggle all</label>
+<input id="enable_refresh" type=checkbox onClick="enable_refresh(this)" />
+<label for"enable_refresh">Auto-refresh</a>
+<input id="refresh_rate" type="text" value="1000" name="refresh"  />
+<label for="refresh_rate">Refresh rate (ms)</label>
 </p></div>
 """
     for j in lev:
@@ -131,8 +149,10 @@ function change_all(flag) {
         graph += T("""
 <div id="d_$name" class="disp"></div>
 <script type="text/javascript">
-    g = new Dygraph(document.getElementById("d_$name"),
-                    "/$file.csv", $opts)
+    i = num_graphs++
+    goptions[i] = $opts
+    graphs[i] = new Dygraph(document.getElementById("d_$name"), "/$file.csv", goptions[i])
+    goptions[i]["file"] = "/$file.csv"
 </script>
                 """).substitute({"name": j, "file": j, "opts": opts})
     graph + """
