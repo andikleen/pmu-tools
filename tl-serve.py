@@ -46,7 +46,7 @@ class Data:
 
     def update(self):
         mtime = os.path.getmtime(self.fn)
-        if self.mtime and self.mtime == mtime:
+        if self.mtime == mtime:
             return
         self.mtime = mtime
         csvf = csv.reader(open(self.fn, 'r'))
