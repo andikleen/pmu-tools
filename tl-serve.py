@@ -106,13 +106,21 @@ function change_all(flag) {
     }
 }
 
-function enable_refresh(el) {
+var timer
+
+function toggle_refresh(el) {
     p = document.getElementById("refresh_rate")
-    setInterval(function () {
+    if (timer) {
+        clearInterval(timer)
+        timer = null
+    }
+    if (el.checked) {
+        timer = setInterval(function () {
                     for (i = 0; i < num_graphs; i++) {
                         graphs[i].updateOptions(goptions[i])
                     }
                 }, Number(p.value))
+    }
 }
 </script>
 
@@ -127,7 +135,7 @@ function enable_refresh(el) {
     graph += """
 <input id="all" type=checkbox name="dall" onClick="change_all(this.checked)" checked />
 <label for="all">Toggle all</label>
-<input id="enable_refresh" type=checkbox onClick="enable_refresh(this)" />
+<input id="enable_refresh" type=checkbox onClick="toggle_refresh(this)" />
 <label for"enable_refresh">Auto-refresh</a>
 <input id="refresh_rate" type="text" size=4 value="1000" name="refresh"  />
 <label for="refresh_rate">Refresh rate (ms)</label>
