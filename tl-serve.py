@@ -142,6 +142,10 @@ function enable_refresh(el) {
             opts["valueRange"] = [-5, 110]
         elif j in metric_unit:
             opts["ylabel"] = metric_unit[j]
+        else:
+            unit = gen_level.get_unit(list(data.levels[j])[0])
+            if unit:
+                opts["ylabel"] = unit
         opts["title"] = j
         opts["width"] = 1000
         opts["height"] = 180

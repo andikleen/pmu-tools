@@ -51,6 +51,13 @@ def get_subplot(name):
             return metric[name].subplot
     return None
 
+def get_unit(name):
+    if name in metric:
+        obj = metric[name]
+        if 'unit' in obj.__class__.__dict__:
+            return metric[name].unit
+    return None
+
 def is_metric(name):
     return name in metric
 
