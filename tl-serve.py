@@ -22,12 +22,6 @@ args = ap.parse_args()
 
 T = string.Template
 
-metric_unit = {
-    "Latencies": "Cycles",
-    "Basic_Block_Length": "Insns",
-    "CPU_Utilization": "CPUs"
-}
-
 class Data:
     def __init__(self, fn):
         self.times = []
@@ -143,17 +137,18 @@ function toggle_refresh(el) {
 """
     for j in lev:
         opts = dict()
-        if j not in data.metrics:
-            opts["stackedGraph"] = 1
-            opts["stackedGraphNaNFill"] = "none"
-            opts["ylabel"] = "% CPU time"
-            opts["valueRange"] = [-5, 110]
-        elif j in metric_unit:
-            opts["ylabel"] = metric_unit[j]
-        else:
+        unit = None
+        if j in data.metrics:
             unit = gen_level.get_unit(list(data.levels[j])[0])
             if unit:
                 opts["ylabel"] = unit
+        else:
+            opts["stackedGraph"] = 1
+            opts["stackedGraphNaNFill"] = "none"
+            opts["ylabel"] = "% CPU time"
+            unit = '%'
+        if unit == '%':
+            opts["valueRange"] = [-5, 110]
         opts["title"] = j
         opts["width"] = 1000
         opts["height"] = 180

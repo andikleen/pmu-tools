@@ -51,11 +51,20 @@ def get_subplot(name):
             return metric[name].subplot
     return None
 
+# XXX move to model
+metric_unit = {
+    "Latencies": "Cycles",
+    "Basic_Block_Length": "Insns",
+    "CPU_Utilization": "CPUs"
+}
+
 def get_unit(name):
     if name in metric:
         obj = metric[name]
         if 'unit' in obj.__class__.__dict__:
             return metric[name].unit
+        if name in metric_unit:
+            return metric_unit[name]
     return None
 
 def is_metric(name):
