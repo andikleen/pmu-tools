@@ -129,7 +129,7 @@ function enable_refresh(el) {
 <label for="all">Toggle all</label>
 <input id="enable_refresh" type=checkbox onClick="enable_refresh(this)" />
 <label for"enable_refresh">Auto-refresh</a>
-<input id="refresh_rate" type="text" value="1000" name="refresh"  />
+<input id="refresh_rate" type="text" size=4 value="1000" name="refresh"  />
 <label for="refresh_rate">Refresh rate (ms)</label>
 </p></div>
 """
