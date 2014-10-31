@@ -30,6 +30,7 @@ class Data:
         self.levels = defaultdict(set)
         self.metrics = set()
         self.mtime = None
+        self.helptxt = dict()
 
     def update(self):
         mtime = os.path.getmtime(self.fn)
@@ -41,6 +42,8 @@ class Data:
         val = dict()
         for r in csvf:
             ts, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4]
+            if helptxt != "":
+                self.helptxt[name] = helptxt
             if state == "below" and not args.verbose:
                 continue
             if prevts and ts != prevts:
@@ -68,6 +71,9 @@ def cmp_level(a, b):
     if b in data.metrics:
         return -1
     return cmp(a, b)
+
+def jsname(n):
+    return n.replace(".", "_").replace("-", "_")
 
 def gen_html():
     lev = sorted(data.levels.keys(), cmp=cmp_level)
@@ -142,6 +148,23 @@ function toggle_refresh(el) {
             "height": 180,
             #"xlabel": "time",
         }
+
+        
+        graph += T("""
+<script type="text/javascript">
+help_$name = {
+""").substitute({"name": jsname(j)})
+        for i in data.levels[j]:
+            if i not in data.helptxt:
+                #print i,"not found in",data.helptxt
+                continue
+            graph += T("""
+        "$name": "$help",
+        """).substitute({"name": i, "help": data.helptxt[i] })
+        graph += """
+}
+</script>
+"""
         if j in data.metrics:
             unit = gen_level.get_unit(list(data.levels[j])[0])
             if unit:
@@ -154,14 +177,37 @@ function toggle_refresh(el) {
         if unit == '%':
             opts["valueRange"] = [-5, 110]
         graph += T("""
-<div id="d_$name" class="disp"></div>
+<table>
+
+<tr>
+<td> <div id="d_$name" class="disp"></div> </td>
+<td> <div id="h_$name" class="help" style="font-size: 10"></div> </td>
+</tr>
+</table>
 <script type="text/javascript">
     i = num_graphs++
     goptions[i] = $opts
+    goptions[i].highlightCallback = function(e, x, pts, row) {
+        p = document.getElementById("h_$name")
+        h = ""
+        for (i = 0; i < pts.length; i++) {
+            n = pts[i].name
+            if (n in help_$jname) {
+                h += "<b>" + n + "</b>: " + help_$jname[n] + " <br /> "
+            } else {
+                // location.reload(); // XXX
+            }
+        }
+        p.innerHTML = h
+    }
+    goptions[i].unhighlightCallback = function(e, x, pts, row) {
+        p = document.getElementById("h_$name")
+        p.innerHTML = ""
+    }
     graphs[i] = new Dygraph(document.getElementById("d_$name"), "/$file.csv", goptions[i])
     goptions[i]["file"] = "/$file.csv"
 </script>
-                """).substitute({"name": j, "file": j, "opts": opts})
+                """).substitute({"name": j, "jname": jsname(j), "file": j, "opts": opts})
     graph + """
 </body>
 </html>"""
