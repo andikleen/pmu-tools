@@ -136,8 +136,12 @@ function toggle_refresh(el) {
 </p></div>
 """
     for j in lev:
-        opts = dict()
-        unit = None
+        opts = {
+            "title": j,
+            "width": 1000,
+            "height": 180,
+            #"xlabel": "time",
+        }
         if j in data.metrics:
             unit = gen_level.get_unit(list(data.levels[j])[0])
             if unit:
@@ -149,10 +153,6 @@ function toggle_refresh(el) {
             unit = '%'
         if unit == '%':
             opts["valueRange"] = [-5, 110]
-        opts["title"] = j
-        opts["width"] = 1000
-        opts["height"] = 180
-        #opts["xlabel"] = "time"
         graph += T("""
 <div id="d_$name" class="disp"></div>
 <script type="text/javascript">
