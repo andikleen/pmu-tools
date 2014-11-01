@@ -92,6 +92,7 @@ def gen_html():
 var graphs = []
 var goptions = []
 var num_graphs = 0
+var block_redraw = false
 
 function enable(el) {
     p = document.getElementById(el.name)
@@ -207,6 +208,20 @@ help_$name = {
             }
         }
         p.innerHTML = h
+    }
+    goptions[i].drawCallback = function(me, initial) {
+        if (block_redraw || initial)
+            return;
+        block_redraw = true
+        xrange = me.xAxisRange()
+        for (i = 0; i < num_graphs; i++) {
+            if (graphs[i] != me) {
+                graphs[i].updateOptions({
+                    dateWindow: xrange,
+                })
+            }
+        }
+        block_redraw = false
     }
     goptions[i].unhighlightCallback = function(e, x, pts, row) {
         p = document.getElementById("h_$name")
