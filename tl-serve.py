@@ -18,6 +18,7 @@ ap.add_argument('host', nargs='?', default="localhost", help='Hostname to bind t
 ap.add_argument('port', nargs='?', default="9001", type=int, help='Port to bind to (default 9001)')
 ap.add_argument('--verbose', '-v', action='store_true', help='Display all metrics, even if below threshold')
 ap.add_argument('--gen', help='Generate HTML files in specified directory')
+ap.add_argument('--title', help='Title for output')
 args = ap.parse_args()
 
 T = string.Template
@@ -127,11 +128,14 @@ function toggle_refresh(el) {
     }
 }
 </script>
-Double click to zoom out again<br />
-
-<div><p>
 """
-    graph += "<b>Display:</b>\n"
+    if args.title:
+        graph += T("<h1>$title</h1>\n").substitute({"title": args.title})
+    graph += """
+Double click to zoom out again<br />
+<div><p>
+<b>Display:</b>"
+"""
     for j, id in zip(lev, range(len(lev))):
         graph += T("""
 <input id="$id" class="toggles" type=checkbox name="d_$name" onClick="enable(this)" checked />
