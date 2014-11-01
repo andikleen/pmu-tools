@@ -127,6 +127,7 @@ function toggle_refresh(el) {
     }
 }
 </script>
+Double click to zoom out again<br />
 
 <div><p>
 """
