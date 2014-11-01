@@ -132,7 +132,6 @@ function toggle_refresh(el) {
     if args.title:
         graph += T("<h1>$title</h1>\n").substitute({"title": args.title})
     graph += """
-Double click to zoom out again<br />
 <div><p>
 <b>Display:</b>"
 """
@@ -149,6 +148,10 @@ Double click to zoom out again<br />
 <input id="refresh_rate" type="text" size=4 value="1000" name="refresh"  />
 <label for="refresh_rate">Refresh rate (ms)</label>
 </p></div>
+
+Double click to zoom out again<br />
+
+<div id="help" style="position:fixed; right:0; width:300px; font-size: 11"> </div>
 """
     for j in lev:
         opts = {
@@ -186,18 +189,14 @@ help_$name = {
         if unit == '%':
             opts["valueRange"] = [-5, 110]
         graph += T("""
-<table>
 
-<tr>
-<td> <div id="d_$name" class="disp"></div> </td>
-<td> <div id="h_$name" class="help" style="font-size: 10"></div> </td>
-</tr>
-</table>
+<div id="d_$name" class="disp"></div>
+
 <script type="text/javascript">
     i = num_graphs++
     goptions[i] = $opts
     goptions[i].highlightCallback = function(e, x, pts, row) {
-        p = document.getElementById("h_$name")
+        p = document.getElementById("help")
         h = ""
         for (i = 0; i < pts.length; i++) {
             n = pts[i].name
