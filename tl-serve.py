@@ -224,7 +224,7 @@ help_$name = {
         block_redraw = false
     }
     goptions[i].unhighlightCallback = function(e, x, pts, row) {
-        p = document.getElementById("h_$name")
+        p = document.getElementById("help")
         p.innerHTML = ""
     }
     graphs[i] = new Dygraph(document.getElementById("d_$name"), "/$file.csv", goptions[i])
