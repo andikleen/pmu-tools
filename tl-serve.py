@@ -42,7 +42,7 @@ class Data:
         val = dict()
         for r in csvf:
             ts, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4]
-            if helptxt != "":
+            if name not in self.helptxt or self.helptxt[name] == "":
                 self.helptxt[name] = helptxt
             if state == "below" and not args.verbose:
                 continue
@@ -156,7 +156,7 @@ help_$name = {
 """).substitute({"name": jsname(j)})
         for i in data.levels[j]:
             if i not in data.helptxt:
-                #print i,"not found in",data.helptxt
+                #print i,"not found in",data.helptxt.keys()
                 continue
             graph += T("""
         "$name": "$help",
@@ -192,7 +192,7 @@ help_$name = {
         h = ""
         for (i = 0; i < pts.length; i++) {
             n = pts[i].name
-            if (n in help_$jname) {
+            if (n in help_$jname && help_$jname[n] != "") {
                 h += "<b>" + n + "</b>: " + help_$jname[n] + " <br /> "
             } else {
                 // location.reload(); // XXX
