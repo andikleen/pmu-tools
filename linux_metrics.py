@@ -12,6 +12,7 @@ class CPU_Utilization:
     desc = " Number of CPUs used"
     nogroup = True
     subplot = "CPU Utilization"
+    unit = "CPUs"
     def compute(self, EV):
         try:
             # interval-ns is not a perf event, but handled by toplev internally.
