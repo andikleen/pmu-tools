@@ -133,7 +133,7 @@ function toggle_refresh(el) {
         graph += T("<h1>$title</h1>\n").substitute({"title": args.title})
     graph += """
 <div><p>
-<b>Display:</b>"
+<b>Display:</b>
 """
     for j, id in zip(lev, range(len(lev))):
         graph += T("""
