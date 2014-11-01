@@ -61,15 +61,19 @@ class Data:
 data = Data(args.csvfile)
 data.update()
 
+early_plots = ["TopLevel", "CPU_Utilization", "Power", "Frequency", "CPU-METRIC"]
+
+def sort_pos(i):
+    if i in early_plots:
+        return early_plots.index(i)
+    if i in data.metrics:
+        return 30
+    return 20
+
 def cmp_level(a, b):
-    if a == "TopLevel":
-        return -1
-    if b == "TopLevel":
-        return +1
-    if a in data.metrics:
-        return +1
-    if b in data.metrics:
-        return -1
+    ap, bp = sort_pos(a), sort_pos(b)
+    if ap != bp:
+        return ap - bp
     return cmp(a, b)
 
 def jsname(n):
