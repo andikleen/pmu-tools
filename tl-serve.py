@@ -149,7 +149,7 @@ function toggle_refresh(el) {
 <label for="refresh_rate">Refresh rate (ms)</label>
 </p></div>
 
-Double click to zoom out again<br />
+Drag to zoom. Double click to zoom out again<br />
 
 <div id="help" style="position:fixed; right:0; width:300px; font-size: 11"> </div>
 """
