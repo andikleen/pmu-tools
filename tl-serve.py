@@ -84,6 +84,7 @@ def gen_html():
     lev = sorted(data.levels.keys(), cmp=cmp_level)
     graph = """
 <html><head><title>Toplev</title>
+<link rel="shortcut icon" href="toplev.ico" />
 <script type="text/javascript" src="dygraph-combined.js"></script>
 </head>
 <body>
@@ -227,11 +228,11 @@ help_$name = {
         p = document.getElementById("help")
         p.innerHTML = ""
     }
-    graphs[i] = new Dygraph(document.getElementById("d_$name"), "/$file.csv", goptions[i])
-    goptions[i]["file"] = "/$file.csv"
+    graphs[i] = new Dygraph(document.getElementById("d_$name"), "$file.csv", goptions[i])
+    goptions[i]["file"] = "$file.csv"
 </script>
                 """).substitute({"name": j, "jname": jsname(j), "file": j, "opts": opts})
-    graph + """
+    graph += """
 </body>
 </html>"""
     return graph
@@ -266,7 +267,7 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.wfile.write(gen_html())
         elif self.path == "/dygraph-combined.js":
             self.serve_file("dygraph-combined.js", "text/javascript")
-        elif self.path == "/favicon.ico":
+        elif self.path == "/toplev.ico":
             self.serve_file("toplev.ico", "image/x-icon")
         elif self.path.endswith(".csv"):
             data.update()
