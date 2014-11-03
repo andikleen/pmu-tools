@@ -10,6 +10,8 @@ import csv
 import gen_level
 import re
 import os
+import tldata
+
 from collections import defaultdict
 
 ap = argparse.ArgumentParser(usage="Serve toplev csv file as http or generate in directory")
@@ -23,43 +25,7 @@ args = ap.parse_args()
 
 T = string.Template
 
-class Data:
-    def __init__(self, fn):
-        self.times = []
-        self.vals = []
-        self.fn = fn
-        self.levels = defaultdict(set)
-        self.metrics = set()
-        self.mtime = None
-        self.helptxt = dict()
-
-    def update(self):
-        mtime = os.path.getmtime(self.fn)
-        if self.mtime == mtime:
-            return
-        self.mtime = mtime
-        csvf = csv.reader(open(self.fn, 'r'))
-        prevts = None
-        val = dict()
-        for r in csvf:
-            ts, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4]
-            if name not in self.helptxt or self.helptxt[name] == "":
-                self.helptxt[name] = helptxt
-            if state == "below" and not args.verbose:
-                continue
-            if prevts and ts != prevts:
-                self.times.append(prevts)
-                self.vals.append(val)
-                val = dict()
-            val[name] = pct
-            n = gen_level.level_name(name)
-            if gen_level.is_metric(name):
-                self.metrics.add(n)
-            self.levels[n].add(name)
-            prevts = ts
-
-
-data = Data(args.csvfile)
+data = tldata.TLData(args.csvfile, args.verbose)
 data.update()
 
 early_plots = ["TopLevel", "CPU_Utilization", "Power", "Frequency", "CPU-METRIC"]
