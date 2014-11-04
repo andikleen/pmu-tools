@@ -4,7 +4,15 @@ from collections import defaultdict
 import csv
 
 class TLData:
-    """Read a toplev output CSV file."""
+    """Read a toplev output CSV file.
+
+   Exported:
+    times[n] All time stamps
+    vals[n]  All values
+    levels{name} All levels (includes metrics), name->list of fields
+    metrics[] All metrics (set)
+    helptxt[col] All help texts.
+    """
 
     def __init__(self, fn, verbose=False):
         self.times = []
