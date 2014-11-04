@@ -49,3 +49,21 @@ class TLData:
             self.levels[n].add(name)
             prevts = ts
 
+early_plots = ["TopLevel", "CPU_Utilization", "Power", "Frequency", "CPU-METRIC"]
+
+def sort_pos(i, data):
+    if i in early_plots:
+        return early_plots.index(i)
+    if i in data.metrics:
+        return 30
+    return 20
+
+def cmp_level(a, b, data):
+    ap, bp = sort_pos(a, data), sort_pos(b, data)
+    if ap != bp:
+        return ap - bp
+    return cmp(a, b)
+
+def level_order(data):
+    """Return plot order of all levels."""
+    return sorted(data.levels.keys(), cmp=lambda a, b: cmp_level(a, b, data))

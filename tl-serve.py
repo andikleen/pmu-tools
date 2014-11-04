@@ -28,26 +28,11 @@ T = string.Template
 data = tldata.TLData(args.csvfile, args.verbose)
 data.update()
 
-early_plots = ["TopLevel", "CPU_Utilization", "Power", "Frequency", "CPU-METRIC"]
-
-def sort_pos(i):
-    if i in early_plots:
-        return early_plots.index(i)
-    if i in data.metrics:
-        return 30
-    return 20
-
-def cmp_level(a, b):
-    ap, bp = sort_pos(a), sort_pos(b)
-    if ap != bp:
-        return ap - bp
-    return cmp(a, b)
-
 def jsname(n):
     return n.replace(".", "_").replace("-", "_")
 
 def gen_html():
-    lev = sorted(data.levels.keys(), cmp=cmp_level)
+    lev = tldata.level_order(data)
     graph = """
 <html><head><title>Toplev</title>
 <link rel="shortcut icon" href="toplev.ico" />
