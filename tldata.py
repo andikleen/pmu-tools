@@ -8,9 +8,10 @@ class TLData:
 
    Exported:
     times[n] All time stamps
-    vals[n]  All values
+    vals[n]  All values, as dicts mapping name->float
     levels{name} All levels (includes metrics), name->list of fields
-    metrics[] All metrics (set)
+    headers(set) All headers (including metrics)
+    metrics(set) All metrics
     helptxt[col] All help texts.
     """
 
@@ -20,6 +21,7 @@ class TLData:
         self.fn = fn
         self.levels = defaultdict(set)
         self.metrics = set()
+        self.headers = set()
         self.mtime = None
         self.helptxt = dict()
         self.verbose = verbose
