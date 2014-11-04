@@ -6,6 +6,7 @@ import hsw_client_ratios
 import power_metrics
 import linux_metrics
 import tsx_metrics
+import frequency
 import re
 
 omap = dict()
@@ -95,3 +96,8 @@ hsw_client_ratios.Setup(runner)
 power_metrics.Setup(runner)
 linux_metrics.Setup(runner)
 tsx_metrics.Setup(runner)
+
+class CPU:
+    freq = 0.0
+
+frequency.SetupCPU(runner, CPU())
