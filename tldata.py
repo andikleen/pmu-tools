@@ -36,6 +36,7 @@ class TLData:
         val = dict()
         for r in csvf:
             ts, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4]
+            ts, pct = float(ts), float(pct.replace("%", ""))
             if name not in self.helptxt or self.helptxt[name] == "":
                 self.helptxt[name] = helptxt
             if state == "below" and not self.verbose:
@@ -46,6 +47,7 @@ class TLData:
                 val = dict()
             val[name] = pct
             n = gen_level.level_name(name)
+            self.headers.add(name)
             if gen_level.is_metric(name):
                 self.metrics.add(n)
             self.levels[n].add(name)
