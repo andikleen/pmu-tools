@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# plot toplev -v -lX -x, output as bar plot
+# plot toplev -I... -x, -o ...csv output as bar plot
 #
 import matplotlib.pyplot as plt
 import csv
@@ -8,13 +8,14 @@ import math
 import re
 from collections import defaultdict
 import gen_level
+import tldata
 
 def parse_args():
-    p = argparse.ArgumentParser(usage='plot toplev -v -lN -x, output as bar plot') 
+    p = argparse.ArgumentParser(usage='plot toplev -v -lN -x, output as bar plot')
     p.add_argument('file', help='CSV file to plot')
     p.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
                       nargs='?')
-    p.add_argument('--verbose', '-v', help='Print data values', action='store_true')
+    p.add_argument('--verbose', '-v', help='Plot all data values even if below threshold', action='store_true')
     p.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
     p.add_argument('--title', help='Set title of plot', nargs='?')
     p.add_argument('--quiet', help='Be quiet', action='store_true')
@@ -31,83 +32,25 @@ except ImportError:
 if args.xkcd:
     plt.xkcd()
 
-def flush_vals(ratios, vals):
-    if not vals:
-        return
-    k = ratios.keys()
-    if not k:
-        k = vals.keys()
-    for j in k:
-        if j in vals and -5 <= vals[j] <= 105:
-            ratios[j].append(vals[j])
-        else:
-            ratios[j].append(float('nan'))
+data = tldata.TLData(args.file, args.verbose)
+data.update()
 
-METRIC_LEVEL = 99
-LAT_LEVEL = 98
-ITB_LEVEL = 96
-new_level = 95
-
-metric_name = {
-    METRIC_LEVEL: "Metrics",
-    LAT_LEVEL: "Latencies (cyc)",
-    ITB_LEVEL: "Insn / Branch",
-}
-
-# XXX move into model as subplot
-metric_columns = {
-    "L1dMissLatency": LAT_LEVEL,
-    "InstPerTakenBranch": ITB_LEVEL,
-}
-
+levels = data.levels
+timestamps = data.times
 ratios = defaultdict(list)
-timestamps = []
-rc = csv.reader(open(args.file, "r"))
-ts = None
-levels = defaultdict(list)
-vals = None
-subplots = dict()
-for r in rc:
-    if len(r) < 4:
-        continue
-    if not re.match(r"\d+(\.\d*)", r[0]):
-        r = ["0.0"] + r
-    sp = gen_level.get_subplot(r[1])
-    if sp:
-        if sp in subplots:
-            l = subplots[sp]
-        else:
-            l = new_level
-            new_level -= 1
-            subplots[sp] = l
-    elif gen_level.is_metric(r[1]):
-        if r[1] in metric_columns:
-            l = metric_columns[r[1]]
-        else:
-            l = METRIC_LEVEL
-    else:
-        l = gen_level.get_level(r[1])
-    if r[1] not in levels[l]:
-        levels[l].append(r[1])
-    t = math.trunc(float(r[0]) * 100) / 100.0
-    if t != ts:
-        timestamps.append(t)
-        ts = t
-        flush_vals(ratios, vals)
-        vals = dict()
-    vals[r[1]] = float(r[2].replace("%",""))
-flush_vals(ratios, vals)
-
-for j in subplots.keys():
-    metric_name[subplots[j]] = j
-
-if args.verbose:
-    print "time", len(timestamps), timestamps
-    for j in ratios.keys():
-        print j, ratios[j]
+for d in data.vals:
+    for j in data.headers:
+        if j not in d:
+            d[j] = float('nan')
+for d in data.vals:
+    for k in d.keys():
+        ratios[k].append(d[k])
+    assert len(ratios.keys()) == len(d.keys())
 
 def valid_row(r):
     s = sum(r)
+    #if sum([0 if math.isnan(x) else 1 for x in r]) < len(r)/80.:
+    #    return False
     return s != 0.0 and s != float('nan')
 
 def get_colors(non_null):
@@ -120,7 +63,7 @@ def get_colors(non_null):
 
 def set_title(ax, t):
     try:
-        ax.set_title(t, { 'fontsize': 10 }, loc='right')
+        ax.set_title(t, { 'fontsize': 6 }, loc='right')
     except AttributeError:
         ax.set_title(t)
 
@@ -130,46 +73,59 @@ def suffix(x):
         return x[dot+1:]
     return x
 
-n = 1
+n = 0
 numplots = len(levels.keys())
-fig = plt.figure()
 ax = None
 yset = False
 max_legend = 0
-print levels.keys()
-for l in sorted(levels.keys()):
+xaxis = None
+legend_bbox = (0., 0., -0.07, -0.03)
+legend_loc = 2
+
+for l in tldata.level_order(data):
     non_null = filter(lambda x: valid_row(ratios[x]), levels[l])
     if not non_null:
-        #print "nothing in level", l
+        print "nothing in level", l
         n += 1
         continue
     all_colors = get_colors(non_null)
-    ax = fig.add_subplot(numplots, 1, n)
+    ax = plt.subplot2grid((numplots, 1), (n, 0), sharex=xaxis)
+    print "numplots", numplots, "n", n
+    plt.tight_layout()
+    set_title(ax, l)
     r = [ratios[x] for x in non_null]
 
-    if l in metric_name:
+    if gen_level.is_metric(non_null[0]):
         for j, name in zip(r, non_null):
             stack = ax.plot(timestamps, j, label=name)
-        set_title(ax, metric_name[l])
-        leg = plt.legend(ncol=3, loc=2, bbox_to_anchor=(0., 0., -0.07, -0.07), prop={'size':8})
+        leg = plt.legend(ncol=6,
+                         loc=legend_loc,
+                         bbox_to_anchor=legend_bbox,
+                         prop={'size':6})
+        low = min([min(ratios[x]) for x in non_null])
+        high = max([max(ratios[x]) for x in non_null])
+        ax.yaxis.set_ticks([low, math.trunc(((high - low)/2.0)/100.)*100., high])
     else:
-        stack = ax.stackplot(timestamps, colors=all_colors, *r)
+        stack = ax.stackplot(timestamps, *r, colors=all_colors)
         ax.set_ylim(0, 100)
         ax.yaxis.set_ticks([0., 50., 100.])
-        set_title(ax, "Level %d" % (l))
         p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
-        leg = plt.legend(p, map(suffix, non_null), ncol=3 if len(non_null) > 4 else 2,
-                bbox_to_anchor=(0., 0., -0.07, -0.07),
-                loc=2, prop={'size':8})
+        leg = plt.legend(p, map(suffix, non_null),
+                ncol=6,
+                bbox_to_anchor=legend_bbox,
+                loc=legend_loc,
+                prop={'size':6})
     leg.get_frame().set_alpha(0.5)
     for j in ax.get_xticklabels() + ax.get_yticklabels():
         j.set_fontsize(6)
-    if n >= 2 and not yset and l != -1:
-        ax.set_ylabel('(% of execution time)')
-        yset = True
+    if not xaxis:
+        xaxis = ax
+    #if n >= 2 and not yset and l != -1:
+    #    ax.set_ylabel('(% of execution time)')
+    #    yset = True
     if n != numplots:
         max_legend = max(len(non_null), max_legend)
-    ax.margins(0, 0)
+    #ax.margins(0, 0)
     n += 1
 
 if len(timestamps) == 1:
