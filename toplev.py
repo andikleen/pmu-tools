@@ -49,7 +49,8 @@ valid_events = [r"cpu/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instruct
 
 # workaround for broken event files for now
 event_fixes = {
-    "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC"
+    "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC",
+    "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC"
 }
 
 perf = os.getenv("PERF")
@@ -628,7 +629,9 @@ def lookup_res(res, rev, ev, obj, env, level):
     if ev in env:
         return env[ev]
     index = obj.res_map[(ev, level)]
-    assert event_rmap(rev[index]) == canon_event(ev)
+    rev = event_rmap(rev[index])
+    assert (rev == canon_event(ev) or
+                (ev in event_fixes and canon_event(event_fixes[ev]) == rev))
     return res[index]
 
 def add_key(k, x, y):
