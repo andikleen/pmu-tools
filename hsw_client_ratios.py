@@ -25,7 +25,7 @@ def FewUopsExecutedThreshold(EV, level):
     EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level); EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
     return EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level) if(IPC(EV, level) > 1.25)else EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
 def BackendBoundAtEXE_stalls(EV, level):
-    return ( EV("CYCLE_ACTIVITY.CYCLES_NO_EXECUTE", level) + EV("UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC", level) - FewUopsExecutedThreshold(EV, level) - EV("RS_EVENTS.EMPTY_CYCLES", level) + EV("RESOURCE_STALLS.SB", level) )
+    return ( EV("CYCLE_ACTIVITY.CYCLES_NO_EXECUTE", level) + EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level) - FewUopsExecutedThreshold(EV, level) - EV("RS_EVENTS.EMPTY_CYCLES", level) + EV("RESOURCE_STALLS.SB", level) )
 def BackendBoundAtEXE(EV, level):
     return BackendBoundAtEXE_stalls(EV, level) / CLKS(EV, level)
 def MemL3HitFraction(EV, level):
