@@ -35,7 +35,7 @@ known_cpus = (
 
 tsx_cpus = ("hsw", "hsx")
 
-ingroup_events = frozenset(["cycles", "instructions", "ref-cycles", 
+ingroup_events = frozenset(["cycles", "instructions", "ref-cycles",
                             "cpu/event=0x3c,umask=0x00,any=1/",
                             "cpu/event=0x3c,umask=0x0,any=1/",
                             "cpu/event=0x00,umask=0x1/",
@@ -65,7 +65,7 @@ class PerfFeatures:
     def __init__(self):
         self.logfd_supported = works(perf + " stat --log-fd 3 3>/dev/null true")
         if not self.logfd_supported:
-	    sys.exit("perf binary is too old. please upgrade")
+            sys.exit("perf binary is too old. please upgrade")
         self.supports_power = works(perf + " list  | grep -q power/")
 
 def event_group(evlist):
@@ -74,7 +74,7 @@ def event_group(evlist):
     if not args.no_group and 1 < len(need_counters) <= cpu.counters:
         e = "{%s}" % (e,)
     return e
- 
+
 feat = PerfFeatures()
 emap = ocperf.find_emap()
 if not emap:
@@ -142,7 +142,7 @@ Valid CPU names: ''' + " ".join([x[0] for x in known_cpus]),
 formatter_class=argparse.RawDescriptionHelpFormatter)
 p.add_argument('--verbose', '-v', help='Print all results even when below threshold',
                action='store_true')
-p.add_argument('--force', help='Force potentially broken configurations', 
+p.add_argument('--force', help='Force potentially broken configurations',
                action='store_true')
 p.add_argument('--kernel', help='Only measure kernel code', action='store_true')
 p.add_argument('--user', help='Only measure user code', action='store_true')
@@ -270,9 +270,9 @@ class Output:
                 desc = ""
             else:
                 self.printed_descs.add(desc)
-	    self.s(area, name, fmtnum(l), remark, desc, sample)
-	else:
-	    self.s(area, name, fmtnum(0), "mismeasured", "", sample)
+            self.s(area, name, fmtnum(l), remark, desc, sample)
+        else:
+            self.s(area, name, fmtnum(0), "mismeasured", "", sample)
 
     def p(self, area, name, l, timestamp, remark, desc, title, sample):
         self.item(area, name, l, timestamp, remark, desc, title,
@@ -308,7 +308,7 @@ class CPU:
         if self.cpu is None:
             print "Unknown FORCECPU ",force
         return True
-       
+
     def force_counters(self):
         cnt = os.getenv("FORCECOUNTERS")
         if cnt:
@@ -332,8 +332,8 @@ class CPU:
                     continue
                 if (n[0], n[2]) == ("vendor_id", "GenuineIntel") and ok == 0:
                     ok += 1
-                elif (len(n) > 3 and 
-                        (n[0], n[1], n[3]) == ("cpu", "family", "6") and 
+                elif (len(n) > 3 and
+                        (n[0], n[1], n[3]) == ("cpu", "family", "6") and
                         ok == 1):
                     ok += 1
                 elif (n[0], n[1]) == ("model", ":") and ok == 2:
@@ -416,8 +416,8 @@ def add_filter(s):
 
 def raw_event(i):
     if i.count(".") > 0:
-	if i in fixed_counters:
-	    i = fixed_counters[i]
+        if i in fixed_counters:
+            i = fixed_counters[i]
             if filter_string():
                 i += ":" + filter_string()
             return i
@@ -446,7 +446,7 @@ def print_header(work, evlist):
     evnames = set(itertools.chain(*evnames0))
     names = [obj.__class__.__name__ for obj in work]
     pwrap(" ".join(names) + ":")
-    pwrap(" ".join(evnames).lower() + 
+    pwrap(" ".join(evnames).lower() +
           " [%d_counters]" % (len(evnames - fixed_set)))
 
 def setup_perf(evstr, rest):
@@ -531,10 +531,10 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
         try:
             l = inf.readline()
             if not l:
-	        break
+                break
         except exceptions.IOError:
-	     # handle pty EIO
-	     break
+             # handle pty EIO
+             break
         except KeyboardInterrupt:
             continue
         if interval_mode:
@@ -704,14 +704,14 @@ class Runner:
         self.olist.append(obj)
 
     def run(self, obj):
-	obj.thresh = False
+        obj.thresh = False
         obj.metric = False
         if obj.level > self.max_level:
             return
         self.do_run(obj)
 
     def metric(self, obj):
-	obj.thresh = True
+        obj.thresh = True
         obj.metric = True
         obj.level = 0
         obj.sibling = None
@@ -737,7 +737,7 @@ class Runner:
 
     def add(self, objl, evnum, evlev):
         assert evlev
-        # does not fit into a group. 
+        # does not fit into a group.
         if len(set(evnum) - add_filter(ingroup_events)) > cpu.counters:
             self.split_groups(objl, evlev)
             return
@@ -827,7 +827,7 @@ class Runner:
                 desc = obj.desc[1:].replace("\n", "\n\t")
                 if obj.metric:
                     out.metric(obj.area if 'area' in obj.__class__.__dict__ else None,
-                            obj.name, val, timestamp, 
+                            obj.name, val, timestamp,
                             desc,
                             title,
                             obj.unit if 'unit' in obj.__class__.__dict__ else "metric")
@@ -863,7 +863,7 @@ def ht_warning():
     if cpu.ht:
         print >>sys.stderr, "WARNING: HT enabled"
         print >>sys.stderr, "Measuring multiple processes/threads on the same core may is not reliable."
-   
+
 runner = Runner(args.level)
 
 need_any = False
