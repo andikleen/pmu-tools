@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # library and tool to access Intel MSRs (model specific registers)
 # Author: Andi Kleen
-import os
 import glob
 import struct
 
@@ -45,7 +44,7 @@ if __name__ == '__main__':
         try:
             return int(s, 16)
         except ValueError:
-            raise argparse.ArgumentError("Bad hex number %s" % (s))
+            raise argparse.ArgumentError(s, "Bad hex number %s" % (s))
 
     if not os.path.exists("/dev/cpu/0/msr"):
         os.system("/sbin/modprobe msr")

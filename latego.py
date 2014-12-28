@@ -72,7 +72,7 @@ enabled = 0
 
 def cleanup():
     if enabled & bypass:
-        bypass(0)
+        set_bypass(0)
     if enabled & d2c:
         direct2core(0)
 

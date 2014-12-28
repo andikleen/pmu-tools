@@ -17,7 +17,7 @@
 # must find ocperf in python module path. add to paths below if needed.
 # Handles a variety of perf versions, but older ones have various limitations.
 
-import sys, os, re, itertools, textwrap, types, platform, pty, subprocess
+import sys, os, re, itertools, textwrap, platform, pty, subprocess
 import exceptions, argparse, time
 from collections import defaultdict, Counter
 #sys.path.append("../pmu-tools")
@@ -43,7 +43,7 @@ ingroup_events = frozenset(["cycles", "instructions", "ref-cycles",
 
 outgroup_events = set()
 
-nonperf_events = set(["interval-ns"])
+nonperf_events = {"interval-ns"}
 
 valid_events = [r"cpu/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions"]
 
@@ -61,7 +61,7 @@ def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
 class PerfFeatures:
-    "Adapt to the quirks of various perf versions."
+    """Adapt to the quirks of various perf versions."""
     def __init__(self):
         self.logfd_supported = works(perf + " stat --log-fd 3 3>/dev/null true")
         if not self.logfd_supported:
@@ -305,7 +305,7 @@ class CPU:
             if force == i[0]:
                 self.cpu = i[0]
                 break
-        if self.cpu == None:
+        if self.cpu is None:
             print "Unknown FORCECPU ",force
         return True
        
@@ -380,14 +380,14 @@ class PerfRun:
         i = l.index('--log-fd')
         del l[i:i+2]
         print " ".join(l)
-	self.perf = subprocess.Popen(r)
+        self.perf = subprocess.Popen(r)
         os.close(inp)
         return os.fdopen(outp, 'r')
 
     def wait(self):
         ret = 0
-	if self.perf:
-	    ret = self.perf.wait()
+        if self.perf:
+            ret = self.perf.wait()
         return ret
 
 filter_to_perf = {
@@ -422,10 +422,10 @@ def raw_event(i):
                 i += ":" + filter_string()
             return i
         e = emap.getevent(i)
-        if e == None:
+        if e is None:
             if i in event_fixes:
                 e = emap.getevent(event_fixes[i])
-        if e == None:
+        if e is None:
             print >>sys.stderr, "%s not found" % (i,)
             if not force:
                 sys.exit(1)
@@ -526,7 +526,6 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
     interval = None
-    title = ""
     start = time.time()
     while True:
         try:
@@ -692,7 +691,7 @@ def full_name(obj):
     return name
 
 class Runner:
-    "Schedule measurements of event groups. Try to run multiple in parallel."
+    """Schedule measurements of event groups. Try to run multiple in parallel."""
     def __init__(self, max_level):
         self.evnum = [] # flat global list
         self.evgroups = list()
@@ -725,7 +724,7 @@ class Runner:
             # when there is only a single left just fill groups
             while evlev:
                 n = num_non_fixed(get_names(evlev))
-		l = evlev[:n]
+                l = evlev[:n]
                 self.add(objl, raw_events(get_names(l)), l)
                 evlev = evlev[n:]
         else:
@@ -852,7 +851,7 @@ def sysctl(name):
 if sysctl("kernel.nmi_watchdog") != 0:
     sys.exit("Please disable nmi watchdog (echo 0 > /proc/sys/kernel/nmi_watchdog)")
 
-if cpu.cpu == None:
+if cpu.cpu is None:
     sys.exit("Unsupported CPU model %d" % (cpu.model,))
 
 kernel_version = map(int, platform.release().split(".")[:2])

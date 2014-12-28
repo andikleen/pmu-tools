@@ -6,7 +6,6 @@
 # Author: Andi Kleen
 # 
 import os
-import glob
 import struct
 import sys
 

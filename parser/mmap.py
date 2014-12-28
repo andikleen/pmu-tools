@@ -74,5 +74,5 @@ class MmapTracker:
             m, offset = lookup(self.maps[-1], ip)
             if not m or offset >= m[1]:
                 return None, None, 0
-        assert ip >= m[0] and ip < m[0] + m[1]
+        assert m[0] <= ip <= m[0] + m[1]
         return m[2], m[0], offset

@@ -38,7 +38,6 @@
 #
 import sys
 import os
-import struct
 import subprocess
 import json
 import re
@@ -94,7 +93,8 @@ class PerfVersion:
 version = PerfVersion()
 
 class MSR:
-    reg = {}
+    def __init__(self):
+        self.reg = {}
 
     def writemsr(self, msrnum, val, print_only = False):
         print "msr %x = %x" % (msrnum, val, )
@@ -248,9 +248,9 @@ def extra_set(e):
 def merge_extra(a, b):
     m = a | b
     if 'ppp' in m:
-        m = m - set(['p', 'pp'])
+        m = m - {'p', 'pp'}
     if 'pp' in m:
-        m = m - set(['p'])
+        m = m - {'p'}
     return m
 
 def print_event(name, desc, f, human, wrap):
@@ -430,7 +430,7 @@ class EmapNativeJSON(Emap):
         data = json.load(open(name, 'rb'))
         if u'PublicDescription' not in data[0]:
             mapping['desc'] = u'BriefDescription'
-        return self.read_table(data, mapping)
+        self.read_table(data, mapping)
 
     def add_offcore(self, name):
         data = json.load(open(name, 'rb'))
@@ -581,7 +581,7 @@ def process_events(event, print_only):
         if ev:
             if ev.msr:
                 msr.checked_writemsr(ev.msr, ev.msrval, print_only)
-	    if emap.latego and (ev.val & 0xffff) in latego.latego_events:
+            if emap.latego and (ev.val & 0xffff) in latego.latego_events:
                 latego.setup_event(ev.val & 0xffff, 1)
             overflow = ev.overflow
         event = (start + i + end).replace("#", ",")
@@ -626,7 +626,7 @@ def process_args():
         elif sys.argv[i][0:2] == '-c':
             oarg, i, prefix = getarg(i, cmd)
             if oarg == "default":
-                if overflow == None:
+                if overflow is None:
                     print >>sys.stderr,"""
 Specify the -e events before -c default or event has no overflow field."""
                     sys.exit(1)
@@ -657,7 +657,7 @@ def perf_cmd(cmd):
         l = subprocess.Popen(cmd, stdout=pager)
         l.wait()
         print >>pager
-        emap.dumpevents(pager, proc != None)
+        emap.dumpevents(pager, proc is not None)
         if proc:
             pager.close()
             proc.wait()

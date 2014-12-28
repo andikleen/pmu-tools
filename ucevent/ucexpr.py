@@ -213,7 +213,7 @@ def parse_list(tl):
     while True:
         term, nmt, tl = parse_term(tl)
         ls.append(term)
-        if nmt != None:
+        if nmt is not None:
             nm.append(nmt)
         if tl[0] != ',':
             break

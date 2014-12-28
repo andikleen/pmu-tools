@@ -20,11 +20,13 @@ if len(sys.argv) > 1:
 emap = ocperf.find_emap()
 if not emap:
     sys.exit("Unknown CPU or cannot find CPU event table")
+found = 0
 for i in range(0, 8):
     try:
         evsel = msr.readmsr(MSR_EVNTSEL + i, cpu)
     except OSError:
         break
+    found += 1
     if evsel & EVENTSEL_ENABLE:
         print "%d: %016x: " % (i, evsel),
         evsel &= EVMASK
@@ -53,7 +55,7 @@ for i in range(0, 8):
                 print "[no exact match] " + name
             else:
                 print "r%x" % (evsel)
-if i == 0:
+if found == 0:
     print "Cannot read any MSRs"
 
 try:

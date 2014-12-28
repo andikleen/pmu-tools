@@ -50,7 +50,7 @@ args = None
 per_socket = False
 
 class CPU:
-    "Query CPU information."
+    """Query CPU information."""
     def cpumap(self):
         if (self.vendor == "GenuineIntel" and
             self.family == 6 and
@@ -361,6 +361,7 @@ class Output:
         self.over = 0
         self.columns = dict()
         self.adaptive = adaptive
+        self.timestamp = None
 
     def out(self, name, r, timestamp):
         if self.vals and sum_event(self.headers[-1], name):
@@ -438,7 +439,7 @@ class Output:
         self.num_output += 1
 
 class OutputCSV(Output):
-    "CSV version of Output."
+    """CSV version of Output."""
 
     def __init__(self, csv):
         Output.__init__(self)
@@ -457,7 +458,9 @@ groupings = ('[', ']', '{', '}', '[[', ']]')
 out = None
 
 class PerfRun:
-    "Control a perf process"
+    """Control a perf process"""
+    def __init__(self):
+        self.perf = None
 
     # for testing purposes
     def mock(self, logfile, evl):
@@ -549,7 +552,7 @@ def evaluate(eq, EV):
     dbg("evaluate", eq)
     try:
         return eval(eq)
-    except NameError as e:
+    except NameError:
         return "#EVAL"
     except ZeroDivisionError:
         return 0.0
@@ -575,7 +578,7 @@ def gen_res(evl, res, evp, equations, evnames, timestamp):
                 if is_error(eq_events[x]):
                     r = eq_events[x]
                     break
-            if r == None:
+            if r is None:
                 if '/' in equations[0]:
                     EV = lambda x, n: float(eq_events[x])
                 else:
@@ -620,7 +623,7 @@ def gen_events(evl):
             j = '}'
         sep = ""
         if prev:
-	    match = [prev in groupings, j in groupings]
+            match = [prev in groupings, j in groupings]
             if match == [True, True] or match == [False, False]:
                 sep = ","
             if prev in ['[', '{'] and match[1] == False:
@@ -929,7 +932,6 @@ def check_events():
     for j in sorted(events.keys()):
         ev = events[j]
         box = j[:j.index(".")]
-        umask = ""
         if "EvSel" not in ev:
             print j,"has no evsel"
         umask = ""
@@ -945,7 +947,7 @@ def check_events():
             print ae[key],"duplicated with",j,key
         else:
             ae[key] = j
-        if compliated_counters(ev):
+        if complicated_counters(ev):
             print "event %s has complicated counters:  %s" % (j, ev["Counters"])
 
 def check_multiplex():
@@ -1068,9 +1070,9 @@ or use that CPU for the (very few) events that use core events''', type=int)
             check_multiplex()
 
         argl = ['-I%s' % (args.interval), '-x,']
-        if args.cpu != None:
+        if args.cpu is not None:
             argl.append('-C%d' % (args.cpu))
-        elif args.socket != None:
+        elif args.socket is not None:
             argl.append('-C%d' % (cpu.socket_to_cpu(args.socket)))
         else:
             argl.append('-a')

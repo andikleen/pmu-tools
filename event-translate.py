@@ -19,14 +19,14 @@ for j in sys.argv[1:]:
             print emap.codes[evsel & EVMASK].name
         elif (evsel & (EVENTSEL_EVENT|EVENTSEL_UMASK)) in emap.codes:
             print emap.codes[evsel & (EVENTSEL_EVENT|EVENTSEL_UMASK)].name,
-            for j in extra_flags:
-                if evsel & j[0]:
-                    m = j[0]
+            for k in extra_flags:
+                if evsel & k[0]:
+                    m = k[0]
                     en = evsel
                     while (m & 1) == 0:
                         m >>= 1
                         en >>= 1
-                    print "%s=%d" % (j[1], en & m),
+                    print "%s=%d" % (k[1], en & m),
             print
         else:
             print "cannot find", m.group(1)
