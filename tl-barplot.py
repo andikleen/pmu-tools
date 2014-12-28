@@ -2,10 +2,8 @@
 # plot toplev -I... -x, -o ...csv output as bar plot
 #
 import matplotlib.pyplot as plt
-import csv
 import argparse
 import math
-import re
 from collections import defaultdict
 import gen_level
 import tldata

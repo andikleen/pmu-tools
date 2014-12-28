@@ -12,8 +12,6 @@ import re
 import os
 import tldata
 
-from collections import defaultdict
-
 ap = argparse.ArgumentParser(usage="Serve toplev csv file as http or generate in directory")
 ap.add_argument('csvfile', help='toplev csv file to serve')
 ap.add_argument('host', nargs='?', default="localhost", help='Hostname to bind to (default localhost)')

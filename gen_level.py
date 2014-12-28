@@ -37,7 +37,7 @@ def find_obj(name):
 
 def get_level(name):
     name = clean_name(name)
-    oname = name
+    #oname = name
     obj, name = find_obj(name)
     if obj:
         return obj.level
