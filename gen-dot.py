@@ -33,20 +33,20 @@ class Runner:
                 print '"%s";' % (n.name)
 
     def fix_parents(self):
-	for obj in self.olist:
+        for obj in self.olist:
             if 'parent' not in obj.__dict__:
                 obj.parent = None
-	        continue
+                continue
             if not obj.parent:
                 continue
-	    if obj.level == 1:
+            if obj.level == 1:
                 obj.parent = None
-	    elif obj.parent.level >= obj.level:
+            elif obj.parent.level >= obj.level:
                 my_list = self.olist[:self.olist.index(obj)]
-		all_parents = filter(lambda x: x.level < obj.level, my_list)
+                all_parents = filter(lambda x: x.level < obj.level, my_list)
                 print >>sys.stderr, obj.name, "all-parents", all_parents
-		obj.parent = all_parents[-1]
-	        assert obj.parent.level < obj.level
+                obj.parent = all_parents[-1]
+                assert obj.parent.level < obj.level
 
 
 runner = Runner()
