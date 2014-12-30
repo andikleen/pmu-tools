@@ -28,7 +28,7 @@ modelpath = urlpath + "/" + mapfile
 
 def get_cpustr():
     f = open('/proc/cpuinfo', 'r')
-    cpu = ["?", "?", "?"]
+    cpu = [None, None, None]
     for j in f:
         n = j.split()
         if n[0] == 'vendor_id':
