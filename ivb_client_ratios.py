@@ -1,6 +1,6 @@
 
 #
-# auto generated TopDown description for Intel 3rd gen Core (code named IvyBridge)
+# auto generated TopDown description for Ivy Bridge
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 
@@ -16,10 +16,6 @@ Mem_4K_Alias_Cost = 7
 Mem_XSNP_HitM_Cost = 60
 MEM_XSNP_Hit_Cost = 43
 MEM_XSNP_None_Cost = 29
-Mem_Local_DRAM_Cost = 200
-Mem_Remote_DRAM_Cost = 310
-Mem_Remote_HitM_Cost = 200
-Mem_Remote_Fwd_Cost = 180
 MS_Switches_Cost = 3
 OneMillion = 1000000
 
@@ -36,6 +32,8 @@ def L1D_Miss_Cycles(EV, level):
     return ( EV("L1D_PEND_MISS.PENDING_CYCLES:amt1", level) / 2)if smt_enabled else EV("L1D_PEND_MISS.PENDING_CYCLES", level)
 def ITLB_Miss_Cycles(EV, level):
     return ( Mem_STLB_Hit_Cost * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION", level) )
+def Cycles_0_Ports_Utilized(EV, level):
+    return ( EV("UOPS_EXECUTED.CORE:i1", level))/ 2 if smt_enabled else(STALLS_TOTAL(EV, level) - EV("RS_EVENTS.EMPTY_CYCLES", level) - EV("ARITH.FPU_DIV_ACTIVE", level) )
 def Cycles_1_Port_Utilized(EV, level):
     return ( EV("UOPS_EXECUTED.CORE:c1", level) - EV("UOPS_EXECUTED.CORE:c2", level))/ 2 if smt_enabled else(EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level) - EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level) )
 def Cycles_2_Ports_Utilized(EV, level):
@@ -51,9 +49,6 @@ def ORO_Demand_DRD_C1(EV, level):
 def ORO_Demand_DRD_C6(EV, level):
     return min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("OFFCORE_REQUESTS_OUTSTANDING.DEMAND_DATA_RD:c6", level) )
 def Few_Uops_Executed_Threshold(EV, level):
-    # hack to force evaluation
-    EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level)
     return EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level) if(IPC(EV, level) > 1.25)else EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
 def Backend_Bound_At_EXE(EV, level):
     return ( STALLS_TOTAL(EV, level) + EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level) - Few_Uops_Executed_Threshold(EV, level) - EV("RS_EVENTS.EMPTY_CYCLES", level) + EV("RESOURCE_STALLS.SB", level))/ CLKS(EV, level)
@@ -685,24 +680,6 @@ main memory (DRAM).  Data layout re-structuring or using Software Prefetches
             self.thresh = False
         return self.val
 
-class Local_DRAM:
-    name = "Local_DRAM"
-    domain = "Clocks"
-    area = "BE/Mem"
-    desc = """
-This metric represents how often CPU was likely stalled due to loads from
-local memory. Caching will improve the latency and increase performance."""
-    level = 5
-    def compute(self, EV):
-        try:
-            self.val = Mem_Local_DRAM_Cost * EV("MEM_LOAD_UOPS_LLC_MISS_RETIRED.LOCAL_DRAM", 5)/ CLKS(EV, 5 )
-            self.thresh = (self.val > 0.1) and self.parent.thresh
-        except ZeroDivisionError:
-            #print "Local_DRAM zero division"
-            self.val = 0
-            self.thresh = False
-        return self.val
-
 class Stores_Bound:
     name = "Stores_Bound"
     domain = "Clocks"
@@ -843,7 +820,7 @@ are calculated with same uop."""
 
 class G0_Ports_Utilized:
     name = "0_Ports_Utilized"
-    domain = "Clocks"
+    domain = "CClocks"
     area = "BE/Core"
     desc = """
 This metric represents cycles fraction CPU executed no uops on any execution
@@ -851,7 +828,7 @@ port."""
     level = 4
     def compute(self, EV):
         try:
-            self.val = ( STALLS_TOTAL(EV, 4)- EV("RS_EVENTS.EMPTY_CYCLES", 4)- EV("ARITH.FPU_DIV_ACTIVE", 4)) / CLKS(EV, 4 )
+            self.val = Cycles_0_Ports_Utilized(EV, 4)/ CLKS1(EV, 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             #print "G0_Ports_Utilized zero division"
@@ -1079,24 +1056,6 @@ instructions hence this bucket."""
             self.thresh = False
         return self.val
 
-class FP_Arith:
-    name = "FP_Arith"
-    domain = "Uops"
-    area = "RET"
-    desc = """
-This metric represents overall arithmetic floating-point (FP) uops fraction
-the CPU has executed."""
-    level = 3
-    def compute(self, EV):
-        try:
-            self.val = self.FP_x87.compute(EV)+ self.FP_Scalar.compute(EV)+ self.FP_Vector.compute(EV )
-            self.thresh = (self.val > 0.2) and self.parent.thresh
-        except ZeroDivisionError:
-            #print "FP_Arith zero division"
-            self.val = 0
-            self.thresh = False
-        return self.val
-
 class FP_x87:
     name = "FP_x87"
     domain = "Uops"
@@ -1112,62 +1071,6 @@ instruction sets, which typically perform better and feature vectors."""
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             #print "FP_x87 zero division"
-            self.val = 0
-            self.thresh = False
-        return self.val
-
-class FP_Scalar:
-    name = "FP_Scalar"
-    domain = "Uops"
-    area = "RET"
-    desc = """
-This metric represents arithmetic floating-point (FP) scalar uops fraction the
-CPU has executed. Tip: investigate what limits (compiler) generation of vector
-code."""
-    level = 4
-    def compute(self, EV):
-        try:
-            self.val = ( EV("FP_COMP_OPS_EXE.SSE_SCALAR_SINGLE", 4)+ EV("FP_COMP_OPS_EXE.SSE_SCALAR_DOUBLE", 4)) / EV("UOPS_EXECUTED.THREAD", 4 )
-            self.thresh = (self.val > 0.1) and self.parent.thresh
-        except ZeroDivisionError:
-            #print "FP_Scalar zero division"
-            self.val = 0
-            self.thresh = False
-        return self.val
-
-class FP_Vector:
-    name = "FP_Vector"
-    domain = "Uops"
-    area = "RET"
-    desc = """
-This metric represents arithmetic floating-point (FP) vector uops fraction the
-CPU has executed. Tip: check if vector width is expected"""
-    level = 4
-    def compute(self, EV):
-        try:
-            self.val = ( EV("FP_COMP_OPS_EXE.SSE_PACKED_DOUBLE", 4)+ EV("FP_COMP_OPS_EXE.SSE_PACKED_SINGLE", 4)+ EV("SIMD_FP_256.PACKED_SINGLE", 4)+ EV("SIMD_FP_256.PACKED_DOUBLE", 4)) / EV("UOPS_EXECUTED.THREAD", 4 )
-            self.thresh = (self.val > 0.2) and self.parent.thresh
-        except ZeroDivisionError:
-            #print "FP_Vector zero division"
-            self.val = 0
-            self.thresh = False
-        return self.val
-
-class Other:
-    name = "Other"
-    domain = "Uops"
-    area = "RET"
-    desc = """
-This metric represents non-floating-point (FP) uop fraction the CPU has
-executed. If you application has no FP operations, this will likely be biggest
-fraction."""
-    level = 3
-    def compute(self, EV):
-        try:
-            self.val = 1 - self.FP_Arith.compute(EV )
-            self.thresh = (self.val > 0.3) and self.parent.thresh
-        except ZeroDivisionError:
-            #print "Other zero division"
             self.val = 0
             self.thresh = False
         return self.val
@@ -1375,7 +1278,6 @@ class Setup:
         n = MEM_Bound() ; r.run(n) ; o["MEM_Bound"] = n
         n = MEM_Bandwidth() ; r.run(n) ; o["MEM_Bandwidth"] = n
         n = MEM_Latency() ; r.run(n) ; o["MEM_Latency"] = n
-        n = Local_DRAM() ; r.run(n) ; o["Local_DRAM"] = n
         n = Stores_Bound() ; r.run(n) ; o["Stores_Bound"] = n
         n = False_Sharing() ; r.run(n) ; o["False_Sharing"] = n
         n = Split_Stores() ; r.run(n) ; o["Split_Stores"] = n
@@ -1395,11 +1297,7 @@ class Setup:
         n = Port_5() ; r.run(n) ; o["Port_5"] = n
         n = Retiring() ; r.run(n) ; o["Retiring"] = n
         n = Base() ; r.run(n) ; o["Base"] = n
-        n = FP_Arith() ; r.run(n) ; o["FP_Arith"] = n
         n = FP_x87() ; r.run(n) ; o["FP_x87"] = n
-        n = FP_Scalar() ; r.run(n) ; o["FP_Scalar"] = n
-        n = FP_Vector() ; r.run(n) ; o["FP_Vector"] = n
-        n = Other() ; r.run(n) ; o["Other"] = n
         n = Microcode_Sequencer() ; r.run(n) ; o["Microcode_Sequencer"] = n
 
         # parents
@@ -1431,7 +1329,6 @@ class Setup:
         o["MEM_Bound"].parent = o["Memory_Bound"]
         o["MEM_Bandwidth"].parent = o["MEM_Bound"]
         o["MEM_Latency"].parent = o["MEM_Bound"]
-        o["Local_DRAM"].parent = o["MEM_Latency"]
         o["Stores_Bound"].parent = o["Memory_Bound"]
         o["False_Sharing"].parent = o["Stores_Bound"]
         o["Split_Stores"].parent = o["Stores_Bound"]
@@ -1450,11 +1347,7 @@ class Setup:
         o["Port_4"].parent = o["G3m_Ports_Utilized"]
         o["Port_5"].parent = o["G3m_Ports_Utilized"]
         o["Base"].parent = o["Retiring"]
-        o["FP_Arith"].parent = o["Base"]
-        o["FP_x87"].parent = o["FP_Arith"]
-        o["FP_Scalar"].parent = o["FP_Arith"]
-        o["FP_Vector"].parent = o["FP_Arith"]
-        o["Other"].parent = o["Base"]
+        o["FP_x87"].parent = o["Base"]
         o["Microcode_Sequencer"].parent = o["Retiring"]
 
         # references between groups
@@ -1476,10 +1369,6 @@ class Setup:
         o["Retiring"].Microcode_Sequencer = o["Microcode_Sequencer"]
         o["Base"].Retiring = o["Retiring"]
         o["Base"].Microcode_Sequencer = o["Microcode_Sequencer"]
-        o["FP_Arith"].FP_x87 = o["FP_x87"]
-        o["FP_Arith"].FP_Scalar = o["FP_Scalar"]
-        o["FP_Arith"].FP_Vector = o["FP_Vector"]
-        o["Other"].FP_Arith = o["FP_Arith"]
 
         # siblings cross-tree
 
@@ -1513,7 +1402,6 @@ class Setup:
         o["MEM_Bound"].sibling = None
         o["MEM_Bandwidth"].sibling = None
         o["MEM_Latency"].sibling = None
-        o["Local_DRAM"].sibling = None
         o["Stores_Bound"].sibling = None
         o["False_Sharing"].sibling = None
         o["Split_Stores"].sibling = None
@@ -1533,14 +1421,10 @@ class Setup:
         o["Port_5"].sibling = None
         o["Retiring"].sibling = None
         o["Base"].sibling = None
-        o["FP_Arith"].sibling = None
         o["FP_x87"].sibling = None
-        o["FP_Scalar"].sibling = None
-        o["FP_Vector"].sibling = None
-        o["Other"].sibling = None
         o["Microcode_Sequencer"].sibling = o["MS_Switches"]
 
-        # sampling events (experimential)
+        # sampling events (experimental)
 
         o["Frontend_Bound"].sample = []
         o["Frontend_Latency"].sample = []
@@ -1572,7 +1456,6 @@ class Setup:
         o["MEM_Bound"].sample = []
         o["MEM_Bandwidth"].sample = []
         o["MEM_Latency"].sample = []
-        o["Local_DRAM"].sample = []
         o["Stores_Bound"].sample = []
         o["False_Sharing"].sample = ['MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HITM_PS']
         o["Split_Stores"].sample = ['MEM_UOPS_RETIRED.SPLIT_STORES_PS', 'MEM_UOPS_RETIRED.ALL_STORES_PS']
@@ -1592,11 +1475,7 @@ class Setup:
         o["Port_5"].sample = []
         o["Retiring"].sample = []
         o["Base"].sample = []
-        o["FP_Arith"].sample = []
         o["FP_x87"].sample = []
-        o["FP_Scalar"].sample = []
-        o["FP_Vector"].sample = []
-        o["Other"].sample = []
         o["Microcode_Sequencer"].sample = []
 
         # user visible metrics
