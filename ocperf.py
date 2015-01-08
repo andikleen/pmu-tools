@@ -136,24 +136,30 @@ class Event:
            capabilities of the installed perf executable.
            flags when set add perf flags (e.g. u for user, p for pebs)."""
         val = self.val
-        newe = ""
+        newe = []
         extra = "".join(merge_extra(extra_set(self.extra), extra_set(flags)))
         m = re.search(r"c(mask=)?([0-9]+)", extra)
         if m:
             extra = re.sub(r"c(mask=)?[0-9]+", "", extra)
             val |= int(m.group(2)) << 24
-            newe += "cmask=%x" % (int(m.group(2)))
+            newe.append("cmask=%x" % (int(m.group(2))))
         m = re.search(r"amt1", extra)
         if m:
             extra = extra.replace("amt1", "")
             val |= EVENTSEL_ANY
-            newe += "any=1"
+            newe.append("any=1")
+        m = re.search(r"i1", extra)
+        if m:
+            extra = extra.replace("i1", "")
+            val |= EVENTSEL_INV
+            newe.append("inv=1")
+
         if version.direct or use_raw:
             ename = "r%x" % (val,) 
             if extra:
                 ename += ":" + extra
         else:
-            ename = "cpu/%s/" % (self.output_newstyle(newextra=newe, noname=noname)) + extra
+            ename = "cpu/%s/" % (self.output_newstyle(newextra=",".join(newe), noname=noname)) + extra
         return ename
 
 box_to_perf = {
@@ -243,7 +249,7 @@ def ffs(flag):
 
 def extra_set(e):
     return set(map(lambda x: x[0],
-                   re.findall(r"((p+)|[ukHG]|(c(mask=)?\d+|amt1))", e)))
+                   re.findall(r"((p+)|(c(mask=)?\d+|amt1|i1)|.)", e)))
 
 def merge_extra(a, b):
     m = a | b
@@ -251,6 +257,7 @@ def merge_extra(a, b):
         m = m - {'p', 'pp'}
     if 'pp' in m:
         m = m - {'p'}
+    m = m - {':'}
     return m
 
 def print_event(name, desc, f, human, wrap):
