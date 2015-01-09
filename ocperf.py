@@ -357,7 +357,7 @@ class Emap(object):
         e = e.lower()
         extra = ""
         edelim = ""
-        m = re.match(r'(.*):(.*)', e)
+        m = re.match(r'(.*?):(.*)', e)
         if m:
             extra = m.group(2)
             edelim = ":"
