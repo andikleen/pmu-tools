@@ -321,16 +321,21 @@ class CPU:
         self.counters = 0
         self.has_tsx = False
         self.freq = 0.0
+        self.siblings = {}
         forced_cpu = self.force_cpu()
         self.force_counters()
-        cores = {}
+        cores = Counter()
+        self.coreids = defaultdict(list)
+        self.cputocore = {}
         with open("/proc/cpuinfo", "r") as f:
             ok = 0
             for l in f:
                 n = l.split()
                 if len(n) < 3:
                     continue
-                if (n[0], n[2]) == ("vendor_id", "GenuineIntel") and ok == 0:
+                if n[0] == 'processor':
+                    cpunum = int(n[2])
+                elif (n[0], n[2]) == ("vendor_id", "GenuineIntel") and ok == 0:
                     ok += 1
                 elif (len(n) > 3 and
                         (n[0], n[1], n[3]) == ("cpu", "family", "6") and
@@ -346,13 +351,13 @@ class CPU:
                 elif (n[0], n[1]) == ("physical", "id"):
                     physid = int(n[3])
                 elif (n[0], n[1]) == ("core", "id"):
-                    key = (physid, int(n[3]),)
-                    if key in cores:
-                        cores[key] += 1
-                    else:
-                        cores[key] = 1
+                    coreid = int(n[3])
+                    key = (physid, coreid,)
+                    cores[key] += 1
                     if cores[key] > 1:
                         self.ht = True
+                    self.coreids[coreid].append(cpunum)
+                    self.cputocore[cpunum] = coreid
                 elif n[0] == "flags":
                     ok += 1
                     self.has_tsx = n.count("rtm") > 0
