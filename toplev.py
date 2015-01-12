@@ -53,6 +53,8 @@ event_fixes = {
     "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC"
 }
 
+need_any = False
+
 perf = os.getenv("PERF")
 if not perf:
     perf = "perf"
@@ -166,7 +168,6 @@ p.add_argument('--sample', '-S', help="Suggest commands to sample for bottleneck
         action='store_true')
 p.add_argument('--raw', help="Print raw values", action='store_true')
 p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
-p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 p.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
 p.add_argument('--all', help="Measure everything available", action='store_true')
@@ -221,8 +222,6 @@ if args.user:
 if args.user and args.kernel:
     ring_filter = None
 print_group = args.print_group
-if args.no_aggr:
-    rest = ["-A"] + rest
 if args.cpu:
     rest = ["--cpu", args.cpu] + rest
 
@@ -360,7 +359,7 @@ class CPU:
                     self.cputocore[cpunum] = coreid
                 elif n[0] == "flags":
                     ok += 1
-                    self.has_tsx = n.count("rtm") > 0
+                    self.has_tsx = "rtm" in n
         if ok >= 4 and not forced_cpu:
             for i in known_cpus:
                 if self.model in i[1]:
@@ -491,6 +490,10 @@ def set_interval(env, d):
     if args.raw:
         print "interval-ns val", env['interval-ns']
 
+def print_keys(runner, res, rev, out, interval, env):
+   for j in sorted(res.keys()):
+        runner.print_res(res[j], rev[j], out, interval, j, env)
+
 def execute_no_multiplex(runner, out, rest):
     if args.interval: # XXX
         sys.exit('--no-multiplex is not supported with interval mode')
@@ -503,8 +506,7 @@ def execute_no_multiplex(runner, out, rest):
         print "RUN #%d of %d" % (n, len(groups))
         ret, res, rev, interval = do_execute(runner, g, out, rest, res, rev, env)
         n += 1
-    for j in sorted(res.keys()):
-        runner.print_res(res[j], rev[j], out, interval, j, env)
+    print_keys(runner, res, rev, out, interval, env)
     return ret
 
 def execute(runner, out, rest):
@@ -513,8 +515,7 @@ def execute(runner, out, rest):
                                          defaultdict(list),
                                          defaultdict(list),
                                          env)
-    for j in sorted(res.keys()):
-        runner.print_res(res[j], rev[j], out, interval, j, env)
+    print_keys(runner, res, rev, out, interval, env)
     return ret
 
 perf_fields = [
@@ -550,8 +551,7 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
                 if interval != prev_interval:
                     if res:
                         set_interval(env, interval - prev_interval)
-                        for j in sorted(res.keys()):
-                            runner.print_res(res[j], rev[j], out, prev_interval, j, env)
+                        print_keys(runner, res[j], rev[j], out, prev_interval, env)
                         res = defaultdict(list)
                         rev = defaultdict(list)
                     prev_interval = interval
@@ -592,10 +592,10 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
         if args.raw:
             print "raw",title,"event",event,"val",val
     inf.close()
+    if 'interval-ns' not in env:
+            set_interval(env, (time.time() - start) * 1E+9)
     ret = prun.wait()
     print_account(account)
-    if 'interval-ns' not in env:
-        set_interval(env, (time.time() - start))
     return ret, res, rev, interval
 
 def ev_append(ev, level, obj):
@@ -815,8 +815,6 @@ class Runner:
             else:
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
         out.logf.flush()
-        if 'interval-ns' in env:
-            del env['interval-ns']
 
         # step 2: propagate siblings
         for obj in self.olist:
@@ -871,7 +869,6 @@ def ht_warning():
 
 runner = Runner(args.level)
 
-need_any = False
 if cpu.cpu == "ivb":
     import ivb_client_ratios
     ivb_client_ratios.smt_enabled = cpu.ht
@@ -929,8 +926,8 @@ args.metrics = old_metrics
 
 if need_any:
     print "Running in HyperThreading mode. Will measure complete system."
-    if args.no_aggr:
-        print >>sys.stderr, "Warning: Hyper Threading mode not compatible with -A/--no-aggr option"
+    if "--per-socket" in rest:
+        sys.exit("Hyper Threading more not compatible with --per-socket")
     if args.cpu:
         print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1):
@@ -939,6 +936,8 @@ if need_any:
         print >>sys.stderr, "Warning: kernel may need to be patched to schedule all events with level %d in HT mode" % (args.level)
     if "-a" not in rest:
         rest = ["-a"] + rest
+    if "-A" not in rest:
+        rest = ["-A"] + rest
 
 print "Using level %d." % (args.level),
 if not args.level and cpu.cpu != "slm":
