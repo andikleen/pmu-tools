@@ -252,7 +252,7 @@ class Output:
         print >>self.logf, "%-*s %s %s" % (self.hdrlen, hdr + ":", s, remark)
         if desc and not args.no_desc:
             print >>self.logf, "\t" + desc
-        if sample:
+        if desc and sample:
             print >>self.logf, "\t" + "Sampling events: ", sample
 
     def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, check, sample):
@@ -715,7 +715,7 @@ def sample_event(e):
     ev = emap.getevent(e.replace("_PS", ""))
     if not ev:
         raise BadEvent(e)
-    return "cpu/" + ev.output_newstyle(filter_string()) + "/pp"
+    return ev.name + ":pp"
 
 def sample_desc(s):
     try:
