@@ -3,6 +3,7 @@
 # Author: Andi Kleen
 import glob
 import struct
+import os
 
 def writemsr(msr, val):
     n = glob.glob('/dev/cpu/*/msr')
