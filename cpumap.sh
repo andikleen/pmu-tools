@@ -12,3 +12,5 @@ cpus[ivb]=GenuineIntel-6-3A
 cpus[hsw]=GenuineIntel-6-45
 cpus[slm]=GenuineIntel-6-37
 cpus[bnl]=GenuineIntel-6-35
+cpus[bdw]=GenuineIntel-6-3D
+cpus[hsx]=GenuineIntel-6-3F

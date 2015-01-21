@@ -33,10 +33,15 @@ EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -v -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -x, -v -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py --metrics -x, -v -d -l4 $LOAD
-EVENTMAP=${cpus[ivt]} FORCECPU=ivt $WRAP ./toplev.py -d --all --sample --kernel $LOAD
-EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d --all --sample $LOAD
-EVENTMAP=${cpus[jkt]} FORCECPU=jkt $WRAP ./toplev.py -d --all --sample $LOAD
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all --sample $LOAD
+EVENTMAP=${cpus[ivt]} FORCECPU=ivt $WRAP ./toplev.py -d --all --kernel $LOAD
+EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d --all $LOAD
+EVENTMAP=${cpus[jkt]} FORCECPU=jkt $WRAP ./toplev.py -d --all -l5 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all -l5 $LOAD
+# fixme: need event list with missing events
+#EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py -d --all -l5 $LOAD
+#EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py -d --all $LOAD
+EVENTMAP=${cpus[ivt]} FORCECPU=ivt $WRAP ./toplev.py -d --all $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --metrics -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --metrics --no-multiplex -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --power -l4 $LOAD
@@ -55,9 +60,9 @@ EVENTMAP=${cpus[slm]} FORCECPU=slm $WRAP ./toplev.py -d --all $LOAD
 
 # need new perf
 # test other perf output formats
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d -l4 -I 1000 -a --per-core sleep 1
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d -l4 -I 1000 -a --per-socket sleep 1
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d -l4 -I 1000 -a -A sleep 1
+EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a --per-core sleep 1
+EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a --per-socket sleep 1
+EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a -A sleep 1
 
 trap "" ERR 0
 

@@ -18,7 +18,7 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import exceptions, argparse, time
+import exceptions, argparse, time, types
 from collections import defaultdict, Counter
 #sys.path.append("../pmu-tools")
 import ocperf
@@ -31,9 +31,10 @@ known_cpus = (
     ("hsw", (60, 70, 69 )),
     ("hsx", (63, )),
     ("slm", (55, 77)),
+    ("bdw", (61, )),
 )
 
-tsx_cpus = ("hsw", "hsx")
+tsx_cpus = ("hsw", "hsx", "bdw")
 
 ingroup_events = frozenset(["cycles", "instructions", "ref-cycles",
                             "cpu/event=0x3c,umask=0x00,any=1/",
@@ -164,8 +165,6 @@ p.add_argument('--level', '-l', help='Measure upto level N (max 5)',
                type=int, default=1)
 p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
-p.add_argument('--sample', '-S', help="Suggest commands to sample for bottlenecks (experimental)",
-        action='store_true')
 p.add_argument('--raw', help="Print raw values", action='store_true')
 p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
@@ -321,9 +320,11 @@ class CPU:
         self.has_tsx = False
         self.freq = 0.0
         self.siblings = {}
+        self.threads = 0
         forced_cpu = self.force_cpu()
         self.force_counters()
         cores = Counter()
+        sockets = Counter()
         self.coreids = defaultdict(list)
         self.cputocore = {}
         with open("/proc/cpuinfo", "r") as f:
@@ -349,14 +350,16 @@ class CPU:
                         self.freq = float(m.group(1))
                 elif (n[0], n[1]) == ("physical", "id"):
                     physid = int(n[3])
+                    sockets[physid] += 1
                 elif (n[0], n[1]) == ("core", "id"):
                     coreid = int(n[3])
                     key = (physid, coreid,)
                     cores[key] += 1
-                    if cores[key] > 1:
+                    self.threads = max(self.threads, cores[key])
+                    if self.threads > 1:
                         self.ht = True
-                    self.coreids[coreid].append(cpunum)
-                    self.cputocore[cpunum] = coreid
+                    self.coreids[key].append(cpunum)
+                    self.cputocore[cpunum] = key
                 elif n[0] == "flags":
                     ok += 1
                     self.has_tsx = "rtm" in n
@@ -372,6 +375,7 @@ class CPU:
                 self.counters = 4
             else:
                 self.counters = 8
+        self.sockets = len(sockets.keys())
 
 cpu = CPU()
 
@@ -490,9 +494,27 @@ def set_interval(env, d):
     if args.raw:
         print "interval-ns val", env['interval-ns']
 
+def key_to_coreid(k):
+    x = cpu.cputocore[int(k)]
+    return x[0] * 1000 + x[1]
+
+def core_fmt(core):
+    if cpu.sockets > 1:
+        return "S%d-C%d" % (core / 1000, core % 1000,)
+    return "C%d" % (core % 1000,)
+
 def print_keys(runner, res, rev, out, interval, env):
-   for j in sorted(res.keys()):
-        runner.print_res(res[j], rev[j], out, interval, j, env)
+    if need_any:
+        # collect counts from all threads of cores as lists
+        # this way the model can access all threads individually
+        keys = sorted(res.keys(), key = key_to_coreid)
+        for core, citer in itertools.groupby(keys, key_to_coreid):
+            cpus = list(citer)
+            r = list(itertools.izip(*[res[j] for j in cpus]))
+            runner.print_res(r, rev[cpus[0]], out, interval, core_fmt(core), env)
+    else:
+        for j in sorted(res.keys()):
+            runner.print_res(res[j], rev[j], out, interval, j, env)
 
 def execute_no_multiplex(runner, out, rest):
     if args.interval: # XXX
@@ -503,6 +525,8 @@ def execute_no_multiplex(runner, out, rest):
     rev = defaultdict(list)
     env = dict()
     for g in groups:
+        if len(g) == 0:
+            continue
         print "RUN #%d of %d" % (n, len(groups))
         ret, res, rev, interval = do_execute(runner, g, out, rest, res, rev, env)
         n += 1
@@ -511,7 +535,9 @@ def execute_no_multiplex(runner, out, rest):
 
 def execute(runner, out, rest):
     env = dict()
-    ret, res, rev, interval = do_execute(runner, ",".join(runner.evgroups), out, rest,
+    print "evgroups", runner.evgroups
+    ret, res, rev, interval = do_execute(runner, ",".join(filter(lambda x: len(x) > 0, runner.evgroups)),
+                                         out, rest,
                                          defaultdict(list),
                                          defaultdict(list),
                                          env)
@@ -599,6 +625,8 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
     return ret, res, rev, interval
 
 def ev_append(ev, level, obj):
+    if isinstance(ev, types.LambdaType):
+        return ev(lambda ev, level: ev_append(ev, level, obj), level)
     if ev in nonperf_events:
         return 99
     if not (ev, level) in obj.evlevels:
@@ -610,7 +638,7 @@ def ev_append(ev, level, obj):
     return 99
 
 def canon_event(e):
-    m = re.match(r"(.*):(.*)", e)
+    m = re.match(r"(.*?):(.*)", e)
     if m:
         e = m.group(1)
     if e.upper() in fixed_counters:
@@ -629,13 +657,33 @@ def event_rmap(e):
         n = fixes[n.upper()].lower()
     return n
 
-def lookup_res(res, rev, ev, obj, env, level):
+def lookup_res(res, rev, ev, obj, env, level, cpuoff = -1):
     if ev in env:
         return env[ev]
+    #
+    # when the model passed in a lambda run the function for each logical cpu
+    # (by resolving its EVs to only that CPU)
+    # and then sum up. This is needed for the workarounds to make various
+    # per thread counters at least as big as unhalted cycles.
+    #
+    # otherwise we always sum up.
+    #
+    if isinstance(ev, types.LambdaType):
+        n = 0
+        for off in range(cpu.threads): # XXX
+            n += ev(lambda ev, level: lookup_res(res, rev, ev, obj, env, level, off), level)
+        return n
+
     index = obj.res_map[(ev, level)]
     rev = event_rmap(rev[index])
     assert (rev == canon_event(ev) or
                 (ev in event_fixes and canon_event(event_fixes[ev]) == rev))
+
+    if isinstance(res[index], types.TupleType):
+        if cpuoff == -1:
+            return sum(res[index])
+        else:
+            return res[index][cpuoff]
     return res[index]
 
 def add_key(k, x, y):
@@ -741,7 +789,6 @@ class Runner:
                     self.add(objl, raw_events(get_names(evl)), evl)
 
     def add(self, objl, evnum, evlev):
-        assert evlev
         # does not fit into a group.
         if len(set(evnum) - add_filter(ingroup_events)) > cpu.counters:
             self.split_groups(objl, evlev)
@@ -777,7 +824,7 @@ class Runner:
         # try to fit each objects events into groups
         # that fit into the available CPU counters
         for obj in solist:
-            if obj.evnum[0] in outgroup_events:
+            if len(obj.evnum) == 0 or obj.evnum[0] in outgroup_events:
                 self.add([obj], obj.evnum, obj.evlevels)
                 continue
             # try adding another object to the current group
@@ -827,20 +874,25 @@ class Runner:
                 val = obj.val
                 if not obj.thresh and not dont_hide:
                     val = 0.0
+                disclaimer = ""
+                if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht:
+                    disclaimer = """
+Warning: Hyper Threading may lead to incorrect measurements for this node.
+Suggest to re-measure with HT off."""
                 desc = obj.desc[1:].replace("\n", "\n\t")
                 if obj.metric:
                     out.metric(obj.area if 'area' in obj.__class__.__dict__ else None,
                             obj.name, val, timestamp,
-                            desc,
+                            desc + disclaimer,
                             title,
                             obj.unit if 'unit' in obj.__class__.__dict__ else "metric")
                 else:
                     out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
                         full_name(obj), val, timestamp,
                         "below" if not obj.thresh else "above",
-                        desc,
+                        desc + disclaimer,
                         title,
-                        sample_desc(obj.sample) if args.sample and obj.sample else "")
+                        sample_desc(obj.sample) if obj.sample else "")
 
 def sysctl(name):
     try:
@@ -879,12 +931,27 @@ elif cpu.cpu == "ivt":
     ivb_server_ratios.smt_enabled = cpu.ht
     need_any = cpu.ht
     ivb_server_ratios.Setup(runner)
-elif cpu.cpu == "snb" and detailed_model:
+elif cpu.cpu == "snb":
     import snb_client_ratios
     snb_client_ratios.Setup(runner)
-elif cpu.cpu == "hsw" and detailed_model:
+elif cpu.cpu == "jkt":
+    import jkt_server_ratios
+    jkt_server_ratios.Setup(runner)
+elif cpu.cpu == "hsw":
     import hsw_client_ratios
+    hsw_client_ratios.smt_enabled = cpu.ht
+    need_any = cpu.ht
     hsw_client_ratios.Setup(runner)
+elif cpu.cpu == "hsx":
+    import hsx_server_ratios
+    hsx_server_ratios.smt_enabled = cpu.ht
+    need_any = cpu.ht
+    hsx_server_ratios.Setup(runner)
+elif cpu.cpu == "bdw":
+    import bdw_client_ratios
+    bdw_client_ratios.smt_enabled = cpu.ht
+    need_any = cpu.ht
+    bdw_client_ratios.Setup(runner)
 elif cpu.cpu == "slm":
     import slm_ratios
     slm_ratios.Setup(runner)
@@ -892,8 +959,6 @@ else:
     ht_warning()
     if detailed_model:
         print >>sys.stderr, "Sorry, no detailed model for your CPU. Only Level 1 supported."
-        if cpu.cpu == "jkt":
-            print >>sys.stderr, "Consider using FORCECPU=snb"
     import simple_ratios
     simple_ratios.Setup(runner)
 
@@ -928,6 +993,8 @@ if need_any:
     print "Running in HyperThreading mode. Will measure complete system."
     if "--per-socket" in rest:
         sys.exit("Hyper Threading more not compatible with --per-socket")
+    if "--per-core" in rest:
+        sys.exit("Hyper Threading more not compatible with --per-core")
     if args.cpu:
         print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1):

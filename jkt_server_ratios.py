@@ -1,6 +1,6 @@
 
 #
-# auto generated TopDown 2.9 description for Intel 2nd gen Core (code named SandyBridge)
+# auto generated TopDown 2.9 description for Intel Xeon E5 (code named SandyBridge EP)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -65,8 +65,8 @@ def ORO_Demand_RFO_C1(EV, level):
 def Store_L2_Hit_Cycles(EV, level):
     return 0
 
-def Cycles_False_Sharing_Client(EV, level):
-    return Mem_XSNP_HitM_Cost *(EV("MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HITM", level) + EV("OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.HITM_OTHER_CORE", level))
+def Mem_L3_Hit_Fraction(EV, level):
+    return EV("MEM_LOAD_UOPS_RETIRED.LLC_HIT", level) /(EV("MEM_LOAD_UOPS_RETIRED.LLC_HIT", level) + Mem_L3_Weight * EV("MEM_LOAD_UOPS_RETIRED.LLC_MISS", level))
 
 def Mem_Lock_St_Fraction(EV, level):
     return EV("MEM_UOPS_RETIRED.LOCK_LOADS", level) / EV("MEM_UOPS_RETIRED.ALL_STORES", level)
