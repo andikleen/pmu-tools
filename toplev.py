@@ -551,7 +551,7 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
                 if interval != prev_interval:
                     if res:
                         set_interval(env, interval - prev_interval)
-                        print_keys(runner, res[j], rev[j], out, prev_interval, env)
+                        print_keys(runner, res, rev, out, prev_interval, env)
                         res = defaultdict(list)
                         rev = defaultdict(list)
                     prev_interval = interval
