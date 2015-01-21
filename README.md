@@ -54,7 +54,7 @@ counter event list for common Intel CPUs. This allows to use all the
 Intel events, not just the builtin events of perf. Can be also used
 as a library from other python programs
 * The "toplev.py" tool to identify the micro-architectural bottleneck for a workload. 
-This implements the [TopDown](http://software.intel.com/en-us/articles/how-to-tune-applications-using-a-top-down-characterization-of-microarchitectural-issues)
+This implements the [TopDown](https://sites.google.com/site/analysismethods/yasin-pubs) or [TopDown2](http://software.intel.com/en-us/articles/how-to-tune-applications-using-a-top-down-characterization-of-microarchitectural-issues)
 methology.
 * The "ucevent" tool to manage and compute uncore performance events. Uncore is the part of the CPU that is not core.  Supports many metrics for power management, IO, QPI (interconnect), caches, and others.  ucevent automatically generates event descriptions
 for the perf uncore driver and pretty prints the output. It also supports
@@ -205,7 +205,7 @@ prints meaningful ratios, unless -v is specified.
 
 This follows the "Top Down" methology. The best description of the method
 is in the "A top-down method for performance analysis and counter architecture"
-paper (ISPASS 2014, unfortunately paywalled) Older descriptions of Top Down are in B.3.2 of
+paper (ISPASS 2014, available [here](https://sites.google.com/site/analysismethods/yasin-pubs)) Older descriptions of Top Down are in B.3.2 of
 the [Intel optimization manual](http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf) and
 in this [article](http://software.intel.com/en-us/articles/how-to-tune-applications-using-a-top-down-characterization-of-microarchitectural-issues) and in [Ahmad Yasin's presentation](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxhbmFseXNpc21ldGhvZHN8Z3g6MWJjNTE2OTU4ODVlZGFkMw) at a [ISCA workshop](https://sites.google.com/site/analysismethods/isca2013/program-1). I didn't invent it, I'm just implementing it.
 
