@@ -5,6 +5,17 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev updated to TopDown 2.9:
+    - Many fixes to SMT support. SMT now supported on Haswell.
+    - Many bug fixes to metrics
+    - Initial Haswell Server support
+    - Add a Sandy Bridge EP model
+    - Lots of new metrics and nodes: e.g. Core IPC, MUX confidence,
+      BPTB (Branch per Taken Branch), SMT_2T utilization,
+      IFetch_Line_utilization
+    - Initial Broadwell model support
+    - Improve sample event support. Now enable them by default.
+    - --per-core and --per-socket support dropped with SMT
 * The new tl-serve.py tool displays toplev output in a web browser.
 * toplev now has a new --all option to enable all features.
 * toplev now has a simple TSX metrics model with --tsx on Haswell/Broadwell
