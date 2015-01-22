@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* Add cputop utility to easy enable/disable hyper threading
 * toplev updated to TopDown 2.9:
     - Many fixes to SMT support. SMT now supported on Haswell.
     - Many bug fixes to metrics
@@ -337,6 +338,26 @@ Run toplev:
 	tl-serve.py x.csv
 	
 Then browse http://localhost:9001/ in your web browser.
+
+## cputop
+
+query cpu topology and print all matching cpu numbers
+cputop "query" ["format"]
+query is a python expression, using variables:
+socket, core, thread
+or "offline" to query all offline cpus
+format is a printf format with %d
+%d will be replaced with the cpu number
+format can be offline to offline the cpu or online to online
+### Examples:
+Print all cores on socket 0
+	cputop "socket == 0"
+Print all first threads in each core on socket 0
+	cputop "thread == 0 and socket == 0"
+Disable all second threads (disable hyper threading)
+	cputop "thread == 1" offline
+Reenable all second threads (reenable hyper threading)
+	cputop "thread == 0" online
 
 ## self: 
 

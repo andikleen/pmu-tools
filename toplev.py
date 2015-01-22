@@ -878,7 +878,7 @@ class Runner:
                 if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht:
                     disclaimer = """
 Warning: Hyper Threading may lead to incorrect measurements for this node.
-Suggest to re-measure with HT off."""
+Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
                 desc = obj.desc[1:].replace("\n", "\n\t")
                 if obj.metric:
                     out.metric(obj.area if 'area' in obj.__class__.__dict__ else None,
