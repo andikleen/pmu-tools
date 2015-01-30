@@ -95,7 +95,7 @@ function toggle_refresh(el) {
 <input id="all" type=checkbox name="dall" onClick="change_all(this.checked)" checked />
 <label for="all">Toggle all</label>
 <input id="enable_refresh" type=checkbox onClick="toggle_refresh(this)" />
-<label for"enable_refresh">Auto-refresh</a>
+<label for="enable_refresh">Auto-refresh</label>
 <input id="refresh_rate" type="text" size=4 value="1000" name="refresh"  />
 <label for="refresh_rate">Refresh rate (ms)</label>
 </p></div>
