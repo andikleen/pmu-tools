@@ -535,7 +535,6 @@ def execute_no_multiplex(runner, out, rest):
 
 def execute(runner, out, rest):
     env = dict()
-    print "evgroups", runner.evgroups
     ret, res, rev, interval = do_execute(runner, ",".join(filter(lambda x: len(x) > 0, runner.evgroups)),
                                          out, rest,
                                          defaultdict(list),
