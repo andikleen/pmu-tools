@@ -10,6 +10,7 @@ import csv
 import gen_level
 import re
 import os
+import itertools
 import tldata
 
 ap = argparse.ArgumentParser(usage="Serve toplev csv file as http or generate in directory")
@@ -29,24 +30,30 @@ data.update()
 def jsname(n):
     return n.replace(".", "_").replace("-", "_")
 
-def gen_html():
-    lev = tldata.level_order(data)
-    graph = """
-<html><head><title>Toplev</title>
+def gen_html_header():
+    graph = """<html><head><title>Toplev</title>
 <link rel="shortcut icon" href="toplev.ico" />
 <script type="text/javascript" src="dygraph-combined.js"></script>
 </head>
 <body>
 <script type="text/javascript">
 
+var cpus = ["""
+
+    graph += ",".join(['"%s"' % (x) for x in data.cpus])
+    graph += "]"
+
+    graph += """
 var graphs = []
 var goptions = []
 var num_graphs = 0
 var block_redraw = false
 
 function enable(el) {
-    p = document.getElementById(el.name)
-    p.style.display = el.checked ? 'block' : 'none';
+    for (i = 0; i < cpus.length; i++) {
+        p = document.getElementById("d_" + cpus[i] + "_" + el.name)
+        p.style.display = el.checked ? 'block' : 'none';
+    }
 }
 
 function change_all(flag) {
@@ -86,11 +93,12 @@ function toggle_refresh(el) {
 <div><p>
 <b>Display:</b>
 """
-    for j, id in zip(lev, range(len(lev))):
-        graph += T("""
-<input id="$id" class="toggles" type=checkbox name="d_$name" onClick="enable(this)" checked />
+    lev = tldata.level_order(data)
+    for num, name in enumerate(lev):
+        graph += T("""\
+<input id="$id" class="toggles" type=checkbox name="$name" onClick="enable(this)" checked />
 <label for="$id">$name</label>
-        """).substitute({"id": id, "name": j})
+        """).substitute({"id": num, "name": name})
     graph += """
 <input id="all" type=checkbox name="dall" onClick="change_all(this.checked)" checked />
 <label for="all">Toggle all</label>
@@ -104,15 +112,8 @@ Drag to zoom. Double click to zoom out again<br />
 
 <div id="help" style="position:fixed; right:0; width:300px; font-size: 11"> </div>
 """
-    for j in lev:
-        opts = {
-            "title": j,
-            "width": 1000,
-            "height": 180,
-            #"xlabel": "time",
-        }
 
-        
+    for j in lev:
         graph += T("""
 <script type="text/javascript">
 help_$name = {
@@ -128,8 +129,21 @@ help_$name = {
 }
 </script>
 """
-        if j in data.metrics:
-            unit = gen_level.get_unit(list(data.levels[j])[0])
+    return graph
+
+def gen_html_cpu(cpu):
+    lev = tldata.level_order(data)
+    graph = "<h2>" + cpu + "</h2>\n"
+    for name in lev:
+        opts = {
+            "title": name,
+            "width": 1000,
+            "height": 180,
+            #"xlabel": "time",
+        }
+
+        if name in data.metrics:
+            unit = gen_level.get_unit(list(data.levels[name])[0])
             if unit:
                 opts["ylabel"] = unit
         else:
@@ -141,7 +155,7 @@ help_$name = {
             opts["valueRange"] = [-5, 110]
         graph += T("""
 
-<div id="d_$name" class="disp"></div>
+<div id="d_${cpu}_$name" class="disp"></div>
 
 <script type="text/javascript">
     i = num_graphs++
@@ -177,21 +191,27 @@ help_$name = {
         p = document.getElementById("help")
         p.innerHTML = ""
     }
-    graphs[i] = new Dygraph(document.getElementById("d_$name"), "$file.csv", goptions[i])
-    goptions[i]["file"] = "$file.csv"
+    graphs[i] = new Dygraph(document.getElementById("d_${cpu}_$name"), "$cpu.$file.csv", goptions[i])
+    goptions[i]["file"] = "$cpu.$file.csv"
 </script>
-                """).substitute({"name": j, "jname": jsname(j), "file": j, "opts": opts})
+                """).substitute({"name": name, "jname": jsname(name), "file": name, "cpu": cpu, "opts": opts})
+    return graph
+
+def gen_html():
+    graph = gen_html_header()
+    for cpu in data.cpus:
+        graph += gen_html_cpu(cpu)
     graph += """
 </body>
 </html>"""
     return graph
 
-def gencsv(wfile, l):
+def gencsv(wfile, l, cpu):
     hdr = sorted(data.levels[l])
     wr = csv.writer(wfile)
     wr.writerow(["Timestamp"] + hdr)
-    for v, t in zip(data.vals, data.times):
-        wr.writerow([t] + [v[x] if x in v else "" for x in hdr])
+    for val, ts in zip(data.vals, data.times):
+        wr.writerow([ts] + [val[(x, cpu)] if (x, cpu) in val else "" for x in hdr])
 
 class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def header(self, type):
@@ -220,12 +240,17 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.serve_file("toplev.ico", "image/x-icon")
         elif self.path.endswith(".csv"):
             data.update()
-            l = re.sub(r"\.csv$", "", self.path[1:])
+            m = re.match(r"/(cpu|C\d+|S\d+-C\d+)\.(.*?)\.csv", self.path)
+            if not m:
+                self.bad()
+                return
+            cpu = m.group(1)
+            l = m.group(2)
             if l not in data.levels:
                 self.bad()
                 return
             self.header("text/csv")
-            gencsv(self.wfile, l)
+            gencsv(self.wfile, l, cpu)
         else:
             self.bad()
 
@@ -242,9 +267,10 @@ if args.gen:
         f.write(gen_html())
     copyfile('dygraph-combined.js', genfn(args.gen, 'dygraph-combined.js'))
     copyfile('toplev.ico', genfn(args.gen, 'favicon.ico'))
-    for l in data.levels:
-        with open(genfn(args.gen, l + ".csv"), 'w') as f:
-            gencsv(f, l)
+    for cpu in data.cpus:
+        for l in data.levels:
+            with open(genfn(args.gen, cpu + ":" + l + ".csv"), 'w') as f:
+                gencsv(f, l)
     print "Please browse", args.gen, "through a web server, not through file:"
 else:
     httpd = BaseHTTPServer.HTTPServer((args.host, args.port), TLHandler)

@@ -17,6 +17,7 @@ def parse_args():
     p.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
     p.add_argument('--title', help='Set title of plot', nargs='?')
     p.add_argument('--quiet', help='Be quiet', action='store_true')
+    p.add_argument('--cpu', help='CPU to plot (by default first)') # XXX
     return p.parse_args()
 
 args = parse_args()
@@ -36,14 +37,22 @@ data.update()
 levels = data.levels
 timestamps = data.times
 ratios = defaultdict(list)
+# XXX plot multiple cpus instead
+if args.cpu:
+    cpu = args.cpu
+else:
+    cpu = sorted(data.cpus)[0]
+print "plotting cpu", cpu
+
 for d in data.vals:
     for j in data.headers:
-        if j not in d:
-            d[j] = float('nan')
+        if (j, cpu) not in d:
+            d[(j, cpu)] = float('nan')
 for d in data.vals:
-    for k in d.keys():
-        ratios[k].append(d[k])
-    assert len(ratios.keys()) == len(d.keys())
+    for k, c in d.keys():
+        if c == cpu:
+            ratios[k].append(d[(k, cpu)])
+    assert len(ratios.keys()) == len(filter(lambda x: x[1] == cpu, d.keys()))
 
 def valid_row(r):
     s = sum(r)
@@ -102,7 +111,8 @@ for l in tldata.level_order(data):
                          prop={'size':6})
         low = min([min(ratios[x]) for x in non_null])
         high = max([max(ratios[x]) for x in non_null])
-        ax.yaxis.set_ticks([low, math.trunc(((high - low)/2.0)/100.)*100., high])
+        if not math.isnan(low) and not math.isnan(high):
+            ax.yaxis.set_ticks([low, math.trunc(((high - low)/2.0)/100.)*100., high])
     else:
         stack = ax.stackplot(timestamps, *r, colors=all_colors)
         ax.set_ylim(0, 100)
