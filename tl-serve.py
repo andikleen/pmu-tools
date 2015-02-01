@@ -185,7 +185,7 @@ help_$name = {
                 continue
             graph += T("""
         "$name": "$help",
-        """).substitute({"name": i, "help": data.helptxt[i] })
+        """).substitute({"name": get_postfix(i), "help": data.helptxt[i] })
         graph += """
 }
 </script>
@@ -241,10 +241,16 @@ def gen_html():
 </html>"""
     return graph
 
+def get_postfix(s):
+    m = re.match(r'.*\.(.*)', s)
+    if m:
+        return m.group(1)
+    return s
+
 def gencsv(wfile, l, cpu):
     hdr = sorted(data.levels[l])
     wr = csv.writer(wfile)
-    wr.writerow(["Timestamp"] + hdr)
+    wr.writerow(["Timestamp"] + map(get_postfix, hdr))
     for val, ts in zip(data.vals, data.times):
         wr.writerow([ts] + [val[(x, cpu)] if (x, cpu) in val else "" for x in hdr])
 
