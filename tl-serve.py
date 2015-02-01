@@ -30,6 +30,9 @@ data.update()
 def jsname(n):
     return n.replace(".", "_").replace("-", "_")
 
+def comma_strings(l):
+    return ",".join(['"%s"' % (x) for x in l])
+
 def gen_html_header():
     graph = """<html><head><title>Toplev</title>
 <link rel="shortcut icon" href="toplev.ico" />
@@ -40,8 +43,8 @@ def gen_html_header():
 
 var cpus = ["""
 
-    graph += ",".join(['"%s"' % (x) for x in data.cpus])
-    graph += "]"
+    graph += comma_strings(sorted(data.cpus)) + "]\n"
+    graph += "var nodes = [" + comma_strings(tldata.level_order(data)) + "]"
 
     graph += """
 var graphs = []
@@ -85,6 +88,62 @@ function toggle_refresh(el) {
                 }, Number(p.value))
     }
 }
+
+function add_node(cpu, nd) {
+    p = document.getElementById("d_" + cpus[cpu] + "_" + nodes[nd])
+    p.parentNode.appendChild(p)
+}
+
+function toggle_interleave(el) {
+    if (!el.checked) {
+        for (cpu = 0; cpu < cpus.length; cpu++) {
+            for (nd = 0; nd < nodes.length; nd++) {
+                add_node(cpu, nd)
+            }
+        }
+    } else {
+        for (nd = 0; nd < nodes.length; nd++) {
+            for (cpu = 0; cpu < cpus.length; cpu++) {
+                add_node(cpu, nd)
+            }
+        }
+    }
+}
+
+function draw_graph(me, initial) {
+    if (block_redraw || initial)
+        return;
+    block_redraw = true
+    xrange = me.xAxisRange()
+    for (i = 0; i < num_graphs; i++) {
+        if (graphs[i] != me) {
+            graphs[i].updateOptions({
+                dateWindow: xrange,
+            })
+        }
+    }
+    block_redraw = false
+}
+
+function hilight_help(e, x, pts, row, help) {
+    p = document.getElementById("help")
+    h = ""
+    for (i = 0; i < pts.length; i++) {
+        n = pts[i].name
+        if (n in help && help[n] != "") {
+            h += "<b>" + n + "</b>: " + help[n] + " <br /> "
+        } else {
+            // location.reload(); // XXX
+        }
+    }
+    p.innerHTML = h
+}
+
+function unhilight_help(e, x, pts, row) {
+    p = document.getElementById("help")
+    p.innerHTML = ""
+}
+
 </script>
 """
     if args.title:
@@ -106,6 +165,8 @@ function toggle_refresh(el) {
 <label for="enable_refresh">Auto-refresh</label>
 <input id="refresh_rate" type="text" size=4 value="1000" name="refresh"  />
 <label for="refresh_rate">Refresh rate (ms)</label>
+<input id="interleave" type=checkbox onClick="toggle_interleave(this)" />
+<label for="interleave">Interleave CPUs</label>
 </p></div>
 
 Drag to zoom. Double click to zoom out again<br />
@@ -133,10 +194,10 @@ help_$name = {
 
 def gen_html_cpu(cpu):
     lev = tldata.level_order(data)
-    graph = "<h2>" + cpu + "</h2>\n"
+    graph = ""
     for name in lev:
         opts = {
-            "title": name,
+            "title": name + " " + cpu,
             "width": 1000,
             "height": 180,
             #"xlabel": "time",
@@ -161,36 +222,10 @@ def gen_html_cpu(cpu):
     i = num_graphs++
     goptions[i] = $opts
     goptions[i].highlightCallback = function(e, x, pts, row) {
-        p = document.getElementById("help")
-        h = ""
-        for (i = 0; i < pts.length; i++) {
-            n = pts[i].name
-            if (n in help_$jname && help_$jname[n] != "") {
-                h += "<b>" + n + "</b>: " + help_$jname[n] + " <br /> "
-            } else {
-                // location.reload(); // XXX
-            }
-        }
-        p.innerHTML = h
+        hilight_help(e, x, pts, row, help_$jname)
     }
-    goptions[i].drawCallback = function(me, initial) {
-        if (block_redraw || initial)
-            return;
-        block_redraw = true
-        xrange = me.xAxisRange()
-        for (i = 0; i < num_graphs; i++) {
-            if (graphs[i] != me) {
-                graphs[i].updateOptions({
-                    dateWindow: xrange,
-                })
-            }
-        }
-        block_redraw = false
-    }
-    goptions[i].unhighlightCallback = function(e, x, pts, row) {
-        p = document.getElementById("help")
-        p.innerHTML = ""
-    }
+    goptions[i].unhighlightCallback = unhilight_help
+    goptions[i].drawCallback = draw_graph
     graphs[i] = new Dygraph(document.getElementById("d_${cpu}_$name"), "$cpu.$file.csv", goptions[i])
     goptions[i]["file"] = "$cpu.$file.csv"
 </script>
@@ -199,7 +234,7 @@ def gen_html_cpu(cpu):
 
 def gen_html():
     graph = gen_html_header()
-    for cpu in data.cpus:
+    for cpu in sorted(data.cpus):
         graph += gen_html_cpu(cpu)
     graph += """
 </body>
