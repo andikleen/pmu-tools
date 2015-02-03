@@ -51,22 +51,37 @@ grep /k log
 # test L1 uses a single group
 onegroup() {
 	grep perf $1 | tr -cd '{}' | awk ' { if ($1 != "{}") { print "more than one group for L1" ; exit(1); } } '
-	grep -v "not supported" $1
+}
+
+badschedules=0
+badschedlist=""
+
+checklog() {
+	if grep "not supported 100.00%" $1 ; then
+		echo "WARNING unsupported schedule in $1"
+		badschedules=$[$badschedules + 1]
+		badschedlist="$badschedlist $1"
+	fi
 }
 
 for j in $SMTCPUS ; do
-EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD | tee log
-onegroup log
-EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD | tee log
-onegroup log
-EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD
-EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD
+EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD 2>&1 | tee log.$j
+onegroup log.$j
+checklog log.$j
+EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD 2>&1 | tee log.$j
+onegroup log.$j
+EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD 2>&1 | tee log.$j
+checklog log.$j
+EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD 2>&1 | tee log.$j
+#checklog log.$j
 done
 
 for j in $NOSMTCPUS ; do
-EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD | tee log
-onegroup log
-EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD
+EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD 2>&1 | tee log.$j
+onegroup log.$j
+checklog log.$j
+EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD 2>&1 | tee log.$j
+checklog log.$j
 done
 
 # misc features
@@ -89,4 +104,5 @@ EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a
 trap "" ERR 0
 
 echo
+echo "$badschedules bad schedules: $badschedlist"
 echo "SUCCEEDED"
