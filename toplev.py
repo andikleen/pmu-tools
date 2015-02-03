@@ -881,6 +881,8 @@ class Runner:
                 val = obj.val
                 if not obj.thresh and not dont_hide:
                     val = 0.0
+                if obj.name == "Time": # XXX hack
+                    continue
                 disclaimer = ""
                 if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht:
                     disclaimer = """
