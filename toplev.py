@@ -171,6 +171,7 @@ p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 p.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
 p.add_argument('--all', help="Measure everything available", action='store_true')
+p.add_argument('--frequency', help="Measure frequency", action='store_true')
 p.add_argument('--no-group', help='Dont use groups', action='store_true')
 p.add_argument('--no-multiplex',
                help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
@@ -192,6 +193,7 @@ if args.all:
     args.power = True
     args.sw = True
     args.metrics = True
+    args.frequency = True
     args.level = 5
 
 if args.graph:
@@ -1016,11 +1018,12 @@ if args.tsx and cpu.has_tsx and cpu.cpu in tsx_cpus:
     import tsx_metrics
     setup_with_metrics(tsx_metrics, runner)
 
-import frequency
-old_metrics = args.metrics
-args.metrics = True
-frequency.SetupCPU(runner, cpu)
-args.metrics = old_metrics
+if (args.level > 2 or not need_any) or args.frequency:
+    import frequency
+    old_metrics = args.metrics
+    args.metrics = True
+    frequency.SetupCPU(runner, cpu)
+    args.metrics = old_metrics
 
 if need_any:
     print "Running in HyperThreading mode. Will measure complete system."
