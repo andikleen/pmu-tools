@@ -33,51 +33,30 @@ Energy_Unit = 61
 
 
 def Recovery_Cycles(EV, level):
-    EV("INT_MISC.RECOVERY_CYCLES", level)
-    EV("INT_MISC.RECOVERY_CYCLES:amt1", level)
     return (EV("INT_MISC.RECOVERY_CYCLES:amt1", level) / 2) if smt_enabled else EV("INT_MISC.RECOVERY_CYCLES", level)
 
 def Execute_Cycles(EV, level):
-    EV("UOPS_EXECUTED.CORE:c1", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level)
     return (EV("UOPS_EXECUTED.CORE:c1", level) / 2) if smt_enabled else EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level)
 
 def L1D_Miss_Cycles(EV, level):
-    EV("L1D_PEND_MISS.PENDING_CYCLES", level)
-    EV("L1D_PEND_MISS.PENDING_CYCLES:amt1", level)
     return (EV("L1D_PEND_MISS.PENDING_CYCLES:amt1", level) / 2) if smt_enabled else EV("L1D_PEND_MISS.PENDING_CYCLES", level)
 
 def SQ_Full_Cycles(EV, level):
-    EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
     return (EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level) / 2) if smt_enabled else EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
 
 def ITLB_Miss_Cycles(EV, level):
     return (Mem_STLB_Hit_Cost * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION", level))
 
 def Cycles_0_Ports_Utilized(EV, level):
-    EV("ARITH.FPU_DIV_ACTIVE", level)
-    EV("UOPS_EXECUTED.CORE:i1:c1", level)
-    EV("CYCLE_ACTIVITY.STALLS_TOTAL", level)
-    EV("RS_EVENTS.EMPTY_CYCLES", level)
     return (EV("UOPS_EXECUTED.CORE:i1:c1", level)) / 2 if smt_enabled else(EV("CYCLE_ACTIVITY.STALLS_TOTAL", level) - EV("RS_EVENTS.EMPTY_CYCLES", level) - EV("ARITH.FPU_DIV_ACTIVE", level))
 
 def Cycles_1_Port_Utilized(EV, level):
-    EV("UOPS_EXECUTED.CORE:c2", level)
-    EV("UOPS_EXECUTED.CORE:c1", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
     return (EV("UOPS_EXECUTED.CORE:c1", level) - EV("UOPS_EXECUTED.CORE:c2", level)) / 2 if smt_enabled else(EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level) - EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level))
 
 def Cycles_2_Ports_Utilized(EV, level):
-    EV("UOPS_EXECUTED.CORE:c2", level)
-    EV("UOPS_EXECUTED.CORE:c3", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
     return (EV("UOPS_EXECUTED.CORE:c2", level) - EV("UOPS_EXECUTED.CORE:c3", level)) / 2 if smt_enabled else(EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level) - EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level))
 
 def Cycles_3m_Ports_Utilized(EV, level):
-    EV("UOPS_EXECUTED.CORE:c3", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level)
     return (EV("UOPS_EXECUTED.CORE:c3", level) / 2) if smt_enabled else EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level)
 
 def ORO_Demand_DRD_C1(EV, level):
@@ -173,7 +152,6 @@ def CLKS(EV, level):
 
 # Core actual clocks
 def CORE_CLKS(EV, level):
-    EV("CPU_CLK_UNHALTED.THREAD:amt1", level)
     return (EV("CPU_CLK_UNHALTED.THREAD:amt1", level) / 2) if smt_enabled else CLKS(EV, level)
 
 # Run duration time in seconds

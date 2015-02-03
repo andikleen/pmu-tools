@@ -37,17 +37,12 @@ def FLOP_Count(EV, level):
     return (1 *(EV("FP_COMP_OPS_EXE.X87", level) + EV("FP_COMP_OPS_EXE.SSE_SCALAR_SINGLE", level) + EV("FP_COMP_OPS_EXE.SSE_SCALAR_DOUBLE", level)) + 2 * EV("FP_COMP_OPS_EXE.SSE_PACKED_DOUBLE", level) + 4 *(EV("FP_COMP_OPS_EXE.SSE_PACKED_SINGLE", level) + EV("SIMD_FP_256.PACKED_DOUBLE", level)) + 8 * EV("SIMD_FP_256.PACKED_SINGLE", level))
 
 def Recovery_Cycles(EV, level):
-    EV("INT_MISC.RECOVERY_CYCLES", level)
-    EV("INT_MISC.RECOVERY_CYCLES:amt1", level)
     return (EV("INT_MISC.RECOVERY_CYCLES:amt1", level) / 2) if smt_enabled else EV("INT_MISC.RECOVERY_CYCLES", level)
 
 def L1D_Miss_Cycles(EV, level):
-    EV("L1D_PEND_MISS.PENDING_CYCLES", level)
-    EV("L1D_PEND_MISS.PENDING_CYCLES:amt1", level)
     return (EV("L1D_PEND_MISS.PENDING_CYCLES:amt1", level) / 2) if smt_enabled else EV("L1D_PEND_MISS.PENDING_CYCLES", level)
 
 def SQ_Full_Cycles(EV, level):
-    EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
     return (EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level) / 2) if smt_enabled else EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
 
 def ITLB_Miss_Cycles(EV, level):
@@ -134,7 +129,6 @@ def CLKS(EV, level):
 
 # Core actual clocks
 def CORE_CLKS(EV, level):
-    EV("CPU_CLK_UNHALTED.THREAD:amt1", level)
     return (EV("CPU_CLK_UNHALTED.THREAD:amt1", level) / 2) if smt_enabled else CLKS(EV, level)
 
 # Run duration time in seconds

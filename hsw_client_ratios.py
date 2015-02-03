@@ -33,21 +33,15 @@ Energy_Unit = 61
 
 
 def Recovery_Cycles(EV, level):
-    EV("INT_MISC.RECOVERY_CYCLES", level)
-    EV("INT_MISC.RECOVERY_CYCLES:amt1", level)
     return (EV("INT_MISC.RECOVERY_CYCLES:amt1", level) / 2) if smt_enabled else EV("INT_MISC.RECOVERY_CYCLES", level)
 
 def Execute_Cycles(EV, level):
-    EV("UOPS_EXECUTED.CORE:c1", level)
     return (EV("UOPS_EXECUTED.CORE:c1", level) / 2) if smt_enabled else EV("UOPS_EXECUTED.CORE:c1", level)
 
 def L1D_Miss_Cycles(EV, level):
-    EV("L1D_PEND_MISS.PENDING_CYCLES", level)
-    EV("L1D_PEND_MISS.PENDING_CYCLES:amt1", level)
     return (EV("L1D_PEND_MISS.PENDING_CYCLES:amt1", level) / 2) if smt_enabled else EV("L1D_PEND_MISS.PENDING_CYCLES", level)
 
 def SQ_Full_Cycles(EV, level):
-    EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
     return (EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level) / 2) if smt_enabled else EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
 
 def ITLB_Miss_Cycles(EV, level):
@@ -57,17 +51,12 @@ def Cycles_0_Ports_Utilized(EV, level):
     return STALLS_TOTAL(EV, level)
 
 def Cycles_1_Port_Utilized(EV, level):
-    EV("UOPS_EXECUTED.CORE:c2", level)
-    EV("UOPS_EXECUTED.CORE:c1", level)
     return (EV("UOPS_EXECUTED.CORE:c1", level) - EV("UOPS_EXECUTED.CORE:c2", level)) / 2 if smt_enabled else(EV("UOPS_EXECUTED.CORE:c1", level) - EV("UOPS_EXECUTED.CORE:c2", level))
 
 def Cycles_2_Ports_Utilized(EV, level):
-    EV("UOPS_EXECUTED.CORE:c2", level)
-    EV("UOPS_EXECUTED.CORE:c3", level)
     return (EV("UOPS_EXECUTED.CORE:c2", level) - EV("UOPS_EXECUTED.CORE:c3", level)) / 2 if smt_enabled else(EV("UOPS_EXECUTED.CORE:c2", level) - EV("UOPS_EXECUTED.CORE:c3", level))
 
 def Cycles_3m_Ports_Utilized(EV, level):
-    EV("UOPS_EXECUTED.CORE:c3", level)
     return (EV("UOPS_EXECUTED.CORE:c3", level) / 2) if smt_enabled else EV("UOPS_EXECUTED.CORE:c3", level)
 
 def STALLS_MEM_ANY(EV, level):
@@ -144,7 +133,6 @@ def DSB_Coverage(EV, level):
 
 # Instruction-Level-Parallelism (average number of uops executed when there is at least 1 uop executed)
 def ILP(EV, level):
-    EV("UOPS_EXECUTED.CORE", level)
     return (EV("UOPS_EXECUTED.CORE", level) / 2 / Execute_Cycles(EV, level)) if smt_enabled else EV("UOPS_EXECUTED.CORE", level) / Execute_Cycles(EV, level)
 
 # Memory-Level-Parallelism (average number of L1 miss demand load when there is at least 1 such miss)
@@ -173,7 +161,6 @@ def CLKS(EV, level):
 
 # Core actual clocks
 def CORE_CLKS(EV, level):
-    EV("CPU_CLK_UNHALTED.THREAD:amt1", level)
     return (EV("CPU_CLK_UNHALTED.THREAD:amt1", level) / 2) if smt_enabled else CLKS(EV, level)
 
 # Run duration time in seconds

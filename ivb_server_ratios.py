@@ -37,50 +37,30 @@ def FLOP_Count(EV, level):
     return (1 *(EV("FP_COMP_OPS_EXE.X87", level) + EV("FP_COMP_OPS_EXE.SSE_SCALAR_SINGLE", level) + EV("FP_COMP_OPS_EXE.SSE_SCALAR_DOUBLE", level)) + 2 * EV("FP_COMP_OPS_EXE.SSE_PACKED_DOUBLE", level) + 4 *(EV("FP_COMP_OPS_EXE.SSE_PACKED_SINGLE", level) + EV("SIMD_FP_256.PACKED_DOUBLE", level)) + 8 * EV("SIMD_FP_256.PACKED_SINGLE", level))
 
 def Recovery_Cycles(EV, level):
-    EV("INT_MISC.RECOVERY_CYCLES", level)
-    EV("INT_MISC.RECOVERY_CYCLES:amt1", level)
     return (EV("INT_MISC.RECOVERY_CYCLES:amt1", level) / 2) if smt_enabled else EV("INT_MISC.RECOVERY_CYCLES", level)
 
 def Execute_Cycles(EV, level):
-    EV("UOPS_EXECUTED.CORE:c1", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level)
     return (EV("UOPS_EXECUTED.CORE:c1", level) / 2) if smt_enabled else EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level)
 
 def L1D_Miss_Cycles(EV, level):
-    EV("L1D_PEND_MISS.PENDING_CYCLES", level)
-    EV("L1D_PEND_MISS.PENDING_CYCLES:amt1", level)
     return (EV("L1D_PEND_MISS.PENDING_CYCLES:amt1", level) / 2) if smt_enabled else EV("L1D_PEND_MISS.PENDING_CYCLES", level)
 
 def SQ_Full_Cycles(EV, level):
-    EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
     return (EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level) / 2) if smt_enabled else EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
 
 def ITLB_Miss_Cycles(EV, level):
     return (Mem_STLB_Hit_Cost * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION", level))
 
 def Cycles_0_Ports_Utilized(EV, level):
-    EV("ARITH.FPU_DIV_ACTIVE", level)
-    EV("UOPS_EXECUTED.CORE:i1:c1", level)
-    EV("RS_EVENTS.EMPTY_CYCLES", level)
     return (EV("UOPS_EXECUTED.CORE:i1:c1", level)) / 2 if smt_enabled else(STALLS_TOTAL(EV, level) - EV("RS_EVENTS.EMPTY_CYCLES", level) - EV("ARITH.FPU_DIV_ACTIVE", level))
 
 def Cycles_1_Port_Utilized(EV, level):
-    EV("UOPS_EXECUTED.CORE:c2", level)
-    EV("UOPS_EXECUTED.CORE:c1", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
     return (EV("UOPS_EXECUTED.CORE:c1", level) - EV("UOPS_EXECUTED.CORE:c2", level)) / 2 if smt_enabled else(EV("UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC", level) - EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level))
 
 def Cycles_2_Ports_Utilized(EV, level):
-    EV("UOPS_EXECUTED.CORE:c2", level)
-    EV("UOPS_EXECUTED.CORE:c3", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
     return (EV("UOPS_EXECUTED.CORE:c2", level) - EV("UOPS_EXECUTED.CORE:c3", level)) / 2 if smt_enabled else(EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level) - EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level))
 
 def Cycles_3m_Ports_Utilized(EV, level):
-    EV("UOPS_EXECUTED.CORE:c3", level)
-    EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level)
     return (EV("UOPS_EXECUTED.CORE:c3", level) / 2) if smt_enabled else EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level)
 
 def STALLS_MEM_ANY(EV, level):
@@ -195,7 +175,6 @@ def CLKS(EV, level):
 
 # Core actual clocks
 def CORE_CLKS(EV, level):
-    EV("CPU_CLK_UNHALTED.THREAD:amt1", level)
     return (EV("CPU_CLK_UNHALTED.THREAD:amt1", level) / 2) if smt_enabled else CLKS(EV, level)
 
 # Run duration time in seconds
