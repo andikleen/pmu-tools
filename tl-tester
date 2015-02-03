@@ -50,21 +50,22 @@ grep /k log
 
 # test L1 uses a single group
 onegroup() {
-	grep perf | tr -cd '{}' | awk ' { if ($1 != "{}") { print "more than one group for L1" ; exit(1); } } '
+	grep perf $1 | tr -cd '{}' | awk ' { if ($1 != "{}") { print "more than one group for L1" ; exit(1); } } '
+	grep -v "not supported" $1
 }
 
 for j in $SMTCPUS ; do
 EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD | tee log
-onegroup < log
+onegroup log
 EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD | tee log
-onegroup < log
+onegroup log
 EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD
 EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD
 done
 
 for j in $NOSMTCPUS ; do
 EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD | tee log
-onegroup < log
+onegroup log
 EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD
 done
 
