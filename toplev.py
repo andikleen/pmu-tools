@@ -37,6 +37,7 @@ known_cpus = (
 tsx_cpus = ("hsw", "hsx", "bdw")
 
 ingroup_events = frozenset(["cycles", "instructions", "ref-cycles",
+                            "cpu/event=0x0,umask=0x3,any=1/",
                             "cpu/event=0x3c,umask=0x00,any=1/",
                             "cpu/event=0x3c,umask=0x0,any=1/",
                             "cpu/event=0x00,umask=0x1/",
@@ -407,8 +408,10 @@ filter_to_perf = {
 
 fixed_counters = {
     "CPU_CLK_UNHALTED.THREAD": "cycles",
+    "CPU_CLK_UNHALTED.THREAD:amt1": "cpu/event=0x3c,umask=0x0,any=1/",
     "INST_RETIRED.ANY": "instructions",
-    "CPU_CLK_UNHALTED.REF_TSC": "ref-cycles"
+    "CPU_CLK_UNHALTED.REF_TSC": "ref-cycles",
+    "CPU_CLK_UNHALTED.REF_TSC:amt1": "cpu/event=0x0,umask=0x3,any=1/",
 }
 
 fixed_set = frozenset(fixed_counters.keys())
@@ -429,7 +432,9 @@ def raw_event(i):
         if i in fixed_counters:
             i = fixed_counters[i]
             if filter_string():
-                i += ":" + filter_string()
+                if ":" not in i:
+                    i += ":"
+                i += filter_string()
             return i
         e = emap.getevent(i)
         if e is None:
@@ -646,10 +651,12 @@ def ev_append(ev, level, obj):
 
 def canon_event(e):
     m = re.match(r"(.*?):(.*)", e)
+    if m and m.group(2) != "amt1":
+        e = m.group(1)
+    if e in fixed_counters:
+        return fixed_counters[e]
     if m:
         e = m.group(1)
-    if e.upper() in fixed_counters:
-        return fixed_counters[e.upper()]
     if e.endswith("_0"):
         e = e[:-2]
     return e.lower()

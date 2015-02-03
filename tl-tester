@@ -27,42 +27,47 @@ LOAD="-- gcc -o /dev/null hello.c"
 
 set -o pipefail
 
-EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py $LOAD
-DIRECT_MSR=1 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py $LOAD
+ALLCPUS="snb ivb ivt hsw hsx bdw slm"
+
+EVENTMAP=${cpus[ivb]} FORCECPU=$j $WRAP ./toplev.py $LOAD
+DIRECT_MSR=1 EVENTMAP=${cpus[ivb]} FORCECPU=$j $WRAP ./toplev.py $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -v -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -x, -v -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py --metrics -x, -v -d -l4 $LOAD
-EVENTMAP=${cpus[ivt]} FORCECPU=ivt $WRAP ./toplev.py -d --all --kernel $LOAD
-EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d --all $LOAD
-EVENTMAP=${cpus[jkt]} FORCECPU=jkt $WRAP ./toplev.py -d --all -l5 $LOAD
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all $LOAD
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all -l5 $LOAD
-# fixme: need event list with missing events
-#EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py -d --all -l5 $LOAD
-#EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py -d --all $LOAD
-EVENTMAP=${cpus[ivt]} FORCECPU=ivt $WRAP ./toplev.py -d --all $LOAD
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --metrics -l4 $LOAD
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d --all --kernel $LOAD
+
+for j in $ALLCPUS ; do
+EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD
+EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d --all $LOAD
+EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d --all -l5 $LOAD
+done
+
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --metrics --no-multiplex -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --power -l4 $LOAD
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all --no-group $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all --user $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --sw -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --graph -o x.png -d --metrics -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 sleep 1
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 --user $LOAD | tee log
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --all -l5 $LOAD
-EVENTMAP=${cpus[slm]} FORCECPU=slm $WRAP ./toplev.py --all $LOAD
-EVENTMAP=${cpus[ivb]} FORCECPU=ivb  $WRAP ./toplev.py --all -l5 $LOAD
 grep :u log
-EVENTMAP=${cpus[slm]} FORCECPU=slm $WRAP ./toplev.py -d --all $LOAD
+
+# test L1 uses a single group
+onegroup() {
+	tr -cd '{}' | awk ' { if ($1 != "{}") { print "more than one group for L1" ; exit(1); } '
+}
+
+for j in $ALLCPUS ; do
+EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -l1 true $LOAD | onegroup
+done
 
 # need new perf
 # test other perf output formats
-EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a --per-core sleep 1
-EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a --per-socket sleep 1
-EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a -A sleep 1
+# need force smt off first
+#EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a --per-core sleep 1
+#EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a --per-socket sleep 1
+#EVENTMAP=${cpus[snb]} FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a -A sleep 1
 
 trap "" ERR 0
 
