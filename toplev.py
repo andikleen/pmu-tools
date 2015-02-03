@@ -448,6 +448,12 @@ def raw_event(i):
 def raw_events(evlist):
     return map(raw_event, evlist)
 
+def mark_fixed(s):
+    r = raw_event(s)
+    if r in ingroup_events:
+        return "%s[F]" % s
+    return s
+
 def pwrap(s):
     print "\n".join(textwrap.wrap(s, 60))
 
@@ -456,7 +462,7 @@ def print_header(work, evlist):
     evnames = set(itertools.chain(*evnames0))
     names = [obj.__class__.__name__ for obj in work]
     pwrap(" ".join(names) + ":")
-    pwrap(" ".join(evnames).lower() +
+    pwrap(" ".join(map(mark_fixed, evnames)).lower() +
           " [%d_counters]" % (len(evnames - fixed_set)))
 
 def setup_perf(evstr, rest):
