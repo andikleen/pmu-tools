@@ -429,10 +429,15 @@ def filter_string():
         return filter_to_perf[ring_filter]
     return ""
 
+def separator(x):
+    if x.startswith("cpu"):
+        return ""
+    return ":"
+
 def add_filter(s):
     f = filter_string()
     if f:
-        s = set([x + ":" + f for x in s])
+        s = set([x + separator(x) + f for x in s])
     return s
 
 def raw_event(i):
@@ -440,7 +445,7 @@ def raw_event(i):
         if i in fixed_counters:
             i = fixed_counters[i]
             if filter_string():
-                if ":" not in i:
+                if ":" not in i and not i.startswith("cpu"):
                     i += ":"
                 i += filter_string()
             return i
