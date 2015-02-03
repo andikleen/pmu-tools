@@ -313,6 +313,13 @@ class CPU:
         if cnt:
             self.counters = int(cnt)
 
+    def force_ht(self):
+        ht = os.getenv("FORCEHT")
+        if ht:
+            self.ht = int(ht)
+            return True
+        return False
+
     def __init__(self):
         self.model = 0
         self.cpu = None
@@ -323,6 +330,7 @@ class CPU:
         self.siblings = {}
         self.threads = 0
         forced_cpu = self.force_cpu()
+        forced_ht = self.force_ht()
         self.force_counters()
         cores = Counter()
         sockets = Counter()
@@ -359,7 +367,7 @@ class CPU:
                     key = (physid, coreid,)
                     cores[key] += 1
                     self.threads = max(self.threads, cores[key])
-                    if self.threads > 1:
+                    if self.threads > 1 and not forced_ht:
                         self.ht = True
                     self.coreids[key].append(cpunum)
                     self.cputocore[cpunum] = key
