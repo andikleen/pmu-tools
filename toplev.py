@@ -289,6 +289,10 @@ class OutputCSV(Output):
 
     def s(self, area, hdr, s, remark, desc, sample):
         remark = self.csv + remark
+        if args.no_desc:
+            desc = ""
+        if desc and sample:
+            desc += " Sampling events: " + sample
         desc = self.csv + '"' + desc + '"'
         desc = re.sub(r"\s+", " ", desc)
         print >>self.logf, '%s%s%s%s%s%s%s' % (hdr, self.csv, s.strip(), remark, desc, self.csv, sample)
