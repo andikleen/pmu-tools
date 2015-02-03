@@ -5,7 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
-* Add cputop utility to easy enable/disable hyper threading
+* Added cputop utility to easily enable/disable hyper threading
 * toplev updated to TopDown 2.9:
     - Many fixes to SMT support. SMT now supported on Haswell.
     - Many bug fixes to metrics
