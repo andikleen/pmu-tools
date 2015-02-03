@@ -334,6 +334,7 @@ class CPU:
                 if len(n) < 3:
                     continue
                 if n[0] == 'processor':
+                    ok += 1
                     cpunum = int(n[2])
                 elif (n[0], n[2]) == ("vendor_id", "GenuineIntel") and ok == 0:
                     ok += 1
@@ -345,6 +346,7 @@ class CPU:
                     ok += 1
                     self.model = int(n[2])
                 elif (n[0], n[1]) == ("model", "name"):
+                    ok += 1
                     m = re.search(r"@ (\d+\.\d+)Ghz", l)
                     if m:
                         self.freq = float(m.group(1))
@@ -363,7 +365,7 @@ class CPU:
                 elif n[0] == "flags":
                     ok += 1
                     self.has_tsx = "rtm" in n
-        if ok >= 4 and not forced_cpu:
+        if ok >= 6 and not forced_cpu:
             for i in known_cpus:
                 if self.model in i[1]:
                     self.cpu = i[0]
