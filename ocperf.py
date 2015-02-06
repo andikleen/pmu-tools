@@ -564,9 +564,7 @@ def process_events(event, print_only):
             end = "}"
             i = i[:-1]
         i = i.strip()
-        m = re.match(r"(cpu/)([^/#]+)([^/]+/)([^,]*)", i)
-        if not m:
-            m = re.match(r"(uncore_.+?/)([^/#]+)([^/]+/)([^,]*)", i)
+        m = re.match(r"(cpu/|uncore/)(.*?)(/)([^,]*)", i)
         if m:
             start += m.group(1)
             ev = emap.getevent(m.group(2))
