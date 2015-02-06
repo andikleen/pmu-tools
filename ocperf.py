@@ -36,6 +36,10 @@
 # The eventmap is automatically downloaded there
 # eventmap can be also a CPU specified (GenuineIntel-FAMILY-MODEL, like GenuineIntel-06-37)
 #
+# Special arguments:
+# --no-period   Never add a period
+# --print       only print
+# --force-download Force event list download
 import sys
 import os
 import subprocess
@@ -622,7 +626,8 @@ def process_args():
 
     overflow = None
     print_only = False
-    record = False
+    never, no, yes = range(3)
+    record = no
     i = 1
     while i < len(sys.argv):
         if sys.argv[i] == "--print":
@@ -630,13 +635,16 @@ def process_args():
         elif sys.argv[i] == "--force-download":
             global force_download
             force_download = True
+        elif sys.argv[i] == "--no-period":
+            record = never
         # XXX does not handle options between perf and record
-        elif sys.argv[i] == "record":
+        elif sys.argv[i] == "record" and record == no:
             cmd.append(sys.argv[i])
-            record = True
+            record = yes
         elif sys.argv[i][0:2] == '-e':
             event, i, prefix = getarg(i, cmd)
-            event, overflow = process_events(event, print_only, record)
+            event, overflow = process_events(event, print_only,
+                                             True if record == yes else False)
             cmd.append(prefix + event)
         elif sys.argv[i][0:2] == '-c':
             oarg, i, prefix = getarg(i, cmd)
