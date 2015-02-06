@@ -117,7 +117,7 @@ class Event:
         self.msrval = 0
         self.desc = desc
 
-    def output_newstyle(self, newextra="", noname=False):
+    def output_newstyle(self, newextra="", noname=False, period=False):
         """Format an perf event for output and return as perf event string.
            Always uses new style (cpu/.../)."""
         val = self.val
@@ -127,9 +127,11 @@ class Event:
         e = "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff, extra)
         if version.has_name and not noname:
             e += ",name=%s" % (self.name.replace(".", "_"),)
+        if period and self.period:
+            e += ",period=%d" % self.period
         return e
 
-    def output(self, use_raw=False, flags="", noname=False):
+    def output(self, use_raw=False, flags="", noname=False, period=False):
         """Format an event for output and return as perf event string.
            use_raw when true return old style perf string (rXXX).
            Otherwise chose between old and new style based on the 
@@ -159,7 +161,7 @@ class Event:
             if extra:
                 ename += ":" + extra
         else:
-            ename = "cpu/%s/" % (self.output_newstyle(newextra=",".join(newe), noname=noname)) + extra
+            ename = "cpu/%s/" % (self.output_newstyle(newextra=",".join(newe), noname=noname, period=period)) + extra
         return ename
 
 box_to_perf = {
@@ -216,7 +218,7 @@ class UncoreEvent:
     # "EdgeDetect": "0"
     # },
     # XXX cannot separate sockets
-    def output_newstyle(self, extra="", noname=False):
+    def output_newstyle(self, extra="", noname=False, period=False):
         # xxx multiply boxes
         e = self
         o = "/event=%#x,umask=%#x" % (e.code, e.umask)
@@ -235,7 +237,7 @@ class UncoreEvent:
                              itertools.takewhile(box_n_exists, itertools.count())])
         return "uncore_%s%s" % (e.unit, o.replace("_NUM", ""))
 
-    def output(self, flags):
+    def output(self, flags, period=False):
         return self.output_newstyle()
 
 def ffs(flag):
@@ -350,6 +352,7 @@ class Emap(object):
             for (flag, name) in extra_flags:
                 if val & flag:
                     e.newextra += ",%s=%d" % (name, (val & flag) >> ffs(flag), )
+            e.period = int(get('sav')) if m['sav'] in row else 0
             self.add_event(e)
 
     def getevent(self, e):
@@ -430,6 +433,7 @@ class EmapNativeJSON(Emap):
             'counter': u'Counter',
             'overflow': u'SampleAfterValue',
             'errata': u'Errata',
+            'sav': u'SampleAfterValue',
         }
         super(EmapNativeJSON, self).__init__()
         if name.find("JKT") >= 0:
@@ -546,7 +550,7 @@ def find_emap():
         pass
     return None
 
-def process_events(event, print_only):
+def process_events(event, print_only, period):
     overflow = None
     # replace inner commas so we can split events
     event = re.sub(r"([a-z][a-z0-9]+/)([^/]+)/",
@@ -571,7 +575,7 @@ def process_events(event, print_only):
             end += m.group(3)
             if ev:
                 end += "".join(merge_extra(extra_set(ev.extra), extra_set(m.group(4))))
-                i = ev.output_newstyle()
+                i = ev.output_newstyle(period=period)
             else:
                 start = ""
                 end = ""
@@ -583,7 +587,7 @@ def process_events(event, print_only):
                 i = m.group(1)
             ev = emap.getevent(i)
             if ev:
-                i = ev.output(flags=extra)
+                i = ev.output(flags=extra, period=period)
         if ev:
             if ev.msr:
                 msr.checked_writemsr(ev.msr, ev.msrval, print_only)
@@ -618,6 +622,7 @@ def process_args():
 
     overflow = None
     print_only = False
+    record = False
     i = 1
     while i < len(sys.argv):
         if sys.argv[i] == "--print":
@@ -625,9 +630,13 @@ def process_args():
         elif sys.argv[i] == "--force-download":
             global force_download
             force_download = True
+        # XXX does not handle options between perf and record
+        elif sys.argv[i] == "record":
+            cmd.append(sys.argv[i])
+            record = True
         elif sys.argv[i][0:2] == '-e':
             event, i, prefix = getarg(i, cmd)
-            event, overflow = process_events(event, print_only)
+            event, overflow = process_events(event, print_only, record)
             cmd.append(prefix + event)
         elif sys.argv[i][0:2] == '-c':
             oarg, i, prefix = getarg(i, cmd)
