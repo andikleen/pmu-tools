@@ -113,6 +113,8 @@ DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL:ppp  'r1c4:ppp$'
 # following tests need new enough perf
 
 checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/$'
+checkp cpu/BR_INST_RETIRED.CONDITIONAL/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional/$'
+checkp cpu/br_inst_retired.conditional/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional/$'
 checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/p  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/p$'
 checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/ppu  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/ppu$'
 export EVENTMAP=${cpus[wsm-sp]}
