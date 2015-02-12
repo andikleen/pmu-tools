@@ -55,7 +55,9 @@ event_fixes = {
     "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC"
 }
 
-need_any = False
+smt_domains = ("Slots", "CoreClocks", "CoreMetric")
+
+smt_mode = False
 
 perf = os.getenv("PERF")
 if not perf:
@@ -536,17 +538,22 @@ def core_fmt(core):
     return "C%d" % (core % 1000,)
 
 def print_keys(runner, res, rev, out, interval, env):
-    if need_any:
+    if smt_mode:
         # collect counts from all threads of cores as lists
         # this way the model can access all threads individually
-        keys = sorted(res.keys(), key = key_to_coreid)
-        for core, citer in itertools.groupby(keys, key_to_coreid):
+        # print the SMT aware nodes
+        core_keys = sorted(res.keys(), key = key_to_coreid)
+        for core, citer in itertools.groupby(core_keys, key_to_coreid):
             cpus = list(citer)
             r = list(itertools.izip(*[res[j] for j in cpus]))
-            runner.print_res(r, rev[cpus[0]], out, interval, core_fmt(core), env)
+            runner.print_res(r, rev[cpus[0]], out, interval, core_fmt(core), env, Runner.SMT_yes)
+
+        # print the non SMT nodes
+        for j in sorted(res.keys()):
+            runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_no)
     else:
         for j in sorted(res.keys()):
-            runner.print_res(res[j], rev[j], out, interval, j, env)
+            runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare)
 
 def execute_no_multiplex(runner, out, rest):
     if args.interval: # XXX
@@ -775,8 +782,14 @@ def full_name(obj):
         name = obj.name + "." + name
     return name
 
+def smt_node(obj):
+    return 'domain' in obj.__class__.__dict__ and obj.domain in smt_domains
+
 class Runner:
     """Schedule measurements of event groups. Try to run multiple in parallel."""
+
+    SMT_yes, SMT_no, SMT_dontcare = range(3)
+
     def __init__(self, max_level):
         self.evnum = [] # flat global list
         self.evgroups = list()
@@ -881,7 +894,7 @@ class Runner:
         if curobj:
             self.add(curobj, curev, curlev)
 
-    def print_res(self, res, rev, out, timestamp, title, env):
+    def print_res(self, res, rev, out, timestamp, title, env, smt):
         if len(res) == 0:
             print "Nothing measured?"
             return
@@ -907,6 +920,9 @@ class Runner:
                 if not obj.thresh and not dont_hide:
                     val = 0.0
                 if obj.name == "Time": # XXX hack
+                    continue
+                if (smt != Runner.SMT_dontcare and
+                        (Runner.SMT_yes if smt_node(obj) else Runner.SMT_no) != smt):
                     continue
                 disclaimer = ""
                 if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht:
@@ -958,12 +974,12 @@ runner = Runner(args.level)
 if cpu.cpu == "ivb":
     import ivb_client_ratios
     ivb_client_ratios.smt_enabled = cpu.ht
-    need_any = cpu.ht
+    smt_mode = cpu.ht
     ivb_client_ratios.Setup(runner)
 elif cpu.cpu == "ivt":
     import ivb_server_ratios
     ivb_server_ratios.smt_enabled = cpu.ht
-    need_any = cpu.ht
+    smt_mode = cpu.ht
     ivb_server_ratios.Setup(runner)
 elif cpu.cpu == "snb":
     import snb_client_ratios
@@ -974,17 +990,17 @@ elif cpu.cpu == "jkt":
 elif cpu.cpu == "hsw":
     import hsw_client_ratios
     hsw_client_ratios.smt_enabled = cpu.ht
-    need_any = cpu.ht
+    smt_mode = cpu.ht
     hsw_client_ratios.Setup(runner)
 elif cpu.cpu == "hsx":
     import hsx_server_ratios
     hsx_server_ratios.smt_enabled = cpu.ht
-    need_any = cpu.ht
+    smt_mode = cpu.ht
     hsx_server_ratios.Setup(runner)
 elif cpu.cpu == "bdw":
     import bdw_client_ratios
     bdw_client_ratios.smt_enabled = cpu.ht
-    need_any = cpu.ht
+    smt_mode = cpu.ht
     bdw_client_ratios.Setup(runner)
 elif cpu.cpu == "slm":
     import slm_ratios
@@ -1017,14 +1033,14 @@ if args.tsx and cpu.has_tsx and cpu.cpu in tsx_cpus:
     import tsx_metrics
     setup_with_metrics(tsx_metrics, runner)
 
-if (args.level > 2 or not need_any) or args.frequency:
+if (args.level > 2 or not smt_mode) or args.frequency:
     import frequency
     old_metrics = args.metrics
     args.metrics = True
     frequency.SetupCPU(runner, cpu)
     args.metrics = old_metrics
 
-if need_any:
+if smt_mode:
     print "Running in HyperThreading mode. Will measure complete system."
     if "--per-socket" in rest:
         sys.exit("Hyper Threading more not compatible with --per-socket")

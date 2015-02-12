@@ -1441,7 +1441,7 @@ class Metric_CoreIPC:
     name = "CoreIPC"
     desc = """
 Instructions Per Cycle (per physical core)"""
-    domain = "Metric"
+    domain = "CoreMetric"
     maxval = 5
 
     def compute(self, EV):

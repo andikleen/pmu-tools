@@ -500,7 +500,7 @@ class Metric_CoreIPC:
     name = "CoreIPC"
     desc = """
 Instructions Per Cycle (per physical core)"""
-    domain = "Metric"
+    domain = "CoreMetric"
     maxval = 5
 
     def compute(self, EV):
@@ -600,7 +600,7 @@ class Metric_Turbo_Utilization:
     name = "Turbo_Utilization"
     desc = """
 Average Frequency Utilization relative nominal frequency"""
-    domain = "Metric"
+    domain = "CoreMetric"
     maxval = 10
 
     def compute(self, EV):
