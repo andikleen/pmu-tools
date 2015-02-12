@@ -702,10 +702,9 @@ def lookup_res(res, rev, ev, obj, env, level, cpuoff = -1):
     # otherwise we always sum up.
     #
     if isinstance(ev, types.LambdaType):
-        n = 0
-        for off in range(cpu.threads): # XXX
-            n += ev(lambda ev, level: lookup_res(res, rev, ev, obj, env, level, off), level)
-        return n
+        return sum([ev(lambda ev, level:
+                       lookup_res(res, rev, ev, obj, env, level, off), level)
+                       for off in range(cpu.threads)])
 
     index = obj.res_map[(ev, level)]
     rev = event_rmap(rev[index])
