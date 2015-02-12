@@ -344,6 +344,7 @@ class CPU:
         sockets = Counter()
         self.coreids = defaultdict(list)
         self.cputocore = {}
+        self.cputothread = {}
         with open("/proc/cpuinfo", "r") as f:
             ok = 0
             for l in f:
@@ -379,6 +380,7 @@ class CPU:
                         self.ht = True
                     self.coreids[key].append(cpunum)
                     self.cputocore[cpunum] = key
+                    self.cputothread[cpunum] = self.coreids[key].index(cpunum)
                 elif n[0] == "flags":
                     ok += 1
                     self.has_tsx = "rtm" in n
@@ -537,6 +539,9 @@ def core_fmt(core):
         return "S%d-C%d" % (core / 1000, core % 1000,)
     return "C%d" % (core % 1000,)
 
+def thread_fmt(j):
+    return core_fmt(key_to_coreid(j)) + ("-T%d" % cpu.cputothread[int(j)])
+
 def print_keys(runner, res, rev, out, interval, env):
     if smt_mode:
         # collect counts from all threads of cores as lists
@@ -550,7 +555,7 @@ def print_keys(runner, res, rev, out, interval, env):
 
         # print the non SMT nodes
         for j in sorted(res.keys()):
-            runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_no)
+            runner.print_res(res[j], rev[j], out, interval, thread_fmt(j), env, Runner.SMT_no)
     else:
         for j in sorted(res.keys()):
             runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare)
