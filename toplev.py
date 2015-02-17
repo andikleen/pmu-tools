@@ -79,8 +79,8 @@ class PerfFeatures:
         self.supports_power = works(perf + " list  | grep -q power/")
 
 def event_group(evlist):
-    need_counters = set(evlist) - add_filter(ingroup_events)
-    e = ",".join(evlist)
+    need_counters = set(evlist) - ingroup_events
+    e = ",".join(add_filter(evlist))
     if not args.no_group and 1 < len(need_counters) <= cpu.counters:
         e = "{%s}" % (e,)
     return e
@@ -451,18 +451,13 @@ def separator(x):
 def add_filter(s):
     f = filter_string()
     if f:
-        s = set([x + separator(x) + f for x in s])
+        s = [x + separator(x) + f for x in s]
     return s
 
 def raw_event(i):
     if i.count(".") > 0:
         if i in fixed_counters:
-            i = fixed_counters[i]
-            if filter_string():
-                if ":" not in i and not i.startswith("cpu"):
-                    i += ":"
-                i += filter_string()
-            return i
+            return fixed_counters[i]
         e = emap.getevent(i)
         if e is None:
             if i in event_fixes:
@@ -472,7 +467,7 @@ def raw_event(i):
             if not force:
                 sys.exit(1)
             return "cycles" # XXX
-        i = e.output(flags=filter_string(), noname=True)
+        i = e.output(noname=True)
         emap.update_event(e.output(noname=True), e)
     return i
 
@@ -629,6 +624,7 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
                         rev = defaultdict(list)
                     prev_interval = interval
         # cannot just split on commas, as they are inside cpu/..../
+        # code later relies on the regex stripping ku flags
         fields = "(" + "|".join(valid_events + perf_fields) + "),?"
         n = re.findall(fields, l)
         # filter out the empty unit field added by 3.14
@@ -844,7 +840,7 @@ class Runner:
 
     def add(self, objl, evnum, evlev):
         # does not fit into a group.
-        if len(set(evnum) - add_filter(ingroup_events)) > cpu.counters:
+        if len(set(evnum) - ingroup_events) > cpu.counters:
             self.split_groups(objl, evlev)
             return
         base = len(self.evnum)
@@ -865,7 +861,7 @@ class Runner:
             obj.compute(lambda ev, level: ev_append(ev, level, obj))
             obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist)
-            obj.nc = len(set(obj.evnum) - add_filter(ingroup_events))
+            obj.nc = len(set(obj.evnum) - ingroup_events)
 
     # fit events into available counters
     # simple first fit algorithm
@@ -884,7 +880,7 @@ class Runner:
             # try adding another object to the current group
             newev = curev + obj.evnum
             newlev = curlev + obj.evlevels
-            needed = len(set(newev) - add_filter(ingroup_events))
+            needed = len(set(newev) - ingroup_events)
             # when the current group doesn't have enough free slots
             # or is already too large
             # start a new group
