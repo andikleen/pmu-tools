@@ -36,12 +36,16 @@ known_cpus = (
 
 tsx_cpus = ("hsw", "hsx", "bdw")
 
-ingroup_events = frozenset(["cycles", "instructions", "ref-cycles",
-                            "cpu/event=0x0,umask=0x3,any=1/",
-                            "cpu/event=0x3c,umask=0x00,any=1/",
-                            "cpu/event=0x3c,umask=0x0,any=1/",
-                            "cpu/event=0x00,umask=0x1/",
-                            "cpu/event=0x0,umask=0x1/"])
+fixed_to_num = {
+    "instructions" : 0,
+    "cycles" : 1,
+    "cpu/event=0x3c,umask=0x00,any=1/": 1,
+    "cpu/event=0x3c,umask=0x0,any=1/": 1,
+    "ref-cycles" : 2,
+    "cpu/event=0x0,umask=0x3,any=1/" : 2,
+}
+
+ingroup_events = frozenset(fixed_to_num.keys())
 
 outgroup_events = set()
 
