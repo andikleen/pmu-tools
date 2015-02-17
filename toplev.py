@@ -222,11 +222,11 @@ detailed_model = (args.level > 1) or args.detailed
 csv_mode = args.csv
 interval_mode = args.interval
 force = args.force
-ring_filter = None
+ring_filter = ""
 if args.kernel:
-    ring_filter = 'kernel'
+    ring_filter = 'k'
 if args.user:
-    ring_filter = 'user'
+    ring_filter = 'u'
 if args.user and args.kernel:
     ring_filter = None
 print_group = args.print_group
@@ -423,11 +423,6 @@ class PerfRun:
             ret = self.perf.wait()
         return ret
 
-filter_to_perf = {
-    "kernel": "k",
-    "user": "u",
-}
-
 fixed_counters = {
     "CPU_CLK_UNHALTED.THREAD": "cycles",
     "CPU_CLK_UNHALTED.THREAD:amt1": "cpu/event=0x3c,umask=0x0,any=1/",
@@ -438,20 +433,14 @@ fixed_counters = {
 
 fixed_set = frozenset(fixed_counters.keys())
 
-def filter_string():
-    if ring_filter:
-        return filter_to_perf[ring_filter]
-    return ""
-
 def separator(x):
     if x.startswith("cpu"):
         return ""
     return ":"
 
 def add_filter(s):
-    f = filter_string()
-    if f:
-        s = [x + separator(x) + f for x in s]
+    if ring_filter:
+        s = [x + separator(x) + ring_filter for x in s]
     return s
 
 def raw_event(i):
