@@ -476,7 +476,7 @@ def pwrap(s):
 def print_header(work, evlist):
     evnames0 = [obj.evlist for obj in work]
     evnames = set(itertools.chain(*evnames0))
-    names = [obj.__class__.__name__ for obj in work]
+    names = ["%s[%d]" % (obj.__class__.__name__, obj.__class__.level) for obj in work]
     pwrap(" ".join(names) + ":")
     pwrap(" ".join(map(mark_fixed, evnames)).lower() +
           " [%d_counters]" % (len(evnames - fixed_set)))
@@ -495,15 +495,19 @@ class Stat:
         self.errors = Counter()
 
 def print_not(a, count , msg, j):
-     print >>sys.stderr, ("warning: %s[%s] %s %.2f%% in %d measurements"
+     print >>sys.stderr, ("%s %s %s %.2f%% in %d measurements"
                 % (emap.getperf(j), j, msg, 100.0 * (float(count) / float(a.total)), a.total))
 
 # XXX need to get real ratios from perf
 def print_account(ad):
+    total = Counter()
     for j in ad:
         a = ad[j]
         for e in a.errors:
             print_not(a, a.errors[e], e, j)
+            total[e] += 1
+    if sum(total.values()) > 0:
+        print >>sys.stderr, ", ".join(["%d %s" % (num, e) for e, num in total.iteritems()])
 
 def event_regexp():
     return "|".join(valid_events)
