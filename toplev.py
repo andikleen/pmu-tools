@@ -666,7 +666,7 @@ def ev_append(ev, level, obj):
     if ev in nonperf_events:
         return 99
     if not (ev, level) in obj.evlevels:
-        obj.evlevels.append((ev, level))
+        obj.evlevels.append((ev, level, obj.name))
     if 'nogroup' in obj.__class__.__dict__ and obj.nogroup:
         outgroup_events.add(ev)
     if re.match(r'^[a-z]', ev):
@@ -711,7 +711,7 @@ def lookup_res(res, rev, ev, obj, env, level, cpuoff = -1):
                        lookup_res(res, rev, ev, obj, env, level, off), level)
                        for off in range(cpu.threads)])
 
-    index = obj.res_map[(ev, level)]
+    index = obj.res_map[(ev, level, obj.name)]
     rev = event_rmap(rev[index])
     assert (rev == canon_event(ev) or
                 (ev in event_fixes and canon_event(event_fixes[ev]) == rev))
