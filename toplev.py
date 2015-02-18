@@ -78,10 +78,25 @@ class PerfFeatures:
             sys.exit("perf binary is too old. please upgrade")
         self.supports_power = works(perf + " list  | grep -q power/")
 
+def needed_fixed(evlist):
+    fixed_only = set(evlist) & ingroup_events
+    return sum(Counter([fixed_to_num[x] for x in fixed_only]).values())
+
+MAX_FIXED = 3
+
+def needed_counters(evlist):
+    num_generic = len(set(evlist) - ingroup_events)
+    # If we need more than 3 fixed counters (happens with any vs no any)
+    # promote those to generic counters
+    num_fixed = needed_fixed(evlist)
+    #print "num_generic", num_generic, "num_fixed", num_fixed, "evlist", evlist
+    if num_fixed > MAX_FIXED:
+        num_generic += num_fixed - MAX_FIXED
+    return num_generic
+
 def event_group(evlist):
-    need_counters = set(evlist) - ingroup_events
     e = ",".join(add_filter(evlist))
-    if not args.no_group and 1 < len(need_counters) <= cpu.counters:
+    if not args.no_group and 1 < needed_counters(evlist) <= cpu.counters:
         e = "{%s}" % (e,)
     return e
 
@@ -833,7 +848,7 @@ class Runner:
 
     def add(self, objl, evnum, evlev):
         # does not fit into a group.
-        if len(set(evnum) - ingroup_events) > cpu.counters:
+        if needed_counters(evnum) > cpu.counters:
             self.split_groups(objl, evlev)
             return
         base = len(self.evnum)
@@ -854,7 +869,7 @@ class Runner:
             obj.compute(lambda ev, level: ev_append(ev, level, obj))
             obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist)
-            obj.nc = len(set(obj.evnum) - ingroup_events)
+            obj.nc = needed_counters(obj.evnum)
 
     # fit events into available counters
     # simple first fit algorithm
@@ -873,7 +888,7 @@ class Runner:
             # try adding another object to the current group
             newev = curev + obj.evnum
             newlev = curlev + obj.evlevels
-            needed = len(set(newev) - ingroup_events)
+            needed = needed_counters(newev)
             # when the current group doesn't have enough free slots
             # or is already too large
             # start a new group
