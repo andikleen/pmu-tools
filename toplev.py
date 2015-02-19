@@ -485,16 +485,19 @@ def mark_fixed(s):
         return "%s[F]" % s
     return s
 
-def pwrap(s):
-    print "\n".join(textwrap.wrap(s, 60))
+def pwrap(s, linelen=60):
+    print "\n".join(textwrap.wrap(s, linelen))
+
+def has(obj, name):
+    return name in obj.__class__.__dict__
 
 def print_header(work, evlist):
     evnames0 = [obj.evlist for obj in work]
     evnames = set(itertools.chain(*evnames0))
-    names = ["%s[%d]" % (obj.__class__.__name__, obj.__class__.level) for obj in work]
-    pwrap(" ".join(names) + ":")
+    names = ["%s[%d]" % (obj.__class__.__name__, obj.__class__.level if has(obj, 'level') else 0) for obj in work]
+    pwrap(" ".join(names) + ":", 78)
     pwrap(" ".join(map(mark_fixed, evnames)).lower() +
-          " [%d_counters]" % (len(evnames - fixed_set)))
+          " [%d_counters]" % (len(evnames - fixed_set)), 78)
 
 def setup_perf(evstr, rest):
     prun = PerfRun()
