@@ -419,7 +419,6 @@ class Emap(object):
         for k in sorted(self.uncore_events.keys()):
             print_event(k, self.uncore_events[k].desc, f, human, wrap)
 
-# XXX handle TakenAlone, DataLA
 class EmapNativeJSON(Emap):
     def __init__(self, name):
         mapping = {
