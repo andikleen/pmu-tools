@@ -885,7 +885,7 @@ class Runner:
         # try to fit each objects events into groups
         # that fit into the available CPU counters
         for obj in solist:
-            if len(obj.evnum) == 0 or obj.evnum[0] in outgroup_events:
+            if not (set(obj.evnum) - outgroup_events):
                 self.add([obj], obj.evnum, obj.evlevels)
                 continue
             # try adding another object to the current group
