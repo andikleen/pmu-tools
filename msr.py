@@ -6,13 +6,13 @@ import struct
 import os
 
 def writemsr(msr, val):
-    n = glob.glob('/dev/cpu/*/msr')
+    n = glob.glob('/dev/cpu/[0-9]*/msr')
     for c in n:
         f = os.open(c, os.O_WRONLY)
         os.lseek(f, msr, os.SEEK_SET)
         os.write(f, struct.pack('Q', val))
         os.close(f)
-    else:
+    if not n:
         raise OSError("msr module not loaded (run modprobe msr)")
     
 def readmsr(msr, cpu = 0):
@@ -23,7 +23,7 @@ def readmsr(msr, cpu = 0):
     return val
 
 def changebit(msr, bit, val):
-    n = glob.glob('/dev/cpu/*/msr')
+    n = glob.glob('/dev/cpu/[0-9]*/msr')
     for c in n:
         f = os.open(c, os.O_RDWR)
         os.lseek(f, msr, os.SEEK_SET)
@@ -35,7 +35,7 @@ def changebit(msr, bit, val):
         os.lseek(f, msr, os.SEEK_SET)            
         os.write(f, struct.pack('Q', v))
         os.close(f)
-    else:
+    if not n:
         raise OSError("msr module not loaded (run modprobe msr)")
 
 if __name__ == '__main__':
@@ -45,7 +45,7 @@ if __name__ == '__main__':
         try:
             return int(s, 16)
         except ValueError:
-            raise argparse.ArgumentError(s, "Bad hex number %s" % (s))
+            raise argparse.ArgumentError("Bad hex number %s" % (s))
 
     if not os.path.exists("/dev/cpu/0/msr"):
         os.system("/sbin/modprobe msr")
