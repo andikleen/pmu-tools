@@ -553,6 +553,7 @@ def thread_fmt(j):
     return core_fmt(key_to_coreid(j)) + ("-T%d" % cpu.cputothread[int(j)])
 
 def print_keys(runner, res, rev, out, interval, env):
+    referenced = set()
     if smt_mode:
         # collect counts from all threads of cores as lists
         # this way the model can access all threads individually
@@ -561,14 +562,23 @@ def print_keys(runner, res, rev, out, interval, env):
         for core, citer in itertools.groupby(core_keys, key_to_coreid):
             cpus = list(citer)
             r = list(itertools.izip(*[res[j] for j in cpus]))
-            runner.print_res(r, rev[cpus[0]], out, interval, core_fmt(core), env, Runner.SMT_yes)
+            runner.print_res(r, rev[cpus[0]], out, interval, core_fmt(core), env, Runner.SMT_yes,
+                             referenced)
 
         # print the non SMT nodes
         for j in sorted(res.keys()):
-            runner.print_res(res[j], rev[j], out, interval, thread_fmt(j), env, Runner.SMT_no)
+            runner.print_res(res[j], rev[j], out, interval, thread_fmt(j), env, Runner.SMT_no,
+                             referenced)
     else:
         for j in sorted(res.keys()):
-            runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare)
+            runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare,
+                             referenced)
+
+    # sanity check: did we reference all results?
+    r = res[res.keys()[0]]
+    if len(referenced) != len(r):
+        print "warning: %d results not referenced:" % (len(r) - len(referenced)),
+        print " ".join(sorted(["%d" % x for x in set(range(len(r))) - referenced]))
 
 def execute_no_multiplex(runner, out, rest):
     if args.interval: # XXX
@@ -713,7 +723,7 @@ def event_rmap(e):
         n = fixes[n.upper()].lower()
     return n
 
-def lookup_res(res, rev, ev, obj, env, level, cpuoff = -1):
+def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff = -1):
     if ev in env:
         return env[ev]
     #
@@ -726,10 +736,12 @@ def lookup_res(res, rev, ev, obj, env, level, cpuoff = -1):
     #
     if isinstance(ev, types.LambdaType):
         return sum([ev(lambda ev, level:
-                       lookup_res(res, rev, ev, obj, env, level, off), level)
+                       lookup_res(res, rev, ev, obj, env, level, referenced, off), level)
                        for off in range(cpu.threads)])
 
     index = obj.res_map[(ev, level, obj.name)]
+    referenced.add(index)
+    #print (ev, level, obj.name), "->", index
     rev = event_rmap(rev[index])
     assert (rev == canon_event(ev) or
                 (ev in event_fixes and canon_event(event_fixes[ev]) == rev))
@@ -800,6 +812,9 @@ def full_name(obj):
 
 def smt_node(obj):
     return 'domain' in obj.__class__.__dict__ and obj.domain in smt_domains
+
+def count(f, l):
+    return len(filter(f, l))
 
 class Runner:
     """Schedule measurements of event groups. Try to run multiple in parallel."""
@@ -909,17 +924,25 @@ class Runner:
             curlev = newlev
         if curobj:
             self.add(curobj, curev, curlev)
+        if print_group:
+            print "%d groups, %d non-groups with %d events total (%d unique) for %d objects" % (
+                count(lambda x: x.startswith("{"), self.evgroups),
+                count(lambda x: not x.startswith("{"), self.evgroups),
+                len(self.evnum),
+                len(set(self.evnum)),
+                len(self.olist))
 
-    def print_res(self, res, rev, out, timestamp, title, env, smt):
+    def print_res(self, res, rev, out, timestamp, title, env, smt, referenced):
         if len(res) == 0:
             print "Nothing measured?"
             return
+
         # step 1: compute
         for obj in self.olist:
             out.set_hdr(full_name(obj))
             if obj.res_map:
                 obj.compute(lambda e, level:
-                            lookup_res(res, rev, e, obj, env, level))
+                            lookup_res(res, rev, e, obj, env, level, referenced))
             else:
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
         out.logf.flush()
