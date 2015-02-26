@@ -558,6 +558,14 @@ def core_fmt(core):
 def thread_fmt(j):
     return core_fmt(key_to_coreid(j)) + ("-T%d" % cpu.cputothread[int(j)])
 
+def referenced_check(res, referenced):
+    # sanity check: did we reference all results?
+    if len(res.keys()) > 0:
+        r = res[res.keys()[0]]
+        if len(referenced) != len(r):
+            print "warning: %d results not referenced:" % (len(r) - len(referenced)),
+            print " ".join(sorted(["%d" % x for x in set(range(len(r))) - referenced]))
+
 def print_keys(runner, res, rev, out, interval, env):
     referenced = set()
     if smt_mode:
@@ -579,12 +587,7 @@ def print_keys(runner, res, rev, out, interval, env):
         for j in sorted(res.keys()):
             runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare,
                              referenced)
-
-    # sanity check: did we reference all results?
-    r = res[res.keys()[0]]
-    if len(referenced) != len(r):
-        print "warning: %d results not referenced:" % (len(r) - len(referenced)),
-        print " ".join(sorted(["%d" % x for x in set(range(len(r))) - referenced]))
+    referenced_check(res, referenced)
 
 def execute_no_multiplex(runner, out, rest):
     if args.interval: # XXX
