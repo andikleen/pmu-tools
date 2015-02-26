@@ -419,15 +419,18 @@ class CPU:
 
 cpu = CPU()
 
+def print_perf(r):
+    l = ["'" + x + "'" if x.find("{") >= 0 else x for x in r]
+    i = l.index('--log-fd')
+    del l[i:i+2]
+    print " ".join(l)
+
 class PerfRun:
     def execute(self, r):
         outp, inp = pty.openpty()
         n = r.index("--log-fd")
         r[n + 1] = "%d" % (inp)
-        l = ["'" + x + "'" if x.find("{") >= 0 else x for x in r]
-        i = l.index('--log-fd')
-        del l[i:i+2]
-        print " ".join(l)
+        print_perf(r)
         self.perf = subprocess.Popen(r)
         os.close(inp)
         return os.fdopen(outp, 'r')
@@ -499,12 +502,15 @@ def print_header(work, evlist):
     pwrap(" ".join(map(mark_fixed, evnames)).lower() +
           " [%d_counters]" % (len(evnames - fixed_set)), 75, "  ")
 
-def setup_perf(evstr, rest):
-    prun = PerfRun()
+def perf_args(evstr, rest):
     add = []
     if interval_mode:
         add += ['-I', str(interval_mode)]
-    inf = prun.execute([perf, "stat", "-x,", "--log-fd", "X", "-e", evstr]  + add + rest)
+    return [perf, "stat", "-x,", "--log-fd", "X", "-e", evstr]  + add + rest
+
+def setup_perf(evstr, rest):
+    prun = PerfRun()
+    inf = prun.execute(perf_args(evstr, rest))
     return inf, prun
 
 class Stat:
