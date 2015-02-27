@@ -590,7 +590,7 @@ def print_keys(runner, res, rev, out, interval, env):
 def execute_no_multiplex(runner, out, rest):
     if args.interval: # XXX
         sys.exit('--no-multiplex is not supported with interval mode')
-    groups = runner.evgroups
+    groups = map(event_group, runner.evgroups)
     n = 1
     res = defaultdict(list)
     rev = defaultdict(list)
@@ -606,7 +606,8 @@ def execute_no_multiplex(runner, out, rest):
 
 def execute(runner, out, rest):
     env = dict()
-    ret, res, rev, interval = do_execute(runner, ",".join(filter(lambda x: len(x) > 0, runner.evgroups)),
+    groups = ",".join([event_group(x) for x in runner.evgroups if len(x) > 0])
+    ret, res, rev, interval = do_execute(runner, groups,
                                          out, rest,
                                          defaultdict(list),
                                          defaultdict(list),
@@ -880,7 +881,7 @@ class Runner:
         evnum, evlev = dedup2(evnum, evlev)
         update_res_map(evnum, objl, base)
         self.evnum += evnum
-        self.evgroups.append(event_group(evnum))
+        self.evgroups.append(evnum)
         if print_group:
             print_header(objl, get_names(evlev))
 
@@ -932,9 +933,10 @@ class Runner:
         if curobj:
             self.add(curobj, curev, curlev)
         if print_group:
+            num_groups = len([x for x in self.evgroups if needed_counters(x) <= cpu.counters])
             print "%d groups, %d non-groups with %d events total (%d unique) for %d objects" % (
-                count(lambda x: x.startswith("{"), self.evgroups),
-                count(lambda x: not x.startswith("{"), self.evgroups),
+                num_groups,
+                len(self.evgroups) - num_groups, 
                 len(self.evnum),
                 len(set(self.evnum)),
                 len(self.olist))
