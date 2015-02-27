@@ -51,7 +51,7 @@ outgroup_events = set()
 
 nonperf_events = {"interval-ns"}
 
-valid_events = [r"cpu/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions"]
+valid_events = [r"cpu/.*?/", r"power/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions"]
 
 # workaround for broken event files for now
 event_fixes = {
@@ -450,7 +450,7 @@ fixed_counters = {
 fixed_set = frozenset(fixed_counters.keys())
 
 def separator(x):
-    if x.startswith("cpu"):
+    if x.startswith("cpu") or x.startswith("power"):
         return ""
     return ":"
 
