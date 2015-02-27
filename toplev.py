@@ -78,21 +78,19 @@ class PerfFeatures:
             sys.exit("perf binary is too old. please upgrade")
         self.supports_power = works(perf + " list  | grep -q power/")
 
-def needed_fixed(evlist):
+def fixed_overflow(evlist):
     fixed_only = set(evlist) & ingroup_events
-    return sum(Counter([fixed_to_num[x] for x in fixed_only]).values())
-
-MAX_FIXED = 3
+    assigned = Counter([fixed_to_num[x] for x in fixed_only]).values()
+    # 0..1 counter is ok
+    # >1   counter is over subscribed
+    return sum([x - 1 for x in assigned if x > 1])
 
 def needed_counters(evlist):
     num_generic = len(set(evlist) - ingroup_events)
     # If we need more than 3 fixed counters (happens with any vs no any)
     # promote those to generic counters
-    num_fixed = needed_fixed(evlist)
-    #print "num_generic", num_generic, "num_fixed", num_fixed, "evlist", evlist
-    if num_fixed > MAX_FIXED:
-        num_generic += num_fixed - MAX_FIXED
-    return num_generic
+    fixed_over = fixed_overflow(evlist)
+    return num_generic + fixed_over
 
 def event_group(evlist):
     e = ",".join(add_filter(evlist))
