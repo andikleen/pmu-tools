@@ -750,9 +750,9 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff = -1):
     index = obj.res_map[(ev, level, obj.name)]
     referenced.add(index)
     #print (ev, level, obj.name), "->", index
-    rev = event_rmap(rev[index])
-    assert (rev == canon_event(ev) or
-                (ev in event_fixes and canon_event(event_fixes[ev]) == rev))
+    rmap_ev = event_rmap(rev[index])
+    assert (rmap_ev == canon_event(ev) or
+                (ev in event_fixes and canon_event(event_fixes[ev]) == rmap_ev))
 
     if isinstance(res[index], types.TupleType):
         if cpuoff == -1:
