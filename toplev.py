@@ -1079,7 +1079,7 @@ if args.tsx and cpu.has_tsx and cpu.cpu in tsx_cpus:
     import tsx_metrics
     setup_with_metrics(tsx_metrics, runner)
 
-if (args.level > 2 or not smt_mode) or args.frequency:
+if args.frequency:
     import frequency
     old_metrics = args.metrics
     args.metrics = True
