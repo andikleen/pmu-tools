@@ -703,7 +703,7 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
             rev[title].append(event)
 
         if args.raw:
-            print "raw",title,"event",event,"val",val
+            print "raw",title,"event",event,"val",val,"index",len(res[title])-1
     inf.close()
     if 'interval-ns' not in env:
             set_interval(env, (time.time() - start) * 1E+9)
@@ -847,8 +847,10 @@ class Runner:
     def __init__(self, max_level):
         self.evnum = [] # flat global list
         self.evgroups = list()
+        self.evbases = list()
         self.olist = []
         self.max_level = max_level
+        self.missed = 0
 
     def do_run(self, obj):
         obj.res = None
@@ -883,20 +885,39 @@ class Runner:
             # resubmit groups for each level
             max_level = max(get_levels(evlev))
             for l in range(1, max_level + 1):
+                # FIXME: filter objl by level too
                 evl = filter(lambda x: x[1] == l, evlev)
                 if evl:
                     self.add(objl, raw_events(get_names(evl)), evl)
+
+    def add_duplicate(self, evnum, objl):
+        for j, base in zip(self.evgroups, self.evbases):
+            # FIXME: should check for subset here, but would need to patch
+            # up indexes inbetween first.
+            if cmp(j, evnum) == 0:
+                if args.raw:
+                    print "add_duplicate", evnum, base, map(event_rmap, evnum)
+                update_res_map(evnum, objl, base)
+                return True
+            # for now...
+            elif needed_counters(set(evnum) | set(j)) < cpu.counters:
+                self.missed += 1
+        return False
 
     def add(self, objl, evnum, evlev):
         # does not fit into a group.
         if needed_counters(evnum) > cpu.counters:
             self.split_groups(objl, evlev)
             return
-        base = len(self.evnum)
         evnum, evlev = dedup2(evnum, evlev)
-        update_res_map(evnum, objl, base)
-        self.evnum += evnum
-        self.evgroups.append(evnum)
+        if not self.add_duplicate(evnum, objl):
+            base = len(self.evnum)
+            if args.raw:
+                print "add", evnum, base, map(event_rmap, evnum)
+            update_res_map(evnum, objl, base)
+            self.evnum += evnum
+            self.evgroups.append(evnum)
+            self.evbases.append(base)
         if print_group:
             print_header(objl, get_names(evlev))
 
@@ -949,12 +970,13 @@ class Runner:
             self.add(curobj, curev, curlev)
         if print_group:
             num_groups = len([x for x in self.evgroups if needed_counters(x) <= cpu.counters])
-            print "%d groups, %d non-groups with %d events total (%d unique) for %d objects" % (
+            print "%d groups, %d non-groups with %d events total (%d unique) for %d objects, missed %d merges" % (
                 num_groups,
                 len(self.evgroups) - num_groups, 
                 len(self.evnum),
                 len(set(self.evnum)),
-                len(self.olist))
+                len(self.olist),
+                self.missed)
 
     def print_res(self, res, rev, out, timestamp, title, env, smt, referenced):
         if len(res) == 0:
