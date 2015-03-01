@@ -353,6 +353,7 @@ class Emap(object):
             except KeyError:
                 pass
             e.desc = d
+            e.counter = get('counter')
             for (flag, name) in extra_flags:
                 if val & flag:
                     e.newextra += ",%s=%d" % (name, (val & flag) >> ffs(flag), )

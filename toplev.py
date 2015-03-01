@@ -61,6 +61,11 @@ event_fixes = {
 
 smt_domains = ("Slots", "CoreClocks", "CoreMetric")
 
+limited_counters = {
+    "cpu/cycles-ct/": 2,
+}
+limited_set = set(limited_counters.keys())
+
 smt_mode = False
 
 perf = os.getenv("PERF")
@@ -78,19 +83,40 @@ class PerfFeatures:
             sys.exit("perf binary is too old. please upgrade")
         self.supports_power = works(perf + " list  | grep -q power/")
 
-def fixed_overflow(evlist):
-    fixed_only = set(evlist) & ingroup_events
-    assigned = Counter([fixed_to_num[x] for x in fixed_only]).values()
+def needed_limited_counter(evlist, limit_table, limit_set):
+    limited_only = set(evlist) & set(limit_set)
+    assigned = Counter([limit_table[x] for x in limited_only]).values()
     # 0..1 counter is ok
     # >1   counter is over subscribed
     return sum([x - 1 for x in assigned if x > 1])
 
+def fixed_overflow(evlist):
+    return needed_limited_counter(evlist, fixed_to_num, ingroup_events)
+
+def limit_overflow(evlist):
+    return needed_limited_counter(evlist, limited_counters, limited_set)
+
 def needed_counters(evlist):
-    num_generic = len(set(evlist) - ingroup_events)
+    evset = set(evlist)
+    num_generic = len(evset - ingroup_events - limited_set)
+
     # If we need more than 3 fixed counters (happens with any vs no any)
     # promote those to generic counters
-    fixed_over = fixed_overflow(evlist)
-    return num_generic + fixed_over
+    num = num_generic + fixed_overflow(evlist)
+
+    # account events that only schedule on one of the generic counters
+
+    # first allocate the limited counters that are not oversubscribed
+    num_limit = limit_overflow(evlist)
+    num += len(evset & limited_set) - num_limit
+
+    # if we need more than one of a limited counter make it look
+    # like it fills the group to limit first before adding them to force
+    # a split
+    if num_limit > 0:
+        num = max(num, cpu.counters) + num_limit
+    #print "num_generic", num_generic, "num", num, "num_limit", num_limit, evlist
+    return num
 
 def event_group(evlist):
     e = ",".join(add_filter(evlist))
@@ -410,8 +436,10 @@ class CPU:
                     self.cpu = i[0]
                     break
         if self.counters == 0:
+            self.standard_counters = "0,1,2,3"
             if self.cpu == "slm":
                 self.counters = 2
+                self.standard_counters = "0,1"
             elif self.ht:
                 self.counters = 4
             else:
@@ -477,6 +505,12 @@ def raw_event(i):
             return "cycles" # XXX
         i = e.output(noname=True)
         emap.update_event(e.output(noname=True), e)
+        if e.counter != cpu.standard_counters:
+            # for now only use the first counter only to simplify
+            # the assignment. This is sufficient for current
+            # CPUs
+            limited_counters[i] = int(e.counter.split(",")[0])
+            limited_set.add(i)
     return i
 
 # generate list of converted raw events from events string
@@ -820,9 +854,11 @@ def get_names(evlev):
     return [x[0] for x in evlev]
 
 def grab_group(l):
-    n = cpu.counters
+    n = 1
     while needed_counters(l[:n]) < cpu.counters and n < len(l):
         n += 1
+    if needed_counters(l[:n]) > cpu.counters and n > 0:
+        n -= 1
     return n
 
 def full_name(obj):
@@ -876,7 +912,7 @@ class Runner:
         if len(set(get_levels(evlev))) == 1:
             # when there is only a single left just fill groups
             while evlev:
-                n = grab_group(get_names(evlev))
+                n = grab_group(map(raw_event, get_names(evlev)))
                 l = evlev[:n]
                 self.add(objl, raw_events(get_names(l)), l)
                 evlev = evlev[n:]
