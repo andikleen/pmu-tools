@@ -453,6 +453,7 @@ def print_perf(r):
     i = l.index('--log-fd')
     del l[i:i+2]
     print " ".join(l)
+    sys.stdout.flush()
 
 class PerfRun:
     def execute(self, r):
