@@ -45,6 +45,7 @@ EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -v -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -x, -v -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py --metrics -x, -v -d -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d $ALL --kernel $LOAD | tee log
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d $ALL --kernel --no-multiplex $LOAD | tee log
 grep :k log
 grep /k log
 
