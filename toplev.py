@@ -110,14 +110,13 @@ The bottlenecks are expressed as a tree with different levels.
 
 Requires an Intel Sandy, Ivy Bridge, Haswell CPU.
 It works best on Ivy Bridge currently.
-On Sandy Bridge Server use Sandy Bridge (FORCECPU=snb)
 
 Examples:
 
 ./toplev.py -l2 program
 measure program in level 2
 
-./toplev.py -a sleep X
+./toplev.py --all -a sleep X
 measure whole system for X seconds
 
 ./toplev.py -o logfile.csv -x, -p PID
