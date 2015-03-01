@@ -635,6 +635,7 @@ def execute_no_multiplex(runner, out, rest):
     for g in groups:
         if len(g) == 0:
             continue
+        # XXX grab multiple groups if they fit
         print "RUN #%d of %d" % (n, len(groups))
         ret, res, rev, interval = do_execute(runner, g, out, rest, res, rev, env)
         n += 1
