@@ -751,7 +751,7 @@ def ev_append(ev, level, obj):
         return 99
     if not (ev, level) in obj.evlevels:
         obj.evlevels.append((ev, level, obj.name))
-    if 'nogroup' in obj.__class__.__dict__ and obj.nogroup:
+    if has(obj, 'nogroup') and obj.nogroup:
         outgroup_events.add(ev)
     if re.match(r'^[a-z]', ev):
         valid_events.append(ev)
@@ -869,7 +869,7 @@ def full_name(obj):
     return name
 
 def smt_node(obj):
-    return 'domain' in obj.__class__.__dict__ and obj.domain in smt_domains
+    return has(obj, 'domain') and obj.domain in smt_domains
 
 def count(f, l):
     return len(filter(f, l))
@@ -1051,13 +1051,13 @@ Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
                 desc = obj.desc[1:].replace("\n", "\n\t")
                 if obj.metric:
-                    out.metric(obj.area if 'area' in obj.__class__.__dict__ else None,
+                    out.metric(obj.area if has(obj, 'area') else None,
                             obj.name, val, timestamp,
                             desc + disclaimer,
                             title,
                             obj.unit if 'unit' in obj.__class__.__dict__ else "metric")
                 else:
-                    out.p(obj.area if 'area' in obj.__class__.__dict__ else None,
+                    out.p(obj.area if has(obj, 'area') else None,
                         full_name(obj), val, timestamp,
                         "below" if not obj.thresh else "above",
                         desc + disclaimer,
