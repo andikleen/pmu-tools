@@ -820,9 +820,9 @@ def get_levels(evlev):
 def get_names(evlev):
     return [x[0] for x in evlev]
 
-def num_non_fixed(l):
+def grab_group(l):
     n = cpu.counters
-    while len(set(l[:n]) - fixed_set) < cpu.counters and n < len(l):
+    while needed_counters(l[:n]) < cpu.counters and n < len(l):
         n += 1
     return n
 
@@ -875,7 +875,7 @@ class Runner:
         if len(set(get_levels(evlev))) == 1:
             # when there is only a single left just fill groups
             while evlev:
-                n = num_non_fixed(get_names(evlev))
+                n = grab_group(get_names(evlev))
                 l = evlev[:n]
                 self.add(objl, raw_events(get_names(l)), l)
                 evlev = evlev[n:]
