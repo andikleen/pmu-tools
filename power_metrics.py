@@ -2,6 +2,8 @@
 # perf power metrics for toplev
 #
 
+import os
+
 class EnergyPackage:
     name = "Package Energy"
     desc = """
@@ -50,5 +52,9 @@ class Setup:
     def __init__(self, r):
         r.metric(EnergyCores())
         r.metric(EnergyPackage())
-        r.metric(EnergyRAM())
+        perf = os.getenv("PERF")
+        if not perf:
+            perf = "perf"
+        if os.system(perf + " stat -e power/energy-ram/ >/dev/null 2>/dev/null true") == 0:
+            r.metric(EnergyRAM())
         r.metric(EnergyGPU())
