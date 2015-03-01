@@ -624,21 +624,31 @@ def print_keys(runner, res, rev, out, interval, env):
                              referenced)
     referenced_check(res, referenced)
 
+def is_outgroup(x):
+    return set(x) - outgroup_events == set()
+
 def execute_no_multiplex(runner, out, rest):
     if args.interval: # XXX
         sys.exit('--no-multiplex is not supported with interval mode')
-    groups = map(event_group, runner.evgroups)
-    n = 1
     res = defaultdict(list)
     rev = defaultdict(list)
     env = dict()
+    groups = [x for x in runner.evgroups if len(x) > 0]
+    num_runs = len(groups) - count(is_outgroup, groups)
+    outg = []
+    n = 0
+    # runs could be further reduced by some reordering
     for g in groups:
-        if len(g) == 0:
+        if is_outgroup(g):
+            outg.append(g)
             continue
-        # XXX grab multiple groups if they fit
-        print "RUN #%d of %d" % (n, len(groups))
-        ret, res, rev, interval = do_execute(runner, g, out, rest, res, rev, env)
         n += 1
+        print "RUN #%d of %d" % (n, num_runs)
+        events = ",".join(map(event_group, outg + [g]))
+        ret, res, rev, interval = do_execute(runner, events, out, rest,
+                                             res, rev, env)
+        outg = []
+    assert num_runs == n
     print_keys(runner, res, rev, out, interval, env)
     return ret
 
