@@ -594,13 +594,19 @@ def core_fmt(core):
 def thread_fmt(j):
     return core_fmt(key_to_coreid(j)) + ("-T%d" % cpu.cputothread[int(j)])
 
+last_refwarn = set()
+
 def referenced_check(res, referenced):
+    global last_refwarn
+    if last_refwarn == referenced:
+        return
+    last_refwarn = referenced
     # sanity check: did we reference all results?
     if len(res.keys()) > 0:
         r = res[res.keys()[0]]
         if len(referenced) != len(r):
-            print "warning: %d results not referenced:" % (len(r) - len(referenced)),
-            print " ".join(sorted(["%d" % x for x in set(range(len(r))) - referenced]))
+            print >>sys.stderr, "warning: %d results not referenced:" % (len(r) - len(referenced)),
+            print >>sys.stderr, " ".join(sorted(["%d" % x for x in set(range(len(r))) - referenced]))
 
 def print_keys(runner, res, rev, out, interval, env):
     referenced = set()
