@@ -299,7 +299,7 @@ class Output:
         print >>self.logf, "%-*s %s %s" % (self.hdrlen, hdr + ":", s, remark)
         if desc and not args.no_desc:
             print >>self.logf, "\t" + desc
-        if desc and sample:
+        if desc and sample and not args.no_desc:
             print >>self.logf, "\t" + "Sampling events: ", sample
 
     def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, check, sample):
