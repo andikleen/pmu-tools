@@ -362,6 +362,8 @@ class CPU:
         self.coreids = defaultdict(list)
         self.cputocore = {}
         self.cputothread = {}
+        self.sockettocpus = defaultdict(list)
+        self.cputosocket = {}
         with open("/proc/cpuinfo", "r") as f:
             ok = 0
             for l in f:
@@ -388,6 +390,8 @@ class CPU:
                 elif (n[0], n[1]) == ("physical", "id"):
                     physid = int(n[3])
                     sockets[physid] += 1
+                    self.sockettocpus[physid].append(cpunum)
+                    self.cputosocket[cpunum] = physid
                 elif (n[0], n[1]) == ("core", "id"):
                     coreid = int(n[3])
                     key = (physid, coreid,)
@@ -685,8 +689,19 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
             sys.stdout.write(l)
             continue
         account[event].total += 1
-        res[title].append(val)
-        rev[title].append(event)
+
+        # power events are only output once for every socket. duplicate them
+        # to all cpus in the socket to make the result lists match
+        if event.startswith("power") and title != "":
+            cpunum = int(title)
+            socket = cpu.cputosocket[cpunum]
+            for j in cpu.sockettocpus[socket]:
+                res["%d" % (j)].append(val)
+                rev["%d" % (j)].append(event)
+        else:
+            res[title].append(val)
+            rev[title].append(event)
+
         if args.raw:
             print "raw",title,"event",event,"val",val
     inf.close()
