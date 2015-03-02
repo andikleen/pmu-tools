@@ -239,14 +239,33 @@ Usage:
 
 ### Options:
 
-	-o set output file
-	-v print everything
-	-d use detailed model if available (only Ivy Bridge currently)
-	-lLEVEL only use events upto max level (max 4)
-	-x,     Enable CSV mode with separator ,
-	-Ixxx   Enable interval mode, measure every xxx ms
-	--kernel Only measure kernel code
-	--user	Only measure user code
+	--verbose, -v         Print all results even when below threshold
+	--force               Force potentially broken configurations
+	--kernel              Only measure kernel code
+	--user                Only measure user code
+	--print-group, -g     Print event group assignments
+	--no-desc             Don't print event descriptions
+	--csv CSV, -x CSV     Enable CSV mode with specified delimeter
+	--interval INTERVAL, -I INTERVAL
+        	                Enable interval mode with ms interval
+	--output OUTPUT, -o OUTPUT
+        	                Set output file
+	--graph               Automatically graph interval output with tl-barplot.py
+	--title TITLE         Set title of graph
+	--xkcd                Use xkcd plotting mode for graph
+	--level LEVEL, -l LEVEL
+        	                Measure upto level N (max 5)
+	--metrics, -m         Print extra metrics
+	--raw                 Print raw values
+	--sw                  Measure perf Linux metrics
+	--tsx                 Measure TSX metrics
+	--all                 Measure everything available
+	--frequency           Measure frequency
+	--no-group            Dont use groups
+	--no-multiplex        Do not multiplex, but run the workload multiple times
+        	                as needed. Requires reproducible workloads.
+	--stats               Show statistics on what events counted
+	--power               Display power metrics
 
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplevel can be used.
