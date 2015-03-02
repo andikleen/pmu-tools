@@ -1193,7 +1193,8 @@ if smt_mode:
         print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1):
         print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
-    if kernel_version[0] == 3 and kernel_version[1] >= 10 and args.level >= 3:
+    if (cpu.cpu == "ivb" and
+        (kernel_version[0] == 3 and kernel_version[1] >= 10 and args.level >= 3)):
         print >>sys.stderr, "Warning: kernel may need to be patched to schedule all events with level %d in HT mode" % (args.level)
     if "-a" not in rest:
         rest = ["-a"] + rest
