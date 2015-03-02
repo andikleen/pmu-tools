@@ -608,7 +608,7 @@ def referenced_check(res, referenced, already_warned):
         r = res[res.keys()[0]]
         if len(referenced) != len(r):
             print >>sys.stderr, "warning: %d results not referenced:" % (len(r) - len(referenced)),
-            print >>sys.stderr, " ".join(sorted(["%d" % x for x in set(range(len(r))) - referenced]))
+            print >>sys.stderr, " ".join(["%d" % x for x in sorted(set(range(len(r))) - referenced)])
 
 def print_keys(runner, res, rev, out, interval, env):
     referenced = set()
