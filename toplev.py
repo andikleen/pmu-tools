@@ -220,6 +220,7 @@ p.add_argument('--no-group', help='Dont use groups', action='store_true')
 p.add_argument('--no-multiplex',
                help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
                action='store_true')
+p.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
 p.add_argument('--power', help='Display power metrics', action='store_true')
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 args, rest = p.parse_known_args()
@@ -564,10 +565,11 @@ def print_account(ad):
     for j in ad:
         a = ad[j]
         for e in a.errors:
-            print_not(a, a.errors[e], e, j)
+            if args.stats:
+                print_not(a, a.errors[e], e, j)
             total[e] += 1
     if sum(total.values()) > 0:
-        print >>sys.stderr, ", ".join(["%d %s" % (num, e) for e, num in total.iteritems()])
+        print >>sys.stderr, ", ".join(["%d events %s" % (num, e) for e, num in total.iteritems()])
 
 def event_regexp():
     return "|".join(valid_events)
