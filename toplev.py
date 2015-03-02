@@ -769,7 +769,7 @@ def ev_append(ev, level, obj):
         return ev(lambda ev, level: ev_append(ev, level, obj), level)
     if ev in nonperf_events:
         return 99
-    if not (ev, level) in obj.evlevels:
+    if not (ev, level, obj.name) in obj.evlevels:
         obj.evlevels.append((ev, level, obj.name))
     if has(obj, 'nogroup') and obj.nogroup:
         outgroup_events.add(ev)
