@@ -182,10 +182,11 @@ In Hyper Threading mode toplev defaults to measuring the whole
 system.
 
 Recent kernels do not allow all events needed by level 3 or larger
-in Hyper Threading mode due to a bug workaround. If that is needed
+in Hyper Threading mode due to a bug workaround. If that is a problem
 please see the github site for a kernel patch.
 
 Other CPUs can be forced with FORCECPU=name
+This usually requires setting the correct event map with EVENTMAP=...
 Valid CPU names: ''' + " ".join([x[0] for x in known_cpus]),
 formatter_class=argparse.RawDescriptionHelpFormatter)
 p.add_argument('--verbose', '-v', help='Print all results even when below threshold',
