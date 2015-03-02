@@ -860,7 +860,12 @@ def sample_event(e):
     ev = emap.getevent(e.replace("_PS", ""))
     if not ev:
         raise BadEvent(e)
-    return ev.name + ":pp"
+    postfix = ring_filter
+    if ev.pebs and int(ev.pebs):
+        postfix = "pp"
+    if postfix:
+        postfix = ":" + postfix
+    return ev.name + postfix
 
 def sample_desc(s):
     try:
