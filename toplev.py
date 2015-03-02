@@ -756,7 +756,7 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
             rev[title].append(event)
 
         if args.raw:
-            print "raw",title,"event",event,"val",val,"index",len(res[title])-1
+            print "raw",title,"event",event,"val",val,"ename",event_rmap(event),"index",len(res[title])-1
     inf.close()
     if 'interval-ns' not in env:
             set_interval(env, (time.time() - start) * 1E+9)
