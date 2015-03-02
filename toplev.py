@@ -947,16 +947,17 @@ class Runner:
                     self.add(objl, raw_events(get_names(evl)), evl)
 
     def add_duplicate(self, evnum, objl):
+        evset = set(evnum)
         for j, base in zip(self.evgroups, self.evbases):
-            # FIXME: should check for subset here, but would need to patch
-            # up indexes inbetween first.
-            if cmp(j, evnum) == 0:
+            # cannot add super sets, as that would need patching
+            # up all indexes inbetween.
+            if evset <= set(j):
                 if args.raw:
-                    print "add_duplicate", evnum, base, map(event_rmap, evnum)
-                update_res_map(evnum, objl, base)
+                    print "add_duplicate", evnum, base, map(event_rmap, evnum), "in", j
+                update_res_map(j, objl, base)
                 return True
             # for now...
-            elif needed_counters(set(evnum) | set(j)) < cpu.counters:
+            elif needed_counters(set(evnum) | set(j)) <= cpu.counters:
                 self.missed += 1
         return False
 
