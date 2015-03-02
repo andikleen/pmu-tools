@@ -773,7 +773,7 @@ def ev_append(ev, level, obj):
         obj.evlevels.append((ev, level, obj.name))
     if has(obj, 'nogroup') and obj.nogroup:
         outgroup_events.add(ev)
-    if re.match(r'^[a-z]', ev):
+    if not (ev.startswith("cpu") or ev.startswith("power")) and re.match(r'^[a-z]', ev):
         valid_events.append(ev)
     return 99
 
