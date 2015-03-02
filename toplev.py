@@ -289,7 +289,9 @@ class Output:
         self.hdrlen = 46
 
     # pass all possible hdrs in advance to compute suitable padding
-    def set_hdr(self, hdr):
+    def set_hdr(self, hdr, area):
+        if area:
+            hdr = "%-7s %s" % (area, hdr)
         self.hdrlen = max(len(hdr) + 1, self.hdrlen)
 
     def s(self, area, hdr, s, remark, desc, sample):
@@ -1040,7 +1042,7 @@ class Runner:
 
         # step 1: compute
         for obj in self.olist:
-            out.set_hdr(full_name(obj))
+            out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
             if obj.res_map:
                 obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, referenced))
