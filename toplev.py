@@ -935,7 +935,7 @@ class Runner:
             while evlev:
                 n = grab_group(map(raw_event, get_names(evlev)))
                 l = evlev[:n]
-                self.add(objl, raw_events(get_names(l)), l)
+                self.add(objl, raw_events(get_names(l)), l, True)
                 evlev = evlev[n:]
         else:
             # resubmit groups for each level
@@ -960,9 +960,9 @@ class Runner:
                 self.missed += 1
         return False
 
-    def add(self, objl, evnum, evlev):
+    def add(self, objl, evnum, evlev, force=False):
         # does not fit into a group.
-        if needed_counters(evnum) > cpu.counters:
+        if needed_counters(evnum) > cpu.counters and not force:
             self.split_groups(objl, evlev)
             return
         evnum, evlev = dedup2(evnum, evlev)
