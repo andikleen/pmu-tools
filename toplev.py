@@ -598,13 +598,11 @@ def core_fmt(core):
 def thread_fmt(j):
     return core_fmt(key_to_coreid(j)) + ("-T%d" % cpu.cputothread[int(j)])
 
-last_refwarn = set()
-
-def referenced_check(res, referenced):
-    global last_refwarn
-    if last_refwarn == referenced:
+def referenced_check(res, referenced, already_warned):
+    if referenced in already_warned:
         return
-    last_refwarn = referenced
+    already_warned.append(referenced)
+
     # sanity check: did we reference all results?
     if len(res.keys()) > 0:
         r = res[res.keys()[0]]
@@ -633,7 +631,7 @@ def print_keys(runner, res, rev, out, interval, env):
         for j in sorted(res.keys()):
             runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare,
                              referenced)
-    referenced_check(res, referenced)
+    referenced_check(res, referenced, runner.already_warned)
 
 def is_outgroup(x):
     return set(x) - outgroup_events == set()
@@ -908,6 +906,7 @@ class Runner:
         self.olist = []
         self.max_level = max_level
         self.missed = 0
+        self.already_warned = []
 
     def do_run(self, obj):
         obj.res = None
