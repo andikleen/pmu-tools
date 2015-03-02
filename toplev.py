@@ -223,6 +223,7 @@ p.add_argument('--no-multiplex',
 p.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
 p.add_argument('--power', help='Display power metrics', action='store_true')
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
+p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
 args, rest = p.parse_known_args()
 
 if args.version:
@@ -952,7 +953,7 @@ class Runner:
             # cannot add super sets, as that would need patching
             # up all indexes inbetween.
             if evset <= set(j):
-                if args.raw:
+                if args.debug:
                     print "add_duplicate", evnum, base, map(event_rmap, evnum), "in", j
                 update_res_map(j, objl, base)
                 return True
@@ -969,7 +970,7 @@ class Runner:
         evnum, evlev = dedup2(evnum, evlev)
         if not self.add_duplicate(evnum, objl):
             base = len(self.evnum)
-            if args.raw:
+            if args.debug:
                 print "add", evnum, base, map(event_rmap, evnum)
             update_res_map(evnum, objl, base)
             self.evnum += evnum
