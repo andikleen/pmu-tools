@@ -121,7 +121,7 @@ class Event:
         self.msrval = 0
         self.desc = desc
 
-    def output_newstyle(self, newextra="", noname=False, period=False):
+    def output_newstyle(self, newextra="", noname=False, period=False, name=""):
         """Format an perf event for output and return as perf event string.
            Always uses new style (cpu/.../)."""
         val = self.val
@@ -129,13 +129,16 @@ class Event:
         if newextra:
             extra += "," + newextra
         e = "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff, extra)
-        if version.has_name and not noname:
-            e += ",name=%s" % (self.name.replace(".", "_"),)
+	if version.has_name:
+	    if name:
+		e += ",name=" + name
+	    elif not noname:
+		e += ",name=%s" % (self.name.replace(".", "_"),)
         if period and self.period:
             e += ",period=%d" % self.period
         return e
 
-    def output(self, use_raw=False, flags="", noname=False, period=False):
+    def output(self, use_raw=False, flags="", noname=False, period=False, name=""):
         """Format an event for output and return as perf event string.
            use_raw when true return old style perf string (rXXX).
            Otherwise chose between old and new style based on the 
@@ -165,7 +168,7 @@ class Event:
             if extra:
                 ename += ":" + extra
         else:
-            ename = "cpu/%s/" % (self.output_newstyle(newextra=",".join(newe), noname=noname, period=period)) + extra
+	    ename = "cpu/%s/" % (self.output_newstyle(newextra=",".join(newe), noname=noname, period=period, name=name)) + extra
         return ename
 
 box_to_perf = {

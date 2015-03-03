@@ -1482,7 +1482,7 @@ class Setup:
         o["MEM_Bandwidth"].sample = []
         o["MEM_Latency"].sample = []
         o["Stores_Bound"].sample = ['MEM_UOPS_RETIRED.ALL_STORES:pp']
-        o["False_Sharing"].sample = [' MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM:pp', 'MEM_LOAD_UOPS_L3_MISS_RETIRED.REMOTE_HITM:pp', 'OFFCORE_RESPONSE:request=DEMAND_RFO:response=L3_HIT.SNOOP_HITM']
+	o["False_Sharing"].sample = ['MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM:pp', 'OFFCORE_RESPONSE.DEMAND_RFO.L3_HIT.HITM_OTHER_CORE']
         o["Split_Stores"].sample = ['MEM_UOPS_RETIRED.SPLIT_STORES:pp']
         o["DTLB_Store"].sample = ['MEM_UOPS_RETIRED.STLB_MISS_STORES:pp']
         o["Core_Bound"].sample = []

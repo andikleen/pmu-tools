@@ -1895,7 +1895,7 @@ class Setup:
         o["Data_Sharing"].sample = ['MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HITM:pp']
         o["L3_Latency"].sample = ['MEM_LOAD_UOPS_RETIRED.LLC_HIT:pp']
         o["SQ_Full"].sample = []
-        o["MEM_Bound"].sample = ['MEM_LOAD_UOPS_RETIRED.L3_MISS:pp']
+        o["MEM_Bound"].sample = ['MEM_LOAD_UOPS_RETIRED.LLC_MISS:pp']
         o["MEM_Bandwidth"].sample = []
         o["MEM_Latency"].sample = []
         o["Local_DRAM"].sample = ['MEM_LOAD_UOPS_LLC_MISS_RETIRED.LOCAL_DRAM:pp']

@@ -1528,7 +1528,7 @@ class Setup:
         o["Split_Stores"].sample = ['MEM_UOPS_RETIRED.SPLIT_STORES:pp']
         o["DTLB_Store"].sample = ['MEM_UOPS_RETIRED.STLB_MISS_STORES:pp']
         o["Core_Bound"].sample = []
-        o["Divider"].sample = ['ARITH.FPU_DIV_ACTIVE']
+        o["Divider"].sample = []
         o["Ports_Utilization"].sample = []
         o["G0_Ports_Utilized"].sample = []
         o["G1_Port_Utilized"].sample = []

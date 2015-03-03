@@ -45,6 +45,17 @@ fixed_to_num = {
     "cpu/event=0x0,umask=0x3,any=1/" : 2,
 }
 
+# handle kernels that don't support all events
+unsup_pebs = {
+    "BR_MISP_RETIRED.ALL_BRANCHES:pp": (("hsw",), (3, 18)),
+    "MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM:pp": (("hsw",), (3, 18)),
+    "MEM_LOAD_UOPS_RETIRED.L3_MISS:pp": (("hsw",), (3, 18)),
+}
+
+unsup_events = {
+    "OFFCORE_RESPONSE.DEMAND_RFO.L3_HIT.HITM_OTHER_CORE": (("hsw",), (3, 18)),
+}
+
 ingroup_events = frozenset(fixed_to_num.keys())
 
 outgroup_events = set()
@@ -82,6 +93,14 @@ class PerfFeatures:
         if not self.logfd_supported:
             sys.exit("perf binary is too old. please upgrade")
         self.supports_power = works(perf + " list  | grep -q power/")
+
+def unsup_event(e, table):
+    if e in table:
+	v = table[e]
+	return (cpu.cpu in v[0] and
+		kernel_version[0] <= v[1][0] and
+		kernel_version[1] < v[1][1])
+    return False
 
 def needed_limited_counter(evlist, limit_table, limit_set):
     limited_only = set(evlist) & set(limit_set)
@@ -191,8 +210,6 @@ Valid CPU names: ''' + " ".join([x[0] for x in known_cpus]),
 formatter_class=argparse.RawDescriptionHelpFormatter)
 p.add_argument('--verbose', '-v', help='Print all results even when below threshold',
                action='store_true')
-p.add_argument('--force', help='Force potentially broken configurations',
-               action='store_true')
 p.add_argument('--kernel', help='Only measure kernel code', action='store_true')
 p.add_argument('--user', help='Only measure user code', action='store_true')
 p.add_argument('--print-group', '-g', help='Print event group assignments',
@@ -221,6 +238,8 @@ p.add_argument('--no-group', help='Dont use groups', action='store_true')
 p.add_argument('--no-multiplex',
                help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
                action='store_true')
+p.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
+p.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
 p.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
 p.add_argument('--power', help='Display power metrics', action='store_true')
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
@@ -262,7 +281,6 @@ dont_hide = args.verbose
 detailed_model = (args.level > 1) or args.detailed
 csv_mode = args.csv
 interval_mode = args.interval
-force = args.force
 ring_filter = ""
 if args.kernel:
     ring_filter = 'k'
@@ -496,7 +514,7 @@ def add_filter(s):
         s = [x + separator(x) + ring_filter for x in s]
     return s
 
-def raw_event(i):
+def raw_event(i, name="", period=False):
     if i.count(".") > 0:
         if i in fixed_counters:
             return fixed_counters[i]
@@ -506,10 +524,8 @@ def raw_event(i):
                 e = emap.getevent(event_fixes[i])
         if e is None:
             print >>sys.stderr, "%s not found" % (i,)
-            if not force:
-                sys.exit(1)
-            return "cycles" # XXX
-        i = e.output(noname=True)
+	    return None
+	i = e.output(noname=True, name=name, period=period)
         emap.update_event(e.output(noname=True), e)
         if e.counter != cpu.standard_counters:
             # for now only use the first counter only to simplify
@@ -914,6 +930,7 @@ class Runner:
         self.max_level = max_level
         self.missed = 0
         self.already_warned = []
+	self.sample_obj = set()
 
     def do_run(self, obj):
         obj.res = None
@@ -1092,6 +1109,36 @@ Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
                         desc + disclaimer,
                         title,
                         sample_desc(obj.sample) if obj.sample else "")
+		    if obj.thresh or args.verbose:
+			self.sample_obj.add(obj)
+
+def remove_pp(s):
+    if s.endswith(":pp"):
+	return s[:-3]
+    return s
+
+def print_sample(sample_obj, rest):
+    samples = []
+    for obj in sample_obj:
+	for s in obj.sample:
+	    samples.append((s, obj.name))
+    if len(samples) == 0:
+	return
+    nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
+    nsamp = [(remove_pp(x[0]), x[1]) if unsup_event(x[0], unsup_pebs) else x
+		for x in nsamp]
+    if cmp(nsamp, samples):
+	missing = [x[0] for x in set(samples) - set(nsamp)]
+	print >>sys.stderr, "warning: update kernel to handle sample events:"
+	print >>sys.stderr, "\n".join(missing)
+    sl = [raw_event(s[0], s[1], period=True) for s in nsamp]
+    sample = ",".join([x for x in sl if x])
+    print "Sampling:"
+    sperf = [perf, "record", "-g", "-e", sample] + [x for x in rest if x != "-A"]
+    print " ".join(sperf)
+    if args.run_sample:
+	os.system(" ".join(sperf))
+        print "Run `" + perf + " report' to show the sampling results"
 
 def sysctl(name):
     try:
@@ -1222,4 +1269,6 @@ if args.no_multiplex:
     ret = execute_no_multiplex(runner, out, rest)
 else:
     ret = execute(runner, out, rest)
+if args.show_sample or args.run_sample:
+    print_sample(runner.sample_obj, rest)
 sys.exit(ret)

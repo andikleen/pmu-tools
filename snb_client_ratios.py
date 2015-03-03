@@ -749,7 +749,7 @@ class Setup:
         # sampling events
 
         o["Frontend_Bound"].sample = []
-        o["Frontend_Latency"].sample = ['RS_EVENTS.EMPTY_END']
+        o["Frontend_Latency"].sample = []
         o["ITLB_Misses"].sample = ['ITLB_MISSES.WALK_COMPLETED']
         o["DSB_Switches"].sample = []
         o["LCP"].sample = []
