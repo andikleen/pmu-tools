@@ -57,4 +57,5 @@ class Setup:
             perf = "perf"
         if os.system(perf + " stat -e power/energy-ram/ >/dev/null 2>/dev/null true") == 0:
             r.metric(EnergyRAM())
-        r.metric(EnergyGPU())
+        if os.system(perf + " stat -e power/energy-gpu/ >/dev/null 2>/dev/null true") == 0:
+            r.metric(EnergyGPU())
