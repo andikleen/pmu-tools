@@ -18,7 +18,7 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import exceptions, argparse, time, types
+import exceptions, argparse, time, types, fnmatch
 from collections import defaultdict, Counter
 #sys.path.append("../pmu-tools")
 import ocperf
@@ -46,30 +46,23 @@ fixed_to_num = {
 }
 
 # handle kernels that don't support all events
-unsup_pebs = {
-    "BR_MISP_RETIRED.ALL_BRANCHES:pp": (("hsw",), (3, 18), None),
-    "MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM:pp": (("hsw",), (3, 18), None),
-    "MEM_LOAD_UOPS_RETIRED.L3_MISS:pp": (("hsw",), (3, 18), None),
-}
+unsup_pebs = (
+    ("BR_MISP_RETIRED.ALL_BRANCHES:pp", (("hsw",), (3, 18), None)),
+    ("MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM:pp", (("hsw",), (3, 18), None)),
+    ("MEM_LOAD_UOPS_RETIRED.L3_MISS:pp", (("hsw",), (3, 18), None)),
+)
 
 ivb_ht_39 = (("ivb", "ivt"), None, (3, 9))
 # if your kernel is patched to remove this use
 #ivb_ht_39 = ((), None, None)
 
-unsup_events = {
-    "OFFCORE_RESPONSE.DEMAND_RFO.L3_HIT.HITM_OTHER_CORE": (("hsw", "hsx"), (3, 18), None),
-    "MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HIT": ivb_ht_39,
-    "MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_MISS": ivb_ht_39,
-    "MEM_LOAD_UOPS_RETIRED.LLC_MISS": ivb_ht_39,
-    "MEM_LOAD_UOPS_RETIRED.LLC_HIT": ivb_ht_39,
-    "MEM_LOAD_UOPS_RETIRED.L1_MISS": ivb_ht_39,
-    "MEM_LOAD_UOPS_RETIRED.HIT_LFB": ivb_ht_39,
-    "MEM_LOAD_UOPS_LLC_MISS_RETIRED.REMOTE_FWD": ivb_ht_39,
-    "MEM_LOAD_UOPS_LLC_MISS_RETIRED.REMOTE_HITM": ivb_ht_39,
-    "MEM_UOPS_RETIRED.LOCK_LOADS": ivb_ht_39,
-    "MEM_UOPS_RETIRED.ALL_STORES": ivb_ht_39,
-    "MEM_UOPS_RETIRED.SPLIT_STORES": ivb_ht_39,
-}
+unsup_events = (
+    ("OFFCORE_RESPONSE.DEMAND_RFO.L3_HIT.HITM_OTHER_CORE", (("hsw", "hsx"), (3, 18), None)),
+    ("MEM_LOAD_UOPS_L*_HIT_RETIRED.*", ivb_ht_39),
+    ("MEM_LOAD_UOPS_RETIRED.*", ivb_ht_39),
+    ("MEM_LOAD_UOPS_L*_MISS_RETIRED.*", ivb_ht_39),
+    ("MEM_UOPS_RETIRED.*", ivb_ht_39),
+)
 
 ingroup_events = frozenset(fixed_to_num.keys())
 
@@ -110,14 +103,18 @@ class PerfFeatures:
         self.supports_power = works(perf + " list  | grep -q power/")
 
 def unsup_event(e, table):
-    if e in table:
-	v = table[e]
-        if cpu.cpu not in v[0]:
-            return False
-        if v[1] and kernel_version[0] <= v[1][0] and kernel_version[1] < v[1][1]:
-            return True
-        if v[2] and kernel_version[0] >= v[2][0] and kernel_version[1] >= v[2][1]:
-            return True
+    for j in table:
+        if fnmatch.fnmatch(e, j[0]):
+            break
+    else:
+        return False
+    v = j[1]
+    if cpu.realcpu not in v[0]:
+        return False
+    if v[1] and kernel_version[0] <= v[1][0] and kernel_version[1] < v[1][1]:
+        return True
+    if v[2] and kernel_version[0] >= v[2][0] and kernel_version[1] >= v[2][1]:
+        return True
     return False
 
 def needed_limited_counter(evlist, limit_table, limit_set):
@@ -414,6 +411,7 @@ class CPU:
     def __init__(self):
         self.model = 0
         self.cpu = None
+        self.realcpu = None
         self.ht = False
         self.counters = 0
         self.has_tsx = False
@@ -471,10 +469,12 @@ class CPU:
                 elif n[0] == "flags":
                     ok += 1
                     self.has_tsx = "rtm" in n
-        if ok >= 6 and not forced_cpu:
+        if ok >= 6:
             for i in known_cpus:
                 if self.model in i[1]:
-                    self.cpu = i[0]
+                    self.realcpu = i[0]
+                    if not forced_cpu:
+                        self.cpu = i[0]
                     break
         if self.counters == 0:
             self.standard_counters = "0,1,2,3"
