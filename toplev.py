@@ -47,13 +47,28 @@ fixed_to_num = {
 
 # handle kernels that don't support all events
 unsup_pebs = {
-    "BR_MISP_RETIRED.ALL_BRANCHES:pp": (("hsw",), (3, 18)),
-    "MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM:pp": (("hsw",), (3, 18)),
-    "MEM_LOAD_UOPS_RETIRED.L3_MISS:pp": (("hsw",), (3, 18)),
+    "BR_MISP_RETIRED.ALL_BRANCHES:pp": (("hsw",), (3, 18), None),
+    "MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM:pp": (("hsw",), (3, 18), None),
+    "MEM_LOAD_UOPS_RETIRED.L3_MISS:pp": (("hsw",), (3, 18), None),
 }
 
+ivb_ht_39 = (("ivb", "ivt"), None, (3, 9))
+# if your kernel is patched to remove this use
+#ivb_ht_39 = ((), None, None)
+
 unsup_events = {
-    "OFFCORE_RESPONSE.DEMAND_RFO.L3_HIT.HITM_OTHER_CORE": (("hsw",), (3, 18)),
+    "OFFCORE_RESPONSE.DEMAND_RFO.L3_HIT.HITM_OTHER_CORE": (("hsw", "hsx"), (3, 18), None),
+    "MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HIT": ivb_ht_39,
+    "MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_MISS": ivb_ht_39,
+    "MEM_LOAD_UOPS_RETIRED.LLC_MISS": ivb_ht_39,
+    "MEM_LOAD_UOPS_RETIRED.LLC_HIT": ivb_ht_39,
+    "MEM_LOAD_UOPS_RETIRED.L1_MISS": ivb_ht_39,
+    "MEM_LOAD_UOPS_RETIRED.HIT_LFB": ivb_ht_39,
+    "MEM_LOAD_UOPS_LLC_MISS_RETIRED.REMOTE_FWD": ivb_ht_39,
+    "MEM_LOAD_UOPS_LLC_MISS_RETIRED.REMOTE_HITM": ivb_ht_39,
+    "MEM_UOPS_RETIRED.LOCK_LOADS": ivb_ht_39,
+    "MEM_UOPS_RETIRED.ALL_STORES": ivb_ht_39,
+    "MEM_UOPS_RETIRED.SPLIT_STORES": ivb_ht_39,
 }
 
 ingroup_events = frozenset(fixed_to_num.keys())
@@ -97,9 +112,12 @@ class PerfFeatures:
 def unsup_event(e, table):
     if e in table:
 	v = table[e]
-	return (cpu.cpu in v[0] and
-		kernel_version[0] <= v[1][0] and
-		kernel_version[1] < v[1][1])
+        if cpu.cpu not in v[0]:
+            return False
+        if v[1] and kernel_version[0] <= v[1][0] and kernel_version[1] < v[1][1]:
+            return True
+        if v[2] and kernel_version[0] >= v[2][0] and kernel_version[1] >= v[2][1]:
+            return True
     return False
 
 def needed_limited_counter(evlist, limit_table, limit_set):
@@ -1004,15 +1022,22 @@ class Runner:
 
     # collect the events by pre-computing the equation
     def collect(self):
-        self.objects = {}
-        for obj in self.olist:
-            self.objects[obj.name] = obj
+        bad_nodes = set()
+        bad_events = set()
         for obj in self.olist:
             obj.evlevels = []
             obj.compute(lambda ev, level: ev_append(ev, level, obj))
             obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist)
             obj.nc = needed_counters(obj.evnum)
+            unsup = [x for x in obj.evlist if unsup_event(x, unsup_events)]
+            if any(unsup):
+                bad_nodes.add(obj)
+                bad_events |= set(unsup)
+        if len(bad_nodes) > 0:
+            print "removing", " ".join([x.name for x in bad_nodes]), "for unsupported events in kernel:"
+            print "\n".join(bad_events)
+            self.olist = [x for x in self.olist if x not in bad_nodes]
 
     # fit events into available counters
     # simple first fit algorithm
