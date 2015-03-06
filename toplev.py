@@ -545,7 +545,7 @@ def raw_event(i, name="", period=False):
 	    return None
 	i = e.output(noname=True, name=name, period=period)
         emap.update_event(e.output(noname=True), e)
-        if e.counter != cpu.standard_counters:
+        if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
             # for now only use the first counter only to simplify
             # the assignment. This is sufficient for current
             # CPUs
