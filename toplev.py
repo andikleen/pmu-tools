@@ -18,7 +18,7 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import exceptions, argparse, time, types, fnmatch
+import exceptions, argparse, time, types, fnmatch, csv
 from collections import defaultdict, Counter
 #sys.path.append("../pmu-tools")
 import ocperf
@@ -317,7 +317,6 @@ def check_ratio(l):
 class Output:
     """Generate human readable output."""
     def __init__(self, logfile):
-        self.csv = False
         self.sep = " "
         self.logf = logfile
         self.printed_descs = set()
@@ -329,7 +328,11 @@ class Output:
             hdr = "%-7s %s" % (area, hdr)
         self.hdrlen = max(len(hdr) + 1, self.hdrlen)
 
-    def s(self, area, hdr, s, remark, desc, sample):
+    def s(self, timestamp, title, area, hdr, s, remark, desc, sample):
+        if timestamp:
+            self.logf.write("%6.9f%s" % (timestamp, self.sep))
+        if title:
+            self.logf.write("%-6s" % (title))
         if area:
             hdr = "%-7s %s" % (area, hdr)
         if remark == "above":
@@ -341,21 +344,14 @@ class Output:
             print >>self.logf, "\t" + "Sampling events: ", sample
 
     def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, check, sample):
-        if timestamp:
-            self.logf.write("%6.9f%s" % (timestamp, self.sep))
-        if title:
-            if self.csv:
-                self.logf.write(title + self.csv)
-            else:
-                self.logf.write("%-6s" % (title))
         if not check or check_ratio(l):
             if desc in self.printed_descs:
                 desc = ""
             else:
                 self.printed_descs.add(desc)
-            self.s(area, name, fmtnum(l), remark, desc, sample)
+            self.s(timestamp, title, area, name, fmtnum(l), remark, desc, sample)
         else:
-            self.s(area, name, fmtnum(0), "mismeasured", "", sample)
+            self.s(timestamp, title, area, name, fmtnum(0), "mismeasured", "", sample)
 
     def p(self, area, name, l, timestamp, remark, desc, title, sample):
         self.item(area, name, l, timestamp, remark, desc, title,
@@ -365,21 +361,24 @@ class Output:
         self.item(area, name, l, timestamp, unit, desc, title,
                   lambda l: "%5s" % ("%3.2f" % (l)), False, "")
 
-class OutputCSV(Output):
-    def __init__(self, logfile, csv):
-        Output.__init__(self, logfile)
-        self.csv = csv
-        self.sep = self.csv
+def csv_writer(f, sep):
+    return csv.writer(f, delimiter=sep)
 
-    def s(self, area, hdr, s, remark, desc, sample):
-        remark = self.csv + remark
+class OutputCSV(Output):
+    def __init__(self, logfile, sep):
+        Output.__init__(self, logfile)
+        self.writer = csv_writer(self.logf, sep)
+
+    def s(self, timestamp, title, area, hdr, s, remark, desc, sample):
         if args.no_desc:
             desc = ""
-        if desc and sample:
-            desc += " Sampling events: " + sample
-        desc = self.csv + '"' + desc + '"'
         desc = re.sub(r"\s+", " ", desc)
-        print >>self.logf, '%s%s%s%s%s%s%s' % (hdr, self.csv, s.strip(), remark, desc, self.csv, sample)
+        l = []
+        if timestamp:
+            l.append(timestamp)
+        if title:
+            l.append(title)
+        self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample])
 
 class CPU:
     # overrides for easy regression tests
