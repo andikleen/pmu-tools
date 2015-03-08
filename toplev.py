@@ -1105,7 +1105,7 @@ class Runner:
             if obj.res_map:
                 obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, referenced))
-            else:
+            elif obj.name != "Time":
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
         out.logf.flush()
 
