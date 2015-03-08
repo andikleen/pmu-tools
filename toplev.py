@@ -338,7 +338,8 @@ class Output:
             hdr = "%-7s %s" % (area, hdr)
         if remark == "above":
             remark = ""
-        print >>self.logf, "%-*s %s %s" % (self.hdrlen, hdr + ":", s, remark)
+        hdroff = min(len(s), self.hdrlen)
+        print >>self.logf, "%-*s %s %s" % (self.hdrlen - hdroff, hdr + ":", s, remark)
         if desc and not args.no_desc:
             print >>self.logf, "\t" + desc
         if desc and sample and not args.no_desc:
