@@ -255,6 +255,7 @@ p.add_argument('--no-multiplex',
                action='store_true')
 p.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
 p.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
+p.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file', type=argparse.FileType('w'))
 p.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
 p.add_argument('--power', help='Display power metrics', action='store_true')
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
@@ -520,6 +521,7 @@ fixed_counters = {
 }
 
 fixed_set = frozenset(fixed_counters.keys())
+fixed_to_name = dict(zip(fixed_counters.values(), fixed_counters.keys()))
 
 def separator(x):
     if x.startswith("cpu") or x.startswith("power"):
@@ -726,12 +728,29 @@ def group_number(num, events):
     idx = 0
     gnum = 1
     for group in events:
-        for ev in group:
-            if idx == num:
-                return gnum
-            idx += 1
-        gnum += 1
+        if all([x in outgroup_events for x in group]):
+            for ev in group:
+                if idx == num:
+                    return 0
+                idx += 1
+        else:
+            for ev in group:
+                if idx == num:
+                    return gnum
+                idx += 1
+            gnum += 1
     assert False
+
+def dump_raw(interval, title, event, val, index, events):
+    if event in fixed_to_name:
+        ename = fixed_to_name[event].lower()
+    else:
+        ename = event_rmap(event)
+    gnum = group_number(index, events)
+    if args.raw:
+        print "raw", title, "event", event, "val", val, "ename", ename, "index", index, "group", gnum
+    if args.valcsv:
+        runner.valcsv.writerow((interval, title, gnum, ename, val, event, index))
 
 perf_fields = [
     r"[0-9.]+",
@@ -817,8 +836,13 @@ def do_execute(runner, events, out, rest, res, rev, env):
             res[title].append(val)
             rev[title].append(event)
 
-        if args.raw:
-            print "raw",title,"event",event,"val",val,"ename",event_rmap(event),"index",len(res[title])-1,"group", group_number(len(res[title]) - 1, events)
+        if args.raw or args.valcsv:
+            dump_raw(interval if interval_mode else "",
+                     title,
+                     event,
+                     val,
+                     len(res[title]) - 1,
+                     events)
     inf.close()
     if 'interval-ns' not in env:
             set_interval(env, (time.time() - start) * 1E+9)
@@ -975,6 +999,9 @@ class Runner:
         self.missed = 0
 	self.sample_obj = set()
         self.stat = ComputeStat()
+        if args.valcsv:
+            self.valcsv = csv.writer(args.valcsv)
+            self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value", "Perf-event", "Index"))
 
     def do_run(self, obj):
         obj.res = None
