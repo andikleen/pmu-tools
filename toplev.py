@@ -688,8 +688,7 @@ def execute_no_multiplex(runner, out, rest):
             continue
         n += 1
         print "RUN #%d of %d" % (n, num_runs)
-        events = ",".join(map(event_group, outg + [g]))
-        ret, res, rev, interval = do_execute(runner, events, out, rest,
+        ret, res, rev, interval = do_execute(runner, outg + [g], out, rest,
                                              res, rev, env)
         outg = []
     assert num_runs == n
@@ -698,14 +697,25 @@ def execute_no_multiplex(runner, out, rest):
 
 def execute(runner, out, rest):
     env = dict()
-    groups = ",".join([event_group(x) for x in runner.evgroups if len(x) > 0])
-    ret, res, rev, interval = do_execute(runner, groups,
+    events = filter(lambda x: len(x) > 0, runner.evgroups)
+    ret, res, rev, interval = do_execute(runner, events,
                                          out, rest,
                                          defaultdict(list),
                                          defaultdict(list),
                                          env)
     print_keys(runner, res, rev, out, interval, env)
     return ret
+
+def group_number(num, events):
+    idx = 0
+    gnum = 1
+    for group in events:
+        for ev in group:
+            if idx == num:
+                return gnum
+            idx += 1
+        gnum += 1
+    assert False
 
 perf_fields = [
     r"[0-9.]+",
@@ -716,7 +726,8 @@ perf_fields = [
     r"Joules",
     ""]
 
-def do_execute(runner, evstr, out, rest, res, rev, env):
+def do_execute(runner, events, out, rest, res, rev, env):
+    evstr = ",".join(map(event_group, events))
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
@@ -791,7 +802,7 @@ def do_execute(runner, evstr, out, rest, res, rev, env):
             rev[title].append(event)
 
         if args.raw:
-            print "raw",title,"event",event,"val",val,"ename",event_rmap(event),"index",len(res[title])-1
+            print "raw",title,"event",event,"val",val,"ename",event_rmap(event),"index",len(res[title])-1,"group", group_number(len(res[title]) - 1, events)
     inf.close()
     if 'interval-ns' not in env:
             set_interval(env, (time.time() - start) * 1E+9)
