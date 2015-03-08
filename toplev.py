@@ -767,6 +767,7 @@ def do_execute(runner, events, out, rest, res, rev, env):
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
     interval = None
+    index = Counter()
     start = time.time()
     while True:
         try:
@@ -789,6 +790,7 @@ def do_execute(runner, events, out, rest, res, rev, env):
                         print_keys(runner, res, rev, out, prev_interval, env)
                         res = defaultdict(list)
                         rev = defaultdict(list)
+                        index.clear()
                     prev_interval = interval
         # cannot just split on commas, as they are inside cpu/..../
         # code later relies on the regex stripping ku flags
@@ -841,8 +843,9 @@ def do_execute(runner, events, out, rest, res, rev, env):
                      title,
                      event,
                      val,
-                     len(res[title]) - 1,
+                     index[title],
                      events)
+            index[title] += 1
     inf.close()
     if 'interval-ns' not in env:
             set_interval(env, (time.time() - start) * 1E+9)
