@@ -570,9 +570,12 @@ def pwrap(s, linelen=60, indent=""):
 def has(obj, name):
     return name in obj.__class__.__dict__
 
+def flatten(x):
+    return itertools.chain(*x)
+
 def print_header(work, evlist):
     evnames0 = [obj.evlist for obj in work]
-    evnames = set(itertools.chain(*evnames0))
+    evnames = set(flatten(evnames0))
     names = ["%s[%d]" % (obj.__class__.__name__, obj.__class__.level if has(obj, 'level') else 0) for obj in work]
     pwrap(" ".join(names) + ":", 78)
     pwrap(" ".join(map(mark_fixed, evnames)).lower() +
@@ -724,22 +727,22 @@ def execute(runner, out, rest):
     print_keys(runner, res, rev, out, interval, env)
     return ret
 
+class GroupNum:
+    def __init__(self):
+        self.gnum = 1
+
 def group_number(num, events):
-    idx = 0
-    gnum = 1
-    for group in events:
+    gnum = GroupNum()
+    def group_nums(group, gnum):
         if all([x in outgroup_events for x in group]):
-            for ev in group:
-                if idx == num:
-                    return 0
-                idx += 1
+            idx = 0
         else:
-            for ev in group:
-                if idx == num:
-                    return gnum
-                idx += 1
-            gnum += 1
-    assert False
+            idx = gnum.gnum
+            gnum.gnum += 1
+        return [idx] * len(group)
+
+    gnums = [group_nums(x, gnum) for x in events]
+    return list(flatten(gnums))[num]
 
 def dump_raw(interval, title, event, val, index, events):
     if event in fixed_to_name:
