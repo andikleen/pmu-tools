@@ -1163,7 +1163,7 @@ class Runner:
                 obj.errcount = 0
                 obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, stat.referenced))
-            elif obj.name != "Time":
+            elif not all([x in env for x in obj.evnum]):
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
         out.logf.flush()
 
