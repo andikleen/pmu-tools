@@ -992,6 +992,13 @@ def smt_node(obj):
 def count(f, l):
     return len(filter(f, l))
 
+def metric_unit(obj):
+    if has(obj, 'unit'):
+        return obj.unit
+    if has(obj, 'domain'):
+        return obj.domain
+    return "Metric"
+
 class Runner:
     """Schedule measurements of event groups. Try to run multiple in parallel."""
 
@@ -1190,7 +1197,7 @@ Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
                             obj.name, val, timestamp,
                             desc + disclaimer,
                             title,
-                            obj.unit if 'unit' in obj.__class__.__dict__ else "metric")
+                            metric_unit(obj))
                 else:
                     out.p(obj.area if has(obj, 'area') else None,
                         full_name(obj), val, timestamp,
