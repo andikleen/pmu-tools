@@ -326,7 +326,7 @@ class Output:
     def set_hdr(self, hdr, area):
         if area:
             hdr = "%-7s %s" % (area, hdr)
-        self.hdrlen = max(len(hdr) + 1, self.hdrlen)
+        self.hdrlen = min(max(len(hdr) + 1, self.hdrlen), 78)
 
     def s(self, timestamp, title, area, hdr, s, remark, desc, sample):
         if timestamp:
