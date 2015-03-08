@@ -639,6 +639,7 @@ class ComputeStat:
         self.already_warned = set()
         self.errcount = 0
         self.errors = set()
+        self.prev_errors = set()
 
     def referenced_check(self, res):
         referenced = self.referenced
@@ -655,9 +656,12 @@ class ComputeStat:
                 print >>sys.stderr, " ".join(["%d" % x for x in sorted(set(range(len(r))) - referenced)])
 
     def compute_errors(self):
-        if self.errcount > 0:
-            print >>sys.stderr, "warning: %d division by zero errors"
+        if self.errcount > 0 and self.errors != self.prev_errors:
+            print >>sys.stderr, "warning: %d division by zero errors:" % (self.errcount),
             print >>sys.stderr, " ".join(self.errors)
+            self.errcount = 0
+            self.prev_errors = self.errors
+            self.errors = set()
 
 def print_keys(runner, res, rev, out, interval, env):
     stat = runner.stat
@@ -678,6 +682,7 @@ def print_keys(runner, res, rev, out, interval, env):
         for j in sorted(res.keys()):
             runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare, stat)
     stat.referenced_check(res)
+    stat.compute_errors()
 
 def is_outgroup(x):
     return set(x) - outgroup_events == set()
@@ -1114,11 +1119,9 @@ class Runner:
         for obj in self.olist:
             out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
             if obj.res_map:
+                obj.errcount = 0
                 obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, stat.referenced))
-                if has(obj, 'errcount') and obj.errcount > 0:
-                    stat.errors.add(obj.name)
-                    stat.errcount += obj.errcount
             elif obj.name != "Time":
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
         out.logf.flush()
@@ -1139,6 +1142,9 @@ class Runner:
                 if (smt != Runner.SMT_dontcare and
                         (Runner.SMT_yes if smt_node(obj) else Runner.SMT_no) != smt):
                     continue
+                if has(obj, 'errcount') and obj.errcount > 0:
+                    stat.errors.add(obj.name)
+                    stat.errcount += obj.errcount
                 disclaimer = ""
                 if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht:
                     disclaimer = """
