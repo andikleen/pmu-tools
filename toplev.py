@@ -18,7 +18,7 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import exceptions, argparse, time, types, fnmatch, csv
+import exceptions, argparse, time, types, fnmatch, csv, copy
 from collections import defaultdict, Counter
 #sys.path.append("../pmu-tools")
 import ocperf
@@ -728,21 +728,16 @@ def execute(runner, out, rest):
     print_keys(runner, res, rev, out, interval, env)
     return ret
 
-class GroupNum:
-    def __init__(self):
-        self.gnum = 1
-
 def group_number(num, events):
-    gnum = GroupNum()
-    def group_nums(group, gnum):
+    gnum = itertools.count(1)
+    def group_nums(group):
         if all([x in outgroup_events for x in group]):
             idx = 0
         else:
-            idx = gnum.gnum
-            gnum.gnum += 1
+            idx = gnum.next()
         return [idx] * len(group)
 
-    gnums = [group_nums(x, gnum) for x in events]
+    gnums = map(group_nums, events)
     return list(flatten(gnums))[num]
 
 def dump_raw(interval, title, event, val, index, events):
@@ -771,8 +766,8 @@ def do_execute(runner, events, out, rest, res, rev, env):
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
     interval = None
-    index = Counter()
     start = time.time()
+    init_res = copy.deepcopy(res)
     while True:
         try:
             l = inf.readline()
@@ -794,7 +789,6 @@ def do_execute(runner, events, out, rest, res, rev, env):
                         print_keys(runner, res, rev, out, prev_interval, env)
                         res = defaultdict(list)
                         rev = defaultdict(list)
-                        index.clear()
                     prev_interval = interval
         # cannot just split on commas, as they are inside cpu/..../
         # code later relies on the regex stripping ku flags
@@ -847,9 +841,8 @@ def do_execute(runner, events, out, rest, res, rev, env):
                      title,
                      event,
                      val,
-                     index[title],
+                     len(res[title]) - len(init_res[title]) - 1,
                      events)
-            index[title] += 1
     inf.close()
     if 'interval-ns' not in env:
             set_interval(env, (time.time() - start) * 1E+9)
