@@ -633,20 +633,34 @@ def core_fmt(core):
 def thread_fmt(j):
     return core_fmt(key_to_coreid(j)) + ("-T%d" % cpu.cputothread[int(j)])
 
-def referenced_check(res, referenced, already_warned):
-    if referenced in already_warned:
-        return
-    already_warned.append(referenced)
+class ComputeStat:
+    def __init__(self):
+        self.referenced = set()
+        self.already_warned = set()
+        self.errcount = 0
+        self.errors = set()
 
-    # sanity check: did we reference all results?
-    if len(res.keys()) > 0:
-        r = res[res.keys()[0]]
-        if len(referenced) != len(r):
-            print >>sys.stderr, "warning: %d results not referenced:" % (len(r) - len(referenced)),
-            print >>sys.stderr, " ".join(["%d" % x for x in sorted(set(range(len(r))) - referenced)])
+    def referenced_check(self, res):
+        referenced = self.referenced
+        referenced = referenced - self.already_warned
+        if not referenced:
+            return
+        self.already_warned |= referenced
+
+        # sanity check: did we reference all results?
+        if len(res.keys()) > 0:
+            r = res[res.keys()[0]]
+            if len(referenced) != len(r):
+                print >>sys.stderr, "warning: %d results not referenced:" % (len(r) - len(referenced)),
+                print >>sys.stderr, " ".join(["%d" % x for x in sorted(set(range(len(r))) - referenced)])
+
+    def compute_errors(self):
+        if self.errcount > 0:
+            print >>sys.stderr, "warning: %d division by zero errors"
+            print >>sys.stderr, " ".join(self.errors)
 
 def print_keys(runner, res, rev, out, interval, env):
-    referenced = set()
+    stat = runner.stat
     if smt_mode:
         # collect counts from all threads of cores as lists
         # this way the model can access all threads individually
@@ -655,18 +669,15 @@ def print_keys(runner, res, rev, out, interval, env):
         for core, citer in itertools.groupby(core_keys, key_to_coreid):
             cpus = list(citer)
             r = list(itertools.izip(*[res[j] for j in cpus]))
-            runner.print_res(r, rev[cpus[0]], out, interval, core_fmt(core), env, Runner.SMT_yes,
-                             referenced)
+            runner.print_res(r, rev[cpus[0]], out, interval, core_fmt(core), env, Runner.SMT_yes, stat)
 
         # print the non SMT nodes
         for j in sorted(res.keys()):
-            runner.print_res(res[j], rev[j], out, interval, thread_fmt(j), env, Runner.SMT_no,
-                             referenced)
+            runner.print_res(res[j], rev[j], out, interval, thread_fmt(j), env, Runner.SMT_no, stat)
     else:
         for j in sorted(res.keys()):
-            runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare,
-                             referenced)
-    referenced_check(res, referenced, runner.already_warned)
+            runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare, stat)
+    stat.referenced_check(res)
 
 def is_outgroup(x):
     return set(x) - outgroup_events == set()
@@ -957,8 +968,8 @@ class Runner:
         self.olist = []
         self.max_level = max_level
         self.missed = 0
-        self.already_warned = []
 	self.sample_obj = set()
+        self.stat = ComputeStat()
 
     def do_run(self, obj):
         obj.res = None
@@ -1094,7 +1105,7 @@ class Runner:
                 len(self.olist),
                 self.missed)
 
-    def print_res(self, res, rev, out, timestamp, title, env, smt, referenced):
+    def print_res(self, res, rev, out, timestamp, title, env, smt, stat):
         if len(res) == 0:
             print "Nothing measured?"
             return
@@ -1104,7 +1115,10 @@ class Runner:
             out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
             if obj.res_map:
                 obj.compute(lambda e, level:
-                            lookup_res(res, rev, e, obj, env, level, referenced))
+                            lookup_res(res, rev, e, obj, env, level, stat.referenced))
+                if has(obj, 'errcount') and obj.errcount > 0:
+                    stat.errors.add(obj.name)
+                    stat.errcount += obj.errcount
             elif obj.name != "Time":
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
         out.logf.flush()
@@ -1202,36 +1216,51 @@ def ht_warning():
 
 runner = Runner(args.level)
 
+pe = lambda x: None
+if args.debug:
+    pe = lambda x: sys.stdout.write(x + "\n")
+
 if cpu.cpu == "ivb":
     import ivb_client_ratios
     ivb_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
+    ivb_client_ratios.print_error = pe
     ivb_client_ratios.Setup(runner)
 elif cpu.cpu == "ivt":
     import ivb_server_ratios
     ivb_server_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
+    ivb_server_ratios.print_error = pe
     ivb_server_ratios.Setup(runner)
 elif cpu.cpu == "snb":
     import snb_client_ratios
+    snb_client_ratios.smt_enabled = cpu.ht
+    smt_mode = cpu.ht
+    snb_client_ratios.print_error = pe
     snb_client_ratios.Setup(runner)
 elif cpu.cpu == "jkt":
     import jkt_server_ratios
+    jkt_server_ratios.smt_enabled = cpu.ht
+    smt_mode = cpu.ht
+    jkt_server_ratios.print_error = pe
     jkt_server_ratios.Setup(runner)
 elif cpu.cpu == "hsw":
     import hsw_client_ratios
     hsw_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
+    hsw_client_ratios.print_error = pe
     hsw_client_ratios.Setup(runner)
 elif cpu.cpu == "hsx":
     import hsx_server_ratios
     hsx_server_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
+    hsx_server_ratios.print_error = pe
     hsx_server_ratios.Setup(runner)
 elif cpu.cpu == "bdw":
     import bdw_client_ratios
     bdw_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
+    bdw_client_ratios.print_error = pe
     bdw_client_ratios.Setup(runner)
 elif cpu.cpu == "slm":
     import slm_ratios
@@ -1304,6 +1333,7 @@ if args.no_multiplex:
     ret = execute_no_multiplex(runner, out, rest)
 else:
     ret = execute(runner, out, rest)
+runner.stat.compute_errors()
 if args.show_sample or args.run_sample:
     print_sample(runner.sample_obj, rest)
 sys.exit(ret)
