@@ -264,6 +264,13 @@ def format_umask(u):
     u = u.replace("x", "0")
     return int(u, 2)
 
+box_dir_cache = []
+
+def find_boxes(prefix):
+    if len(box_dir_cache) == 0:
+        box_dir_cache += [x for x in os.listdir("/sys/devices/") if x.startswith("uncore")]
+    return [x for x in box_dir_cache if x.startswith("uncore_" + prefix)]
+
 box_cache = dict()
 
 def box_exists(box):
@@ -311,11 +318,7 @@ def format_reg_event(ev, qual):
     if qual:
         attrs += "," + qual
     if not box_exists(box):
-        ret = []
-        num = 0
-        while box_exists("%s_%d" % (box, num)):
-            ret.append("uncore_%s_%d/%s/" % (box, num, attrs))
-            num += 1
+        ret = ["uncore_%s/%s/" % (j, attrs) for j in find_boxes(box)]
         if ret:
             return ret
     return ["uncore_%s/%s/" % (box, attrs)]
@@ -533,10 +536,7 @@ def supports_group(evl, nl):
     return True
 
 def count_box(box):
-    num = 0
-    while box_exists("%s_%d" % (box, num)):
-        num += 1
-    return num
+    return len(find_boxes(box))
 
 # run a equation
 def evaluate(eq, EV):

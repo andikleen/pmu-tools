@@ -92,10 +92,10 @@ def expand_events(s):
     if not m:
         return [s]
     l = []
-    n = 0
-    while ucevent.box_exists("%s_%d" % (m.group(1), n)):
-        l.append(s.replace("_INDEX", "_%d" % (n)))
-        n += 1
+    for j in ucevent.find_boxes(m.group(1)):
+        m = re.search(r'_(\d+)$', j)
+        if m:
+            l.append(s.replace("_INDEX", "_" + m.group(1)))
     if len(l) == 0:
         return [s]
     return l
