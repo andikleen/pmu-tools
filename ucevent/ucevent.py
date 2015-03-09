@@ -267,9 +267,13 @@ def format_umask(u):
 box_dir_cache = []
 
 def find_boxes(prefix):
+    if prefix.startswith("uncore_"):
+        prefix = prefix[6:]
+    global box_dir_cache
     if len(box_dir_cache) == 0:
         box_dir_cache += [x for x in os.listdir("/sys/devices/") if x.startswith("uncore")]
-    return [x for x in box_dir_cache if x.startswith("uncore_" + prefix)]
+    l = [x.replace("uncore_", "") for x in box_dir_cache if x.startswith("uncore_" + prefix)]
+    return l
 
 box_cache = dict()
 
