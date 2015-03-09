@@ -1152,11 +1152,10 @@ class Runner:
         # step 1: compute
         for obj in self.olist:
             out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
-            if obj.res_map:
-                obj.errcount = 0
-                obj.compute(lambda e, level:
+            obj.errcount = 0
+            obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, stat.referenced))
-            elif not all([x in env for x in obj.evnum]):
+            if not obj.res_map and not all([x in env for x in obj.evnum]):
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
         out.logf.flush()
 
@@ -1171,8 +1170,6 @@ class Runner:
                 val = obj.val
                 if not obj.thresh and not dont_hide:
                     val = 0.0
-                if obj.name == "Time": # XXX hack
-                    continue
                 if (smt != Runner.SMT_dontcare and
                         (Runner.SMT_yes if smt_node(obj) else Runner.SMT_no) != smt):
                     continue
