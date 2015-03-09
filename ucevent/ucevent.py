@@ -350,6 +350,11 @@ def sum_event(a, b):
 def is_str(x):
     return isinstance(x, basestring)
 
+def scale_val(val):
+    if args.scale and not is_str(val):
+        val = val / units[args.scale]
+    return val
+
 PCT_FIELDLEN = 7
 OVER_THRESHOLD = 3
 
@@ -408,14 +413,12 @@ class Output:
             if is_pct(h):
                 j *= 100.0
             fmt = "%.2f"
-            if args.scale:
-                j = j / units[args.scale]
+            j = scale_val(j)
         elif is_str(j):
             fmt = "%s"
         else:
             fmt = "%d"
-            if args.scale:
-                j = j / units[args.scale]
+            j = scale_val(j)
         num = locale.format(fmt, j, grouping=True)
         if len(num) >= fieldlen:
             num += " "
@@ -455,7 +458,8 @@ class OutputCSV(Output):
     def flush(self):
         if self.num_output == 0:
             print >>args.output, self.csv.join(["timestamp"] + self.headers)
-        print >>args.output, self.csv.join(map(str, [self.timestamp] + self.vals))
+        scaled_vals = map(scale_val, [self.timestamp] + self.vals)
+        print >>args.output, self.csv.join(map(str, scaled_vals))
         self.vals = []
         self.headers = []
         self.num_output += 1
