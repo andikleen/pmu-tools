@@ -210,9 +210,8 @@ prints meaningful ratios, unless -v is specified.
 
 This follows the "Top Down" methology. The best description of the method
 is in the "A top-down method for performance analysis and counter architecture"
-paper (ISPASS 2014, available [here](https://sites.google.com/site/analysismethods/yasin-pubs)) Older descriptions of Top Down are in B.3.2 of
-the [Intel optimization manual](http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-optimization-manual.pdf) and
-in this [article](http://software.intel.com/en-us/articles/how-to-tune-applications-using-a-top-down-characterization-of-microarchitectural-issues) and in [Ahmad Yasin's presentation](https://docs.google.com/viewer?a=v&pid=sites&srcid=ZGVmYXVsdGRvbWFpbnxhbmFseXNpc21ldGhvZHN8Z3g6MWJjNTE2OTU4ODVlZGFkMw) at a [ISCA workshop](https://sites.google.com/site/analysismethods/isca2013/program-1). I didn't invent it, I'm just implementing it.
+paper (ISPASS 2014, available [here](https://sites.google.com/site/analysismethods/yasin-pubs)) 
+I didn't invent it, I'm just implementing it.
 
 A more gentle introduction is in [andi's blog](http://halobates.de/blog/p/262)
 
