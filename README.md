@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev kernel workarounds are documented in [toplev kernel workarounds](https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support)
 * toplev can now automatically sample workloads with --run-sample
 * Added cputop utility to easily enable/disable hyper threading
 * toplev updated to TopDown 2.9:
@@ -30,9 +31,7 @@ on very reproducible workloads.
 * toplev now supports a --no-group mode to work around bugs on older kernels
 (such as RHEL/CentOS 6)
 * ucevent now supports Intel Xeon v3 (codenamed Haswell server)
-* toplev now supports measurements with HyperThreading enabled
-on IvyBridge system (but may need patching the kernel with this
-[patch](http://halobates.de/ivb-allow-mem-load-uops) for levels larger than three)
+* toplev now supports measurements with HyperThreading enabled.
 * toplev now supports Silvermont CPUs, with a simple 1 level model.
 * ocperf now outputs all possible offcore event combinations when 
 an offcore file is available
@@ -112,6 +111,10 @@ dependencies outside a standard python install on a recent
 Linux system with perf. 
 
 old. parser/ needs a scipy stack with pandas and pyelftools.
+
+The perf tool should not be too old.
+
+toplev has kernel dependencies, please see https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
 
 # Tools
 
@@ -215,58 +218,73 @@ A more gentle introduction is in [andi's blog](http://halobates.de/blog/p/262)
 
 toplev.py only supports counting, that is it cannot tell you where in
 the program the problem occurred, just what happened. There is now
-an experimential --sample option to suggest sampling events for specific
-problems.
+an experimential --show-sample option to suggest sampling events for specific
+problems. The new --run-sample option can also automatically sample
+the program by re-running.
 
-Requires an Intel Sandy Bridge, Ivy Bridge, Haswell CPU (Core 2rd, 3rd, 4th generation)
-On Sandy Bridge E/EP (Xeon E5, Core i7 39xx) only level 1 is supported
-currently.
+Requires Intel CPUs Sandy Bridge (Core 2nd gen, Xeon 5xxx) or newer or Atom Silvermont or newer.
+Quark or Xeon Phi are not supported.
 
-It works best on Ivy Bridge currently.  By default the simple high level model
-is used. The detailed model is selected with -d, and the max level
-specified with -l (max 5, default 2).
+By default the simple high level model is used. The detailed model is selected
+with -lX, with X being the level.
+
+On non-SMT systems only the program is measured by default, while
+with SMT on the whole system is measured.
 
 [IVB model] (http://halobates.de/ivb-hierarchy.svg)
 [Simple model] (http://halobates.de/simple-hierarchy.svg)
 
 Usage:
 
-	./toplev.py [-lX] [-v] [-d] [-o logfile] program
-	measure program
-	./toplev.py [-lX] [-v] [-d] [-o logfile] -a sleep X
-	measure whole system for X seconds
-	./toplev.py [-lX] [-v] [-d] [-o logfile] -p PID
-	measure pid PID
+usage: toplev [options] perf-arguments
 
-### Options:
+Estimate on which part of the CPU pipeline a workload bottlenecks using the TopDown model.
+The bottlenecks are expressed as a tree with different levels.
 
-	--verbose, -v         Print all results even when below threshold
-	--force               Force potentially broken configurations
-	--kernel              Only measure kernel code
-	--user                Only measure user code
-	--print-group, -g     Print event group assignments
-	--no-desc             Don't print event descriptions
-	--csv CSV, -x CSV     Enable CSV mode with specified delimeter
-	--interval INTERVAL, -I INTERVAL
-        	                Enable interval mode with ms interval
-	--output OUTPUT, -o OUTPUT
-        	                Set output file
-	--graph               Automatically graph interval output with tl-barplot.py
-	--title TITLE         Set title of graph
-	--xkcd                Use xkcd plotting mode for graph
-	--level LEVEL, -l LEVEL
-        	                Measure upto level N (max 5)
-	--metrics, -m         Print extra metrics
-	--raw                 Print raw values
-	--sw                  Measure perf Linux metrics
-	--tsx                 Measure TSX metrics
-	--all                 Measure everything available
-	--frequency           Measure frequency
-	--no-group            Dont use groups
-	--no-multiplex        Do not multiplex, but run the workload multiple times
-        	                as needed. Requires reproducible workloads.
-	--stats               Show statistics on what events counted
-	--power               Display power metrics
+Examples:
+
+./toplev.py -l2 program
+measure program in level 2
+
+./toplev.py --all -a sleep X
+measure whole system for X seconds
+
+./toplev.py -o logfile.csv -x, -p PID
+measure pid PID, outputting in CSV format
+
+## Options:
+
+  -h, --help            show this help message and exit
+  --verbose, -v         Print all results even when below threshold
+  --kernel              Only measure kernel code
+  --user                Only measure user code
+  --print-group, -g     Print event group assignments
+  --no-desc             Don't print event descriptions
+  --csv CSV, -x CSV     Enable CSV mode with specified delimeter
+  --interval INTERVAL, -I INTERVAL
+                        Enable interval mode with ms interval
+  --output OUTPUT, -o OUTPUT
+                        Set output file
+  --graph               Automatically graph interval output with tl-barplot.py
+  --title TITLE         Set title of graph
+  --xkcd                Use xkcd plotting mode for graph
+  --level LEVEL, -l LEVEL
+                        Measure upto level N (max 5)
+  --metrics, -m         Print extra metrics
+  --raw                 Print raw values
+  --sw                  Measure perf Linux metrics
+  --tsx                 Measure TSX metrics
+  --all                 Measure everything available
+  --frequency           Measure frequency
+  --no-group            Dont use groups
+  --no-multiplex        Do not multiplex, but run the workload multiple times
+                        as needed. Requires reproducible workloads.
+  --show-sample         Show command line to rerun workload with sampling
+  --run-sample          Automatically rerun workload with sampling
+  --valcsv VALCSV, -V VALCSV
+                        Write raw counter values into CSV file
+  --stats               Show statistics on what events counted
+  --power               Display power metrics
 
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplevel can be used.
@@ -276,27 +294,30 @@ After -- perf arguments conflicting with toplevel can be used.
 The lower levels of the measurement tree are less reliable
 than the higher levels.  They also rely on counter multi-plexing
 and cannot use groups, which can cause larger measurement errors
-with non steady state workloads.
+with non steady state workloads. Enabling metrics will also
+force multi-plexing.
 
 (If you don't understand this terminology; it means measurements
 in higher levels are less accurate and it works best with programs that
 primarily do the same thing over and over)
 
-It's recommended to measure the work load only after
+If the program is very reproducible it is possible to avoid
+multiplexing with --no-multiplex. This will run the program many times.
+The perf -r option (to rerun multiple times to measure the standard deviation)
+is currently not supported by toplev though.
+
+When using level > 1, it's recommended to measure the work load only after
 the startup phase by using interval mode or attaching later.
 level 1 or running without -d is generally the most reliable.
+The startup phase tends to be multiplexing unfriendly, as it does not
+execute for long enough.
+
 If your perf stat is new enough (3.12+) the --initial-delay option
 is useful to skip the startup phase.
 
-One of the events (even used by level 1) requires a recent enough
-kernel that understands its counter constraints.  3.10+ is safe.
-
-If you are on SandyBridge E/EP which does not have a detailed
-model currently it's possible to force normal SandyBridge
-with "FORCECPU=snb ./toplev.py ..."
-to get higher levels working.  However some of the estimated latencies will be wrong
-and some tree nodes may not work correctly. You have been
-warned.
+Toplev uses many events and is demand of the kernel perf driver.
+A number of kernel workarounds may be needed. See
+https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
 
 ## ucevent uncore monitoring
 
