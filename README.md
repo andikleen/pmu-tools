@@ -254,37 +254,37 @@ measure pid PID, outputting in CSV format
 
 ## Options:
 
-  -h, --help            show this help message and exit
-  --verbose, -v         Print all results even when below threshold
-  --kernel              Only measure kernel code
-  --user                Only measure user code
-  --print-group, -g     Print event group assignments
-  --no-desc             Don't print event descriptions
-  --csv CSV, -x CSV     Enable CSV mode with specified delimeter
-  --interval INTERVAL, -I INTERVAL
-                        Enable interval mode with ms interval
-  --output OUTPUT, -o OUTPUT
-                        Set output file
-  --graph               Automatically graph interval output with tl-barplot.py
-  --title TITLE         Set title of graph
-  --xkcd                Use xkcd plotting mode for graph
-  --level LEVEL, -l LEVEL
-                        Measure upto level N (max 5)
-  --metrics, -m         Print extra metrics
-  --raw                 Print raw values
-  --sw                  Measure perf Linux metrics
-  --tsx                 Measure TSX metrics
-  --all                 Measure everything available
-  --frequency           Measure frequency
-  --no-group            Dont use groups
-  --no-multiplex        Do not multiplex, but run the workload multiple times
-                        as needed. Requires reproducible workloads.
-  --show-sample         Show command line to rerun workload with sampling
-  --run-sample          Automatically rerun workload with sampling
-  --valcsv VALCSV, -V VALCSV
-                        Write raw counter values into CSV file
-  --stats               Show statistics on what events counted
-  --power               Display power metrics
+	-h, --help            show this help message and exit
+	--verbose, -v         Print all results even when below threshold
+	--kernel              Only measure kernel code
+	--user                Only measure user code
+	--print-group, -g     Print event group assignments
+	--no-desc             Don't print event descriptions
+	--csv CSV, -x CSV     Enable CSV mode with specified delimeter
+	--interval INTERVAL, -I INTERVAL
+	                      Enable interval mode with ms interval
+	--output OUTPUT, -o OUTPUT
+	                      Set output file
+	--graph               Automatically graph interval output with tl-barplot.py
+	--title TITLE         Set title of graph
+	--xkcd                Use xkcd plotting mode for graph
+	--level LEVEL, -l LEVEL
+	                      Measure upto level N (max 5)
+	--metrics, -m         Print extra metrics
+	--raw                 Print raw values
+	--sw                  Measure perf Linux metrics
+	--tsx                 Measure TSX metrics
+	--all                 Measure everything available
+	--frequency           Measure frequency
+	--no-group            Dont use groups
+	--no-multiplex        Do not multiplex, but run the workload multiple times
+	                      as needed. Requires reproducible workloads.
+	--show-sample         Show command line to rerun workload with sampling
+	--run-sample          Automatically rerun workload with sampling
+	--valcsv VALCSV, -V VALCSV
+	                      Write raw counter values into CSV file
+	--stats               Show statistics on what events counted
+	--power               Display power metrics
 
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplevel can be used.
