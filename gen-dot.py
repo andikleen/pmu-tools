@@ -14,6 +14,9 @@ else:
     import ivb_client_ratios
     m = ivb_client_ratios
 
+def has(obj, name):
+    return name in obj.__class__.__dict__
+
 class Runner:
     def __init__(self):
         self.olist = []
@@ -27,32 +30,16 @@ class Runner:
 
     def finish(self):
         for n in self.olist:
-            if n.parent:
-                print '"%s" -> "%s";' % (n.parent.name, n.name)
-            elif n.level == 1:
+            if n.level == 1:
                 print '"%s";' % (n.name)
-
-    def fix_parents(self):
-        for obj in self.olist:
-            if 'parent' not in obj.__dict__:
-                obj.parent = None
-                continue
-            if not obj.parent:
-                continue
-            if obj.level == 1:
-                obj.parent = None
-            elif obj.parent.level >= obj.level:
-                my_list = self.olist[:self.olist.index(obj)]
-                all_parents = filter(lambda x: x.level < obj.level, my_list)
-                print >>sys.stderr, obj.name, "all-parents", all_parents
-                obj.parent = all_parents[-1]
-                assert obj.parent.level < obj.level
-
+            elif n.parent:
+                print '"%s" -> "%s";' % (n.parent.name, n.name)
+            #if n.sibling:
+            #    print '"%s" -> "%s";' % (n.name, n.sibling.name)
 
 runner = Runner()
 m.Setup(runner)
 print >>sys.stderr, runner.olist
-runner.fix_parents()
 print "digraph {"
 print "fontname=\"Courier\";"
 runner.finish()
