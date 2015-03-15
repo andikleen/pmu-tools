@@ -100,7 +100,28 @@ checked out (but it does not need to be the current directory)
 They automatically search for other modules and data files
 in the same directory the script was located in.
 
+You can set the PATH to include the repository to run the tools
+from other directories:
+
+	export PATH=/path/to/pmu-tools:$PATH
+
+# What tool to use for what?
+
+You want to:
+
+- understand CPU bottlenecks on the high-level: use toplev.
+- display toplev output graphically: use tl-server or toplev --graph
+- know what CPU events to run, but want to use symbolic names: use ocperf.
+- measure interconnect/caches/memory/power management on Xeon E5+: use ucevent
+- Use perf events from a C program: use jevents, self, addr
+- Query CPU topology or disable HyperThreading: use cputop
+- Change Model Specific Registers: use msr
+- Change PCI config space: use PCI
+
+The other tools are for more obscure usages.
+
 # Dependencies
+
 All tools (except for parser/) should work with a python 2.7
 standard installation.  All need a reasonably recent perf (RHEL5 is too old)
 ocperf.py should work with python 2.6, or likely 2.5 when the json
