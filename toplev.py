@@ -246,6 +246,7 @@ p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true
 p.add_argument('--raw', help="Print raw values", action='store_true')
 p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
+p.add_argument('--pid', '-p', help=argparse.SUPPRESS)
 p.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
 p.add_argument('--all', help="Measure everything available", action='store_true')
 p.add_argument('--frequency', help="Measure frequency", action='store_true')
@@ -307,6 +308,8 @@ if args.user and args.kernel:
 print_group = args.print_group
 if args.cpu:
     rest = ["--cpu", args.cpu] + rest
+if args.pid:
+    rest = ["--pid", args.pid] + rest
 
 MAX_ERROR = 0.05
 
@@ -1345,6 +1348,8 @@ if smt_mode:
         sys.exit("Hyper Threading more not compatible with --per-core")
     if args.cpu:
         print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
+    if args.pid:
+        sys.exit("-p/--pid mode not compatible with SMT. Use sleep in global mode.")
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1):
         print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
     if (cpu.cpu == "ivb" and
