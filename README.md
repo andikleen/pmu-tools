@@ -5,7 +5,6 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
-* toplev kernel workarounds are documented in [toplev kernel workarounds](https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support)
 * toplev can now automatically sample workloads with --run-sample
 * Added cputop utility to easily enable/disable hyper threading
 * toplev updated to TopDown 2.9:
