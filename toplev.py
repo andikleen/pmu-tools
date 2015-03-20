@@ -1322,6 +1322,10 @@ def setup_with_metrics(p, runner):
     p.Setup(runner)
     args.metrics = old_metrics
 
+if True:
+    import perf_metrics
+    setup_with_metrics(perf_metrics, runner)
+
 if args.power and feat.supports_power:
     import power_metrics
     setup_with_metrics(power_metrics, runner)
