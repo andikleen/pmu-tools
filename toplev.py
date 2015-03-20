@@ -743,7 +743,7 @@ def group_number(num, events):
     gnums = map(group_nums, events)
     return list(flatten(gnums))[num]
 
-def dump_raw(interval, title, event, val, index, events):
+def dump_raw(interval, title, event, val, index, events, stddev, multiplex):
     if event in fixed_to_name:
         ename = fixed_to_name[event].lower()
     else:
@@ -752,7 +752,7 @@ def dump_raw(interval, title, event, val, index, events):
     if args.raw:
         print "raw", title, "event", event, "val", val, "ename", ename, "index", index, "group", gnum
     if args.valcsv:
-        runner.valcsv.writerow((interval, title, gnum, ename, val, event, index))
+	runner.valcsv.writerow((interval, title, gnum, ename, val, event, index, stddev, multiplex))
 
 perf_fields = [
     r"[0-9.]+",
@@ -806,25 +806,41 @@ def do_execute(runner, events, out, rest, res, rev, env):
         # -a -A cpu,count,event,...
         # count,event,...
         if is_event(n, 1):
-            title, count, event = "", n[0], n[1]
+	    title, count, event, off = "", n[0], n[1], 2
         elif is_event(n, 3):
-            title, count, event = n[0], n[2], n[3]
+	    title, count, event, off = n[0], n[2], n[3], 4
         elif is_event(n, 2):
-            title, count, event = n[0], n[1], n[2]
+	    title, count, event, off = n[0], n[1], n[2], 3
         else:
             print "unparseable perf output"
             sys.stdout.write(l)
             continue
+
+	multiplex = 100.
         event = event.rstrip()
         if re.match(r"[0-9]+", count):
             val = float(count)
         elif count.startswith("<"):
             account[event].errors[count.replace("<","").replace(">","")] += 1
+	    multiplex = 0.
             val = 0
         else:
             print "unparseable perf count"
             sys.stdout.write(l)
             continue
+
+	# post fixes:
+	# ,xxx%    -> -rXXX stddev
+	stddev = 0.
+	if len(n) > off and n[off].endswith("%"):
+	    stddev = (float(n[off].replace("%", "")) / 100.) * count
+	    off += 1
+
+	# ,xxx,yyy -> multiplexing in newer perf
+	if len(n) > off + 1:
+	    multiplex = float(n[off + 1])
+	    off += 2
+
         account[event].total += 1
 
         # power events are only output once for every socket. duplicate them
@@ -845,7 +861,7 @@ def do_execute(runner, events, out, rest, res, rev, env):
                      event,
                      val,
                      len(res[title]) - len(init_res[title]) - 1,
-                     events)
+		     events, stddev, multiplex)
     inf.close()
     if 'interval-ns' not in env:
             set_interval(env, (time.time() - start) * 1E+9)
@@ -1015,7 +1031,7 @@ class Runner:
         self.stat = ComputeStat()
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv)
-            self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value", "Perf-event", "Index"))
+	    self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value", "Perf-event", "Index", "STDEV", "MULTI"))
 
     def do_run(self, obj):
         obj.res = None
