@@ -915,7 +915,11 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff = -1):
         if cpuoff == -1:
             return sum(res[index])
         else:
-            return res[index][cpuoff]
+            try:
+                return res[index][cpuoff]
+            except IndexError:
+                print >>sys.stderr, "warning: Partial CPU thread data from perf"
+                return 0
     return res[index]
 
 def add_key(k, x, y):
