@@ -1347,9 +1347,9 @@ if args.frequency:
 if smt_mode:
     print "Running in HyperThreading mode. Will measure complete system."
     if "--per-socket" in rest:
-        sys.exit("Hyper Threading more not compatible with --per-socket")
+        sys.exit("Hyper Threading mode not compatible with --per-socket")
     if "--per-core" in rest:
-        sys.exit("Hyper Threading more not compatible with --per-core")
+        sys.exit("Hyper Threading mode not compatible with --per-core")
     if args.cpu:
         print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
     if args.pid:
