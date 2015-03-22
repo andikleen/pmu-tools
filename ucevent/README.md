@@ -429,11 +429,13 @@ Please contact linux-perf-users@vger.kernel.org
 
 # Other Projects providing uncore monitoring
 
-[Intel PCM](http://software.intel.com/en-us/articles/intel-performance-counter-monitor-a-better-way-to-measure-cpu-utilization) Runs from user space and provides a library.
+[Intel PCM](http://software.intel.com/en-us/articles/intel-performance-counter-monitor-a-better-way-to-measure-cpu-utilization) Provides high-level metrics. Runs from user space and provides a C++ library.
 
 [likwid](http://code.google.com/p/likwid/) 
 
 [libpfm4](http://perfmon2.sourceforge.net/) has another program to convert (non derived) uncore events to perf form.
+
+[Vtune](https://software.intel.com/en-us/intel-vtune-amplifier-xe) (not open source) provides GUI and command line interfaces (sep) for uncore metrics. It also supports CPUs that are not supported by ucevent, such as Atom and client systems.
 
 # Author
 
