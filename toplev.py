@@ -339,8 +339,6 @@ class Output:
             self.logf.write("%-6s" % (title))
         if area:
             hdr = "%-7s %s" % (area, hdr)
-        if remark == "above":
-            remark = ""
         hdroff = min(len(s), self.hdrlen)
         print >>self.logf, "%-*s %s %s" % (self.hdrlen - hdroff, hdr + ":", s, remark)
         if desc and not args.no_desc:
@@ -1217,7 +1215,7 @@ Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
                     if check_ratio(val):
                         out.ratio(obj.area if has(obj, 'area') else None,
                             full_name(obj), val, timestamp,
-                            "below" if not obj.thresh else "above",
+                            "below" if not obj.thresh else "",
                             desc + disclaimer,
                             title,
                             sample_desc(obj.sample) if obj.sample else "")
