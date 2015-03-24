@@ -332,7 +332,7 @@ class Output:
             hdr = "%-7s %s" % (area, hdr)
         self.hdrlen = min(max(len(hdr) + 1, self.hdrlen), 78)
 
-    def s(self, timestamp, title, area, hdr, s, remark, desc, sample):
+    def show(self, timestamp, title, area, hdr, s, remark, desc, sample):
         if timestamp:
             self.logf.write("%6.9f%s" % (timestamp, self.sep))
         if title:
@@ -348,23 +348,20 @@ class Output:
         if desc and sample and not args.no_desc:
             print >>self.logf, "\t" + "Sampling events: ", sample
 
-    def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, check, sample):
-        if not check or check_ratio(l):
-            if desc in self.printed_descs:
-                desc = ""
-            else:
-                self.printed_descs.add(desc)
-            self.s(timestamp, title, area, name, fmtnum(l), remark, desc, sample)
+    def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, sample):
+        if desc in self.printed_descs:
+            desc = ""
         else:
-            self.s(timestamp, title, area, name, fmtnum(0), "mismeasured", "", sample)
+            self.printed_descs.add(desc)
+        self.show(timestamp, title, area, name, fmtnum(l), remark, desc, sample)
 
-    def p(self, area, name, l, timestamp, remark, desc, title, sample):
+    def ratio(self, area, name, l, timestamp, remark, desc, title, sample):
         self.item(area, name, l, timestamp, remark, desc, title,
-                  lambda l: "%5s%%" % ("%2.2f" % (100.0 * l)), True, sample)
+                  lambda l: "%5s%%" % ("%2.2f" % (100.0 * l)), sample)
 
     def metric(self, area, name, l, timestamp, desc, title, unit):
         self.item(area, name, l, timestamp, unit, desc, title,
-                  lambda l: "%5s" % ("%3.2f" % (l)), False, "")
+                  lambda l: "%5s" % ("%3.2f" % (l)), "")
 
 def csv_writer(f, sep):
     return csv.writer(f, delimiter=sep)
@@ -374,7 +371,7 @@ class OutputCSV(Output):
         Output.__init__(self, logfile)
         self.writer = csv_writer(self.logf, sep)
 
-    def s(self, timestamp, title, area, hdr, s, remark, desc, sample):
+    def show(self, timestamp, title, area, hdr, s, remark, desc, sample):
         if args.no_desc:
             desc = ""
         desc = re.sub(r"\s+", " ", desc)
@@ -649,6 +646,8 @@ class ComputeStat:
         self.errcount = 0
         self.errors = set()
         self.prev_errors = set()
+        self.mismeasured = set()
+        self.prev_mismeasured = set()
 
     def referenced_check(self, res):
         referenced = self.referenced
@@ -671,6 +670,9 @@ class ComputeStat:
             self.errcount = 0
             self.prev_errors = self.errors
             self.errors = set()
+        if self.mismeasured and self.mismeasured > self.prev_mismeasured:
+            print "warning: Mismeasured:", " ".join(self.mismeasured)
+            self.prev_mismeasured = self.mismeasured
 
 def print_keys(runner, res, rev, out, interval, env):
     stat = runner.stat
@@ -1212,14 +1214,18 @@ Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
                             title,
                             metric_unit(obj))
                 else:
-                    out.p(obj.area if has(obj, 'area') else None,
-                        full_name(obj), val, timestamp,
-                        "below" if not obj.thresh else "above",
-                        desc + disclaimer,
-                        title,
-                        sample_desc(obj.sample) if obj.sample else "")
-		    if obj.thresh or args.verbose:
-			self.sample_obj.add(obj)
+                    if check_ratio(val):
+                        out.ratio(obj.area if has(obj, 'area') else None,
+                            full_name(obj), val, timestamp,
+                            "below" if not obj.thresh else "above",
+                            desc + disclaimer,
+                            title,
+                            sample_desc(obj.sample) if obj.sample else "")
+		        if obj.thresh or args.verbose:
+			    self.sample_obj.add(obj)
+                    else:
+                        obj.thresh = False
+                        stat.mismeasured.add(obj.name)
 
 def remove_pp(s):
     if s.endswith(":pp"):
