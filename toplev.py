@@ -1209,6 +1209,10 @@ class Runner:
                             lookup_res(res, rev, e, obj, env, level, stat.referenced))
             if not obj.res_map and not all([x in env for x in obj.evnum]):
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
+	    if not obj.metric and not check_ratio(obj.val):
+		obj.thresh = False
+		stat.mismeasured.add(obj.name)
+
         out.logf.flush()
 
         # step 2: propagate siblings
@@ -1240,19 +1244,15 @@ Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
                             desc + disclaimer,
                             title,
                             metric_unit(obj))
-                else:
-                    if check_ratio(val):
-                        out.ratio(obj.area if has(obj, 'area') else None,
+		elif check_ratio(val):
+		    out.ratio(obj.area if has(obj, 'area') else None,
                             full_name(obj), val, timestamp,
                             "below" if not obj.thresh else "",
                             desc + disclaimer,
                             title,
                             sample_desc(obj.sample) if obj.sample else "")
-		        if obj.thresh or args.verbose:
-			    self.sample_obj.add(obj)
-                    else:
-                        obj.thresh = False
-                        stat.mismeasured.add(obj.name)
+		    if obj.thresh or args.verbose:
+			self.sample_obj.add(obj)
 
 def remove_pp(s):
     if s.endswith(":pp"):
