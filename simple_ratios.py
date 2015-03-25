@@ -2,6 +2,8 @@
 # Simple 5 event top level model
 #
 
+print_error = lambda msg: False
+
 # Constants
 
 PipelineWidth = 4
@@ -95,36 +97,42 @@ class Metric_IPC:
     name = "IPC"
     desc = """
 Instructions Per Cycle"""
+    errcount = 0
 
     def compute(self, EV):
         try:
             self.val = IPC(EV, 0)
         except ZeroDivisionError:
-            print "IPC zero division"
+            print_error("IPC zero division")
+            self.errcount += 1
             self.val = 0
 
 class Metric_UPI:
     name = "UPI"
     desc = """
 Uops Per Instruction"""
+    errcount = 0
 
     def compute(self, EV):
         try:
             self.val = UPI(EV, 0)
         except ZeroDivisionError:
-            print "UPI zero division"
+            print_error("UPI zero division")
+            self.errcount += 1
             self.val = 0
 
 class Metric_TurboUtilization:
     name = "TurboUtilization"
     desc = """
 Average Frequency Utilization relative nominal frequency"""
+    errcount = 0
 
     def compute(self, EV):
         try:
             self.val = TurboUtilization(EV, 0)
         except ZeroDivisionError:
-            print "TurboUtilization zero division"
+            print_error("TurboUtilization zero division")
+            self.errcount += 1
             self.val = 0
 
 class Setup:

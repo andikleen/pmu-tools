@@ -1362,6 +1362,7 @@ else:
     if detailed_model:
         print >>sys.stderr, "Sorry, no detailed model for your CPU. Only Level 1 supported."
     import simple_ratios
+    simple_ratios.print_error = pe
     simple_ratios.Setup(runner)
 
 def setup_with_metrics(p, runner):
