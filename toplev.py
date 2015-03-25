@@ -261,6 +261,7 @@ p.add_argument('--stats', help='Show statistics on what events counted', action=
 p.add_argument('--power', help='Display power metrics', action='store_true')
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
+p.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
 args, rest = p.parse_known_args()
 
 if args.version:
@@ -672,6 +673,27 @@ class ComputeStat:
             print "warning: Mismeasured:", " ".join(self.mismeasured)
             self.prev_mismeasured = self.mismeasured
 
+def display_core(cpunum):
+    if not args.core:
+        return True
+    cpunum = int(cpunum)
+    for match in args.core.split(","):
+        core_keys = filter(display_core, core_keys)
+        m = re.match(r'(?P<socket>S\d+)?-?(?P<core>C\d+)?-?(?P<thread>T\d+)?', match, re.I)
+        if not m:
+            sys.exit("Bad core match %s" % match)
+
+        def matching(name, mapping):
+            return mapping[cpunum] == int(m.group(name)[1:])
+        if m.group('socket') and not matching('socket', cpu.cputosocket):
+            continue
+        if m.group('core') and cpu.cputocore[cpunum][1] != int(m.group('core')[1:]):
+            continue
+        if m.group('thread') and not matching('thread', cpu.cputothread):
+            continue
+        return True
+    return False
+
 def print_keys(runner, res, rev, out, interval, env):
     stat = runner.stat
     if smt_mode:
@@ -682,13 +704,19 @@ def print_keys(runner, res, rev, out, interval, env):
         for core, citer in itertools.groupby(core_keys, key_to_coreid):
             cpus = list(citer)
             r = list(itertools.izip(*[res[j] for j in cpus]))
+            if not any(map(display_core, cpus)):
+                continue
             runner.print_res(r, rev[cpus[0]], out, interval, core_fmt(core), env, Runner.SMT_yes, stat)
 
         # print the non SMT nodes
         for j in sorted(res.keys()):
+            if not display_core(j):
+                continue
             runner.print_res(res[j], rev[j], out, interval, thread_fmt(j), env, Runner.SMT_no, stat)
     else:
         for j in sorted(res.keys()):
+            if not display_core(j):
+                continue
             runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare, stat)
     stat.referenced_check(res)
     stat.compute_errors()
