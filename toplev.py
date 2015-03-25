@@ -32,6 +32,7 @@ known_cpus = (
     ("hsx", (63, )),
     ("slm", (55, 77)),
     ("bdw", (61, )),
+    ("simple", ()),
 )
 
 tsx_cpus = ("hsw", "hsx", "bdw")

@@ -48,6 +48,7 @@ EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -g --raw -v --debug --stats
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py --no-desc --stats -d $ALL --kernel --valcsv val.csv --no-multiplex $LOAD | tee log
 grep :k log
 grep /k log
+EVENTMAP=${cpus[ivb]} FORCECPU=simple $WRAP ./toplev.py --no-desc -l1 $LOAD
 
 # test L1 uses a single group
 onegroup() {
