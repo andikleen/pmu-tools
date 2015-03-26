@@ -263,7 +263,7 @@ def extra_set(e):
 def merge_extra(a, b):
     m = a | b
     if 'ppp' in m:
-        m = m - {'p', 'pp'}
+        m = m - set(['p', 'pp'])
     if 'pp' in m:
         m = m - {'p'}
     m = m - {':'}
