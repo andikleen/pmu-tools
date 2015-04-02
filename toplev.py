@@ -429,6 +429,7 @@ class CPU:
         self.cputothread = {}
         self.sockettocpus = defaultdict(list)
         self.cputosocket = {}
+        self.allcpus = []
         with open("/proc/cpuinfo", "r") as f:
             ok = 0
             for l in f:
@@ -438,6 +439,7 @@ class CPU:
                 if n[0] == 'processor':
                     ok += 1
                     cpunum = int(n[2])
+                    self.allcpus.append(cpunum)
                 elif (n[0], n[2]) == ("vendor_id", "GenuineIntel") and ok == 0:
                     ok += 1
                 elif (len(n) > 3 and
@@ -675,11 +677,7 @@ class ComputeStat:
             self.prev_mismeasured = self.mismeasured
 
 def display_core(cpunum):
-    if not args.core:
-        return True
-    cpunum = int(cpunum)
     for match in args.core.split(","):
-        core_keys = filter(display_core, core_keys)
         m = re.match(r'(?P<socket>S\d+)?-?(?P<core>C\d+)?-?(?P<thread>T\d+)?', match, re.I)
         if not m:
             sys.exit("Bad core match %s" % match)
@@ -702,8 +700,6 @@ def print_keys(runner, res, rev, out, interval, env):
         # this is needed for getting the thresholds correct when
         # a SMT node depends on a non SMT node
         for j in sorted(res.keys()):
-            if not display_core(j):
-                continue
             runner.compute(res[j], rev[j], env, not_smt_node, stat)
 
         # collect counts from all threads of cores as lists
@@ -713,20 +709,14 @@ def print_keys(runner, res, rev, out, interval, env):
         for core, citer in itertools.groupby(core_keys, key_to_coreid):
             cpus = list(citer)
             r = list(itertools.izip(*[res[j] for j in cpus]))
-            if not any(map(display_core, cpus)):
-                continue
             runner.compute(r, rev[cpus[0]], env, smt_node, stat)
             runner.print_res(out, interval, core_fmt(core), smt_node)
 
         # print the non SMT nodes
         for j in sorted(res.keys()):
-            if not display_core(j):
-                continue
             runner.print_res(out, interval, thread_fmt(j), not_smt_node)
     else:
         for j in sorted(res.keys()):
-            if not display_core(j):
-                continue
             runner.compute(res[j], rev[j], env, lambda obj: True, stat)
             runner.print_res(out, interval, j, lambda obj: True)
     stat.referenced_check(res)
@@ -1433,6 +1423,9 @@ if smt_mode:
         rest = ["-a"] + rest
     if "-A" not in rest:
         rest = ["-A"] + rest
+
+if args.core:
+    rest = ["-C", ",".join(["%d" % x for x in cpu.allcpus if display_core(x)])] + rest
 
 print "Using level %d." % (args.level),
 if not args.level and cpu.cpu != "slm":
