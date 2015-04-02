@@ -698,6 +698,14 @@ def display_core(cpunum):
 def print_keys(runner, res, rev, out, interval, env):
     stat = runner.stat
     if smt_mode:
+        # compute non SMT nodes, but don't print yet
+        # this is needed for getting the thresholds correct when
+        # a SMT node depends on a non SMT node
+        for j in sorted(res.keys()):
+            if not display_core(j):
+                continue
+            runner.compute(res[j], rev[j], env, Runner.SMT_no, stat)
+
         # collect counts from all threads of cores as lists
         # this way the model can access all threads individually
         # print the SMT aware nodes
@@ -707,18 +715,20 @@ def print_keys(runner, res, rev, out, interval, env):
             r = list(itertools.izip(*[res[j] for j in cpus]))
             if not any(map(display_core, cpus)):
                 continue
-            runner.print_res(r, rev[cpus[0]], out, interval, core_fmt(core), env, Runner.SMT_yes, stat)
+            runner.compute(r, rev[cpus[0]], env, Runner.SMT_yes, stat)
+            runner.print_res(out, interval, core_fmt(core), Runner.SMT_yes)
 
         # print the non SMT nodes
         for j in sorted(res.keys()):
             if not display_core(j):
                 continue
-            runner.print_res(res[j], rev[j], out, interval, thread_fmt(j), env, Runner.SMT_no, stat)
+            runner.print_res(out, interval, thread_fmt(j), Runner.SMT_no)
     else:
         for j in sorted(res.keys()):
             if not display_core(j):
                 continue
-            runner.print_res(res[j], rev[j], out, interval, j, env, Runner.SMT_dontcare, stat)
+            runner.compute(res[j], rev[j], env, Runner.SMT_dontcare, stat)
+            runner.print_res(out, interval, j, Runner.SMT_dontcare)
     stat.referenced_check(res)
     stat.compute_errors()
 
@@ -1200,15 +1210,17 @@ class Runner:
                 len(self.olist),
                 self.missed)
 
-    def print_res(self, res, rev, out, timestamp, title, env, smt, stat):
+    def compute(self, res, rev, env, smt, stat):
         if len(res) == 0:
             print "Nothing measured?"
             return
 
         # step 1: compute
         for obj in self.olist:
-            out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
             obj.errcount = 0
+
+            if smt_no_match(smt, obj):
+                continue
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, stat.referenced))
             if not obj.res_map and not all([x in env for x in obj.evnum]):
@@ -1217,8 +1229,15 @@ class Runner:
 		obj.thresh = False
                 if not smt_no_match(smt, obj):
 		    stat.mismeasured.add(obj.name)
+            if has(obj, 'errcount') and obj.errcount > 0:
+                stat.errors.add(obj.name)
+                stat.errcount += obj.errcount
 
+    def print_res(self, out, timestamp, title, smt):
         out.logf.flush()
+
+        for obj in self.olist:
+            out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
 
         # step 2: propagate siblings
         for obj in self.olist:
@@ -1233,9 +1252,6 @@ class Runner:
                     val = 0.0
                 if smt_no_match(smt, obj):
                     continue
-                if has(obj, 'errcount') and obj.errcount > 0:
-                    stat.errors.add(obj.name)
-                    stat.errcount += obj.errcount
                 disclaimer = ""
                 if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht:
                     disclaimer = """
