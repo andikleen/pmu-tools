@@ -704,7 +704,7 @@ def print_keys(runner, res, rev, out, interval, env):
         for j in sorted(res.keys()):
             if not display_core(j):
                 continue
-            runner.compute(res[j], rev[j], env, Runner.SMT_no, stat)
+            runner.compute(res[j], rev[j], env, not_smt_node, stat)
 
         # collect counts from all threads of cores as lists
         # this way the model can access all threads individually
@@ -715,20 +715,20 @@ def print_keys(runner, res, rev, out, interval, env):
             r = list(itertools.izip(*[res[j] for j in cpus]))
             if not any(map(display_core, cpus)):
                 continue
-            runner.compute(r, rev[cpus[0]], env, Runner.SMT_yes, stat)
-            runner.print_res(out, interval, core_fmt(core), Runner.SMT_yes)
+            runner.compute(r, rev[cpus[0]], env, smt_node, stat)
+            runner.print_res(out, interval, core_fmt(core), smt_node)
 
         # print the non SMT nodes
         for j in sorted(res.keys()):
             if not display_core(j):
                 continue
-            runner.print_res(out, interval, thread_fmt(j), Runner.SMT_no)
+            runner.print_res(out, interval, thread_fmt(j), not_smt_node)
     else:
         for j in sorted(res.keys()):
             if not display_core(j):
                 continue
-            runner.compute(res[j], rev[j], env, Runner.SMT_dontcare, stat)
-            runner.print_res(out, interval, j, Runner.SMT_dontcare)
+            runner.compute(res[j], rev[j], env, lambda obj: True, stat)
+            runner.print_res(out, interval, j, lambda obj: True)
     stat.referenced_check(res)
     stat.compute_errors()
 
@@ -1044,6 +1044,9 @@ def full_name(obj):
 def smt_node(obj):
     return has(obj, 'domain') and obj.domain in smt_domains
 
+def not_smt_node(obj):
+    return not smt_node(obj)
+
 def count(f, l):
     return len(filter(f, l))
 
@@ -1054,14 +1057,8 @@ def metric_unit(obj):
         return obj.domain
     return "Metric"
 
-def smt_no_match(smt, obj):
-    return (smt != Runner.SMT_dontcare and
-                (Runner.SMT_yes if smt_node(obj) else Runner.SMT_no) != smt)
-
 class Runner:
     """Schedule measurements of event groups. Try to run multiple in parallel."""
-
-    SMT_yes, SMT_no, SMT_dontcare = range(3)
 
     def __init__(self, max_level):
         self.evnum = [] # flat global list
@@ -1210,7 +1207,7 @@ class Runner:
                 len(self.olist),
                 self.missed)
 
-    def compute(self, res, rev, env, smt, stat):
+    def compute(self, res, rev, env, match, stat):
         if len(res) == 0:
             print "Nothing measured?"
             return
@@ -1219,7 +1216,7 @@ class Runner:
         for obj in self.olist:
             obj.errcount = 0
 
-            if smt_no_match(smt, obj):
+            if not match(obj):
                 continue
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, stat.referenced))
@@ -1227,13 +1224,12 @@ class Runner:
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
 	    if not obj.metric and not check_ratio(obj.val):
 		obj.thresh = False
-                if not smt_no_match(smt, obj):
-		    stat.mismeasured.add(obj.name)
+		stat.mismeasured.add(obj.name)
             if has(obj, 'errcount') and obj.errcount > 0:
                 stat.errors.add(obj.name)
                 stat.errcount += obj.errcount
 
-    def print_res(self, out, timestamp, title, smt):
+    def print_res(self, out, timestamp, title, match):
         out.logf.flush()
 
         for obj in self.olist:
@@ -1250,7 +1246,7 @@ class Runner:
                 val = obj.val
                 if not obj.thresh and not dont_hide:
                     val = 0.0
-                if smt_no_match(smt, obj):
+                if not match(obj):
                     continue
                 disclaimer = ""
                 if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht:
