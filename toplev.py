@@ -230,7 +230,7 @@ p.add_argument('--kernel', help='Only measure kernel code', action='store_true')
 p.add_argument('--user', help='Only measure user code', action='store_true')
 p.add_argument('--print-group', '-g', help='Print event group assignments',
                action='store_true')
-p.add_argument('--no-desc', help='Don\'t print event descriptions', action='store_true')
+p.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
 p.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
 p.add_argument('--interval', '-I', help='Enable interval mode with ms interval',
                type=int)
