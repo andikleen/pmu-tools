@@ -1044,6 +1044,10 @@ def metric_unit(obj):
         return obj.domain
     return "Metric"
 
+def smt_no_match(smt, obj):
+    return (smt != Runner.SMT_dontcare and
+                (Runner.SMT_yes if smt_node(obj) else Runner.SMT_no) != smt)
+
 class Runner:
     """Schedule measurements of event groups. Try to run multiple in parallel."""
 
@@ -1211,7 +1215,8 @@ class Runner:
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
 	    if not obj.metric and not check_ratio(obj.val):
 		obj.thresh = False
-		stat.mismeasured.add(obj.name)
+                if not smt_no_match(smt, obj):
+		    stat.mismeasured.add(obj.name)
 
         out.logf.flush()
 
@@ -1226,8 +1231,7 @@ class Runner:
                 val = obj.val
                 if not obj.thresh and not dont_hide:
                     val = 0.0
-                if (smt != Runner.SMT_dontcare and
-                        (Runner.SMT_yes if smt_node(obj) else Runner.SMT_no) != smt):
+                if smt_no_match(smt, obj):
                     continue
                 if has(obj, 'errcount') and obj.errcount > 0:
                     stat.errors.add(obj.name)
