@@ -254,6 +254,8 @@ p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
 p.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
+p.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
+                action='store_true')
 args, rest = p.parse_known_args()
 
 if args.version:
@@ -1239,6 +1241,8 @@ class Runner:
 Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
                 desc = obj.desc[1:].replace("\n", "\n\t")
+                if not args.long_desc and "." in desc:
+                    desc = desc[:desc.find(".") + 1]
                 if obj.metric:
                     out.metric(obj.area if has(obj, 'area') else None,
                             obj.name, val, timestamp,
