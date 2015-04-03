@@ -5,6 +5,10 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now defaults to measuring the whole system even on non SMT. The old mode
+  can be still enabled with --single-thread. It should be only used on single threads
+  and when the other thread is idle on SMT. In addition there is a new --core option
+  to select the CPUs to measure.
 * toplev can now automatically sample workloads with --run-sample
 * Added cputop utility to easily enable/disable hyper threading
 * toplev updated to TopDown 2.9:

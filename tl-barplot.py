@@ -102,6 +102,8 @@ for l in tldata.level_order(data):
     set_title(ax, l)
     r = [ratios[x] for x in non_null]
 
+    print "adding", r, non_null
+
     if gen_level.is_metric(non_null[0]):
         for j, name in zip(r, non_null):
             stack = ax.plot(timestamps, j, label=name)
@@ -114,6 +116,7 @@ for l in tldata.level_order(data):
         if not math.isnan(low) and not math.isnan(high):
             ax.yaxis.set_ticks([low, math.trunc(((high - low)/2.0)/100.)*100., high])
     else:
+        print "plot", r
         stack = ax.stackplot(timestamps, *r, colors=all_colors)
         ax.set_ylim(0, 100)
         ax.yaxis.set_ticks([0., 50., 100.])
