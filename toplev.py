@@ -168,25 +168,30 @@ p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
 description='''
 Estimate on which part of the CPU pipeline a workload bottlenecks using the TopDown model.
 The bottlenecks are expressed as a tree with different levels.
-
-Requires an Intel Sandy, Ivy Bridge, Haswell CPU.
-It works best on Ivy Bridge currently.
+Requires a modern Intel CPU.
 
 Examples:
+toplev.py -l2 program
+measure whole system in level 2 while program is running
 
-./toplev.py -l2 program
-measure program in level 2
+toplev.py -l1 --single-thread program
+measure single threaded program. system must be idle.
 
-./toplev.py --all -a sleep X
-measure whole system for X seconds
+toplev.py -l3 --no-desc -I 100 -x, sleep X
+measure whole system for X seconds every 100ms, outputting in CSV format.
 
-./toplev.py -o logfile.csv -x, -p PID
-measure pid PID, outputting in CSV format
+toplev.py --all --core C0 taskset -c 0,1 program
+Measure program running on core 0 with all nodes and metrics enables
 ''', epilog='''
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplev can be used.
 
 Some caveats:
+
+toplev defaults to measuring the full system and show data
+for all CPUs. Use taskset to limit the workload to known CPUs if needed.
+In some cases (idle system, single threaded workload) --single-thread
+can also be used.
 
 The lower levels of the measurement tree are less reliable
 than the higher levels.  They also rely on counter multi-plexing,
@@ -197,28 +202,13 @@ measurement errors with non steady state workloads
 in higher levels are less accurate and it works best with programs that primarily
 do the same thing over and over)
 
-In this case it's recommended to measure the program only after
-the startup phase by profiling globally or attaching later.
-level 1 or running without -d is generally the most reliable.
-
 If the program is very reproducible -- such as a simple kernel --
 it is also possible to use --no-multiplex. In this case the
 workload is rerun multiple times until all data is collected.
 Do not use together with sleep.
 
-One of the events (even used by level 1) requires a recent enough
-kernel that understands its counter constraints.  3.10+ is safe.
-
-Various older kernels (such as 2.6.32) can not schedule all groups
-used by toplev correctly. In this case use --no-group (may cause
-additional measurement errors)
-
-In Hyper Threading mode toplev defaults to measuring the whole
-system.
-
-Recent kernels do not allow all events needed by level 3 or larger
-in Hyper Threading mode due to a bug workaround. If that is a problem
-please see the github site for a kernel patch.
+toplev needs a new enough perf tool and has specific requirements on
+the kernel. See http://github.com/andikleen/pmu-toolls/toplev-kernel-support
 
 Other CPUs can be forced with FORCECPU=name
 This usually requires setting the correct event map with EVENTMAP=...
@@ -263,7 +253,7 @@ p.add_argument('--power', help='Display power metrics', action='store_true')
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
-p.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload run single threaded. In SMT mode other thread must be idle.', action='store_true')
+p.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
 args, rest = p.parse_known_args()
 
 if args.version:
