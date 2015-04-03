@@ -25,6 +25,7 @@ int main() {
 EOL
 
 LOAD="-- gcc -o /dev/null hello.c"
+LOAD0="-- taskset -c 0 gcc -o /dev/null hello.c"
 
 set -o pipefail
 
@@ -43,6 +44,8 @@ DCPU=hsw
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
 DIRECT_MSR=1 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 $LOAD
+EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 --single-thread $LOAD
+EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 --core S0-C0-T0 $LOAD0
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -v -d -l4 $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -x, -v -d -l4 $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc --metrics -x, -v -d -l4 $LOAD
@@ -101,9 +104,9 @@ grep /u log
 
 # need new perf
 # test other perf output formats
-EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a --per-core sleep 1
-EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a --per-socket sleep 1
-EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -d --no-desc -l4 -I 1000 -a -A sleep 1
+#EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a --per-core sleep 1
+#EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -d -l4 -I 1000 -a --per-socket sleep 1
+#EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -d --no-desc -l4 -I 1000 -a -A sleep 1
 
 $WRAP ./toplev.py -o /dev/null --no-desc -v -l5 --run-sample $LOAD
 for cpu in $ALLCPUS ; do

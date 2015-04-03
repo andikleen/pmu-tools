@@ -263,6 +263,7 @@ p.add_argument('--power', help='Display power metrics', action='store_true')
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
+p.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload run single threaded. In SMT mode other thread must be idle.', action='store_true')
 args, rest = p.parse_known_args()
 
 if args.version:
@@ -1323,6 +1324,9 @@ pe = lambda x: None
 if args.debug:
     pe = lambda x: sys.stdout.write(x + "\n")
 
+if args.single_thread:
+    cpu.ht = False
+
 if cpu.cpu == "ivb":
     import ivb_client_ratios
     ivb_client_ratios.smt_enabled = cpu.ht
@@ -1408,25 +1412,29 @@ if args.frequency:
     frequency.SetupCPU(runner, cpu)
     args.metrics = old_metrics
 
-if smt_mode:
-    print "Running in HyperThreading mode. Will measure complete system."
-    if "--per-socket" in rest:
-        sys.exit("Hyper Threading mode not compatible with --per-socket")
-    if "--per-core" in rest:
-        sys.exit("Hyper Threading mode not compatible with --per-core")
-    if args.cpu:
-        print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
-    if args.pid:
-        sys.exit("-p/--pid mode not compatible with SMT. Use sleep in global mode.")
+if "--per-socket" in rest:
+    sys.exit("toplev not compatible with --per-socket")
+if "--per-core" in rest:
+    sys.exit("toplev not compatible with --per-core")
+
+if not args.single_thread:
+    print "Will measure complete system."
+    if smt_mode:
+        if args.cpu:
+            print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
+        if args.pid:
+            sys.exit("-p/--pid mode not compatible with SMT. Use sleep in global mode.")
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1):
         print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
-    if (cpu.cpu == "ivb" and
-        (kernel_version[0] == 3 and kernel_version[1] >= 10 and args.level >= 3)):
-        print >>sys.stderr, "Warning: kernel may need to be patched to schedule all events with level %d in HT mode" % (args.level)
+
     if "-a" not in rest:
         rest = ["-a"] + rest
     if "-A" not in rest:
         rest = ["-A"] + rest
+
+if (cpu.cpu == "ivb" and
+    (kernel_version[0] == 3 and kernel_version[1] >= 10 and args.level >= 3)):
+    print >>sys.stderr, "Warning: kernel may need to be patched to schedule all events with level %d in HT mode" % (args.level)
 
 if args.core:
     rest = ["-C", ",".join(["%d" % x for x in cpu.allcpus if display_core(x)])] + rest
