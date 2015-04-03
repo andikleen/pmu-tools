@@ -714,9 +714,13 @@ def print_keys(runner, res, rev, out, interval, env):
 
         # print the non SMT nodes
         for j in sorted(res.keys()):
+            if args.core and not display_core(int(j)):
+                continue
             runner.print_res(out, interval, thread_fmt(j), not_smt_node)
     else:
         for j in sorted(res.keys()):
+            if args.core and not display_core(int(j)):
+                continue
             runner.compute(res[j], rev[j], env, lambda obj: True, stat)
             runner.print_res(out, interval, j, lambda obj: True)
     stat.referenced_check(res)
