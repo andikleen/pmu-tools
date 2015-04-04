@@ -696,7 +696,7 @@ class ComputeStat:
             print "warning: Mismeasured:", " ".join(self.mismeasured)
             self.prev_mismeasured = self.mismeasured
 
-def display_core(cpunum):
+def display_core(cpunum, ignore_thread=False):
     for match in args.core.split(","):
         m = re.match(r'(?P<socket>S\d+)?-?(?P<core>C\d+)?-?(?P<thread>T\d+)?', match, re.I)
         if not m:
@@ -708,7 +708,7 @@ def display_core(cpunum):
             continue
         if m.group('core') and cpu.cputocore[cpunum][1] != int(m.group('core')[1:]):
             continue
-        if m.group('thread') and not matching('thread', cpu.cputothread):
+	if not ignore_thread and m.group('thread') and not matching('thread', cpu.cputothread):
             continue
         return True
     return False
@@ -739,7 +739,7 @@ def print_keys(runner, res, rev, out, interval, env):
             runner.print_res(out, interval, thread_fmt(j), not_smt_node)
     else:
         for j in sorted(res.keys()):
-            if args.core and not display_core(int(j)):
+	    if args.core and j != "" and not display_core(int(j)):
                 continue
             runner.compute(res[j], rev[j], env, lambda obj: True, stat)
             runner.print_res(out, interval, j, lambda obj: True)
@@ -898,12 +898,16 @@ def do_execute(runner, events, out, rest, res, rev, env):
 
         # power events are only output once for every socket. duplicate them
         # to all cpus in the socket to make the result lists match
-        if event.startswith("power") and title != "":
+	# unless we use -A ??
+        # also -C xxx causes them to be duplicated too, unless single thread
+	if event.startswith("power") and title != "" and (
+                not (args.core and not args.single_thread)):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
             for j in cpu.sockettocpus[socket]:
-                res["%d" % (j)].append(val)
-                rev["%d" % (j)].append(event)
+		if not args.core or display_core(j, True):
+		    res["%d" % (j)].append(val)
+		    rev["%d" % (j)].append(event)
         else:
             res[title].append(val)
             rev[title].append(event)
@@ -1482,7 +1486,7 @@ if (cpu.cpu == "ivb" and
     print >>sys.stderr, "Warning: kernel may need to be patched to schedule all events with level %d in HT mode" % (args.level)
 
 if args.core:
-    rest = ["-C", ",".join(["%d" % x for x in cpu.allcpus if display_core(x)])] + rest
+    rest = ["-C", ",".join(["%d" % x for x in cpu.allcpus if display_core(x, True)])] + rest
 
 print "Using level %d." % (args.level),
 if not args.level and cpu.cpu != "slm":
