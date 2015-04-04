@@ -1071,6 +1071,29 @@ def metric_unit(obj):
         return obj.domain
     return "Metric"
 
+# l list must be sorted by full_name
+# only check direct children, the rest are handled recursively
+def children_over(l, obj):
+    return any([o.thresh for o in itertools.takewhile(
+	lambda x: 'parent' in x.__dict__ and x.parent == obj, l)])
+
+def obj_desc(obj, rest):
+    # hide description if children are also printed
+    if not args.long_desc and children_over(rest, obj):
+	desc = ""
+    else:
+	desc = obj.desc[1:].replace("\n", "\n\t")
+
+    # by default limit to first sentence
+    if not args.long_desc and "." in desc:
+	desc = desc[:desc.find(".") + 1] + ".."
+
+    if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht and not args.single_thread:
+	desc += """
+Warning: Hyper Threading may lead to incorrect measurements for this node.
+Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
+    return desc
+
 class Runner:
     """Schedule measurements of event groups. Try to run multiple in parallel."""
 
@@ -1249,44 +1272,39 @@ class Runner:
                 stat.errors.add(obj.name)
                 stat.errcount += obj.errcount
 
+	# step 2: propagate siblings
+	for obj in self.olist:
+	    if obj.thresh and obj.sibling:
+		obj.sibling.thresh = True
+
     def print_res(self, out, timestamp, title, match):
         out.logf.flush()
 
+	# first compute column lengths
         for obj in self.olist:
             out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
 
-        # step 2: propagate siblings
-        for obj in self.olist:
-            if obj.thresh and obj.sibling:
-                obj.sibling.thresh = True
-
         # step 3: print
-        for obj in self.olist:
+	for i in range(0, len(self.olist)):
+	    obj = self.olist[i]
             if obj.thresh or print_all:
                 val = obj.val
                 if not obj.thresh and not dont_hide:
                     val = 0.0
                 if not match(obj):
                     continue
-                disclaimer = ""
-                if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht:
-                    disclaimer = """
-Warning: Hyper Threading may lead to incorrect measurements for this node.
-Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
-                desc = obj.desc[1:].replace("\n", "\n\t")
-                if not args.long_desc and "." in desc:
-                    desc = desc[:desc.find(".") + 1]
+		desc = obj_desc(obj, self.olist[1 + 1:])
                 if obj.metric:
                     out.metric(obj.area if has(obj, 'area') else None,
                             obj.name, val, timestamp,
-                            desc + disclaimer,
+			    desc,
                             title,
                             metric_unit(obj))
 		elif check_ratio(val):
 		    out.ratio(obj.area if has(obj, 'area') else None,
                             full_name(obj), val, timestamp,
                             "below" if not obj.thresh else "",
-                            desc + disclaimer,
+			    desc,
                             title,
                             sample_desc(obj.sample) if obj.sample else "")
 		    if obj.thresh or args.verbose:
