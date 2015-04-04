@@ -14,7 +14,7 @@ than the number of cores."""
     def compute(self, EV):
         try:
             # interval-ns is not a perf event, but handled by toplev internally.
-            self.val = EV("task-clock", 1) / EV("interval-ns", 1)
+            self.val = EV("task-clock", 1) / (EV("interval-ns", 1)/1e9)
         except ZeroDivisionError:
             self.val = 0
 
