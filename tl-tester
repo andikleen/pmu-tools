@@ -29,8 +29,8 @@ LOAD0="-- taskset -c 0 gcc -o /dev/null hello.c"
 
 set -o pipefail
 
-SMTCPUS="ivb ivt hsw hsx bdw"
-NOSMTCPUS="snb jkt slm"
+SMTCPUS="snb jkt ivb ivt hsw hsx bdw"
+NOSMTCPUS="slm simple"
 ALLCPUS="$SMTCPUS $NOSMTCPUS"
 
 if [ $(whoami) = root ] ; then
@@ -45,9 +45,10 @@ EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
 DIRECT_MSR=1 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 --single-thread $LOAD
-EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 --core S0-C0-T0 $LOAD0
+EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d --all --core S0-C0-T0 $LOAD0
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -v -d -l4 $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -x, -v -d -l4 $LOAD
+EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -r2 -l4 $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc --metrics -x, -v -d -l4 $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py -g --raw -v --debug --stats -d $ALL --kernel $LOAD | tee log
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc --stats -d $ALL --kernel --valcsv val.csv --no-multiplex $LOAD | tee log
