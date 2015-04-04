@@ -53,17 +53,37 @@ unsup_pebs = (
     ("MEM_LOAD_UOPS_RETIRED.L3_MISS:pp", (("hsw",), (3, 18), None)),
 )
 
-ivb_ht_39 = (("ivb", "ivt"), None, (3, 9))
-# if your kernel is patched to remove this use
+ivb_ht_39 = (("ivb", "ivt"), (4, 1), (3, 9))
+# uncomment if you removed commit 741a698f420c3
 #ivb_ht_39 = ((), None, None)
 
+# both kernel bugs and first time a core was supported
+# disable events if the kernel does not support them properly
+# this does not handle backports (override with --force-events)
 unsup_events = (
+    # commit 36bbb2f2988a29
     ("OFFCORE_RESPONSE.DEMAND_RFO.L3_HIT.HITM_OTHER_CORE", (("hsw", "hsx"), (3, 18), None)),
+    # commit 741a698f420c3 broke it, commit e979121b1b and later fixed it
     ("MEM_LOAD_UOPS_L*_HIT_RETIRED.*", ivb_ht_39),
     ("MEM_LOAD_UOPS_RETIRED.*", ivb_ht_39),
     ("MEM_LOAD_UOPS_L*_MISS_RETIRED.*", ivb_ht_39),
     ("MEM_UOPS_RETIRED.*", ivb_ht_39),
-)
+    # commit 91f1b70582c62576
+    ("CYCLE_ACTIVITY.*", (("bdw"), (4, 1), None)),
+    ("L1D_PEND_MISS.PENDING", (("bdw"), (4, 1), None)),
+    # commit 6113af14c8
+    ("CYCLE_ACTIVITY:CYCLES_LDM_PENDING", (("ivb", "ivt"), (3, 12), None)),
+    # commit f8378f52596477
+    ("CYCLE_ACTIVITY.*", (("snb", "jkt"), (3, 9), None)),
+    # commit 0499bd867bd17c (ULT) or commit 3a632cb229bfb18 (other)
+    # technically most haswells are 3.10, but ULT is 3.11
+    ("L1D_PEND_MISS.PENDING", (("hsw",), (3, 11), None)),
+    ("L1D_PEND_MISS.PENDING", (("hsx"), (3, 10), None)),
+    # commit c420f19b9cdc
+    ("CYCLE_ACTIVITY.*_L1D_PENDING", (("hsw", "hsx"), (4, 1), None)),
+    ("CYCLE_ACTIVITY.CYCLES_NO_EXECUTE", (("hsw", "hsx"), (4, 1), None)),
+    # commit 3a632cb229b
+    ("CYCLE_ACTIVITY.*", (("hsw", "hsx"), (3, 11), None)))
 
 ingroup_events = frozenset(fixed_to_num.keys())
 
@@ -103,18 +123,24 @@ class PerfFeatures:
             sys.exit("perf binary is too old. please upgrade")
         self.supports_power = works(perf + " list  | grep -q power/")
 
-def unsup_event(e, table):
+def kv_to_key(v):
+    return v[0] * 100 + v[1]
+
+def unsup_event(e, table, min_kernel=None):
+    if ":" in e:
+	e = e[:e.find(":")]
+    if args.force_events:
+	return False
     for j in table:
-        if fnmatch.fnmatch(e, j[0]):
+	if fnmatch.fnmatch(e, j[0]) and cpu.realcpu in j[1][0]:
             break
     else:
         return False
     v = j[1]
-    if cpu.realcpu not in v[0]:
-        return False
-    if v[1] and kernel_version[0] <= v[1][0] and kernel_version[1] < v[1][1]:
+    if v[1] and kv_to_key(kernel_version) < kv_to_key(v[1]):
+	min_kernel.append(v[1])
         return True
-    if v[2] and kernel_version[0] >= v[2][0] and kernel_version[1] >= v[2][1]:
+    if v[2] and kv_to_key(kernel_version) >= kv_to_key(v[2]) :
         return True
     return False
 
@@ -256,6 +282,7 @@ p.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. Al
 p.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
 p.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
                 action='store_true')
+p.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.', action='store_true')
 args, rest = p.parse_known_args()
 
 if args.version:
@@ -561,7 +588,7 @@ def mark_fixed(s):
     return s
 
 def pwrap(s, linelen=60, indent=""):
-    print indent + ("\n" + indent).join(textwrap.wrap(s, linelen))
+    print indent + ("\n" + indent).join(textwrap.wrap(s, linelen, break_long_words=False))
 
 def has(obj, name):
     return name in obj.__class__.__dict__
@@ -1134,19 +1161,25 @@ class Runner:
     def collect(self):
         bad_nodes = set()
         bad_events = set()
+	min_kernel = []
         for obj in self.olist:
             obj.evlevels = []
             obj.compute(lambda ev, level: ev_append(ev, level, obj))
             obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist)
             obj.nc = needed_counters(obj.evnum)
-            unsup = [x for x in obj.evlist if unsup_event(x, unsup_events)]
+	    unsup = [x for x in obj.evlist if unsup_event(x, unsup_events, min_kernel)]
             if any(unsup):
                 bad_nodes.add(obj)
                 bad_events |= set(unsup)
         if len(bad_nodes) > 0:
-            print "removing", " ".join([x.name for x in bad_nodes]), "for unsupported events in kernel:"
-            print "\n".join(bad_events)
+	    pwrap("warning: removing " +
+		   " ".join([x.name for x in bad_nodes]) +
+		   " due to unsupported events in kernel: " +
+		   " ".join(sorted(bad_events)), 80, "")
+	    if min_kernel:
+		print "Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0])
+	    print "Use --force-events to override (may result in wrong measurements)"
             self.olist = [x for x in self.olist if x not in bad_nodes]
 
     # fit events into available counters
@@ -1302,10 +1335,10 @@ if sysctl("kernel.nmi_watchdog") != 0:
 if cpu.cpu is None:
     sys.exit("Unsupported CPU model %d" % (cpu.model,))
 
-kernel_version = map(int, platform.release().split(".")[:2])
-if detailed_model:
-    if kernel_version[0] < 3 or (kernel_version[0] == 3 and kernel_version[1] < 10):
-        print >>sys.stderr, "Older kernel than 3.10. Events may not be correctly scheduled."
+kv = os.getenv("KERNEL_VERSION")
+if not kv:
+    kv = platform.release()
+kernel_version = map(int, kv.split(".")[:2])
 
 def ht_warning():
     if cpu.ht:
