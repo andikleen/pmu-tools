@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # convert perf stat -Ixxx -x, / toplev -Ixxx -x, output to normalized output
-# this version buffers all data in memory
+# this version buffers all data in memory, so it can use a lot of memory.
 # t1,ev1,num1
 # t1,ev2,num1
 # t2,ev1,num3
@@ -8,55 +8,91 @@
 # timestamp,ev1,ev2
 # t1,num1,num2
 # t2,num3,,
+# when the input has CPU generate separate lines for each CPU (may need post filtering)
 import sys
 import csv
 import re
 import copy
+import argparse
 
-if len(sys.argv) > 1:
-    inf = open(sys.argv[1], "r")
-else:
-    inf = sys.stdin
+ap = argparse.ArgumentParser(description=
+'Normalize CSV data from perf or toplev. All values are printed on a single line.')
+ap.add_argument('inputfile', type=argparse.FileType('r'), default=sys.stdin, nargs='?')
+ap.add_argument('--output', '-o', type=argparse.FileType('w'), default=sys.stdout, nargs='?')
+args = ap.parse_args()
 
 printed_header = False
 timestamp = None
 
 def is_number(n):
-    return re.match(r'[0-9.%]+', n)
+    return re.match(r'[0-9.]+%?', n) != None
+
+def is_cpu(n):
+    return re.match(r'(CPU)|(S\d+(-C\d+)?)', row[1]) != None
 
 events = dict()
 out = []
 times = []
-rc = csv.reader(inf)
+rc = csv.reader(args.inputfile)
+res = []
+writer = csv.writer(args.output)
+lastcpu = None
 for row in rc:
-    if len(row) < 3:
-        continue
-    # formats:
-    # 1.354075473,0,cpu-migrations                                  old perf
+    # 1.354075473,0,cpu-migrations                                  old perf w/o cpu
+    # 1.354075473,CPU0,0,cpu-migrations                             old perf w/ cpu
     # 0.799553738,137765150,,branches                               new perf with unit
-    # 0.200584389,FrontendBound.Branch Resteers,15.87%,above,"",    toplev
+    # 0.799553738,CPU1,137765150,,branches                        new perf with unit and cpu
+    # 0.200584389,FrontendBound.Branch Resteers,15.87%,above,"",    toplev single thread
+    # 0.200584389,0,FrontendBound.Branch Resteers,15.87%,above,"",  toplev w/ cpu
     ts = row[0].strip()
-    if is_number(row[2]):
-        ev, val = row[1], row[2]
-    elif is_number(row[1]):
-        if len(row) > 3:
-            val, ev = row[1], row[3]
+    off = 1
+    if len(row) == 3: # old perf
+        cpu, ev, val = None, row[2], row[1]
+    elif len(row) == 4: # new perf w/ unit or old perf w/ CPU
+        if is_cpu(row[1]):  # old
+            cpu, ev, val = row[1], row[3], row[2]
+        else: # new
+            cpu, ev, val = None, row[3], row[1]
+    elif len(row) == 5: # new perf w/ CPU
+        cpu, ev, val = row[1], row[4], row[2]
+    elif len(row) > 5: # toplev
+        if "%" in row[2]:
+            cpu, ev, val = None, row[1], row[2].replace("%", "")
         else:
-            val, ev = row[1], row[2]
+            cpu, ev, val = row[1], row[2], row[3].replace("%", "")
+
     ev = ev.strip()
-    if ts != timestamp:
+    if ts != timestamp or cpu != lastcpu:
         if timestamp:
             # delay in case we didn't see all headers
             # only need to do that for toplev, directly output for perf?
             # could limit buffering to save memory?
-            out.append(copy.deepcopy(events))
-            times.append(ts)
-            for j in events.keys():
-                events[j] = ""
+            out.append(res)
+            times.append((cpu, ts))
+            res = []
         timestamp = ts
-    events[ev] = val
+        lastcpu = cpu
+    if ev not in events:
+        events[ev] = len(res)
+    ind = events[ev]
+    if ind >= len(res):
+        res += [None] * ((ind + 1) - len(res))
+    # use a list for storage to keep memory requirements down
+    res[ind] = val
 
+def resolve(row, ind):
+    if ind >= len(row):
+        return ""
+    v = row[ind]
+    if v is None:
+        return ""
+    return v
 
-print ",".join(["Timestamp"] + events.keys())
-for row, ts in zip(out, times):
-    print ts + "," + ",".join([row[x] if x in row else "" for x in events.keys()])
+keys = sorted(events.keys())
+writer.writerow(["Timestamp"] + (["CPU"] if cpu is not None else []) + keys)
+for row, tc in zip(out, times):
+    cpunum, ts = tc
+    writer.writerow([ts] +
+                ([cpunum] if cpu is not None else []) +
+                ([resolve(row, events[x]) for x in keys]))
+
