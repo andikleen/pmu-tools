@@ -645,7 +645,7 @@ def is_event(l, n):
     return re.match(event_regexp(), l[n])
 
 def set_interval(env, d):
-    env['interval-ns'] = d * 1E+3
+    env['interval-ns'] = d * 1E+12
     if args.raw:
         print "interval-ns val", env['interval-ns']
 
