@@ -35,6 +35,7 @@ def is_cpu(n):
 events = dict()
 out = []
 times = []
+cpus = []
 rc = csv.reader(args.inputfile)
 res = []
 writer = csv.writer(args.output)
@@ -47,7 +48,6 @@ for row in rc:
     # 0.200584389,FrontendBound.Branch Resteers,15.87%,above,"",    toplev single thread
     # 0.200584389,0,FrontendBound.Branch Resteers,15.87%,above,"",  toplev w/ cpu
     ts = row[0].strip()
-    off = 1
     if len(row) == 3: # old perf
         cpu, ev, val = None, row[2], row[1]
     elif len(row) == 4: # new perf w/ unit or old perf w/ CPU
@@ -72,16 +72,18 @@ for row in rc:
             # only need to do that for toplev, directly output for perf?
             # could limit buffering to save memory?
             out.append(res)
-            times.append((cpu, ts))
+            times.append(ts)
+            cpus.append(cpu)
             res = []
         timestamp = ts
         lastcpu = cpu
+
+    # use a list for row storage to keep memory requirements down
     if ev not in events:
         events[ev] = len(res)
     ind = events[ev]
     if ind >= len(res):
         res += [None] * ((ind + 1) - len(res))
-    # use a list for storage to keep memory requirements down
     res[ind] = val
 
 def resolve(row, ind):
@@ -94,8 +96,7 @@ def resolve(row, ind):
 
 keys = sorted(events.keys())
 writer.writerow(["Timestamp"] + (["CPU"] if cpu is not None else []) + keys)
-for row, tc in zip(out, times):
-    cpunum, ts = tc
+for row, ts, cpunum in zip(out, times, cpus):
     writer.writerow([ts] +
                 ([cpunum] if cpu is not None else []) +
                 ([resolve(row, events[x]) for x in keys]))
