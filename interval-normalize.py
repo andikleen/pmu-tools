@@ -19,6 +19,8 @@ ap = argparse.ArgumentParser(description=
 'Normalize CSV data from perf or toplev. All values are printed on a single line.')
 ap.add_argument('inputfile', type=argparse.FileType('r'), default=sys.stdin, nargs='?')
 ap.add_argument('--output', '-o', type=argparse.FileType('w'), default=sys.stdout, nargs='?')
+ap.add_argument('--cpu', nargs='?', help='Only output for this cpu')
+ap.add_argument('--na', nargs='?', help='Value to use if data is not available', default="")
 args = ap.parse_args()
 
 printed_header = False
@@ -64,6 +66,8 @@ for row in rc:
     ev = ev.strip()
     if ts != timestamp or cpu != lastcpu:
         if timestamp:
+            if args.cpu and cpu != args.cpu:
+                continue
             # delay in case we didn't see all headers
             # only need to do that for toplev, directly output for perf?
             # could limit buffering to save memory?
@@ -82,10 +86,10 @@ for row in rc:
 
 def resolve(row, ind):
     if ind >= len(row):
-        return ""
+        return args.na
     v = row[ind]
     if v is None:
-        return ""
+        return args.na
     return v
 
 keys = sorted(events.keys())
