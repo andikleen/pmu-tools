@@ -1075,11 +1075,10 @@ def metric_unit(obj):
         return obj.domain
     return "Metric"
 
-# l list must be sorted by full_name
 # only check direct children, the rest are handled recursively
 def children_over(l, obj):
-    return any([o.thresh for o in itertools.takewhile(
-	lambda x: 'parent' in x.__dict__ and x.parent == obj, l)])
+    n = [o.thresh for o in l if 'parent' in o.__dict__ and o.parent == obj]
+    return any(n)
 
 def obj_desc(obj, rest):
     # hide description if children are also printed
