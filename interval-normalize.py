@@ -58,7 +58,7 @@ for row in rc:
     elif len(row) == 5: # new perf w/ CPU
         cpu, ev, val = row[1], row[4], row[2]
     elif len(row) > 5: # toplev
-        if "%" in row[2]:
+        if "." in row[2] and is_number(row[2]):
             cpu, ev, val = None, row[1], row[2].replace("%", "")
         else:
             cpu, ev, val = row[1], row[2], row[3].replace("%", "")
