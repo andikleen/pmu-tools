@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now has a (draft) [tutorial and manual](https://github.com/andikleen/pmu-tools/wiki/toplev-manual)
 * toplev now defaults to measuring the whole system even on non SMT. The old mode
   can be still enabled with --single-thread. It should be only used on single threads
   and when the other thread is idle on SMT. In addition there is a new --core option
@@ -23,31 +24,6 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
     - Improve sample event support. Now enable them by default.
     - --per-core and --per-socket support dropped with SMT
 * The new tl-serve.py tool displays toplev output in a web browser.
-* toplev now has a new --all option to enable all features.
-* toplev now has a simple TSX metrics model with --tsx on Haswell/Broadwell
-CPUs.
-* toplev now supports some Linux software metrics with --sw. The trace
-point based events may require running as root.
-* toplev now supports power measurements with --power.
-* toplev now supports a --no-multiplex mode to avoid multiplexing errors
-on very reproducible workloads.
-* toplev now supports a --no-group mode to work around bugs on older kernels
-(such as RHEL/CentOS 6)
-* ucevent now supports Intel Xeon v3 (codenamed Haswell server)
-* toplev now supports measurements with HyperThreading enabled.
-* toplev now supports Silvermont CPUs, with a simple 1 level model.
-* ocperf now outputs all possible offcore event combinations when 
-an offcore file is available
-* toplev now can plot directly with --graph. It can also 
-now plot metrics.
-* toplev updated to TopDown 2.5. Supports standard metrics (--metrics)
-and has an experimential feature to suggest sample command lines
-(--sample)
-* ocperf now automatically downloads JSON event lists (3/29/2014)
-This changed various event names. The old CSV files have been removed.
-"PS" events are gone now. Use /p instead. 
-Note this may require setting up https_proxy if you are behind a firewall.
-* New jevents library to resolve event lists from C (3/28/2014)
 
 # All features:
 
@@ -238,6 +214,8 @@ paper (ISPASS 2014, available [here](https://sites.google.com/site/analysismetho
 I didn't invent it, I'm just implementing it.
 
 A more gentle introduction is in [andi's blog](http://halobates.de/blog/p/262)
+
+Please also see the [manual and tutorial](https://github.com/andikleen/pmu-tools/wiki/toplev-manual)
 
 toplev.py only supports counting, that is it cannot tell you where in
 the program the problem occurred, just what happened. There is now
