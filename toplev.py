@@ -354,7 +354,7 @@ class Output:
             hdr = "%-7s %s" % (area, hdr)
         self.hdrlen = min(max(len(hdr) + 1, self.hdrlen), 78)
 
-    def show(self, timestamp, title, area, hdr, s, remark, desc):
+    def show(self, timestamp, title, area, hdr, s, remark, desc, sample):
         if timestamp:
             self.logf.write("%6.9f%s" % (timestamp, self.sep))
         if title:
@@ -366,21 +366,23 @@ class Output:
         print >>self.logf, "%-*s %s %s" % (self.hdrlen - hdroff, hdr + ":", s, remark)
         if desc and not args.no_desc:
             print >>self.logf, "\t" + desc
+        if desc and sample and not args.no_desc:
+            print >>self.logf, "\t" + "Sampling events: ", sample
 
-    def item(self, area, name, l, timestamp, remark, desc, title, fmtnum):
+    def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, sample):
         if desc in self.printed_descs:
             desc = ""
         else:
             self.printed_descs.add(desc)
-        self.show(timestamp, title, area, name, fmtnum(l), remark, desc)
+        self.show(timestamp, title, area, name, fmtnum(l), remark, desc, sample)
 
-    def ratio(self, area, name, l, timestamp, remark, desc, title):
+    def ratio(self, area, name, l, timestamp, remark, desc, title, sample):
         self.item(area, name, l, timestamp, "% " + remark, desc, title,
-                  lambda l: "%5s" % ("%2.2f" % (100.0 * l)))
+                  lambda l: "%5s" % ("%2.2f" % (100.0 * l)), sample)
 
     def metric(self, area, name, l, timestamp, desc, title, unit):
         self.item(area, name, l, timestamp, unit, desc, title,
-                  lambda l: "%5s" % ("%3.2f" % (l)))
+                  lambda l: "%5s" % ("%3.2f" % (l)), None)
 
 def csv_writer(f, sep):
     return csv.writer(f, delimiter=sep)
@@ -1094,9 +1096,6 @@ def obj_desc(obj, rest):
 	desc += """
 Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
-
-    if has(obj, 'sample') and obj.sample:
-        desc += "\n\tSampling events: %s" % sample_desc(obj.sample)
     return desc
 
 class Runner:
@@ -1310,7 +1309,8 @@ class Runner:
                             full_name(obj), val, timestamp,
                             "below" if not obj.thresh else "",
 			    desc,
-                            title)
+                            title,
+                            sample_desc(obj.sample) if has(obj, 'sample') else None)
 		    if obj.thresh or args.verbose:
 			self.sample_obj.add(obj)
 
