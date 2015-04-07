@@ -6,6 +6,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 # Recent new features:
 
 * toplev now has a (draft) [tutorial and manual](https://github.com/andikleen/pmu-tools/wiki/toplev-manual)
+* toplev now detects kernel counter scheduling problems based on the kernel version and automatically
+disables nodes with unsupported events. Can be overridden with --force-events.
 * toplev now defaults to measuring the whole system even on non SMT. The old mode
   can be still enabled with --single-thread. It should be only used on single threads
   and when the other thread is idle on SMT. In addition there is a new --core option
