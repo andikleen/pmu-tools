@@ -616,7 +616,7 @@ def print_header(work, evlist):
     names = ["%s[%d]" % (obj.__class__.__name__, obj.__class__.level if has(obj, 'level') else 0) for obj in work]
     pwrap(" ".join(names) + ":", 78)
     pwrap(" ".join(map(mark_fixed, evnames)).lower() +
-          " [%d_counters]" % (len(evnames - fixed_set)), 75, "  ")
+          " [%d counters]" % (needed_counters(raw_events(evnames))), 75, "  ")
 
 def perf_args(evstr, rest):
     add = []
@@ -1213,8 +1213,10 @@ class Runner:
             self.evnum += evnum
             self.evgroups.append(evnum)
             self.evbases.append(base)
-        if print_group:
-            print_header(objl, get_names(evlev))
+            if print_group:
+                print_header(objl, get_names(evlev))
+        else:
+            print " ".join([o.name for o in objl]),": deduplicated"
 
     # collect the events by pre-computing the equation
     def collect(self):
