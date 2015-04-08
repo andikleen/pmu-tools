@@ -369,12 +369,12 @@ class Output:
         if valstat and (valstat.stddev or valstat.multiplex):
             vs = "\t"
             if valstat.stddev:
-                vs += "+-%5.2f%% " % valstat.stddev
+                vs += "+-%6.2f%% " % valstat.stddev
             if valstat.multiplex and valstat.multiplex != float('nan'):
-                vs += "[%5.2f%%]" % valstat.multiplex
+                vs += "[%6.2f%%]" % valstat.multiplex
         hdr = "%-7s %s" % (area, hdr)
         hdroff = min(len(s), self.hdrlen)
-        print >>self.logf, "%-*s %s %s" % (self.hdrlen - hdroff + 5, hdr + ":", s, remark)
+        print >>self.logf, "%-*s %s %s" % (self.hdrlen - hdroff + 5, hdr + ":", s, remark + vs)
         if desc and not args.no_desc:
             print >>self.logf, "\t" + desc
         if desc and sample and not args.no_desc:
