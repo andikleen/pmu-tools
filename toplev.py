@@ -254,6 +254,7 @@ p.add_argument('--output', '-o', help='Set output file', default=sys.stderr,
                type=argparse.FileType('w'))
 p.add_argument('--graph', help='Automatically graph interval output with tl-barplot.py',
                action='store_true')
+p.add_argument("--graph-cpu", help="CPU to graph using --graph")
 p.add_argument('--title', help='Set title of graph')
 p.add_argument('--xkcd', help='Use xkcd plotting mode for graph', action='store_true')
 p.add_argument('--level', '-l', help='Measure upto level N (max 5)',
@@ -311,8 +312,11 @@ if args.graph:
         extra += '--xkcd '
     if args.output != sys.stderr:
         extra += '--output "' + args.output.name + '" '
+    if args.graph_cpu:
+        extra += "--cpu " + args.graph_cpu + " "
     args.csv = ','
     cmd = "PATH=$PATH:. ; tl-barplot.py " + extra + "/dev/stdin"
+    print cmd
     args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
 
 print_all = args.verbose # or args.csv
