@@ -18,8 +18,8 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import exceptions, argparse, time, types, fnmatch, csv, copy
-from collections import defaultdict, Counter
+import exceptions, argparse, time, types, fnmatch, csv, copy, math, operator
+from collections import defaultdict, Counter, namedtuple
 #sys.path.append("../pmu-tools")
 import ocperf
 
@@ -354,35 +354,42 @@ class Output:
             hdr = "%-7s %s" % (area, hdr)
         self.hdrlen = min(max(len(hdr) + 1, self.hdrlen), 78)
 
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample):
+    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
         if timestamp:
             self.logf.write("%6.9f%s" % (timestamp, self.sep))
         if title:
             self.logf.write("%-6s" % (title))
         if not area:
             area = ""
+        vs = ""
+        if valstat and (valstat.stddev or valstat.multiplex):
+            vs = "\t"
+            if valstat.stddev:
+                vs += "+-%5.2f%% " % valstat.stddev
+            if valstat.multiplex and valstat.multiplex != float('nan'):
+                vs += "[%5.2f%%]" % valstat.multiplex
         hdr = "%-7s %s" % (area, hdr)
         hdroff = min(len(s), self.hdrlen)
-        print >>self.logf, "%-*s %s %s" % (self.hdrlen - hdroff, hdr + ":", s, remark)
+        print >>self.logf, "%-*s %s %s" % (self.hdrlen - hdroff + 5, hdr + ":", s, remark)
         if desc and not args.no_desc:
             print >>self.logf, "\t" + desc
         if desc and sample and not args.no_desc:
             print >>self.logf, "\t" + "Sampling events: ", sample
 
-    def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, sample):
+    def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, sample, valstat):
         if desc in self.printed_descs:
             desc = ""
         else:
             self.printed_descs.add(desc)
-        self.show(timestamp, title, area, name, fmtnum(l), remark, desc, sample)
+        self.show(timestamp, title, area, name, fmtnum(l), remark, desc, sample, valstat)
 
-    def ratio(self, area, name, l, timestamp, remark, desc, title, sample):
+    def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
         self.item(area, name, l, timestamp, "% " + remark, desc, title,
-                  lambda l: "%5s" % ("%2.2f" % (100.0 * l)), sample)
+                  lambda l: "%5s" % ("%2.2f" % (100.0 * l)), sample, valstat)
 
-    def metric(self, area, name, l, timestamp, desc, title, unit):
+    def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
         self.item(area, name, l, timestamp, unit, desc, title,
-                  lambda l: "%5s" % ("%3.2f" % (l)), None)
+                  lambda l: "%5s" % ("%3.2f" % (l)), None, valstat)
 
 def csv_writer(f, sep):
     return csv.writer(f, delimiter=sep)
@@ -392,7 +399,7 @@ class OutputCSV(Output):
         Output.__init__(self, logfile)
         self.writer = csv_writer(self.logf, sep)
 
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample):
+    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
         if args.no_desc:
             desc = ""
         desc = re.sub(r"\s+", " ", desc)
@@ -401,7 +408,9 @@ class OutputCSV(Output):
             l.append(timestamp)
         if title:
             l.append(title)
-        self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample])
+        stddev = valstat.stddev if (valstat and valstat.stddev) else ""
+        multiplex = valstat.multiplex if (valstat and valstat.multiplex) else ""
+        self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample, stddev, multiplex])
 
 class CPU:
     # overrides for easy regression tests
@@ -714,14 +723,17 @@ def display_core(cpunum, ignore_thread=False):
         return True
     return False
 
-def print_keys(runner, res, rev, out, interval, env):
+def geoadd(l):
+    return math.sqrt(sum([x**2 for x in l]))
+
+def print_keys(runner, res, rev, valstats, out, interval, env):
     stat = runner.stat
     if smt_mode:
         # compute non SMT nodes, but don't print yet
         # this is needed for getting the thresholds correct when
         # a SMT node depends on a non SMT node
         for j in sorted(res.keys()):
-            runner.compute(res[j], rev[j], env, not_smt_node, stat)
+            runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, stat)
 
         # collect counts from all threads of cores as lists
         # this way the model can access all threads individually
@@ -730,7 +742,14 @@ def print_keys(runner, res, rev, out, interval, env):
         for core, citer in itertools.groupby(core_keys, key_to_coreid):
             cpus = list(citer)
             r = list(itertools.izip(*[res[j] for j in cpus]))
-            runner.compute(r, rev[cpus[0]], env, smt_node, stat)
+
+            # use geomean of stddevs and minimum of multiplex ratios for combining
+            # XXX better way to combine multiplex ratios?
+            st = [ValStat(
+                    geoadd([x.stddev for x in z]),
+                    min([x.multiplex for x in z]))
+                   for z in itertools.izip(*[valstats[j] for j in cpus])]
+            runner.compute(r, rev[cpus[0]], st, env, smt_node, stat)
             runner.print_res(out, interval, core_fmt(core), smt_node)
 
         # print the non SMT nodes
@@ -742,7 +761,7 @@ def print_keys(runner, res, rev, out, interval, env):
         for j in sorted(res.keys()):
 	    if args.core and j != "" and not display_core(int(j)):
                 continue
-            runner.compute(res[j], rev[j], env, lambda obj: True, stat)
+            runner.compute(res[j], rev[j], valstats[j], env, lambda obj: True, stat)
             runner.print_res(out, interval, j, lambda obj: True)
     stat.referenced_check(res)
     stat.compute_errors()
@@ -755,6 +774,7 @@ def execute_no_multiplex(runner, out, rest):
         sys.exit('--no-multiplex is not supported with interval mode')
     res = defaultdict(list)
     rev = defaultdict(list)
+    valstats = defaultdict(list)
     env = dict()
     groups = [x for x in runner.evgroups if len(x) > 0]
     num_runs = len(groups) - count(is_outgroup, groups)
@@ -767,22 +787,23 @@ def execute_no_multiplex(runner, out, rest):
             continue
         n += 1
         print "RUN #%d of %d" % (n, num_runs)
-        ret, res, rev, interval = do_execute(runner, outg + [g], out, rest,
-                                             res, rev, env)
+        ret, res, rev, interval, valstats = do_execute(runner, outg + [g], out, rest,
+                                                 res, rev, valstats, env)
         outg = []
     assert num_runs == n
-    print_keys(runner, res, rev, out, interval, env)
+    print_keys(runner, res, rev, valstats, out, interval, env)
     return ret
 
 def execute(runner, out, rest):
     env = dict()
     events = filter(lambda x: len(x) > 0, runner.evgroups)
-    ret, res, rev, interval = do_execute(runner, events,
+    ret, res, rev, interval, valstats = do_execute(runner, events,
                                          out, rest,
                                          defaultdict(list),
                                          defaultdict(list),
+                                         defaultdict(list),
                                          env)
-    print_keys(runner, res, rev, out, interval, env)
+    print_keys(runner, res, rev, valstats, out, interval, env)
     return ret
 
 def group_number(num, events):
@@ -817,7 +838,9 @@ perf_fields = [
     r"Joules",
     ""]
 
-def do_execute(runner, events, out, rest, res, rev, env):
+ValStat = namedtuple('ValStat', ['stddev', 'multiplex'])
+
+def do_execute(runner, events, out, rest, res, rev, valstats, env):
     evstr = ",".join(map(event_group, events))
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
@@ -843,9 +866,10 @@ def do_execute(runner, events, out, rest, res, rev, env):
                 if interval != prev_interval:
                     if res:
                         set_interval(env, interval - prev_interval)
-                        print_keys(runner, res, rev, out, prev_interval, env)
+                        print_keys(runner, res, rev, valstats, out, prev_interval, env)
                         res = defaultdict(list)
                         rev = defaultdict(list)
+                        valstats = defaultdict(list)
                     prev_interval = interval
         # cannot just split on commas, as they are inside cpu/..../
         # code later relies on the regex stripping ku flags
@@ -870,10 +894,10 @@ def do_execute(runner, events, out, rest, res, rev, env):
             sys.stdout.write(l)
             continue
 
-	multiplex = 100.
+	multiplex = float('nan')
         event = event.rstrip()
         if re.match(r"[0-9]+", count):
-            val = float(count)
+            val = float(count) / 100.
         elif count.startswith("<"):
             account[event].errors[count.replace("<","").replace(">","")] += 1
 	    multiplex = 0.
@@ -895,6 +919,8 @@ def do_execute(runner, events, out, rest, res, rev, env):
 	    multiplex = float(n[off + 1])
 	    off += 2
 
+        st = ValStat(stddev=stddev, multiplex=multiplex)
+
         account[event].total += 1
 
         # power events are only output once for every socket. duplicate them
@@ -909,9 +935,11 @@ def do_execute(runner, events, out, rest, res, rev, env):
 		if not args.core or display_core(j, True):
 		    res["%d" % (j)].append(val)
 		    rev["%d" % (j)].append(event)
+		    valstats["%d" % (j)].append(st)
         else:
             res[title].append(val)
             rev[title].append(event)
+            valstats[title].append(st)
 
         if args.raw or args.valcsv:
             dump_raw(interval if interval_mode else "",
@@ -925,7 +953,7 @@ def do_execute(runner, events, out, rest, res, rev, env):
             set_interval(env, (time.time() - start) * 1E+9)
     ret = prun.wait()
     print_account(account)
-    return ret, res, rev, interval
+    return ret, res, rev, interval, valstats
 
 def ev_append(ev, level, obj):
     if isinstance(ev, types.LambdaType):
@@ -1254,7 +1282,7 @@ class Runner:
                 len(self.olist),
                 self.missed)
 
-    def compute(self, res, rev, env, match, stat):
+    def compute(self, res, rev, valstats, env, match, stat):
         if len(res) == 0:
             print "Nothing measured?"
             return
@@ -1265,8 +1293,15 @@ class Runner:
 
             if not match(obj):
                 continue
+            ref = set()
             obj.compute(lambda e, level:
-                            lookup_res(res, rev, e, obj, env, level, stat.referenced))
+                            lookup_res(res, rev, e, obj, env, level, ref))
+            stat.referenced |= ref
+            if ref:
+                obj.valstat = ValStat(geoadd([valstats[i].stddev for i in ref]),
+                                   min([valstats[i].multiplex for i in ref]))
+            else:
+                obj.valstat = None
             if not obj.res_map and not all([x in env for x in obj.evnum]):
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
 	    if not obj.metric and not check_ratio(obj.val):
@@ -1303,14 +1338,16 @@ class Runner:
                             obj.name, val, timestamp,
 			    desc,
                             title,
-                            metric_unit(obj))
+                            metric_unit(obj),
+                            obj.valstat)
 		elif check_ratio(val):
 		    out.ratio(obj.area if has(obj, 'area') else None,
                             full_name(obj), val, timestamp,
                             "below" if not obj.thresh else "",
 			    desc,
                             title,
-                            sample_desc(obj.sample) if has(obj, 'sample') else None)
+                            sample_desc(obj.sample) if has(obj, 'sample') else None,
+                            obj.valstat)
 		    if obj.thresh or args.verbose:
 			self.sample_obj.add(obj)
 
