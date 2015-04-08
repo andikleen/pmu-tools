@@ -413,7 +413,7 @@ class OutputCSV(Output):
         if title:
             l.append(title)
         stddev = valstat.stddev if (valstat and valstat.stddev) else ""
-        multiplex = valstat.multiplex if (valstat and valstat.multiplex) else ""
+        multiplex = valstat.multiplex if (valstat and valstat.multiplex == valstat.multiplex) else ""
         self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample, stddev, multiplex])
 
 class CPU:
