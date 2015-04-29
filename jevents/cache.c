@@ -42,11 +42,14 @@
  *
  * This library allows to resolve named Intel performance counter events
  * (for example INST_RETIRED.ANY)
- * by name and turn them into perf_event_attr attributes.
+ * by name and turn them into perf_event_attr attributes. It also
+ * supports listing all events and resolving numeric events back to names.
  *
  * The standard workflow is the user calling "event_download.py"
  * or "perf download" to download the current list, and then
- * these functions can resolve or walk names.
+ * these functions can resolve or walk names. Alternatively
+ * a JSON event file from https://download.01.org/perfmon
+ * can be specified through the EVENTMAP= environment variable.
  */
  
 struct event {
@@ -155,7 +158,7 @@ int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
 }
 
 /**
- * rmap_event - Map hex event back to name.
+ * rmap_event - Map numeric event back to name and description.
  * @event:  Event code (umask +
  * @name: Put pointer to event name into this. No need to free.
  * @desc: Put pointer to description into this. No need to free. Can be NULL.
