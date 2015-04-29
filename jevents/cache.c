@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <stdio.h>
 #include <linux/perf_event.h>
 
 /**
@@ -151,4 +152,44 @@ int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
 			return ret;
 	}
 	return 0;
+}
+
+/**
+ * rmap_event - Map hex event back to name.
+ * @event:  Event code (umask +
+ * @name: Put pointer to event name into this. No need to free.
+ * @desc: Put pointer to description into this. No need to free. Can be NULL.
+ *
+ * Offcore matrix events are not fully supported.
+ * Ignores bits other than umask/event for now, so some events using cmask,inv
+ * may be misidentified.
+ * Return: -1 on failure, otherwise 0.
+ */
+
+int rmap_event(unsigned event, char **name, char **desc)
+{
+	struct event *e;
+	if (!eventlist) {
+		if (read_events(NULL) < 0)
+			return -1;
+	}
+	for (e = eventlist; e; e = e->next) {
+		// XXX should cache the numeric value
+		char *s;
+		unsigned event = 0, umask = 0;
+		s = strstr(e->event, "event=");
+		if (s)
+			sscanf(s, "event=%x", &event);
+		s = strstr(e->event, "umask=");
+		if (s)
+			sscanf(s, "umask=%x", &umask);
+		if ((event | (umask << 8)) == (event & 0xffff)) {
+			*name = e->name;
+			if (desc)
+				*desc = e->desc;
+			return 0;
+		}
+	}
+	return -1;
+
 }
