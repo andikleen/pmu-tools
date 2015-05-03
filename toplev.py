@@ -857,9 +857,11 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             runner.print_res(out, interval, core_fmt(core), smt_node)
 
         # print the non SMT nodes
+        # recompute the nodes so we get up-to-date values
         for j in sorted(res.keys()):
             if args.core and not display_core(int(j)):
                 continue
+            runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, stat)
             runner.print_res(out, interval, thread_fmt(j), not_smt_node)
     else:
         for j in sorted(res.keys()):
