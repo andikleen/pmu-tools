@@ -836,7 +836,7 @@ def combine_valstat(l):
 def print_keys(runner, res, rev, valstats, out, interval, env):
     stat = runner.stat
     if len(res.keys()) > 1:
-        cores = [key_to_coreid(x) for x in res.keys() if not args.core or display_core(int(x))]
+        cores = [key_to_coreid(x) for x in res.keys() if int(x) in runner.allowed_threads]
         out.set_cpus(set(map(core_fmt, cores) + map(thread_fmt, cores)))
     if smt_mode:
         # compute non SMT nodes, but don't print yet
@@ -859,13 +859,13 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
         # print the non SMT nodes
         # recompute the nodes so we get up-to-date values
         for j in sorted(res.keys()):
-            if args.core and not display_core(int(j)):
+            if j != "" and int(j) not in runner.allowed_threads:
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, stat)
             runner.print_res(out, interval, thread_fmt(j), not_smt_node)
     else:
         for j in sorted(res.keys()):
-	    if args.core and j != "" and not display_core(int(j)):
+            if j != "" and int(j) not in runner.allowed_threads:
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, lambda obj: True, stat)
             runner.print_res(out, interval, j, lambda obj: True)
@@ -1626,7 +1626,11 @@ if not args.single_thread:
         rest = ["-A"] + rest
 
 if args.core:
-    rest = ["-C", ",".join(["%d" % x for x in cpu.allcpus if display_core(x, True)])] + rest
+    runner.allowed_threads = [x for x in cpu.allcpus if display_core(x, False)]
+    allowed_cores = [x for x in cpu.allcpus if display_core(x, True)]
+    rest = ["-C", ",".join(["%d" % x for x in allowed_cores])] + rest
+else:
+    runner.allowed_threads = cpu.allcpus
 
 print "Using level %d." % (args.level),
 if not args.level and cpu.cpu != "slm":
