@@ -344,6 +344,9 @@ def check_ratio(l):
         return True
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
+def isnan(x):
+    return x != x
+
 class Output:
     """Generate human readable output."""
     def __init__(self, logfile):
@@ -370,7 +373,7 @@ class Output:
             vs = "\t"
             if valstat.stddev:
                 vs += "+-%6.2f%% " % valstat.stddev
-            if valstat.multiplex and valstat.multiplex != float('nan'):
+            if valstat.multiplex and not isnan(valstat.multiplex):
                 vs += "[%6.2f%%]" % valstat.multiplex
         hdr = "%-7s %s" % (area, hdr)
         hdroff = min(len(s), self.hdrlen)
