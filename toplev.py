@@ -1406,11 +1406,7 @@ class Runner:
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, ref))
             stat.referenced |= ref
-            if ref:
-                obj.valstat = ValStat(geoadd([valstats[i].stddev for i in ref]),
-                                   min([valstats[i].multiplex for i in ref]))
-            else:
-                obj.valstat = None
+            obj.valstat = combine_valstat([valstats[i] for i in ref])
             if not obj.res_map and not all([x in env for x in obj.evnum]):
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
 	    if not obj.metric and not check_ratio(obj.val):
