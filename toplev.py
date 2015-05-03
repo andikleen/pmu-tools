@@ -129,8 +129,6 @@ def kv_to_key(v):
 def unsup_event(e, table, min_kernel=None):
     if ":" in e:
 	e = e[:e.find(":")]
-    if args.force_events:
-	return False
     for j in table:
 	if fnmatch.fnmatch(e, j[0]) and cpu.realcpu in j[1][0]:
             break
@@ -362,6 +360,7 @@ class Output:
         self.hdrlen = min(max(len(hdr) + 1, self.hdrlen), 78)
 
     def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
+        # C0    BE      Backend_Bound:                                62.00 %
         if timestamp:
             self.logf.write("%6.9f%s" % (timestamp, self.sep))
         if title:
@@ -1235,14 +1234,18 @@ class Runner:
                 bad_nodes.add(obj)
                 bad_events |= set(unsup)
         if len(bad_nodes) > 0:
-	    pwrap("warning: removing " +
-		   " ".join([x.name for x in bad_nodes]) +
-		   " due to unsupported events in kernel: " +
-		   " ".join(sorted(bad_events)), 80, "")
-	    if min_kernel:
-		print "Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0])
-	    print "Use --force-events to override (may result in wrong measurements)"
-            self.olist = [x for x in self.olist if x not in bad_nodes]
+            if args.force_events:
+                pwrap("warning: Using --force-events. Nodes: " +
+		   " ".join([x.name for x in bad_nodes]) + " may be unreliable")
+            else:
+	        pwrap("warning: removing " +
+		       " ".join([x.name for x in bad_nodes]) +
+		       " due to unsupported events in kernel: " +
+		       " ".join(sorted(bad_events)), 80, "")
+	        if min_kernel:
+		    print "Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0])
+	        print "Use --force-events to override (may result in wrong measurements)"
+                self.olist = [x for x in self.olist if x not in bad_nodes]
 
     # fit events into available counters
     # simple first fit algorithm
@@ -1524,10 +1527,6 @@ if not args.single_thread:
         rest = ["-a"] + rest
     if "-A" not in rest:
         rest = ["-A"] + rest
-
-if (cpu.cpu == "ivb" and
-    (kernel_version[0] == 3 and kernel_version[1] >= 10 and args.level >= 3)):
-    print >>sys.stderr, "Warning: kernel may need to be patched to schedule all events with level %d in HT mode" % (args.level)
 
 if args.core:
     rest = ["-C", ",".join(["%d" % x for x in cpu.allcpus if display_core(x, True)])] + rest
