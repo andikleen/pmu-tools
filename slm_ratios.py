@@ -12,6 +12,21 @@ def IPC(EV, level):
 def TurboUtilization(EV, level):
     return EV("cycles", level) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
 
+def DurationTimeInSeconds(EV, level):
+    return EV("interval-ns", 0) / 1e+09 / 1000
+
+# Run duration time in seconds
+def Time(EV, level):
+    return DurationTimeInSeconds(EV, level)
+
+# Per-thread actual clocks
+def CLKS(EV, level):
+    return EV("CPU_CLK_UNHALTED.THREAD", level)
+
+# Cycles Per Instruction (threaded)
+def CPI(EV, level):
+    return 1 / IPC(EV, level)
+
 class FrontendBound:
     name = "Frontend Bound"
     domain = ""
@@ -86,6 +101,54 @@ Average Frequency Utilization relative nominal frequency"""
             print "TurboUtilization zero division"
             self.val = 0
 
+class Metric_CLKS:
+    name = "CLKS"
+    desc = """
+Per-thread actual clocks"""
+    domain = "Count"
+    maxval = 0
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+            self.val = CLKS(EV, 0)
+        except ZeroDivisionError:
+            print_error("CLKS zero division")
+            self.errcount += 1
+            self.val = 0
+
+class Metric_Time:
+    name = "Time"
+    desc = """
+Run duration time in seconds"""
+    domain = "Count"
+    maxval = 0
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+            self.val = Time(EV, 0)
+        except ZeroDivisionError:
+            print_error("Time zero division")
+            self.errcount += 1
+            self.val = 0
+
+class Metric_CPI:
+    name = "CPI"
+    desc = """
+Cycles Per Instruction (threaded)"""
+    domain = "Metric"
+    maxval = 0
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+            self.val = CPI(EV, 0)
+        except ZeroDivisionError:
+            print_error("CPI zero division")
+            self.errcount += 1
+            self.val = 0
+
 class Setup:
     def __init__(self, r):
         prev = None
@@ -111,4 +174,7 @@ class Setup:
         # user visible metrics
 
         n = Metric_IPC() ; r.metric(n)
+        n = Metric_CPI() ; r.metric(n)
         n = Metric_TurboUtilization() ; r.metric(n)
+        n = Metric_CLKS() ; r.metric(n)
+        n = Metric_Time() ; r.metric(n)
