@@ -345,6 +345,16 @@ def check_ratio(l):
 def isnan(x):
     return x != x
 
+def format_valstat(valstat):
+    vs = ""
+    if valstat and (valstat.stddev or valstat.multiplex):
+        vs = "\t"
+        if valstat.stddev:
+            vs += "+-%6.2f%% " % valstat.stddev
+        if valstat.multiplex and not isnan(valstat.multiplex):
+            vs += "[%6.2f%%]" % valstat.multiplex
+    return vs
+
 class Output:
     """Generate human readable output."""
     def __init__(self, logfile):
@@ -359,21 +369,23 @@ class Output:
             hdr = "%-7s %s" % (area, hdr)
         self.hdrlen = min(max(len(hdr) + 1, self.hdrlen), 78)
 
+    # timestamp Timestamp in interval mode
+    # title     CPU
+    # area      FE/BE ...
+    # hdr       Node Name
+    # s         Formatted measured value
+    # remark    above/below/""
+    # desc      Object description
+    # sample    Sample Objects (string)
+    # vs        Statistics object
+    # Example:
+    # C0    BE      Backend_Bound:                                62.00 %
     def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
-        # C0    BE      Backend_Bound:                                62.00 %
         if timestamp:
             self.logf.write("%6.9f%s" % (timestamp, self.sep))
         if title:
             self.logf.write("%-6s" % (title))
-        if not area:
-            area = ""
-        vs = ""
-        if valstat and (valstat.stddev or valstat.multiplex):
-            vs = "\t"
-            if valstat.stddev:
-                vs += "+-%6.2f%% " % valstat.stddev
-            if valstat.multiplex and not isnan(valstat.multiplex):
-                vs += "[%6.2f%%]" % valstat.multiplex
+        vs = format_valstat(valstat)
         hdr = "%-7s %s" % (area, hdr)
         hdroff = min(len(s), self.hdrlen)
         print >>self.logf, "%-*s %s %s" % (self.hdrlen - hdroff + 5, hdr + ":", s, remark + vs)
@@ -387,6 +399,8 @@ class Output:
             desc = ""
         else:
             self.printed_descs.add(desc)
+        if not area:
+            area = ""
         self.show(timestamp, title, area, name, fmtnum(l), remark, desc, sample, valstat)
 
     def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
