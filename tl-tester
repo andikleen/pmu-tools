@@ -45,6 +45,7 @@ EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
 DIRECT_MSR=1 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 --single-thread $LOAD
+EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 --single-thread --columns $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d --all --core S0-C0-T0 $LOAD0
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -v -d -l4 $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -x, -v -d -l4 $LOAD
@@ -95,11 +96,13 @@ done
 
 # misc features
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --stats --metrics --no-multiplex -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --stats --metrics --no-multiplex --columns -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --no-desc --power -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --no-desc $ALL --no-group $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --no-desc --sw -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --graph -o x.png -d --metrics -l4 $LOAD
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 sleep 1
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 --columns sleep 1
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 --valcsv val.csv --user $LOAD | tee log
 grep :u log
 grep /u log

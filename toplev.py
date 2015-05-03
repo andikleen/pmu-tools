@@ -282,6 +282,7 @@ p.add_argument('--single-thread', '-S', help='Measure workload as single thread.
 p.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
                 action='store_true')
 p.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.', action='store_true')
+p.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
 args, rest = p.parse_known_args()
 
 if args.version:
@@ -358,7 +359,6 @@ def format_valstat(valstat):
 class Output:
     """Generate human readable output."""
     def __init__(self, logfile):
-        self.sep = " "
         self.logf = logfile
         self.printed_descs = set()
         self.hdrlen = 46
@@ -368,6 +368,24 @@ class Output:
         if area:
             hdr = "%-7s %s" % (area, hdr)
         self.hdrlen = min(max(len(hdr) + 1, self.hdrlen), 78)
+
+    def set_cpus(self, cpus):
+	pass
+
+    def print_desc(self, desc, sample):
+	if desc and not args.no_desc:
+	    print >>self.logf, "\t" + desc
+	if desc and sample and not args.no_desc:
+	    print >>self.logf, "\t" + "Sampling events: ", sample
+
+    def print_timestamp(self, timestamp):
+	if timestamp:
+	    self.logf.write("%6.9f%s" % (timestamp, " "))
+
+    def print_header(self, area, hdr):
+	hdr = "%-7s %s" % (area, hdr)
+	#hdroff = min(len(hdr), self.hdrlen)
+	print >>self.logf, "%-*s " % (self.hdrlen, hdr + ":"),
 
     # timestamp Timestamp in interval mode
     # title     CPU
@@ -381,18 +399,14 @@ class Output:
     # Example:
     # C0    BE      Backend_Bound:                                62.00 %
     def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
-        if timestamp:
-            self.logf.write("%6.9f%s" % (timestamp, self.sep))
+	self.print_timestamp(timestamp)
         if title:
             self.logf.write("%-6s" % (title))
         vs = format_valstat(valstat)
-        hdr = "%-7s %s" % (area, hdr)
-        hdroff = min(len(s), self.hdrlen)
-        print >>self.logf, "%-*s %s %s" % (self.hdrlen - hdroff + 5, hdr + ":", s, remark + vs)
-        if desc and not args.no_desc:
-            print >>self.logf, "\t" + desc
-        if desc and sample and not args.no_desc:
-            print >>self.logf, "\t" + "Sampling events: ", sample
+	self.print_header(area, hdr)
+	print >>self.logf, s,
+	print >>self.logf, remark + vs
+	self.print_desc(desc, sample)
 
     def item(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
         if desc in self.printed_descs:
@@ -404,17 +418,83 @@ class Output:
         self.show(timestamp, title, area, name, l, remark, desc, sample, valstat)
 
     def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
-        self.item(area, name, "%5s" % ("%2.2f" % (100.0 * l)), timestamp, "% " + remark, desc, title,
+        self.item(area, name, "%5s" % ("%2.2f%%" % (100.0 * l)), timestamp, remark, desc, title,
                   sample, valstat)
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
         self.item(area, name, "%5s" % ("%3.2f" % (l)), timestamp, unit, desc, title,
                   None, valstat)
 
+    def flush(self):
+	pass
+
 def csv_writer(f, sep):
     return csv.writer(f, delimiter=sep)
 
+class OutputBuffered(Output):
+    """Output data in per-cpu columns."""
+    def __init__(self, logfile):
+	Output.__init__(self, logfile)
+	self.nodes = dict()
+	self.timestamp = None
+	self.cpunames = set()
+
+    def set_cpus(self, cpus):
+	self.cpunames = cpus
+
+    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
+        if args.single_thread:
+            Output.show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat)
+            return
+	self.timestamp = timestamp
+	key = (area, hdr)
+	if key not in self.nodes:
+	    self.nodes[key] = dict()
+	assert title not in self.nodes[key]
+	self.nodes[key][title] = (s, remark, desc, sample, valstat)
+
+    def flush(self):
+	VALCOL_LEN = 10
+	write = self.logf.write
+
+	cpunames = self.cpunames
+
+	if self.timestamp:
+	    write("%9s" % "")
+	self.logf.write("%*s" % (self.hdrlen, ""))
+	for j in sorted(cpunames):
+	    write("%*s " % (VALCOL_LEN, j))
+
+	write("\n")
+        for key in sorted(sorted(self.nodes.keys(), key=lambda x: x[1]), key=lambda x: x[0] == ""):
+	    node = self.nodes[key]
+	    desc = None
+	    sample = None
+            remark = None
+	    if self.timestamp:
+		self.print_timestamp(self.timestamp)
+
+	    self.print_header(key[0], key[1])
+            vlist = []
+	    for cpuname in cpunames:
+		if cpuname in node:
+		    cpu = node[cpuname]
+		    desc, sample, remark, valstat = cpu[2], cpu[3], cpu[1], cpu[4]
+                    if remark in ("above", "below"): # XXX
+                        remark = ""
+                    if valstat:
+                        vlist.append(valstat)
+		    write("%-*s " % (VALCOL_LEN, cpu[0]))
+		else:
+		    write("%*s " % (VALCOL_LEN, ""))
+            if remark:
+                write(" " + remark + format_valstat(combine_valstat(vlist)))
+	    write("\n")
+	    self.print_desc(desc, sample)
+	self.nodes = dict()
+
 class OutputCSV(Output):
+    """Output data in CSV format."""
     def __init__(self, logfile, sep):
         Output.__init__(self, logfile)
         self.writer = csv_writer(self.logf, sep)
@@ -746,8 +826,18 @@ def display_core(cpunum, ignore_thread=False):
 def geoadd(l):
     return math.sqrt(sum([x**2 for x in l]))
 
+# use geomean of stddevs and minimum of multiplex ratios for combining
+# XXX better way to combine multiplex ratios?
+def combine_valstat(l):
+    if not l:
+        return []
+    return ValStat(geoadd([x.stddev for x in l]), min([x.multiplex for x in l]))
+
 def print_keys(runner, res, rev, valstats, out, interval, env):
     stat = runner.stat
+    if len(res.keys()) > 1:
+        cores = [key_to_coreid(x) for x in res.keys() if not args.core or display_core(int(x))]
+        out.set_cpus(set(map(core_fmt, cores) + map(thread_fmt, cores)))
     if smt_mode:
         # compute non SMT nodes, but don't print yet
         # this is needed for getting the thresholds correct when
@@ -762,13 +852,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
         for core, citer in itertools.groupby(core_keys, key_to_coreid):
             cpus = list(citer)
             r = list(itertools.izip(*[res[j] for j in cpus]))
-
-            # use geomean of stddevs and minimum of multiplex ratios for combining
-            # XXX better way to combine multiplex ratios?
-            st = [ValStat(
-                    geoadd([x.stddev for x in z]),
-                    min([x.multiplex for x in z]))
-                   for z in itertools.izip(*[valstats[j] for j in cpus])]
+            st = [combine_valstat(z) for z in itertools.izip(*[valstats[j] for j in cpus])]
             runner.compute(r, rev[cpus[0]], st, env, smt_node, stat)
             runner.print_res(out, interval, core_fmt(core), smt_node)
 
@@ -783,6 +867,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, lambda obj: True, stat)
             runner.print_res(out, interval, j, lambda obj: True)
+    out.flush()
     stat.referenced_check(res)
     stat.compute_errors()
 
@@ -1082,7 +1167,7 @@ def sample_event(e):
 
 def sample_desc(s):
     try:
-        return ",".join([sample_event(x) for x in s])
+        return " ".join([sample_event(x) for x in s])
     except BadEvent as e:
         #return "Unknown sample event %s" % (e.event)
         return ""
@@ -1553,6 +1638,8 @@ print
 runner.collect()
 if csv_mode:
     out = OutputCSV(args.output, csv_mode)
+elif args.columns:
+    out = OutputBuffered(args.output)
 else:
     out = Output(args.output)
 runner.schedule()
