@@ -394,22 +394,22 @@ class Output:
         if desc and sample and not args.no_desc:
             print >>self.logf, "\t" + "Sampling events: ", sample
 
-    def item(self, area, name, l, timestamp, remark, desc, title, fmtnum, sample, valstat):
+    def item(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
         if desc in self.printed_descs:
             desc = ""
         else:
             self.printed_descs.add(desc)
         if not area:
             area = ""
-        self.show(timestamp, title, area, name, fmtnum(l), remark, desc, sample, valstat)
+        self.show(timestamp, title, area, name, l, remark, desc, sample, valstat)
 
     def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
-        self.item(area, name, l, timestamp, "% " + remark, desc, title,
-                  lambda l: "%5s" % ("%2.2f" % (100.0 * l)), sample, valstat)
+        self.item(area, name, "%5s" % ("%2.2f" % (100.0 * l)), timestamp, "% " + remark, desc, title,
+                  sample, valstat)
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
-        self.item(area, name, l, timestamp, unit, desc, title,
-                  lambda l: "%5s" % ("%3.2f" % (l)), None, valstat)
+        self.item(area, name, "%5s" % ("%3.2f" % (l)), timestamp, unit, desc, title,
+                  None, valstat)
 
 def csv_writer(f, sep):
     return csv.writer(f, delimiter=sep)
