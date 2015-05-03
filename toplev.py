@@ -1218,8 +1218,6 @@ class Runner:
             self.evbases.append(base)
             if print_group:
                 print_header(objl, get_names(evlev))
-        else:
-            print " ".join([o.name for o in objl]),": deduplicated"
 
     # collect the events by pre-computing the equation
     def collect(self):
