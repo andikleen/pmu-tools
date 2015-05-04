@@ -19,6 +19,7 @@
 
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
 import exceptions, argparse, time, types, fnmatch, csv, copy, math, operator
+import locale
 from collections import defaultdict, Counter, namedtuple
 #sys.path.append("../pmu-tools")
 import ocperf
@@ -357,20 +358,49 @@ def format_valstat(valstat):
     return vs
 
 class Output:
-    """Generate human readable output."""
     def __init__(self, logfile):
         self.logf = logfile
         self.printed_descs = set()
-        self.hdrlen = 46
+        self.hdrlen = 30
 
     # pass all possible hdrs in advance to compute suitable padding
     def set_hdr(self, hdr, area):
         if area:
             hdr = "%-7s %s" % (area, hdr)
-        self.hdrlen = min(max(len(hdr) + 1, self.hdrlen), 78)
+        self.hdrlen = min(max(len(hdr) + 1, self.hdrlen), 60)
 
     def set_cpus(self, cpus):
 	pass
+
+    def item(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
+        if desc in self.printed_descs:
+            desc = ""
+        else:
+            self.printed_descs.add(desc)
+        if not area:
+            area = ""
+        self.show(timestamp, title, area, name, l, remark, desc, sample, valstat)
+
+    def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
+        self.item(area, name, "%5s" % ("%2.2f%%" % (100.0 * l)), timestamp, remark, desc, title,
+                  sample, valstat)
+
+    def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
+        val = "%5.2f" % (l)
+        self.item(area, name, val, timestamp, unit, desc, title,
+                  None, valstat)
+
+    def flush(self):
+	pass
+
+def csv_writer(f, sep):
+    return csv.writer(f, delimiter=sep)
+
+class OutputHuman(Output):
+    """Generate human readable output."""
+    def __init__(self, logfile):
+        Output.__init__(self, logfile)
+        locale.setlocale(locale.LC_ALL, '')
 
     def print_desc(self, desc, sample):
 	if desc and not args.no_desc:
@@ -384,7 +414,6 @@ class Output:
 
     def print_header(self, area, hdr):
 	hdr = "%-7s %s" % (area, hdr)
-	#hdroff = min(len(hdr), self.hdrlen)
 	print >>self.logf, "%-*s " % (self.hdrlen, hdr + ":"),
 
     # timestamp Timestamp in interval mode
@@ -408,33 +437,18 @@ class Output:
 	print >>self.logf, remark + vs
 	self.print_desc(desc, sample)
 
-    def item(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
-        if desc in self.printed_descs:
-            desc = ""
-        else:
-            self.printed_descs.add(desc)
-        if not area:
-            area = ""
-        self.show(timestamp, title, area, name, l, remark, desc, sample, valstat)
-
-    def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
-        self.item(area, name, "%5s" % ("%2.2f%%" % (100.0 * l)), timestamp, remark, desc, title,
-                  sample, valstat)
-
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
-        self.item(area, name, "%5s" % ("%3.2f" % (l)), timestamp, unit, desc, title,
+        if l > 1000:
+            val = locale.format("%5u", round(l), grouping=True)
+        else:
+            val = "%5.2f" % (l)
+        self.item(area, name, val, timestamp, unit, desc, title,
                   None, valstat)
 
-    def flush(self):
-	pass
-
-def csv_writer(f, sep):
-    return csv.writer(f, delimiter=sep)
-
-class OutputBuffered(Output):
+class OutputBuffered(OutputHuman):
     """Output data in per-cpu columns."""
     def __init__(self, logfile):
-	Output.__init__(self, logfile)
+	OutputHuman.__init__(self, logfile)
 	self.nodes = dict()
 	self.timestamp = None
 	self.cpunames = set()
@@ -444,7 +458,7 @@ class OutputBuffered(Output):
 
     def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
         if args.single_thread:
-            Output.show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat)
+            OutputHuman.show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat)
             return
 	self.timestamp = timestamp
 	key = (area, hdr)
@@ -1644,7 +1658,7 @@ if csv_mode:
 elif args.columns:
     out = OutputBuffered(args.output)
 else:
-    out = Output(args.output)
+    out = OutputHuman(args.output)
 runner.schedule()
 if args.no_multiplex:
     ret = execute_no_multiplex(runner, out, rest)
