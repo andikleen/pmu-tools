@@ -1005,7 +1005,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
 	multiplex = float('nan')
         event = event.rstrip()
         if re.match(r"[0-9]+", count):
-            val = float(count) / 100.
+            val = float(count)
         elif count.startswith("<"):
             account[event].errors[count.replace("<","").replace(">","")] += 1
 	    multiplex = 0.
