@@ -367,7 +367,7 @@ class Output:
     def set_hdr(self, hdr, area):
         if area:
             hdr = "%-7s %s" % (area, hdr)
-        self.hdrlen = min(max(len(hdr) + 1, self.hdrlen), 60)
+        self.hdrlen = max(len(hdr) + 1, self.hdrlen)
 
     def set_cpus(self, cpus):
 	pass
@@ -468,7 +468,7 @@ class OutputBuffered(OutputHuman):
 	self.nodes[key][title] = (s, remark, desc, sample, valstat)
 
     def flush(self):
-	VALCOL_LEN = 10
+	VALCOL_LEN = 14
 	write = self.logf.write
 
 	cpunames = self.cpunames
@@ -1443,7 +1443,8 @@ class Runner:
 
 	# first compute column lengths
         for obj in self.olist:
-            out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
+            if obj.thresh or print_all:
+                out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
 
         # step 3: print
 	for i in range(0, len(self.olist)):
