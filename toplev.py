@@ -837,7 +837,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
     stat = runner.stat
     if len(res.keys()) > 1:
         cores = [key_to_coreid(x) for x in res.keys() if int(x) in runner.allowed_threads]
-        out.set_cpus(set(map(core_fmt, cores) + map(thread_fmt, cores)))
+        threads = map(thread_fmt, runner.allowed_threads)
+        out.set_cpus(set(map(core_fmt, cores) + threads))
     if smt_mode:
         # compute non SMT nodes, but don't print yet
         # this is needed for getting the thresholds correct when
