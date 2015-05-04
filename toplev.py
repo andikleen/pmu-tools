@@ -484,7 +484,7 @@ class OutputBuffered(Output):
                         remark = ""
                     if valstat:
                         vlist.append(valstat)
-		    write("%-*s " % (VALCOL_LEN, cpu[0]))
+		    write("%*s " % (VALCOL_LEN, cpu[0]))
 		else:
 		    write("%*s " % (VALCOL_LEN, ""))
             if remark:
