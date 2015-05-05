@@ -397,7 +397,7 @@ def csv_writer(f, sep):
     return csv.writer(f, delimiter=sep)
 
 class OutputHuman(Output):
-    """Generate human readable output."""
+    """Generate human readable single-column output."""
     def __init__(self, logfile):
         Output.__init__(self, logfile)
         locale.setlocale(locale.LC_ALL, '')
@@ -439,7 +439,7 @@ class OutputHuman(Output):
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
         if l > 1000:
-            val = locale.format("%5u", round(l), grouping=True)
+            val = locale.format("%10u", round(l), grouping=True)
         else:
             val = "%5.2f" % (l)
         self.item(area, name, val, timestamp, unit, desc, title,
