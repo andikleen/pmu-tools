@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev has a new --nodes option to add and remove specific measurements.
 * toplev has a new --columns option to print results from different CPUs side-by-side.
 * toplev now has a (draft) [tutorial and manual](https://github.com/andikleen/pmu-tools/wiki/toplev-manual)
 * toplev now detects kernel counter scheduling problems based on the kernel version and automatically

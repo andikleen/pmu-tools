@@ -284,6 +284,7 @@ p.add_argument('--long-desc', help='Print long descriptions instead of abbreviat
                 action='store_true')
 p.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.', action='store_true')
 p.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
+p.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
 args, rest = p.parse_known_args()
 
 if args.version:
@@ -1248,6 +1249,26 @@ Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
     return desc
 
+def node_filter(obj, test):
+    if args.nodes:
+        fname = full_name(obj)
+        name = obj.name
+
+        def match(m):
+            return fnmatch.fnmatch(name, m) or fnmatch.fnmatch(fname, m)
+
+        for j in args.nodes.split(","):
+            i = 0
+            if j[0] == '^':
+                if match(j[1:]):
+                    return False
+                continue
+            elif j[0] == '+':
+                i += 1
+            if match(j[i:]):
+                return True
+    return test()
+
 class Runner:
     """Schedule measurements of event groups. Try to run multiple in parallel."""
 
@@ -1269,11 +1290,19 @@ class Runner:
         obj.res_map = dict()
         self.olist.append(obj)
 
+    # remove unwanted nodes after their parent relation ship has been set up
+    def filter_nodes(self):
+        def want_node(obj):
+            if obj.metric:
+                return node_filter(obj, lambda: obj.level <= self.max_level)
+            else:
+                return node_filter(obj, lambda: args.metrics)
+
+        self.olist = filter(want_node, self.olist)
+
     def run(self, obj):
         obj.thresh = False
         obj.metric = False
-        if obj.level > self.max_level:
-            return
         self.do_run(obj)
 
     def metric(self, obj):
@@ -1281,8 +1310,6 @@ class Runner:
         obj.metric = True
         obj.level = 0
         obj.sibling = None
-        if not args.metrics:
-            return
         self.do_run(obj)
 
     def split_groups(self, objl, evlev):
@@ -1594,6 +1621,8 @@ def setup_with_metrics(p, runner):
     args.metrics = True
     p.Setup(runner)
     args.metrics = old_metrics
+
+runner.filter_nodes()
 
 if True:
     import perf_metrics
