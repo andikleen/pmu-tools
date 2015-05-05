@@ -471,7 +471,7 @@ class OutputBuffered(OutputHuman):
 	VALCOL_LEN = 14
 	write = self.logf.write
 
-	cpunames = self.cpunames
+	cpunames = sorted(self.cpunames)
 
 	if self.timestamp:
 	    write("%9s" % "")
