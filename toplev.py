@@ -474,7 +474,7 @@ class OutputColumns(OutputHuman):
 	if self.timestamp:
 	    write("%9s" % "")
 	self.logf.write("%*s" % (self.hdrlen, ""))
-	for j in sorted(cpunames):
+	for j in cpunames:
 	    write("%*s " % (VALCOL_LEN, j))
 
 	write("\n")
