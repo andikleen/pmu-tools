@@ -175,7 +175,6 @@ def needed_counters(evlist):
     # a split
     if num_limit > 0:
         num = max(num, cpu.counters) + num_limit
-    #print "num_generic", num_generic, "num", num, "num_limit", num_limit, evlist
     return num
 
 def event_group(evlist):
@@ -359,6 +358,7 @@ def format_valstat(valstat):
     return vs
 
 class Output:
+    """Abstract base class for Output classes."""
     def __init__(self, logfile):
         self.logf = logfile
         self.printed_descs = set()
@@ -394,9 +394,6 @@ class Output:
     def flush(self):
 	pass
 
-def csv_writer(f, sep):
-    return csv.writer(f, delimiter=sep)
-
 class OutputHuman(Output):
     """Generate human readable single-column output."""
     def __init__(self, logfile):
@@ -430,12 +427,12 @@ class OutputHuman(Output):
     # C0    BE      Backend_Bound:                                62.00 %
     def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
 	self.print_timestamp(timestamp)
+        write = self.logf.write
         if title:
-            self.logf.write("%-6s" % (title))
+            write("%-6s" % (title))
         vs = format_valstat(valstat)
 	self.print_header(area, hdr)
-	print >>self.logf, s,
-	print >>self.logf, remark + vs
+        write(s + " " + remark + vs + "\n")
 	self.print_desc(desc, sample)
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
@@ -446,8 +443,8 @@ class OutputHuman(Output):
         self.item(area, name, val, timestamp, unit, desc, title,
                   None, valstat)
 
-class OutputBuffered(OutputHuman):
-    """Output data in per-cpu columns."""
+class OutputColumns(OutputHuman):
+    """Human-readable output data in per-cpu columns."""
     def __init__(self, logfile):
 	OutputHuman.__init__(self, logfile)
 	self.nodes = dict()
@@ -512,7 +509,7 @@ class OutputCSV(Output):
     """Output data in CSV format."""
     def __init__(self, logfile, sep):
         Output.__init__(self, logfile)
-        self.writer = csv_writer(self.logf, sep)
+        self.writer = csv.writer(self.logf, separator=sep)
 
     def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
         if args.no_desc:
@@ -528,6 +525,7 @@ class OutputCSV(Output):
         self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample, stddev, multiplex])
 
 class CPU:
+    """Detect the CPU."""
     # overrides for easy regression tests
     def force_cpu(self):
         force = os.getenv("FORCECPU")
@@ -645,6 +643,7 @@ def print_perf(r):
     sys.stdout.flush()
 
 class PerfRun:
+    """Control a perf subprocess."""
     def execute(self, r):
         outp, inp = pty.openpty()
         n = r.index("--log-fd")
@@ -787,6 +786,7 @@ def thread_fmt(j):
     return core_fmt(key_to_coreid(j)) + ("-T%d" % cpu.cputothread[int(j)])
 
 class ComputeStat:
+    """Maintain statistics on measurement data."""
     def __init__(self):
         self.referenced = set()
         self.already_warned = set()
@@ -1270,7 +1270,7 @@ def node_filter(obj, test):
     return test()
 
 class Runner:
-    """Schedule measurements of event groups. Try to run multiple in parallel."""
+    """Schedule measurements of event groups. Map events to groups."""
 
     def __init__(self, max_level):
         self.evnum = [] # flat global list
@@ -1686,7 +1686,7 @@ runner.collect()
 if csv_mode:
     out = OutputCSV(args.output, csv_mode)
 elif args.columns:
-    out = OutputBuffered(args.output)
+    out = OutputColumns(args.output)
 else:
     out = OutputHuman(args.output)
 runner.schedule()
