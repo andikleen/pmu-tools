@@ -383,11 +383,11 @@ class Output:
         self.show(timestamp, title, area, name, l, remark, desc, sample, valstat)
 
     def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
-        self.item(area, name, "%5s" % ("%2.2f%%" % (100.0 * l)), timestamp, remark, desc, title,
+        self.item(area, name, "%12.2f%%" % (100.0 * l), timestamp, remark, desc, title,
                   sample, valstat)
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
-        val = "%5.2f" % (l)
+        val = "%12.2f" % (l)
         self.item(area, name, val, timestamp, unit, desc, title,
                   None, valstat)
 
@@ -492,7 +492,7 @@ class OutputColumns(OutputHuman):
 		if cpuname in node:
 		    cpu = node[cpuname]
 		    desc, sample, remark, valstat = cpu[2], cpu[3], cpu[1], cpu[4]
-                    if remark in ("above", "below"): # XXX
+                    if remark in ("above", "below", "Metric", "CoreMetric", "CoreClocks"): # XXX
                         remark = ""
                     if valstat:
                         vlist.append(valstat)
