@@ -473,7 +473,7 @@ class OutputColumns(OutputHuman):
 
 	if self.timestamp:
 	    write("%9s" % "")
-	self.logf.write("%*s" % (self.hdrlen, ""))
+	write("%*s" % (self.hdrlen, ""))
 	for j in cpunames:
 	    write("%*s " % (VALCOL_LEN, j))
 
@@ -1283,7 +1283,8 @@ class Runner:
         self.stat = ComputeStat()
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv)
-	    self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value", "Perf-event", "Index", "STDEV", "MULTI"))
+	    self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value",
+                                  "Perf-event", "Index", "STDEV", "MULTI"))
 
     def do_run(self, obj):
         obj.res = None
