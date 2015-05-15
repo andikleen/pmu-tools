@@ -509,7 +509,7 @@ class OutputCSV(Output):
     """Output data in CSV format."""
     def __init__(self, logfile, sep):
         Output.__init__(self, logfile)
-        self.writer = csv.writer(self.logf, separator=sep)
+        self.writer = csv.writer(self.logf, delimiter=sep)
 
     def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
         if args.no_desc:
