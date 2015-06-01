@@ -1294,7 +1294,7 @@ class Runner:
     # remove unwanted nodes after their parent relation ship has been set up
     def filter_nodes(self):
         def want_node(obj):
-            if obj.metric:
+            if not obj.metric:
                 return node_filter(obj, lambda: obj.level <= self.max_level)
             else:
                 return node_filter(obj, lambda: args.metrics)
