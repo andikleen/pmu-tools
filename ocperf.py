@@ -112,6 +112,59 @@ class MSR:
         self.writemsr(msr, val, print_only)
         self.reg[msr] = 1
 
+qual_map = (
+    ("amt1", "any=1", EVENTSEL_ANY, ""),
+    ("i1", "inv=1", EVENTSEL_INV, ""),
+    ("tx", "in_tx=1", 0, ""),
+    ("sup", "", 0, "k"),
+    ("usr=yes", "", 0, "u"),
+    ("usr=no", "", 0, "k"),
+    ("anythr=yes", "any=1", 0, ""),
+    ("cp", "in_tx_cp=1", 0, ""))
+
+qualval_map = (
+    (r"c(mask=)?([0-9]+)", "cmask=%d", 24),
+    (r"(sa|sample-after)=([0-9x]+)", "period=%d", 0))
+
+# newe gets modified
+def convert_extra(extra, val, newe):
+    nextra = ""
+    while extra:
+        if extra[0] == ":":
+            extra = extra[1:]
+            continue
+        found = False
+        for j in qualval_map:
+            m = re.match(j[0], extra)
+            if m:
+                if j[2]:
+                    val |= int(m.group(2)) << j[2]
+                newe.append(j[1] % (int(m.group(2))))
+                extra = extra[len(m.group(0)):]
+                found = True
+        if found:
+            continue
+        found = False
+        for j in qual_map:
+            if extra.startswith(j[0]):
+                val |= j[2]
+                newe.append(j[1])
+                extra = extra[len(j[0]):]
+                nextra += j[3]
+                found = True
+                break
+        if found:
+            continue
+        if not extra:
+            break
+        if extra[0] in perf_qual + "p":
+            nextra += extra[0]
+            extra = extra[1:]
+            continue
+        print >>sys.stderr, "bad event qualifier", extra
+        break
+    return nextra, val
+
 class Event:
     def __init__(self, name, val, desc):
         self.val = val
@@ -147,26 +200,12 @@ class Event:
         val = self.val
         newe = []
         extra = "".join(merge_extra(extra_set(self.extra), extra_set(flags)))
-        m = re.search(r"c(mask=)?([0-9]+)", extra)
-        if m:
-            extra = re.sub(r"c(mask=)?[0-9]+", "", extra)
-            val |= int(m.group(2)) << 24
-            newe.append("cmask=%x" % (int(m.group(2))))
-        m = re.search(r"amt1", extra)
-        if m:
-            extra = extra.replace("amt1", "")
-            val |= EVENTSEL_ANY
-            newe.append("any=1")
-        m = re.search(r"i1", extra)
-        if m:
-            extra = extra.replace("i1", "")
-            val |= EVENTSEL_INV
-            newe.append("inv=1")
-
+        extra, val = convert_extra(":" + extra, val, newe)
         if version.direct or use_raw:
             ename = "r%x" % (val,) 
             if extra:
                 ename += ":" + extra
+            # XXX should error for extras that don't fit into raw
         else:
 	    ename = "cpu/%s/" % (self.output_newstyle(newextra=",".join(newe), noname=noname, period=period, name=name)) + extra
         return ename
@@ -256,9 +295,11 @@ def ffs(flag):
         j += 1
     return j
 
+perf_qual = "kuhGHSD" # without pebs
+
 def extra_set(e):
     return set(map(lambda x: x[0],
-                   re.findall(r"((p+)|(c(mask=)?\d+|amt1|i1)|.)", e)))
+        re.findall(r"(p+|" + "|".join([x[0] for x in qual_map + qualval_map]) + "|[" + perf_qual + "])", e)))
 
 def merge_extra(a, b):
     m = a | b
