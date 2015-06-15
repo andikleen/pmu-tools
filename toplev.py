@@ -532,6 +532,57 @@ class OutputColumns(OutputHuman):
 	    self.print_desc(desc, sample)
 	self.nodes = dict()
 
+class OutputColumnsCSV(OutputColumns):
+    """Columns output in CSV mode."""
+
+    def __init__(self, logfile, sep):
+        OutputColumns.__init__(self, logfile)
+        self.writer = csv.writer(self.logf, delimiter=sep)
+        self.printed_header = False
+
+    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
+	self.timestamp = timestamp
+	key = (area, hdr)
+	if key not in self.nodes:
+	    self.nodes[key] = dict()
+	assert title not in self.nodes[key]
+	self.nodes[key][title] = (s, remark, desc, sample, valstat)
+
+    def flush(self):
+        cpunames = sorted(self.cpunames)
+        if not self.printed_header:
+            ts = ["Timestamp"] if self.timestamp else []
+            self.writer.writerow(ts + ["Area", "Node"] + cpunames + ["Description", "Sample", "Stddev", "Multiplex"])
+            self.printed_header = True
+        for key in sorted(sorted(self.nodes.keys(), key=lambda x: x[1]), key=lambda x: x[0] == ""):
+	    node = self.nodes[key]
+            ts = [self.timestamp] if self.timestamp else []
+            l = ts + [key[0], key[1]]
+            vlist = []
+            ol = dict()
+            desc, sample = "", ""
+            for cpuname in cpunames:
+                if cpuname in node:
+		    cpu = node[cpuname]
+                    if cpu[2]:
+                        desc = cpu[2]
+                    if cpu[3]:
+                        sample = cpu[3]
+                    # ignore remark for now
+                    if cpu[4]:
+                        vlist.append(cpu[4])
+                    ol[cpuname] = float(cpu[0])
+            l += [ol[x] if x in ol else "" for x in cpunames]
+            l.append(desc)
+            l.append(sample)
+            vs = combine_valstat(vlist)
+            if vs:
+                l += (vs.stddev, vs.multiplex if not isnan(vs.multiplex) else "")
+            else:
+                l += ["", ""]
+            self.writer.writerow(l)
+        self.nodes = dict()
+
 class OutputCSV(Output):
     """Output data in CSV format."""
     def __init__(self, logfile, sep):
@@ -1784,7 +1835,10 @@ if not args.quiet:
 
 runner.collect()
 if csv_mode:
-    out = OutputCSV(args.output, csv_mode)
+    if args.columns:
+        out = OutputColumnsCSV(args.output, csv_mode)
+    else:
+        out = OutputCSV(args.output, csv_mode)
 elif args.columns:
     out = OutputColumns(args.output)
 else:

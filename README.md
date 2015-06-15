@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now supports columnar output in CSV mode (-x, --column)
 * toplev can print the critical bottleneck with --bottleneck
 * The tools can now find event lists for the original user of sudo
 * jevents now has a perf stat like tool called jstat (renamed to jestat)
