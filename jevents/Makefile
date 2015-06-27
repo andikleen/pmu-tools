@@ -1,5 +1,6 @@
 CFLAGS := -g -Wall -O2
-OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o perf.o
+OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o perf.o \
+       interrupts.o rdpmc.o measure.o
 KDOC = /usr/src/linux/scripts/kernel-doc
 
 all: libjevents.a showevent listevents rmap
@@ -22,14 +23,14 @@ listevents: listevents.o libjevents.a
 
 rmap: rmap.o libjevents.a
 
-DOCFILES := cache.c jevents.c cpustr.c rawevent.c perf.c
+DOCFILES := cache.c jevents.c cpustr.c rawevent.c perf.c interrupts.c measure.c rdpmc.c
 
 html: jevents.html
 
 man: jevents.man
 
 jevents.man: $(DOCFILES)
-	${KDOC} -man ${DOCFILES} > $@
+	${KDOC} -man ${DOCFILES} | sed 's/"Kernel API" 9 "Kernel API"/"pmu-tools" 3 "pmu-tools"/' > $@
 
 jevents.html: $(DOCFILES)
 	${KDOC} -html ${DOCFILES} > $@
