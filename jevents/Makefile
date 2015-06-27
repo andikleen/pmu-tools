@@ -1,5 +1,5 @@
-CFLAGS := -g -Wall
-OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o
+CFLAGS := -g -Wall -O2
+OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o perf.o
 KDOC = /usr/src/linux/scripts/kernel-doc
 
 all: libjevents.a showevent listevents rmap
@@ -22,7 +22,7 @@ listevents: listevents.o libjevents.a
 
 rmap: rmap.o libjevents.a
 
-DOCFILES := cache.c jevents.c cpustr.c rawevent.c
+DOCFILES := cache.c jevents.c cpustr.c rawevent.c perf.c
 
 html: jevents.html
 
