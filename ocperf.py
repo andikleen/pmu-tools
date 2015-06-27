@@ -142,6 +142,7 @@ def convert_extra(extra, val, newe):
                 newe.append(j[1] % (int(m.group(2))))
                 extra = extra[len(m.group(0)):]
                 found = True
+                break
         if found:
             continue
         found = False
