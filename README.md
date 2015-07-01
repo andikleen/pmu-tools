@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* libjevents now supports handling the perf ring buffer and reading performance counters from ring 3 in C programs, in addition to resolving symbolic event names. For more details see the [API reference](http://halobates.de/jevents.html) 
 * toplev has a new --nodes option to add and remove specific measurements.
 * toplev has a new --columns option to print results from different CPUs side-by-side.
 * toplev now has a (draft) [tutorial and manual](https://github.com/andikleen/pmu-tools/wiki/toplev-manual)
