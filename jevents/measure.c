@@ -122,6 +122,7 @@ void measure_group_stop(void)
 
 /**
  * measurement_group_finish - Free the counter resources of a group
+ *
  * Has to be called in the thread that executed measure_group_init()
  */
 void measure_group_finish(void)

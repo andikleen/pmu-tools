@@ -94,7 +94,7 @@ int rdpmc_open_attr(struct perf_event_attr *attr, struct rdpmc_ctx *ctx,
 }
 
 /**
- * rdpmc_close: free a ring 3 readable performance counter
+ * rdpmc_close - free a ring 3 readable performance counter
  * @ctx: Pointer to &rdpmc_ctx context.
  *
  * Must be called by each thread for each context it initialized.
@@ -106,7 +106,7 @@ void rdpmc_close(struct rdpmc_ctx *ctx)
 }
 
 /**
- * rdpmc_read: read a ring 3 readable performance counter
+ * rdpmc_read - read a ring 3 readable performance counter
  * @ctx: Pointer to initialized &rdpmc_ctx structure.
  *
  * Read the current value of a running performance counter.

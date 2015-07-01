@@ -533,7 +533,7 @@ class EmapNativeJSON(Emap):
             return
         data = json.load(open(name, "rb"))
         for row in data:
-            name = (row['Unit'] + "." + row['EventName']).lower()
+            name = row['EventName'].lower()
             self.uncore_events[name] = UncoreEvent(name, row)
 
 def json_with_extra(el):

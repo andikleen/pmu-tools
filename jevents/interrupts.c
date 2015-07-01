@@ -14,7 +14,7 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-/** DOC: Account for interrupts on Intel Sandy Bridge.
+/** DOC: Account for interrupts on Intel Core/Xeon systems
  *
  * This is useful for micro benchmarks to filter out measurement
  * samples that are disturbed by a context switch caused by OS
@@ -33,6 +33,7 @@ static __thread struct rdpmc_ctx int_ctx;
 
 /**
  * interrupts_init - Initialize interrupt counter per thread
+ *
  * Must be called for each application thread.
  */
 void interrupts_init(void)
@@ -42,6 +43,7 @@ void interrupts_init(void)
 
 /**
  * interrupts_exit - Free interrupt counter per thread.
+ *
  * Must be called for each application thread.
  */
 void interrupts_exit(void)
@@ -52,6 +54,7 @@ void interrupts_exit(void)
 
 /**
  * get_interrupts - get current interrupt counter.
+ *
  * Get the current hardware interrupt count. When the number changed
  * for a measurement period you had some sort of context switch.
  * The sample for this period should be discarded.
