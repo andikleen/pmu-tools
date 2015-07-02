@@ -769,7 +769,7 @@ def is_event(l, n):
     return re.match(event_regexp(), l[n])
 
 def set_interval(env, d):
-    env['interval-ns'] = d * 1E+12
+    env['interval-ns'] = d * 1e9
     if args.raw:
         print "interval-ns val", env['interval-ns']
 
@@ -1073,7 +1073,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
 		     events, stddev, multiplex)
     inf.close()
     if 'interval-ns' not in env:
-            set_interval(env, (time.time() - start) * 1E+9)
+            set_interval(env, time.time() - start)
     ret = prun.wait()
     print_account(account)
     return ret, res, rev, interval, valstats
