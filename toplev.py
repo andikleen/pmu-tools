@@ -687,6 +687,8 @@ def add_filter(s):
         s = map(add_filter_event, s)
     return s
 
+notfound_cache = set()
+
 def raw_event(i, name="", period=False):
     if i.count(".") > 0:
         if i in fixed_counters:
@@ -696,7 +698,9 @@ def raw_event(i, name="", period=False):
             if i in event_fixes:
                 e = emap.getevent(event_fixes[i])
         if e is None:
-            print >>sys.stderr, "%s not found" % (i,)
+            if i not in notfound_cache:
+                notfound_cache.add(i)
+                print >>sys.stderr, "%s not found" % (i,)
 	    return "dummy"
 	i = e.output(noname=True, name=name, period=period)
         emap.update_event(e.output(noname=True), e)
