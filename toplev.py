@@ -665,6 +665,7 @@ fixed_counters = {
     "INST_RETIRED.ANY": "instructions",
     "CPU_CLK_UNHALTED.REF_TSC": "ref-cycles",
     "CPU_CLK_UNHALTED.REF_TSC:amt1": "cpu/event=0x0,umask=0x3,any=1/",
+    "CPU_CLK_UNHALTED.REF_TSC:sup": "cpu/event=0x0,umask=0x3/k",
 }
 
 fixed_set = frozenset(fixed_counters.keys())
@@ -1093,7 +1094,7 @@ def ev_append(ev, level, obj):
 
 def canon_event(e):
     m = re.match(r"(.*?):(.*)", e)
-    if m and m.group(2) != "amt1":
+    if m and m.group(2) != "amt1" and m.group(2) != "sup":
         e = m.group(1)
     if e in fixed_counters:
         return fixed_counters[e]
@@ -1133,7 +1134,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff = -1):
     referenced.add(index)
     #print (ev, level, obj.name), "->", index
     rmap_ev = event_rmap(rev[index]).lower()
-    assert (rmap_ev == canon_event(ev) or
+    assert (rmap_ev == canon_event(ev).replace("/k", "/") or
                 (ev in event_fixes and canon_event(event_fixes[ev]) == rmap_ev) or
                 rmap_ev == "dummy")
 
