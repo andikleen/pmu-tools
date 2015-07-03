@@ -1703,10 +1703,13 @@ elif args.columns:
 else:
     out = OutputHuman(args.output)
 runner.schedule()
-if args.no_multiplex:
-    ret = execute_no_multiplex(runner, out, rest)
-else:
-    ret = execute(runner, out, rest)
+try:
+    if args.no_multiplex:
+        ret = execute_no_multiplex(runner, out, rest)
+    else:
+        ret = execute(runner, out, rest)
+except KeyboardInterrupt:
+    sys.exit(1)
 runner.stat.compute_errors()
 if args.show_sample or args.run_sample:
     print_sample(runner.sample_obj, rest)
