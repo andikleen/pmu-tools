@@ -92,7 +92,7 @@ outgroup_events = set()
 
 nonperf_events = {"interval-ns"}
 
-valid_events = [r"cpu/.*?/", r"power/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions"]
+valid_events = [r"cpu/.*?/", r"power/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
 
 # workaround for broken event files for now
 event_fixes = {
@@ -690,7 +690,7 @@ def raw_event(i, name="", period=False):
                 e = emap.getevent(event_fixes[i])
         if e is None:
             print >>sys.stderr, "%s not found" % (i,)
-	    return None
+	    return "dummy"
 	i = e.output(noname=True, name=name, period=period)
         emap.update_event(e.output(noname=True), e)
         if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
@@ -1132,9 +1132,10 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff = -1):
     index = obj.res_map[(ev, level, obj.name)]
     referenced.add(index)
     #print (ev, level, obj.name), "->", index
-    rmap_ev = event_rmap(rev[index])
+    rmap_ev = event_rmap(rev[index]).lower()
     assert (rmap_ev == canon_event(ev) or
-                (ev in event_fixes and canon_event(event_fixes[ev]) == rmap_ev))
+                (ev in event_fixes and canon_event(event_fixes[ev]) == rmap_ev) or
+                rmap_ev == "dummy")
 
     if isinstance(res[index], types.TupleType):
         if cpuoff == -1:
