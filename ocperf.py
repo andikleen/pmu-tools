@@ -247,11 +247,14 @@ class UncoreEvent:
         e.inv = int_or_zero(row, 'Invert')
         e.edge = int_or_zero(row, 'EdgeDetect')
         e.unit = row['Unit'].lower()
+        if e.unit == "imph-u":
+            e.unit = "arb"
         # xxx subctr
         if e.unit in box_to_perf:
             e.unit = box_to_perf[e.unit]
         e.msr = None
         e.overflow = 0
+        e.counter = "1" # dummy for toplev
 
     #  {
     # "Unit": "CBO",
@@ -265,8 +268,9 @@ class UncoreEvent:
     # "EdgeDetect": "0"
     # },
     # XXX cannot separate sockets
-    def output_newstyle(self, extra="", noname=False, period=False):
+    def output_newstyle(self, extra="", noname=False, period=False, name=""):
         # xxx multiply boxes
+        # name ignored for now
         e = self
         o = "/event=%#x,umask=%#x" % (e.code, e.umask)
         # xxx subctr, occ_sel, filters
@@ -284,8 +288,7 @@ class UncoreEvent:
                              itertools.takewhile(box_n_exists, itertools.count())])
         return "uncore_%s%s" % (e.unit, o.replace("_NUM", ""))
 
-    def output(self, flags, period=False):
-        return self.output_newstyle()
+    output = output_newstyle
 
 def ffs(flag):
     assert flag != 0
@@ -317,6 +320,16 @@ def print_event(name, desc, f, human, wrap):
         print >>f, "\n%s" % (wrap.fill(desc),)
     else:
         print >>f, " [%s]" % (desc,)
+
+uncore_boxes = set()
+
+def check_uncore_event(e):
+    if e.unit not in uncore_boxes:
+        if os.path.exists("/sys/devices/uncore_%s" % e.unit):
+            uncore_boxes.add(e.unit)
+    if e.unit in uncore_boxes:
+        return e
+    return None
 
 class Emap(object):
     """Read an event table."""
@@ -431,7 +444,7 @@ class Emap(object):
         elif e.startswith("offcore") and (e + "_0") in self.events:
             return self.getevent(e + "_0" + edelim + extra)
         elif e in self.uncore_events:
-            return self.uncore_events[e]
+            return check_uncore_event(self.uncore_events[e])
         return None
 
     def update_event(self, e, ev):
@@ -533,7 +546,7 @@ class EmapNativeJSON(Emap):
             return
         data = json.load(open(name, "rb"))
         for row in data:
-            name = (row['Unit'] + "." + row['EventName']).lower()
+            name = row['EventName'].lower()
             self.uncore_events[name] = UncoreEvent(name, row)
 
 def json_with_extra(el):
