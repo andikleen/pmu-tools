@@ -117,7 +117,7 @@ $WRAP ./toplev.py -o /dev/null --no-desc -v -l5 --run-sample $LOAD
 for cpu in $ALLCPUS ; do
 EVENTMAP=${cpus[$cpu]} FORCECPU=$cpu $WRAP ./toplev.py -o /dev/null --no-desc -v --all --show-sample $LOAD >&log
 cat log
-grep "not found" log && exit 1
+grep -v UNC log | grep "not found" && exit 1
 done
 
 trap "" ERR 0

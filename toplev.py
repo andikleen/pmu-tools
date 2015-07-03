@@ -676,9 +676,15 @@ def separator(x):
         return ""
     return ":"
 
+def add_filter_event(e):
+    s = separator(e)
+    if not e.endswith(s + ring_filter):
+        return e + s + ring_filter
+    return e
+
 def add_filter(s):
     if ring_filter:
-        s = [x + separator(x) + ring_filter for x in s]
+        s = map(add_filter_event, s)
     return s
 
 def raw_event(i, name="", period=False):
