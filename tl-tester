@@ -100,7 +100,9 @@ EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --stats --metrics --no-m
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --no-desc --power -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --no-desc $ALL --no-group $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --no-desc --sw -l4 $LOAD
+if python -c 'import matplotlib.pyplot' ; then
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --graph -o x.png -d --metrics -l4 $LOAD
+fi
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 sleep 1
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 --columns sleep 1
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 --valcsv val.csv --user $LOAD | tee log
