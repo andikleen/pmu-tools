@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* Support for Airmont and Broadwell with Iris CPUs
 * toplev updates to Ahmad Yasin's TopDown 3.0 (only Haswell and up for now):
 	- Support for Skylake CPUs
 	- Experimental uncore support (needs special event files)
