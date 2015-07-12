@@ -46,7 +46,7 @@
  * supports listing all events and resolving numeric events back to names.
  *
  * The standard workflow is the user calling "event_download.py"
- * or "perf download" to download the current list, and then
+ * to download the current list, and then
  * these functions can resolve or walk names. Alternatively
  * a JSON event file from https://download.01.org/perfmon
  * can be specified through the EVENTMAP= environment variable.
