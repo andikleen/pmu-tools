@@ -1,5 +1,6 @@
 PREFIX := /usr/local
 LIB := ${PREFIX}/lib64
+INCLUDE := ${PREFIX}/include
 CFLAGS := -g -Wall -O2
 OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o perf.o \
        interrupts.o rdpmc.o measure.o
@@ -9,6 +10,7 @@ all: libjevents.a showevent listevents rmap
 
 install: libjevents.a
 	cp libjevents.a ${LIB}
+	cp rdpmc.h jevents.h measure.h perf.h ${INCL}
 	# xxx install man pages
 
 libjevents.a: ${OBJ}

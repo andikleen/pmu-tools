@@ -31,7 +31,7 @@
 #include <sys/ioctl.h>
 
 #include "util.h"
-#include "perf.h"
+#include "perf-iter.h"
 
 /**
  * perf_iter_init - Initialize iterator for perf ring buffer
