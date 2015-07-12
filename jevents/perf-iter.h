@@ -1,5 +1,8 @@
-typedef unsigned long long u64;
-typedef long long s64;
+#ifndef _PERF_ITER_H
+#define _PERF_ITER_H 1
+
+#include <stdint.h>
+
 
 struct perf_event_mmap_page;
 struct perf_event_header;
@@ -7,9 +10,9 @@ struct perf_event_header;
 /* Iterator for perf ring buffer */
 
 struct perf_iter {
-	u64 ring_buffer_mask;	
-	u64 head, cur, raw_head, bufsize;
-	s64 avail;
+	uint64_t ring_buffer_mask;
+	uint64_t head, cur, raw_head, bufsize;
+	int64_t avail;
 	char *data;
 	struct perf_event_mmap_page *mpage;
 };
@@ -33,8 +36,9 @@ static inline int perf_iter_finished(struct perf_iter *iter)
 	return iter->avail <= 0;
 }
 
-static inline u64 *perf_hdr_payload(struct perf_event_header *hdr)
+static inline uint64_t *perf_hdr_payload(struct perf_event_header *hdr)
 {
-	return (u64 *)(hdr + 1);
+	return (uint64_t *)(hdr + 1);
 }
 
+#endif
