@@ -1,5 +1,6 @@
 PREFIX := /usr/local
 LIB := ${PREFIX}/lib64
+BIN := ${PREFIX}/bin
 INCLUDE := ${PREFIX}/include
 CFLAGS := -g -Wall -O2
 OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o perf.o \
@@ -8,10 +9,15 @@ KDOC = /usr/src/linux/scripts/kernel-doc
 
 all: libjevents.a showevent listevents rmap
 
-install: libjevents.a
-	cp libjevents.a ${LIB}
-	cp rdpmc.h jevents.h measure.h perf.h ${INCL}
-	# xxx install man pages
+install: libjevents.a listevents showevent rmap
+	install -d ${BIN}
+	install -d ${LIB}
+	install -d ${INCLUDE}
+	install -m 755 listevents showevent ${BIN}
+	install -m 755 ${BIN}/rmap-event
+	install -m 644 libjevents.a ${LIB}
+	install -m 644 rdpmc.h jevents.h measure.h perf.h ${INCLUDE}
+	# xxx install man page
 
 libjevents.a: ${OBJ}
 	rm -f libjevents.a
