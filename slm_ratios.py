@@ -4,6 +4,8 @@
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 
+print_error = lambda msg: False
+
 # Instructions Per Cycle
 def IPC(EV, level):
     return EV("INST_RETIRED.ANY", level) / EV("cycles", 1)
