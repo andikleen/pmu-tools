@@ -5,6 +5,21 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev updates to Ahmad Yasin's TopDown 3.0 (only Haswell and up for now):
+	- Support for Skylake CPUs
+	- Experimental uncore support (needs special event files)
+	- L3_Bound, L3_Latency, ITLB_Misses, Memory/Core_bound accuracy improved
+	- Enhanced sampling for Branch_Resteers, *_Port_Utilized
+	- Precise sampling for frontend issues on Skylake
+	- A range of bug fixes
+	- Support for Xeon-D (Broadwell-DE micro server)
+	- New nodes: Assists, L3_Bandwidth
+	- A range of new metrics
+	- GFLOPS excludes x87
+	- Workaround for UOPS_EXECUTED issue on Haswell
+	- Fix TLB related nodes on BDW
+	- 0_Ports_Utilized excludes divider cycles
+	- Fix for Frontend_Latency on SMT on Haswell
 * toplev has a new --nodes option to add and remove specific measurements.
 * toplev has a new --columns option to print results from different CPUs side-by-side.
 * toplev now has a (draft) [tutorial and manual](https://github.com/andikleen/pmu-tools/wiki/toplev-manual)

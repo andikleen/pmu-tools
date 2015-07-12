@@ -32,11 +32,12 @@ known_cpus = (
     ("hsw", (60, 70, 69 )),
     ("hsx", (63, )),
     ("slm", (55, 77)),
-    ("bdw", (61, )),
+    ("bdw", (61, 86, )),
     ("simple", ()),
+    ("skl", (94, 78, )),
 )
 
-tsx_cpus = ("hsw", "hsx", "bdw")
+tsx_cpus = ("hsw", "hsx", "bdw", "skl")
 
 fixed_to_num = {
     "instructions" : 0,
@@ -1619,6 +1620,11 @@ elif cpu.cpu == "bdw":
     smt_mode = cpu.ht
     bdw_client_ratios.print_error = pe
     bdw_client_ratios.Setup(runner)
+elif cpu.cpu == "skl":
+    import skl_client_ratios
+    skl_client_ratios.smt_enabled = cpu.ht
+    smt_mode = cpu.ht
+    skl_client_ratios.Setup(runner)
 elif cpu.cpu == "slm":
     import slm_ratios
     slm_ratios.Setup(runner)
