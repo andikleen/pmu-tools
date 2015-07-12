@@ -137,7 +137,8 @@ def unsup_event(e, table, min_kernel=None):
         return False
     v = j[1]
     if v[1] and kv_to_key(kernel_version) < kv_to_key(v[1]):
-	min_kernel.append(v[1])
+        if min_kernel:
+	    min_kernel.append(v[1])
         return True
     if v[2] and kv_to_key(kernel_version) >= kv_to_key(v[2]) :
         return True
