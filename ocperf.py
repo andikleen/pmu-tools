@@ -325,7 +325,7 @@ uncore_boxes = set()
 
 def check_uncore_event(e):
     if e.unit not in uncore_boxes:
-        if os.path.exists("/sys/devices/uncore_%s" % e.unit):
+        if os.path.exists("/sys/devices/uncore_%s" % e.unit) or os.getenv("FORCE_UNCORE"):
             uncore_boxes.add(e.unit)
     if e.unit in uncore_boxes:
         return e
