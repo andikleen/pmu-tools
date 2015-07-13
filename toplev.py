@@ -93,7 +93,7 @@ outgroup_events = set()
 
 nonperf_events = {"interval-ns"}
 
-valid_events = [r"cpu/.*?/", r"power/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
+valid_events = [r"cpu/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
 
 # workaround for broken event files for now
 event_fixes = {
@@ -1100,8 +1100,9 @@ def ev_append(ev, level, obj):
         obj.evlevels.append((ev, level, obj.name))
     if has(obj, 'nogroup') and obj.nogroup:
         outgroup_events.add(ev)
-    if not (ev.startswith("cpu") or ev.startswith("power")) and re.match(r'^[a-z]', ev):
-        valid_events.append(ev)
+    if not ev.startswith("cpu"):
+        # add first to overwrite more generic regexprs list r...
+        valid_events.insert(0, ev)
     return 99
 
 def canon_event(e):
