@@ -38,7 +38,7 @@ Energy_Unit = 61
 
 
 def Recovery_Cycles(EV, level):
-    return (EV("INT_MISC.RECOVERY_CYCLES:amt1", level) / 2) if smt_enabled else EV("INT_MISC.RECOVERY_CYCLES", level)
+    return (EV("INT_MISC.RECOVERY_CYCLES_ANY", level) / 2) if smt_enabled else EV("INT_MISC.RECOVERY_CYCLES", level)
 
 def Execute_Cycles(EV, level):
     return (EV("UOPS_EXECUTED.CORE:c1", level) / 2) if smt_enabled else EV("UOPS_EXECUTED.CORE:c1", level)
@@ -141,6 +141,10 @@ def IPTB(EV, level):
 def BPTB(EV, level):
     return EV("BR_INST_RETIRED.ALL_BRANCHES", level) / EV("BR_INST_RETIRED.NEAR_TAKEN", level)
 
+# Rough Estimation of fraction of fetched lines bytes consumed by program instructions
+def IFetch_Line_Utilization(EV, level):
+    return min(1 , EV("UOPS_ISSUED.ANY", level) /(UPI(EV, level)* 32 *(EV("ICACHE.HIT", level) + EV("ICACHE.MISSES", level)) / 4))
+
 # Fraction of Uops delivered by the DSB (decoded instructions cache)
 def DSB_Coverage(EV, level):
     return (EV("IDQ.DSB_UOPS", level) + EV("LSD.UOPS", level)) /(EV("IDQ.DSB_UOPS", level) + EV("LSD.UOPS", level) + EV("IDQ.MITE_UOPS", level) + EV("IDQ.MS_UOPS", level))
@@ -165,6 +169,10 @@ def Page_Walks_Use(EV, level):
 def Turbo_Utilization(EV, level):
     return CLKS(EV, level) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
 
+# Fraction of cycles where both hardware threads were active
+def SMT_2T_Utilization(EV, level):
+    return 1 - EV("CPU_CLK_THREAD_UNHALTED.ONE_THREAD_ACTIVE", level) /(EV("CPU_CLK_THREAD_UNHALTED.REF_XCLK_ANY", level) / 2) if smt_enabled else 0
+
 # Fraction of cycles spent in Kernel mode
 def Kernel_Utilization(EV, level):
     return EV("CPU_CLK_UNHALTED.REF_TSC:sup", level) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
@@ -183,7 +191,7 @@ def CLKS(EV, level):
 
 # Core actual clocks
 def CORE_CLKS(EV, level):
-    return (EV("CPU_CLK_UNHALTED.THREAD:amt1", level) / 2) if smt_enabled else CLKS(EV, level)
+    return (EV("CPU_CLK_UNHALTED.THREAD_ANY", level) / 2) if smt_enabled else CLKS(EV, level)
 
 # Run duration time in seconds
 def Time(EV, level):
@@ -776,6 +784,30 @@ optimization manual for more details."""
             self.thresh = False
         return self.val
 
+class FB_Full:
+    name = "FB_Full"
+    domain = "Clocks"
+    area = "BE/Mem"
+    desc = """
+This metric does a *rough estimation* of how often L1D Fill
+Buffer unavailability limited additional demand L1D demand
+requests to proceed."""
+    level = 4
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+	try:
+	    self.val = Load_Miss_Real_Latency(EV, 4)* EV("L1D_PEND_MISS.REQUEST_FB_FULL:c1", 4) / CLKS(EV, 4 )
+	    self.thresh = (self.val > 0.1) and self.parent.thresh
+	except ZeroDivisionError:
+	    print_error("FB_Full zero division")
+	    self.errcount += 1
+	    self.val = 0
+	    self.thresh = False
+	return self.val
+
 class L2_Bound:
     name = "L2_Bound"
     domain = "Clocks"
@@ -1295,6 +1327,191 @@ step"""
             self.thresh = False
         return self.val
 
+class Port_0:
+    name = "Port_0"
+    domain = "CoreClocks"
+    area = "BE/Core"
+    desc = """
+This metric represents Core cycles fraction CPU dispatched
+uops on execution port 0 (SNB+: ALU; HSW+:ALU and 2nd
+branch)"""
+    level = 5
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+	try:
+	    self.val = EV("UOPS_DISPATCHED_PORT.PORT_0", 5) / CORE_CLKS(EV, 5 )
+	    self.thresh = (self.val > 0.6)
+	except ZeroDivisionError:
+	    print_error("Port_0 zero division")
+	    self.errcount += 1
+	    self.val = 0
+	    self.thresh = False
+	return self.val
+
+class Port_1:
+    name = "Port_1"
+    domain = "CoreClocks"
+    area = "BE/Core"
+    desc = """
+This metric represents Core cycles fraction CPU dispatched
+uops on execution port 1 (ALU)"""
+    level = 5
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+	try:
+	    self.val = EV("UOPS_DISPATCHED_PORT.PORT_1", 5) / CORE_CLKS(EV, 5 )
+	    self.thresh = (self.val > 0.6)
+	except ZeroDivisionError:
+	    print_error("Port_1 zero division")
+	    self.errcount += 1
+	    self.val = 0
+	    self.thresh = False
+	return self.val
+
+class Port_2:
+    name = "Port_2"
+    domain = "CoreClocks"
+    area = "BE/Core"
+    desc = """
+This metric represents Core cycles fraction CPU dispatched
+uops on execution port 2 (Loads and Store-address)"""
+    level = 5
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+	try:
+	    self.val = EV("UOPS_DISPATCHED_PORT.PORT_2", 5) / CORE_CLKS(EV, 5 )
+	    self.thresh = (self.val > 0.6)
+	except ZeroDivisionError:
+	    print_error("Port_2 zero division")
+	    self.errcount += 1
+	    self.val = 0
+	    self.thresh = False
+	return self.val
+
+class Port_3:
+    name = "Port_3"
+    domain = "CoreClocks"
+    area = "BE/Core"
+    desc = """
+This metric represents Core cycles fraction CPU dispatched
+uops on execution port 3 (Loads and Store-address)"""
+    level = 5
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+	try:
+	    self.val = EV("UOPS_DISPATCHED_PORT.PORT_3", 5) / CORE_CLKS(EV, 5 )
+	    self.thresh = (self.val > 0.6)
+	except ZeroDivisionError:
+	    print_error("Port_3 zero division")
+	    self.errcount += 1
+	    self.val = 0
+	    self.thresh = False
+	return self.val
+
+class Port_4:
+    name = "Port_4"
+    domain = "CoreClocks"
+    area = "BE/Core"
+    desc = """
+This metric represents Core cycles fraction CPU dispatched
+uops on execution port 4 (Store-data)"""
+    level = 5
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+	try:
+	    self.val = EV("UOPS_DISPATCHED_PORT.PORT_4", 5) / CORE_CLKS(EV, 5 )
+	    self.thresh = (self.val > 0.6)
+	except ZeroDivisionError:
+	    print_error("Port_4 zero division")
+	    self.errcount += 1
+	    self.val = 0
+	    self.thresh = False
+	return self.val
+
+class Port_5:
+    name = "Port_5"
+    domain = "CoreClocks"
+    area = "BE/Core"
+    desc = """
+This metric represents Core cycles fraction CPU dispatched
+uops on execution port 5 (SNB+: Branches and ALU; HSW+: ALU)"""
+    level = 5
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+	try:
+	    self.val = EV("UOPS_DISPATCHED_PORT.PORT_5", 5) / CORE_CLKS(EV, 5 )
+	    self.thresh = (self.val > 0.6)
+	except ZeroDivisionError:
+	    print_error("Port_5 zero division")
+	    self.errcount += 1
+	    self.val = 0
+	    self.thresh = False
+	return self.val
+
+class Port_6:
+    name = "Port_6"
+    domain = "CoreClocks"
+    area = "BE/Core"
+    desc = """
+This metric represents Core cycles fraction CPU dispatched
+uops on execution port 6 (Branches and simple ALU)"""
+    level = 5
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+	try:
+	    self.val = EV("UOPS_DISPATCHED_PORT.PORT_6", 5) / CORE_CLKS(EV, 5 )
+	    self.thresh = (self.val > 0.6)
+	except ZeroDivisionError:
+	    print_error("Port_6 zero division")
+	    self.errcount += 1
+	    self.val = 0
+	    self.thresh = False
+	return self.val
+
+class Port_7:
+    name = "Port_7"
+    domain = "CoreClocks"
+    area = "BE/Core"
+    desc = """
+This metric represents Core cycles fraction CPU dispatched
+uops on execution port 7 (simple Store-address)"""
+    level = 5
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+	try:
+	    self.val = EV("UOPS_DISPATCHED_PORT.PORT_7", 5) / CORE_CLKS(EV, 5 )
+	    self.thresh = (self.val > 0.6)
+	except ZeroDivisionError:
+	    print_error("Port_7 zero division")
+	    self.errcount += 1
+	    self.val = 0
+	    self.thresh = False
+	return self.val
+
 class Retiring:
     name = "Retiring"
     domain = "Slots"
@@ -1517,6 +1734,23 @@ approximate PGO-likelihood for non-loopy codes."""
             self.errcount += 1
 	    self.val = 0
 
+class Metric_IFetch_Line_Utilization:
+    name = "IFetch_Line_Utilization"
+    desc = """
+Rough Estimation of fraction of fetched lines bytes consumed
+by program instructions"""
+    domain = "Metric"
+    maxval = 1
+    errcount = 0
+
+    def compute(self, EV):
+	try:
+	    self.val = IFetch_Line_Utilization(EV, 0)
+	except ZeroDivisionError:
+	    print_error("IFetch_Line_Utilization zero division")
+	    self.errcount += 1
+	    self.val = 0
+
 class Metric_DSB_Coverage:
     name = "DSB_Coverage"
     desc = """
@@ -1615,6 +1849,22 @@ Average Frequency Utilization relative nominal frequency"""
         except ZeroDivisionError:
             print_error("Turbo_Utilization zero division")
             self.errcount += 1
+	    self.val = 0
+
+class Metric_SMT_2T_Utilization:
+    name = "SMT_2T_Utilization"
+    desc = """
+Fraction of cycles where both hardware threads were active"""
+    domain = "Metric"
+    maxval = 1
+    errcount = 0
+
+    def compute(self, EV):
+	try:
+	    self.val = SMT_2T_Utilization(EV, 0)
+	except ZeroDivisionError:
+	    print_error("SMT_2T_Utilization zero division")
+	    self.errcount += 1
 	    self.val = 0
 
 class Metric_Kernel_Utilization:
@@ -1741,6 +1991,7 @@ class Setup:
         n = Store_Fwd_Blk() ; r.run(n) ; o["Store_Fwd_Blk"] = n
         n = Split_Loads() ; r.run(n) ; o["Split_Loads"] = n
         n = G4K_Aliasing() ; r.run(n) ; o["G4K_Aliasing"] = n
+	n = FB_Full() ; r.run(n) ; o["FB_Full"] = n
         n = L2_Bound() ; r.run(n) ; o["L2_Bound"] = n
         n = L3_Bound() ; r.run(n) ; o["L3_Bound"] = n
         n = Contested_Accesses() ; r.run(n) ; o["Contested_Accesses"] = n
@@ -1761,6 +2012,14 @@ class Setup:
         n = G1_Port_Utilized() ; r.run(n) ; o["G1_Port_Utilized"] = n
         n = G2_Ports_Utilized() ; r.run(n) ; o["G2_Ports_Utilized"] = n
         n = G3m_Ports_Utilized() ; r.run(n) ; o["G3m_Ports_Utilized"] = n
+	n = Port_0() ; r.run(n) ; o["Port_0"] = n
+	n = Port_1() ; r.run(n) ; o["Port_1"] = n
+	n = Port_2() ; r.run(n) ; o["Port_2"] = n
+	n = Port_3() ; r.run(n) ; o["Port_3"] = n
+	n = Port_4() ; r.run(n) ; o["Port_4"] = n
+	n = Port_5() ; r.run(n) ; o["Port_5"] = n
+	n = Port_6() ; r.run(n) ; o["Port_6"] = n
+	n = Port_7() ; r.run(n) ; o["Port_7"] = n
         n = Retiring() ; r.run(n) ; o["Retiring"] = n
         n = Base() ; r.run(n) ; o["Base"] = n
         n = Microcode_Sequencer() ; r.run(n) ; o["Microcode_Sequencer"] = n
@@ -1787,6 +2046,7 @@ class Setup:
         o["Store_Fwd_Blk"].parent = o["L1_Bound"]
         o["Split_Loads"].parent = o["L1_Bound"]
         o["G4K_Aliasing"].parent = o["L1_Bound"]
+	o["FB_Full"].parent = o["L1_Bound"]
         o["L2_Bound"].parent = o["Memory_Bound"]
         o["L3_Bound"].parent = o["Memory_Bound"]
         o["Contested_Accesses"].parent = o["L3_Bound"]
@@ -1807,6 +2067,14 @@ class Setup:
         o["G1_Port_Utilized"].parent = o["Ports_Utilization"]
         o["G2_Ports_Utilized"].parent = o["Ports_Utilization"]
         o["G3m_Ports_Utilized"].parent = o["Ports_Utilization"]
+	o["Port_0"].parent = o["G3m_Ports_Utilized"]
+	o["Port_1"].parent = o["G3m_Ports_Utilized"]
+	o["Port_2"].parent = o["G3m_Ports_Utilized"]
+	o["Port_3"].parent = o["G3m_Ports_Utilized"]
+	o["Port_4"].parent = o["G3m_Ports_Utilized"]
+	o["Port_5"].parent = o["G3m_Ports_Utilized"]
+	o["Port_6"].parent = o["G3m_Ports_Utilized"]
+	o["Port_7"].parent = o["G3m_Ports_Utilized"]
         o["Base"].parent = o["Retiring"]
         o["Microcode_Sequencer"].parent = o["Retiring"]
 	o["Assists"].parent = o["Microcode_Sequencer"]
@@ -1835,7 +2103,9 @@ class Setup:
 	o["MS_Switches"].sibling = o["Microcode_Sequencer"]
 	o["Bad_Speculation"].sibling = o["Branch_Resteers"]
 	o["L1_Bound"].sibling = o["G1_Port_Utilized"]
+	o["Split_Stores"].sibling = o["Port_4"]
 	o["G1_Port_Utilized"].sibling = o["L1_Bound"]
+	o["Port_4"].sibling = o["Split_Stores"]
 	o["Microcode_Sequencer"].sibling = o["MS_Switches"]
 
         # user visible metrics
@@ -1846,12 +2116,14 @@ class Setup:
         n = Metric_UPI() ; r.metric(n)
         n = Metric_IPTB() ; r.metric(n)
         n = Metric_BPTB() ; r.metric(n)
+	n = Metric_IFetch_Line_Utilization() ; r.metric(n)
         n = Metric_DSB_Coverage() ; r.metric(n)
         n = Metric_ILP() ; r.metric(n)
         n = Metric_MLP() ; r.metric(n)
         n = Metric_Load_Miss_Real_Latency() ; r.metric(n)
         n = Metric_Page_Walks_Use() ; r.metric(n)
 	n = Metric_Turbo_Utilization() ; r.metric(n)
+	n = Metric_SMT_2T_Utilization() ; r.metric(n)
 	n = Metric_Kernel_Utilization() ; r.metric(n)
 	n = Metric_MEM_Request_Latency() ; r.metric(n)
         n = Metric_MUX() ; r.metric(n)

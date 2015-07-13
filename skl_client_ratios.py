@@ -83,9 +83,6 @@ def ORO_L3M_Demand_DRD_C6(EV, level):
 def Store_L2_Hit_Cycles(EV, level):
     return 0
 
-def Cycles_False_Sharing_Client(EV, level):
-    return Mem_XSNP_HitM_Cost *(EV("MEM_LOAD_L3_HIT_RETIRED.XSNP_HITM", level) + EV("OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.HITM_OTHER_CORE", level))
-
 def Few_Uops_Executed_Threshold(EV, level):
     EV("EXE_ACTIVITY.2_PORTS_UTIL", level)
     return EV("EXE_ACTIVITY.2_PORTS_UTIL", level) if(IPC(EV, level)> 1.25)else 0
@@ -178,10 +175,6 @@ def SMT_2T_Utilization(EV, level):
 # Fraction of cycles spent in Kernel mode
 def Kernel_Utilization(EV, level):
     return EV("CPU_CLK_UNHALTED.REF_TSC:sup", level) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
-
-# Average latency of request to external memory
-def MEM_Request_Latency(EV, level):
-    return EV("UNC_ARB_TRK_OCCUPANCY.ALL", level) / EV("UNC_ARB_TRK_REQUESTS.ALL", level)
 
 # Fraction of cycles where the CPU is running in Transactional Memory mode (HLE or RTM)
 def TSX_Transactional_Cycles(EV, level):
@@ -1144,32 +1137,6 @@ cache)."""
 	    self.thresh = False
 	return self.val
 
-class False_Sharing:
-    name = "False_Sharing"
-    domain = "Clocks"
-    area = "BE/Mem"
-    desc = """
-This metric represents how often CPU was stalled due to
-False Sharing. False Sharing is a multithreading hiccup,
-where multiple threads contend on different data-elements
-mapped into the same cache line. It can be easily avoided by
-padding to make threads access different lines."""
-    level = 4
-    htoff = False
-    sample = ['MEM_LOAD_L3_HIT_RETIRED.XSNP_HITM:pp', 'OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.HITM_OTHER_CORE']
-    errcount = 0
-    sibling = None
-    def compute(self, EV):
-	try:
-	    self.val = Mem_XSNP_HitM_Cost *(EV("MEM_LOAD_L3_HIT_RETIRED.XSNP_HITM", 4) + EV("OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.HITM_OTHER_CORE", 4)) / CLKS(EV, 4 )
-	    self.thresh = (self.val > 0.2) and self.parent.thresh
-	except ZeroDivisionError:
-	    print_error("False_Sharing zero division")
-	    self.errcount += 1
-	    self.val = 0
-	    self.thresh = False
-	return self.val
-
 class Split_Stores:
     name = "Split_Stores"
     domain = "CoreClocks"
@@ -2126,22 +2093,6 @@ Fraction of cycles spent in Kernel mode"""
 	    self.errcount += 1
 	    self.val = 0
 
-class Metric_MEM_Request_Latency:
-    name = "MEM_Request_Latency"
-    desc = """
-Average latency of request to external memory"""
-    domain = "Metric"
-    maxval = 1000
-    errcount = 0
-
-    def compute(self, EV):
-	try:
-	    self.val = MEM_Request_Latency(EV, 0)
-	except ZeroDivisionError:
-	    print_error("MEM_Request_Latency zero division")
-	    self.errcount += 1
-	    self.val = 0
-
 class Metric_TSX_Transactional_Cycles:
     name = "TSX_Transactional_Cycles"
     desc = """
@@ -2282,7 +2233,6 @@ class Setup:
 	n = MEM_Latency() ; r.run(n) ; o["MEM_Latency"] = n
 	n = Stores_Bound() ; r.run(n) ; o["Stores_Bound"] = n
 	n = Store_Latency() ; r.run(n) ; o["Store_Latency"] = n
-	n = False_Sharing() ; r.run(n) ; o["False_Sharing"] = n
 	n = Split_Stores() ; r.run(n) ; o["Split_Stores"] = n
 	n = DTLB_Store() ; r.run(n) ; o["DTLB_Store"] = n
 	n = Core_Bound() ; r.run(n) ; o["Core_Bound"] = n
@@ -2345,7 +2295,6 @@ class Setup:
 	o["MEM_Latency"].parent = o["MEM_Bound"]
 	o["Stores_Bound"].parent = o["Memory_Bound"]
 	o["Store_Latency"].parent = o["Stores_Bound"]
-	o["False_Sharing"].parent = o["Stores_Bound"]
 	o["Split_Stores"].parent = o["Stores_Bound"]
 	o["DTLB_Store"].parent = o["Stores_Bound"]
 	o["Core_Bound"].parent = o["Backend_Bound"]
@@ -2429,7 +2378,6 @@ class Setup:
 	n = Metric_Turbo_Utilization() ; r.metric(n)
 	n = Metric_SMT_2T_Utilization() ; r.metric(n)
 	n = Metric_Kernel_Utilization() ; r.metric(n)
-	n = Metric_MEM_Request_Latency() ; r.metric(n)
 	n = Metric_TSX_Transactional_Cycles() ; r.metric(n)
 	n = Metric_TSX_Aborted_Cycles() ; r.metric(n)
 	n = Metric_MUX() ; r.metric(n)
