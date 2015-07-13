@@ -57,15 +57,6 @@ import event_download
 
 force_download = False
 
-fixed_counters = {
-    "32": "instructions",
-    "33": "cycles",
-    "34": "ref-cycles",
-    "FIXED COUNTER 1": "instructions",
-    "FIXED COUNTER 2": "cycles",
-    "FIXED COUNTER 3": "ref-cycles"
-}
-
 def has_format(s):
     return os.path.isfile("/sys/devices/cpu/format/" + s)
 
@@ -357,7 +348,7 @@ class Emap(object):
             code = gethex('code')
             umask = gethex('umask')
             # hack for now to handle fixed counter 2 correctly
-            if name == 'cpu_clk_unhalted.thread':
+            if name.startswith("cpu_clk_unhalted.thread"):
                 code = 0x3c
                 umask = 0
             if 'other' in m and m['other'] in row:
@@ -377,8 +368,6 @@ class Emap(object):
             e = Event(name, val, d)
             counter = get('counter')
             e.pname = "r%x" % (val,)
-            if counter in fixed_counters:
-                e.pname = fixed_counters[counter]
             e.newextra = ""
             if ('msr_index' in m and m['msr_index'] in row
                     and get('msr_index') and get('msr_value')):
