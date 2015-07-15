@@ -62,7 +62,7 @@ for the perf uncore driver and pretty prints the output. It also supports
 computing higher level metrics derived from multiple events. 
 * A library to resolve named intel events (like INST_RETIRED.ANY) 
 to perf_event_attr ([jevents](http://halobates.de/jevents.html))
-* A library for self profiling with Linux since Linux 3.3. Self
+jevents also supports self profiling with Linux since Linux 3.3. Self
 profiling is a program monitoring its own execution, either for controlled
 benchmarking or to optimize itself.
 For self-profiling on older kernels you can use
@@ -113,7 +113,7 @@ You want to:
 - display toplev output graphically: use tl-server or toplev --graph
 - know what CPU events to run, but want to use symbolic names: use ocperf.
 - measure interconnect/caches/memory/power management on Xeon E5+: use ucevent
-- Use perf events from a C program: use jevents, self, addr
+- Use perf events from a C program: use jevents
 - Query CPU topology or disable HyperThreading: use cputop
 - Change Model Specific Registers: use msr
 - Change PCI config space: use PCI
@@ -427,70 +427,6 @@ Reenable all second threads (reenable hyper threading)
 
 	cputop "thread == 0" online
 
-## self: 
-
-Self is a simple library to support self-profiling of programs, that is programs
-that measure their own execution.
-
-cd self
-make
-
-Read the documentation. 
-
-[rdpmc] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/rdpmc.html)
-is the basic facility to access raw counters.
-
-ocperf can be used to generate raw perf numbers for your CPU to pass
-to rdpmc_open()
-
-	ocperf list | less
-<look for intended event>
-	DIRECT_MSR=1 ./ocperf.py stat -e eventname true
-<look for perf stat -e rXXXX in output>
-
-![example] (http://halobates.de/pmutools-event.png)
-
-XXX is the needed event number in hex. Note that self does not support
-offcore or uncore events.
-
-Also the event numbers are CPU specific, so you may need a
-/proc/cpuinfo model check for portable programs (see the ocperf source
-for example)
-
-Example (replace EVENTNUMBER with your intended event from above or a
-perf event like PERF_COUNT_HW_CPU_CYCLES). 
-
-This is very simplified, for a real benchmark you almost certainly
-want some warmup, multiple iterations, possibly context switch
-filtering and some filler code to avoid cache effects.
-
-```C
-	#include "rdpmc.h"
-
-	struct rdpmc_ctx ctx;
-	unsigned long long start, end;
-
-	if (rdpmc_open(EVENTNUMBER, &ctx) < 0) ... error ...
-	start = rdpmc_read(&ctx);
-	... your workload ...
-	end = rdpmc_read(&ctx);
-```
-
-[measure] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/measure.html)
-supports event group profiling.  
-[interrupts] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/interrupts.html)
-provides functions for a common use case of filtering out context
-switches and interrupts from micro benchmarks. These only work on
-Intel Ivy and Sandy Bridge CPUs.
-
-Link the object files and include the header files in your program
-
-/sys/devices/cpu/rdpmc must be 1.
-
-rtest.c and test2.c provide
-examples. http://halobates.de/modern-pmus-yokohama.pdf provides some
-additional general information on cycle counting. The techniques used
-with simple-pmu described there can be used with self too.
 
 ## pebs-grabber:
 
@@ -523,12 +459,6 @@ See http://download.intel.com/products/processor/manual/253669.pdf
 Note this doesn't work with standard FC18 kernels, as they broke
 trace points in modules. It works with later and earlier kernels.
 
-## addr:
-
-addr is a basic frame work for self profiling of memory addresses accessed by the program.
-Requires a Linux 3.10+ kernel and a supported CPU.
-
-Also provides a simple [perf ring buffer API](http://halobates.de/addr.html)
 
 ## event-rmap
 
