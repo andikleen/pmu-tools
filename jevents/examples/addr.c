@@ -28,7 +28,7 @@
 #include <dlfcn.h>
 
 #include "hist.h"
-#include "perf.h"
+#include "perf-iter.h"
 #include "util.h"
 #include "cpu.h"
 
