@@ -1,3 +1,4 @@
+/* Demonstrate self profiling for context switches */
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
