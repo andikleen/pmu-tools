@@ -1,46 +1,26 @@
 # jevents
 
-jevents is a C library to use from C programs.
+jevents is a C library to use from C programs to make access to the kernel Linux perf interface easier.
 
 ## Features
 
-* Handling the perf ring buffer and reading performance counters from ring 3 in C programs,
-* Basic frame work for self profiling of memory addresses accessed by the program.
-* resolving symbolic event names using downloaded event files
+* Resolving symbolic event names using downloaded event files
+* Reading performance counters from ring 3 in C programs,
+* Handling the perf ring buffer (for example to read memory addresses)
 
 For more details see the [API reference](http://halobates.de/jevents.html) 
 
 ## Building
 
-cd jevents
-make
-sudo make install
+	cd jevents
+	make
+	sudo make install
 
 
 ## self profiling 
 
-Self is a simple library to support self-profiling of programs, that is programs
-that measure their own execution.
-
-ocperf can be used to generate raw perf numbers for your CPU to pass
-to rdpmc_open()
-
-	ocperf list | less
-<look for intended event>
-	DIRECT_MSR=1 ./ocperf.py stat -e eventname true
-<look for perf stat -e rXXXX in output>
-
-![example] (http://halobates.de/pmutools-event.png)
-
-XXX is the needed event number in hex. Note that self does not support
-offcore or uncore events.
-
-Also the event numbers are CPU specific, so you may need a
-/proc/cpuinfo model check for portable programs (see the ocperf source
-for example)
-
-Example (replace EVENTNUMBER with your intended event from above or a
-perf event like PERF_COUNT_HW_CPU_CYCLES). 
+Reading performance counters directly in the program without entering
+the kernel.
 
 This is very simplified, for a real benchmark you almost certainly
 want some warmup, multiple iterations, possibly context switch
@@ -52,25 +32,36 @@ filtering and some filler code to avoid cache effects.
 	struct rdpmc_ctx ctx;
 	unsigned long long start, end;
 
-	if (rdpmc_open(EVENTNUMBER, &ctx) < 0) ... error ...
+	if (rdpmc_open(PERF_COUNT_HW_CPU_CYCLES, &ctx) < 0) ... error ...
 	start = rdpmc_read(&ctx);
 	... your workload ...
 	end = rdpmc_read(&ctx);
 ```
 
-[measure] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/measure.html)
-supports event group profiling.  
-[interrupts] (http://htmlpreview.github.com/?https://github.com/andikleen/pmu-tools/blob/master/self/interrupts.html)
-provides functions for a common use case of filtering out context
-switches and interrupts from micro benchmarks. These only work on
-Intel Ivy and Sandy Bridge CPUs.
-
-Link the object files and include the header files in your program
-
 /sys/devices/cpu/rdpmc must be 1.
 
-rtest.c and test2.c provide
-examples. http://halobates.de/modern-pmus-yokohama.pdf provides some
+http://halobates.de/modern-pmus-yokohama.pdf provides some
 additional general information on cycle counting. The techniques used
-with simple-pmu described there can be used with self too.
+with simple-pmu described there can be used with jevents too.
 
+## Resolving named events
+
+Resolving named events to a perf event and set up reading from the perf ring buffer.
+
+First run event_download.sh to download a current event list for your CPU.
+
+```C
+	#include "jevents.h"
+	#include "perf-iter.h"
+	#include <linux/perf_event.h>
+	#include <sys/syscall.h>
+	#include <unistd.h>
+
+	struct perf_event_attr attr;
+	if (resolve_event("cpu_clk_thread_unhalted.ref_xclk", &attr) < 0) {
+		... error ...
+	}
+
+	/* You can change attr, see the perf_event_open man page for details */
+
+'''
