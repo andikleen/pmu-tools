@@ -489,7 +489,11 @@ class EmapNativeJSON(Emap):
         super(EmapNativeJSON, self).__init__()
         if name.find("JKT") >= 0:
             self.latego = True
-        data = json.load(open(name, 'rb'))
+        try:
+            data = json.load(open(name, 'rb'))
+        except ValueError:
+            print >>sys.stderr, "Cannot open", name
+            return
         if u'PublicDescription' not in data[0]:
             mapping['desc'] = u'BriefDescription'
         self.read_table(data, mapping)
