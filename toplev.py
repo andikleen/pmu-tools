@@ -263,6 +263,7 @@ p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
 p.add_argument('--raw', help="Print raw values", action='store_true')
 p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
+p.add_argument('--no-util', help="Do not measure CPU utilization", action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 p.add_argument('--pid', '-p', help=argparse.SUPPRESS)
 p.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
@@ -1645,7 +1646,7 @@ def setup_with_metrics(p, runner):
 
 runner.filter_nodes()
 
-if True:
+if not args.no_util:
     import perf_metrics
     setup_with_metrics(perf_metrics, runner)
 
