@@ -389,12 +389,11 @@ class Output:
         self.show(timestamp, title, area, name, l, remark, desc, sample, valstat)
 
     def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
-        self.item(area, name, "%12.2f%%" % (100.0 * l), timestamp, remark, desc, title,
+        self.item(area, name, "%13.2f" % (100.0 * l), timestamp, "%" + remark, desc, title,
                   sample, valstat)
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
-        val = "%12.2f" % (l)
-        self.item(area, name, val, timestamp, unit, desc, title,
+        self.item(area, name, "%13.2f" % l, timestamp, unit, desc, title,
                   None, valstat)
 
     def flush(self):
@@ -418,7 +417,7 @@ class OutputHuman(Output):
 
     def print_header(self, area, hdr):
 	hdr = "%-7s %s" % (area, hdr)
-	print >>self.logf, "%-*s " % (self.hdrlen, hdr + ":"),
+	self.logf.write("%-*s " % (self.hdrlen, hdr + ":"))
 
     # timestamp Timestamp in interval mode
     # title     CPU
@@ -443,9 +442,9 @@ class OutputHuman(Output):
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
         if l > 1000:
-            val = locale.format("%10u", round(l), grouping=True)
+            val = locale.format("%13u", round(l), grouping=True)
         else:
-            val = "%5.2f" % (l)
+            val = "%13.2f" % (l)
         self.item(area, name, val, timestamp, unit, desc, title,
                   None, valstat)
 
