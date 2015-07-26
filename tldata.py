@@ -42,7 +42,7 @@ class TLData:
                 ts, cpu, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4], r[5]
             else:
                 ts, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4]
-                cpu = "cpu"
+                cpu = None
             key = (name, cpu)
             ts, pct = float(ts), float(pct.replace("%", ""))
             if name not in self.helptxt or self.helptxt[name] == "":
@@ -55,7 +55,8 @@ class TLData:
                 val = dict()
             val[key] = pct
             n = gen_level.level_name(name)
-            self.cpus.add(cpu)
+            if cpu:
+                self.cpus.add(cpu)
             self.headers.add(name)
             if gen_level.is_metric(name):
                 self.metrics.add(n)
