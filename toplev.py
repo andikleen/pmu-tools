@@ -1539,7 +1539,7 @@ def print_sample(sample_obj, rest):
 	missing = [x[0] for x in set(samples) - set(nsamp)]
 	print >>sys.stderr, "warning: update kernel to handle sample events:"
 	print >>sys.stderr, "\n".join(missing)
-    sl = [raw_event(s[0], s[1], period=True) for s in nsamp]
+    sl = [raw_event(s[0], s[1] + "_" + s[0].replace(".", "_"), period=True) for s in nsamp]
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
     print "Sampling:"
