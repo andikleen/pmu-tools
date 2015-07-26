@@ -287,6 +287,7 @@ p.add_argument('--long-desc', help='Print long descriptions instead of abbreviat
 p.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.', action='store_true')
 p.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
 p.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
+p.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
 args, rest = p.parse_known_args()
 
 if len(rest) > 0 and rest[0] == "--":
@@ -322,7 +323,8 @@ if args.graph:
         extra += "--cpu " + args.graph_cpu + " "
     args.csv = ','
     cmd = "PATH=$PATH:. ; tl-barplot.py " + extra + "/dev/stdin"
-    print cmd
+    if not args.quiet:
+        print cmd
     args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
 
 print_all = args.verbose # or args.csv
@@ -641,6 +643,8 @@ class CPU:
 cpu = CPU()
 
 def print_perf(r):
+    if args.quiet:
+        return
     l = ["'" + x + "'" if x.find("{") >= 0 else x for x in r]
     i = l.index('--log-fd')
     del l[i:i+2]
@@ -1702,10 +1706,11 @@ if args.core:
 else:
     runner.allowed_threads = cpu.allcpus
 
-print "Using level %d." % (args.level),
-if not args.level and cpu.cpu != "slm":
-    print "Change level with -lX"
-print
+if not args.quiet:
+    print "Using level %d." % (args.level),
+    if not args.level and cpu.cpu != "slm":
+        print "Change level with -lX"
+    print
 
 runner.collect()
 if csv_mode:
