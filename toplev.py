@@ -289,7 +289,7 @@ p.add_argument('--columns', help='Print CPU output in multiple columns', action=
 p.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
 args, rest = p.parse_known_args()
 
-if rest[0] == "--":
+if len(rest) > 0 and rest[0] == "--":
     rest = rest[1:]
 
 if args.version:
