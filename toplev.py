@@ -439,7 +439,11 @@ class OutputHuman(Output):
             write("%-6s" % (title))
         vs = format_valstat(valstat)
 	self.print_header(area, hdr)
-        write(s + " " + remark + vs + "\n")
+        if vs:
+            val = "%-20s %s" % (s + " " + remark, vs)
+        else:
+            val = "%s %s" % (s, remark)
+        write(val + "\n")
 	self.print_desc(desc, sample)
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
