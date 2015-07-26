@@ -1540,6 +1540,7 @@ def print_sample(sample_obj, rest):
 	print >>sys.stderr, "warning: update kernel to handle sample events:"
 	print >>sys.stderr, "\n".join(missing)
     sl = [raw_event(s[0], s[1], period=True) for s in nsamp]
+    sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
     print "Sampling:"
     sperf = [perf, "record", "-g", "-e", sample] + [x for x in rest if x != "-A"]
