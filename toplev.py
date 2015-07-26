@@ -1684,7 +1684,7 @@ if "--per-socket" in rest:
 if "--per-core" in rest:
     sys.exit("toplev not compatible with --per-core")
 
-if not args.single_thread:
+if not args.single_thread and cpu.ht:
     print "Will measure complete system."
     if smt_mode:
         if args.cpu:
