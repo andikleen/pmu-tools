@@ -185,6 +185,12 @@ def event_group(evlist):
         e = "{%s}" % (e,)
     return e
 
+def exe_dir():
+    d = os.path.dirname(sys.argv[0])
+    if d:
+        return d
+    return "."
+
 feat = PerfFeatures()
 emap = ocperf.find_emap()
 if not emap:
@@ -322,7 +328,7 @@ if args.graph:
     if args.graph_cpu:
         extra += "--cpu " + args.graph_cpu + " "
     args.csv = ','
-    cmd = "PATH=$PATH:. ; tl-barplot.py " + extra + "/dev/stdin"
+    cmd = "PATH=$PATH:%s ; tl-barplot.py %s /dev/stdin" % (exe_dir(), extra)
     if not args.quiet:
         print cmd
     args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
