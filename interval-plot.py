@@ -11,6 +11,7 @@ import sys
 import matplotlib.pyplot as plt
 import collections
 import argparse
+import re
 
 p = argparse.ArgumentParser(
         usage='plot interval CSV output from perf stat/toplev',
@@ -58,16 +59,19 @@ rc = csv.reader(inf)
 timestamps = dict()
 value = dict()
 
+def isnum(x):
+    return re.match(r'[0-9.]+', x)
+
 val = ""
 for r in rc:
     # timestamp,event,value
     if len(r) < 3:
         continue
     print r
-    if len(r) >= 5:
-        ts, event, val, thresh, desc = r
+    if len(r) >= 5 and not isnum(r[1]):
+        ts, event, val, thresh, desc = r[:5]
     elif len(r) >= 4:
-        ts, val, unit, event = r
+        ts, val, unit, event = r[:4]
     else:
         ts, val, event = r
     if event not in assigned:
