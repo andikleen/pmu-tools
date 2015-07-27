@@ -40,9 +40,12 @@ ratios = defaultdict(list)
 # XXX plot multiple cpus instead
 if args.cpu:
     cpu = args.cpu
-else:
+elif len(data.cpus) > 0:
     cpu = sorted(data.cpus)[0]
-print "plotting cpu", cpu
+else:
+    cpu = None
+if cpu:
+    print "plotting cpu", cpu
 
 for d in data.vals:
     for j in data.headers:

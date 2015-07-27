@@ -185,6 +185,12 @@ def event_group(evlist):
         e = "{%s}" % (e,)
     return e
 
+def exe_dir():
+    d = os.path.dirname(sys.argv[0])
+    if d:
+        return d
+    return "."
+
 feat = PerfFeatures()
 emap = ocperf.find_emap()
 if not emap:
@@ -289,9 +295,10 @@ p.add_argument('--long-desc', help='Print long descriptions instead of abbreviat
 p.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.', action='store_true')
 p.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
 p.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
+p.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
 args, rest = p.parse_known_args()
 
-if rest[0] == "--":
+if len(rest) > 0 and rest[0] == "--":
     rest = rest[1:]
 
 if args.version:
@@ -323,8 +330,9 @@ if args.graph:
     if args.graph_cpu:
         extra += "--cpu " + args.graph_cpu + " "
     args.csv = ','
-    cmd = "PATH=$PATH:. ; tl-barplot.py " + extra + "/dev/stdin"
-    print cmd
+    cmd = "PATH=$PATH:%s ; tl-barplot.py %s /dev/stdin" % (exe_dir(), extra)
+    if not args.quiet:
+        print cmd
     args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
 
 print_all = args.verbose # or args.csv
@@ -443,7 +451,11 @@ class OutputHuman(Output):
             write("%-6s" % (title))
         vs = format_valstat(valstat)
 	self.print_header(area, hdr)
-        write(s + " " + remark + vs + "\n")
+        if vs:
+            val = "%-20s %s" % (s + " " + remark, vs)
+        else:
+            val = "%s %s" % (s, remark)
+        write(val + "\n")
 	self.print_desc(desc, sample)
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
@@ -647,6 +659,8 @@ class CPU:
 cpu = CPU()
 
 def print_perf(r):
+    if args.quiet:
+        return
     l = ["'" + x + "'" if x.find("{") >= 0 else x for x in r]
     i = l.index('--log-fd')
     del l[i:i+2]
@@ -779,7 +793,7 @@ def print_account(ad):
             if args.stats:
                 print_not(a, a.errors[e], e, j)
             total[e] += 1
-    if sum(total.values()) > 0:
+    if sum(total.values()) > 0 and not args.quiet:
         print >>sys.stderr, ", ".join(["%d events %s" % (num, e) for e, num in total.iteritems()])
 
 def event_regexp():
@@ -828,18 +842,19 @@ class ComputeStat:
         # sanity check: did we reference all results?
         if len(res.keys()) > 0:
             r = res[res.keys()[0]]
-            if len(referenced) != len(r):
+            if len(referenced) != len(r) and not args.quiet:
                 print >>sys.stderr, "warning: %d results not referenced:" % (len(r) - len(referenced)),
                 print >>sys.stderr, " ".join(["%d" % x for x in sorted(set(range(len(r))) - referenced)])
 
     def compute_errors(self):
         if self.errcount > 0 and self.errors != self.prev_errors:
-            print >>sys.stderr, "warning: %d division by zero errors:" % (self.errcount),
-            print >>sys.stderr, " ".join(self.errors)
+            if not args.quiet:
+                print >>sys.stderr, "warning: %d division by zero errors:" % (self.errcount),
+                print >>sys.stderr, " ".join(self.errors)
             self.errcount = 0
             self.prev_errors = self.errors
             self.errors = set()
-        if self.mismeasured and self.mismeasured > self.prev_mismeasured:
+        if self.mismeasured and self.mismeasured > self.prev_mismeasured and not args.quiet:
             print "warning: Mismeasured:", " ".join(self.mismeasured)
             self.prev_mismeasured = self.mismeasured
 
@@ -1401,7 +1416,7 @@ class Runner:
             if any(unsup):
                 bad_nodes.add(obj)
                 bad_events |= set(unsup)
-        if len(bad_nodes) > 0:
+        if len(bad_nodes) > 0 and not args.quiet:
             if args.force_events:
                 pwrap("warning: Using --force-events. Nodes: " +
 		   " ".join([x.name for x in bad_nodes]) + " may be unreliable")
@@ -1543,9 +1558,11 @@ def print_sample(sample_obj, rest):
 		for x in nsamp]
     if cmp(nsamp, samples):
 	missing = [x[0] for x in set(samples) - set(nsamp)]
-	print >>sys.stderr, "warning: update kernel to handle sample events:"
-	print >>sys.stderr, "\n".join(missing)
-    sl = [raw_event(s[0], s[1], period=True) for s in nsamp]
+        if not args.quiet:
+	    print >>sys.stderr, "warning: update kernel to handle sample events:"
+	    print >>sys.stderr, "\n".join(missing)
+    sl = [raw_event(s[0], s[1] + "_" + s[0].replace(".", "_"), period=True) for s in nsamp]
+    sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
     print "Sampling:"
     sperf = [perf, "record", "-g", "-e", sample] + [x for x in rest if x != "-A"]
@@ -1575,7 +1592,7 @@ if not kv:
 kernel_version = map(int, kv.split(".")[:2])
 
 def ht_warning():
-    if cpu.ht:
+    if cpu.ht and not args.quiet:
         print >>sys.stderr, "WARNING: HT enabled"
         print >>sys.stderr, "Measuring multiple processes/threads on the same core may is not reliable."
 
@@ -1648,7 +1665,7 @@ elif cpu.cpu == "slm":
     slm_ratios.Setup(runner)
 else:
     ht_warning()
-    if detailed_model:
+    if detailed_model and not args.quiet:
         print >>sys.stderr, "Sorry, no detailed model for your CPU. Only Level 1 supported."
     import simple_ratios
     simple_ratios.print_error = pe
@@ -1693,7 +1710,7 @@ if "--per-socket" in rest:
 if "--per-core" in rest:
     sys.exit("toplev not compatible with --per-core")
 
-if not args.single_thread:
+if not args.single_thread and cpu.ht:
     print "Will measure complete system."
     if smt_mode:
         if args.cpu:
@@ -1715,10 +1732,11 @@ if args.core:
 else:
     runner.allowed_threads = cpu.allcpus
 
-print "Using level %d." % (args.level),
-if not args.level and cpu.cpu != "slm":
-    print "Change level with -lX"
-print
+if not args.quiet:
+    print "Using level %d." % (args.level),
+    if not args.level and cpu.cpu != "slm":
+        print "Change level with -lX"
+    print
 
 runner.collect()
 if csv_mode:
