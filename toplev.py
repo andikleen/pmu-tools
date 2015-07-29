@@ -272,8 +272,6 @@ p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
 p.add_argument('--no-util', help="Do not measure CPU utilization", action='store_true')
 p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 p.add_argument('--pid', '-p', help=argparse.SUPPRESS)
-p.add_argument('--all-cpus', '-a', help=argparse.SUPPRESS)
-p.add_argument('--no-aggr', '-A', help=argparse.SUPPRESS)
 p.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
 p.add_argument('--all', help="Measure everything available", action='store_true')
 p.add_argument('--frequency', help="Measure frequency", action='store_true')
@@ -352,10 +350,6 @@ if args.cpu:
     rest = ["--cpu", args.cpu] + rest
 if args.pid:
     rest = ["--pid", args.pid] + rest
-if args.no_aggr:
-    rest = ["--no-aggr"] + rest
-if args.all_cpus:
-    rest = ["--all-cpus"] + rest
 
 MAX_ERROR = 0.05
 
@@ -1601,14 +1595,6 @@ runner = Runner(args.level)
 pe = lambda x: None
 if args.debug:
     pe = lambda x: sys.stdout.write(x + "\n")
-
-# level 2 and no metrics has only SMT nodes. So can use single thread
-if (args.level <= 2 and not
-	args.metrics and not
-	args.nodes and not  # in case it specifies non-smt
-        args.all_cpus and not
-        args.no_aggr):
-    args.single_thread = True
 
 if args.single_thread:
     cpu.ht = False
