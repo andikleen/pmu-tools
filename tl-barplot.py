@@ -9,7 +9,7 @@ import gen_level
 import tldata
 
 def parse_args():
-    p = argparse.ArgumentParser(usage='plot toplev -v -lN -x, output as bar plot')
+    p = argparse.ArgumentParser(usage='plot toplev -I...  -x, output as bar plot')
     p.add_argument('file', help='CSV file to plot')
     p.add_argument('--output', '-o', help='Save figure to file (.pdf/.png/etc). Otherwise show.',
                       nargs='?')
