@@ -310,8 +310,8 @@ if args.gen:
     copyfile('toplev.ico', genfn(args.gen, 'favicon.ico'))
     for cpu in data.cpus:
         for l in data.levels:
-            with open(genfn(args.gen, cpu + ":" + l + ".csv"), 'w') as f:
-                gencsv(f, l)
+            with open(genfn(args.gen, cpu + "." + l + ".csv"), 'w') as f:
+                gencsv(f, l, cpu)
     print "Please browse", args.gen, "through a web server, not through file:"
 else:
     httpd = BaseHTTPServer.HTTPServer((args.host, args.port), TLHandler)
