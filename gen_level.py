@@ -2,10 +2,11 @@
 # utility module for other tools
 # the model used must be a superset of all
 import ivb_server_ratios
-import hsw_client_ratios
+import skl_client_ratios
 import power_metrics
 import linux_metrics
 import tsx_metrics
+import perf_metrics
 import frequency
 import re
 
@@ -56,7 +57,7 @@ def get_subplot(name):
 metric_unit = {
     "Latencies": "Cycles",
     "Basic_Block_Length": "Insns",
-    "CPU_Utilization": "CPUs"
+    "CPU utilization": "CPUs"
 }
 
 def get_unit(name):
@@ -92,10 +93,11 @@ def level_name(name):
 
 runner = Runner()
 ivb_server_ratios.Setup(runner)
-hsw_client_ratios.Setup(runner)
+skl_client_ratios.Setup(runner)
 power_metrics.Setup(runner)
 linux_metrics.Setup(runner)
 tsx_metrics.Setup(runner)
+perf_metrics.Setup(runner)
 
 class CPU:
     freq = 0.0

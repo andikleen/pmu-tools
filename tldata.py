@@ -63,7 +63,7 @@ class TLData:
             self.levels[n].add(name)
             prevts = ts
 
-early_plots = ["TopLevel", "CPU_Utilization", "Power", "Frequency", "CPU-METRIC"]
+early_plots = ["TopLevel", "CPU utilization", "Power", "Frequency", "CPU-METRIC"]
 
 def sort_pos(i, data):
     if i in early_plots:
