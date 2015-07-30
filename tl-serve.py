@@ -281,7 +281,7 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.serve_file("toplev.ico", "image/x-icon")
         elif self.path.endswith(".csv"):
             data.update()
-            m = re.match(r"/(cpu|C\d+|S\d+-C\d+)\.(.*?)\.csv", self.path)
+            m = re.match(r"/(cpu|C\d+|S\d+-C\d+|C\d+-T\d+)\.(.*?)\.csv", self.path)
             if not m:
                 self.bad()
                 return
