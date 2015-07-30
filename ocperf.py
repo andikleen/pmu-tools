@@ -301,8 +301,8 @@ def merge_extra(a, b):
     if 'ppp' in m:
         m = m - set(['p', 'pp'])
     if 'pp' in m:
-        m = m - {'p'}
-    m = m - {':'}
+        m = m - set(['p'])
+    m = m - set([':'])
     return m
 
 def print_event(name, desc, f, human, wrap):
