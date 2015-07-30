@@ -321,6 +321,7 @@ def print_event(name, desc, f, human, wrap):
         print >>f, " [%s]" % (desc,)
 
 uncore_boxes = set()
+missing_boxes = set()
 
 def check_uncore_event(e):
     if e.unit not in uncore_boxes:
@@ -328,6 +329,9 @@ def check_uncore_event(e):
             uncore_boxes.add(e.unit)
     if e.unit in uncore_boxes:
         return e
+    if e.unit not in missing_boxes:
+        print "Uncore unit", e.unit, "missing"
+        missing_boxes.add(e.unit)
     return None
 
 class Emap(object):
