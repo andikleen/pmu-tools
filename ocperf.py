@@ -229,7 +229,12 @@ class UncoreEvent:
     def __init__(self, name, row):
         self.name = name
         e = self
-        e.desc = row['Description'].strip()
+        if 'PublicDescription' in row:
+            e.desc = row['PublicDescription'].strip()
+        elif 'BriefDescription' in row:
+            e.desc = row['BriefDescription'].strip()
+        else:
+            e.desc = row['Description'].strip()
         e.code = int(row['EventCode'], 16)
         if 'Internal' in row and int(row['Internal']) != 0:
             e.code |= int(row['Internal']) << 21
@@ -259,11 +264,14 @@ class UncoreEvent:
     # "EdgeDetect": "0"
     # },
     # XXX cannot separate sockets
-    def output_newstyle(self, extra="", noname=False, period=False, name=""):
+    def output_newstyle(self, extra="", noname=False, period=False, name="", flags=""):
         # xxx multiply boxes
         # name ignored for now
+        # flags ignored
         e = self
-        o = "/event=%#x,umask=%#x" % (e.code, e.umask)
+        o = "/event=%#x" % e.code
+        if e.umask:
+            o += ",umask=%#x" % e.umask
         # xxx subctr, occ_sel, filters
         if version.has_name and not noname:
             o += ",name=" + e.name.replace(".", "_") + "_NUM"
