@@ -611,6 +611,8 @@ def find_emap():
             toget.append("offcore")
         if not os.getenv("UNCORE"):
             toget.append("uncore")
+        if not os.getenv("UNCORE"):
+            toget.append("uncore")
         event_download.download(el, toget)
         return json_with_extra(el)
     except IOError:
