@@ -1599,6 +1599,10 @@ if args.debug:
 if args.single_thread:
     cpu.ht = False
 
+if args.quiet:
+    args.no_desc = True
+    args.no_util = True
+
 if cpu.cpu == "ivb":
     import ivb_client_ratios
     ivb_client_ratios.smt_enabled = cpu.ht
