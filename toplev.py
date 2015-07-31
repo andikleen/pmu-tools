@@ -1672,7 +1672,8 @@ if not args.no_util:
 if args.power and feat.supports_power:
     import power_metrics
     setup_with_metrics(power_metrics, runner)
-    print >>sys.stderr, "Running with --power. Will measure complete system."
+    if not args.quiet:
+        print "Running with --power. Will measure complete system."
     if "-a" not in rest:
         rest = ["-a"] + rest
 
@@ -1697,7 +1698,8 @@ if "--per-core" in rest:
     sys.exit("toplev not compatible with --per-core")
 
 if not args.single_thread and cpu.ht:
-    print "Will measure complete system."
+    if not args.quiet:
+        print "Will measure complete system."
     if smt_mode:
         if args.cpu:
             print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
