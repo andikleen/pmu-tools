@@ -229,7 +229,12 @@ class UncoreEvent:
     def __init__(self, name, row):
         self.name = name
         e = self
-        e.desc = row['Description'].strip()
+        if 'PublicDescription' in row:
+            e.desc = row['PublicDescription'].strip()
+        elif 'BriefDescription' in row:
+            e.desc = row['BriefDescription'].strip()
+        else:
+            e.desc = row['Description'].strip()
         e.code = int(row['EventCode'], 16)
         if 'Internal' in row and int(row['Internal']) != 0:
             e.code |= int(row['Internal']) << 21
@@ -259,11 +264,14 @@ class UncoreEvent:
     # "EdgeDetect": "0"
     # },
     # XXX cannot separate sockets
-    def output_newstyle(self, extra="", noname=False, period=False, name=""):
+    def output_newstyle(self, extra="", noname=False, period=False, name="", flags=""):
         # xxx multiply boxes
         # name ignored for now
+        # flags ignored
         e = self
-        o = "/event=%#x,umask=%#x" % (e.code, e.umask)
+        o = "/event=%#x" % e.code
+        if e.umask:
+            o += ",umask=%#x" % e.umask
         # xxx subctr, occ_sel, filters
         if version.has_name and not noname:
             o += ",name=" + e.name.replace(".", "_") + "_NUM"
@@ -301,8 +309,8 @@ def merge_extra(a, b):
     if 'ppp' in m:
         m = m - set(['p', 'pp'])
     if 'pp' in m:
-        m = m - {'p'}
-    m = m - {':'}
+        m = m - set(['p'])
+    m = m - set([':'])
     return m
 
 def print_event(name, desc, f, human, wrap):
@@ -313,6 +321,7 @@ def print_event(name, desc, f, human, wrap):
         print >>f, " [%s]" % (desc,)
 
 uncore_boxes = set()
+missing_boxes = set()
 
 def check_uncore_event(e):
     if e.unit not in uncore_boxes:
@@ -320,6 +329,9 @@ def check_uncore_event(e):
             uncore_boxes.add(e.unit)
     if e.unit in uncore_boxes:
         return e
+    if e.unit not in missing_boxes:
+        print "Uncore unit", e.unit, "missing"
+        missing_boxes.add(e.unit)
     return None
 
 class Emap(object):
@@ -597,6 +609,8 @@ def find_emap():
         toget = ["core"]
         if not os.getenv("OFFCORE"):
             toget.append("offcore")
+        if not os.getenv("UNCORE"):
+            toget.append("uncore")
         if not os.getenv("UNCORE"):
             toget.append("uncore")
         event_download.download(el, toget)
