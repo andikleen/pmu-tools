@@ -191,7 +191,7 @@ def CLKS(EV, level):
 
 # Core actual clocks
 def CORE_CLKS(EV, level):
-    return EV("CPU_CLK_UNHALTED.THREAD_ANY", level) if smt_enabled else CLKS(EV, level)
+    return (EV("CPU_CLK_UNHALTED.THREAD_ANY", level) / 2) if smt_enabled else CLKS(EV, level)
 
 # Run duration time in seconds
 def Time(EV, level):
