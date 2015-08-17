@@ -1,0 +1,25 @@
+
+simple standalone reference pebs driver
+
+PEBS "Precise Event Based Sampling" is a profiling technology in Intel CPUs,
+that uses microcode to do (mostly) precise event samples.
+
+The driver is "free running" and minimizes interrupts, to allow a maximum 
+PEBS frequency. Interrupts are only triggered when the PEBS buffer is full.
+
+This will take over the PEBS hardware from perf and may cause conflicts.
+
+To build user tools use "make user"
+
+sample file format:
+{8 bytes 	ip}
+
+
+simple-pebs.c	Linux simple pebs driver
+dumper.c	Dump samples running from running Linux driver. -b to write binary sample file
+samples.c	Decode (ELF symbols) sample from running Linux driver.
+
+gencsv.c 	Generate Vtune style CSV format from sample file (not useful)
+histogram.c	Generate histogram from sample file
+
+toperf.c	Generate perf.data from sample file
