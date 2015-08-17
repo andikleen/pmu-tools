@@ -85,7 +85,7 @@ checkuc()
 	EVENTMAP=${cpus[$1]} UNCORE=$2 $WRAP ./ocperf.py stat -e $3 /bin/true | egrep -- "-e $4"
 }
 
-checkuc hsw test-uncore.json ha.unc_h_directory_lookup.no_snp uncore_ha/event=0xc,umask=0x2,name=ha_unc_h_directory_lookup_no_snp/
+checkuc hsw test-uncore.json unc_h_directory_lookup.no_snp uncore_ha/event=0xc,umask=0x2,name=unc_h_directory_lookup_no_snp/
 
 checkmsr2()
 {
