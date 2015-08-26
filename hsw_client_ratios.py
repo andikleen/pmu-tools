@@ -1048,7 +1048,7 @@ flagged should any of these cases be a bottleneck."""
     sibling = None
     def compute(self, EV):
         try:
-	    self.val = (EV("RESOURCE_STALLS.SB", 3) - STALLS_MEM_ANY(EV, 3)) / CLKS(EV, 3 )
+	    self.val = EV("RESOURCE_STALLS.SB", 3) / EV("CPU_CLK_UNHALTED.THREAD", 3)
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
             print_error("Stores_Bound zero division")
