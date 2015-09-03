@@ -14,8 +14,8 @@ static int show_event(void *data, char *name, char *event, char *desc)
 	if (data && fnmatch((char *)data, name, 0))
 		return 0;
 	printf("%-40s ", name);
-	printf("cpu/%s/\n", event);
-	if (verbose)
+	printf("%s\n", event);
+	if (verbose && desc[0])
 		printf("\t%s\n", desc); /* XXX word wrap */
 	return 0;
 }
@@ -27,5 +27,6 @@ int main(int ac, char **av)
 
 	read_events(NULL);
 	walk_events(show_event, av[1]);
+	walk_perf_events(show_event, av[1]);
 	return 0;
 }

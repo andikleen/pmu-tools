@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* jevents can now list and automatically resolve perf style events and aliases
 * simple-pebs is a simple reference Linux PEBS driver
 * ocperf now supports uncore events on some systems (experimential)
 * libjevents now supports handling the perf ring buffer and reading performance counters from ring 3 in C programs, in addition to resolving symbolic event names. For more details see the [API reference](http://halobates.de/jevents.html) and the [jevents README](https://github.com/andikleen/pmu-tools/tree/master/jevents)

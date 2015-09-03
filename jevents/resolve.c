@@ -38,6 +38,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <sys/fcntl.h>
+#include <glob.h>
 
 #define MAXFILE 4096
 
@@ -177,9 +178,14 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 }
 
 
-/* Resolve perf new style event descriptor to perf ATTR. User must initialize 
+/**
+ * jevent_name_to_attr - Resolve perf style event to perf_attr
+ * @str: perf style event (e.g. cpu/event=1/)
+ * @attr: perf_attr to fill in.
+ *
+ * Resolve perf new style event descriptor to perf ATTR. User must initialize
  * attr->sample_type and attr->read_format as needed after this call,
- * and possibly other fields.
+ * and possibly other fields. Returns 0 when succeeded.
  */
 int jevent_name_to_attr(char *str, struct perf_event_attr *attr)
 {
@@ -201,6 +207,57 @@ int jevent_name_to_attr(char *str, struct perf_event_attr *attr)
 	if (read_qual(str + qual_off, attr) < 0)
 		return -1;
 	return 0;
+}
+
+/**
+ * walk_perf_events - walk all kernel supplied perf events
+ * @func: Callback function to call for each event.
+ * @data: data pointer to pass to func.
+ */
+int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc),
+		     void *data)
+{
+	int ret = 0;
+	glob_t g;
+	if (glob("/sys/devices/*/events/*", 0, NULL, &g) != 0)
+		return -1;
+	int i;
+	for (i = 0; i < g.gl_pathc; i++) {
+		char pmu[32], event[32];
+
+		if (sscanf(g.gl_pathv[i], "/sys/devices/%30[^/]/events/%30s",
+			   pmu, event) != 2) {
+			fprintf(stderr, "No match on %s\n", g.gl_pathv[i]);
+			continue;
+		}
+		if (strchr(event, '.'))
+			continue;
+
+
+		char *val;
+		if (read_file(&val, g.gl_pathv[i])) {
+			fprintf(stderr, "Cannot read %s\n", g.gl_pathv[i]);
+			continue;
+		}
+		char *s;
+		for (s = val; *s; s++) {
+			if (*s == '\n')
+				*s = 0;
+		}
+		char *val2;
+		asprintf(&val2, "%s/%s/", pmu, val);
+		free(val);
+
+		char *buf;
+		asprintf(&buf, "%s/%s/", pmu, event);
+		ret = func(data, buf, val2, "");
+		free(val2);
+		free(buf);
+		if (ret)
+			break;
+	}
+	globfree(&g);
+	return ret;
 }
 
 #ifdef TEST

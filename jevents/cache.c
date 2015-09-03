@@ -29,7 +29,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
+#define _GNU_SOURCE 1
 #include "jevents.h"
 #include <stdlib.h>
 #include <string.h>
@@ -93,7 +93,7 @@ static void free_events(void)
  * Read the JSON event list fn. The other functions in the library
  * automatically read the default event list for the current CPU,
  * but calling this explicitly is useful to chose a specific one.
-*
+ *
  * Return: -1 on failure, otherwise 0.
  */
 int read_events(char *fn)
@@ -126,6 +126,19 @@ int resolve_event(char *name, struct perf_event_attr *attr)
 			return jevent_name_to_attr(e->event, attr);
 		}
 	}
+	/* Try a perf style event */
+	if (strchr(name, '/')) {
+		if (jevent_name_to_attr(name, attr) == 0)
+			return 0;
+	} else {
+		char *buf;
+		int ret;
+		asprintf(&buf, "cpu/%s/", name);
+		ret = jevent_name_to_attr(buf, attr);
+		free(buf);
+		if (ret == 0)
+			return ret;
+	}
 	return -1;
 }
 
@@ -150,7 +163,10 @@ int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
 			return -1;
 	}
 	for (e = eventlist; e; e = e->next) {
-		int ret = func(data, e->name, e->event, e->desc);
+		char *buf;
+		asprintf(&buf, "cpu/%s/", e->event);
+		int ret = func(data, e->name, buf, e->desc);
+		free(buf);
 		if (ret)
 			return ret;
 	}
