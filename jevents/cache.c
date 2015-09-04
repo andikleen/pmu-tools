@@ -103,6 +103,28 @@ int read_events(char *fn)
 	return json_events(fn, collect_events, NULL);
 }
 
+static struct fixed {
+	char *name;
+	char *event;
+} fixed[] = {
+	{ "inst_retired.any", "event=0xc0" },
+	{ "cpu_clk_unhalted.thread", "event=0x3c" },
+	{ "cpu_clk_unhalted.thread_any", "event=0x3c,any=1" },
+	{},
+};
+
+/*
+ * Handle different fixed counter encodings between JSON and perf.
+ */
+static char *real_event(char *name, char *event)
+{
+	int i;
+	for (i = 0; fixed[i].name; i++)
+		if (!strcasecmp(name, fixed[i].name))
+			return fixed[i].event;
+	return event;
+}
+
 /**
  * resolve_event - Resolve named performance counter event
  * @name: Name of performance counter event (case in-sensitive)
@@ -117,28 +139,30 @@ int read_events(char *fn)
 int resolve_event(char *name, struct perf_event_attr *attr)
 {
 	struct event *e;
+	char *buf;
+	int ret;
+
 	if (!eventlist) {
 		if (read_events(NULL) < 0)
 			return -1;
 	}
 	for (e = eventlist; e; e = e->next) {
 		if (!strcasecmp(e->name, name)) {
-			return jevent_name_to_attr(e->event, attr);
+			char *event = real_event(e->name, e->event);
+			asprintf(&buf, "cpu/%s/", event);
+			ret = jevent_name_to_attr(buf, attr);
+			free(buf);
+			return ret;
 		}
 	}
 	/* Try a perf style event */
-	if (strchr(name, '/')) {
-		if (jevent_name_to_attr(name, attr) == 0)
-			return 0;
-	} else {
-		char *buf;
-		int ret;
-		asprintf(&buf, "cpu/%s/", name);
-		ret = jevent_name_to_attr(buf, attr);
-		free(buf);
-		if (ret == 0)
-			return ret;
-	}
+	if (jevent_name_to_attr(name, attr) == 0)
+		return 0;
+	asprintf(&buf, "cpu/%s/", name);
+	ret = jevent_name_to_attr(buf, attr);
+	free(buf);
+	if (ret == 0)
+		return ret;
 	return -1;
 }
 
