@@ -195,6 +195,13 @@ int jevent_name_to_attr(char *str, struct perf_event_attr *attr)
 	memset(attr, 0, sizeof(struct perf_event_attr));
 	attr->size = PERF_ATTR_SIZE_VER1;
 
+	if (sscanf(str, "r%llx%n", &attr->config, &qual_off) == 1) {
+		if (str[qual_off] == 0)
+			return 0;
+		if (str[qual_off] == ':' && read_qual(str + qual_off, attr) == 0)
+			return 0;
+		return -1;
+	}
 	if (sscanf(str, "%30[^/]/%200[^/]/%n", pmu, config, &qual_off) < 2)
 		return -1;
 	char *type = NULL;
