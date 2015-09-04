@@ -4,7 +4,7 @@ BIN := ${PREFIX}/bin
 INCLUDE := ${PREFIX}/include
 CFLAGS := -g -Wall -O2
 OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o \
-       perf-iter.o interrupts.o rdpmc.o measure.o jstat.o
+       perf-iter.o interrupts.o rdpmc.o measure.o perf_event_open.o
 KDOC = /usr/src/linux/scripts/kernel-doc
 
 all: libjevents.a showevent listevents event-rmap jstat

@@ -23,12 +23,12 @@
  */
 
 #include <linux/perf_event.h>
-#include <asm/unistd.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/unistd.h>
 #include <sys/ioctl.h>
+#include "jevents.h"
 
 #include "util.h"
 #include "perf-iter.h"
@@ -130,7 +130,7 @@ static unsigned perf_mmap_size(int buf_size_shift)
  */
 int perf_fd_open(struct perf_fd *p, struct perf_event_attr *attr, int buf_size_shift)
 {
-	p->pfd = syscall(__NR_perf_event_open, attr, 0, -1, -1, 0);
+	p->pfd = perf_event_open(attr, 0, -1, -1, 0);
 	if (p->pfd < 0)
 		return -1;
 

@@ -95,8 +95,7 @@ void setup_event(struct event *e, int cpu)
 	e->attr.read_format = PERF_FORMAT_TOTAL_TIME_ENABLED |
 				PERF_FORMAT_TOTAL_TIME_RUNNING;
 
-	e->efd[cpu].fd = syscall(__NR_perf_event_open,
-			&e->attr,
+	e->efd[cpu].fd = perf_event_open(&e->attr,
 			measure_all ? -1 : measure_pid, cpu, -1, 0);
 
 	if (e->efd[cpu].fd < 0) {

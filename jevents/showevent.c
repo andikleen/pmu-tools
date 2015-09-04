@@ -5,7 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/syscall.h>
 
 int main(int ac, char **av)
 {
@@ -28,7 +27,7 @@ int main(int ac, char **av)
 		printf("%s\n", ev);
 		free(ev);
 		if (test) {
-			if (syscall(__NR_perf_event_open, &attr, 0, -1, -1, 0) < 0)
+			if (perf_event_open(&attr, 0, -1, -1, 0) < 0)
 				perror("perf_event_open");
 		}
 	}

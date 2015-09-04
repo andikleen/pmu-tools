@@ -29,7 +29,6 @@
 */
 
 #define _GNU_SOURCE 1
-#include "jevents.h"
 #include <linux/perf_event.h>
 #include <stdio.h>
 #include <string.h>
@@ -268,7 +267,7 @@ int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc
 }
 
 #ifdef TEST
-#include <asm/unistd.h>
+#include "jevents.h"
 int main(int ac, char **av)
 {
 	struct perf_event_attr attr =  { 0 };
@@ -283,7 +282,7 @@ int main(int ac, char **av)
 			printf("cannot parse %s\n", *av);
 		printf("config %llx config1 %llx\n", attr.config, attr.config1);
 		int fd;
-		if ((fd = syscall(__NR_perf_event_open, &attr, 0, -1, -1, 0)) < 0)
+		if ((fd = perf_event_open(&attr, 0, -1, -1, 0)) < 0)
 			perror("perf_event_open");
 		else
 			ret = 0;

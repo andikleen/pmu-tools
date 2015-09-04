@@ -22,7 +22,7 @@
 #include <linux/perf_event.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <asm/unistd.h>
+#include "jevents.h"
 
 /**
  * DOC: Ring 3 counting for CPU performance counters
@@ -78,7 +78,7 @@ int rdpmc_open(unsigned counter, struct rdpmc_ctx *ctx)
 int rdpmc_open_attr(struct perf_event_attr *attr, struct rdpmc_ctx *ctx,
 		    struct rdpmc_ctx *leader_ctx)
 {
-	ctx->fd = syscall(__NR_perf_event_open, attr, 0, -1, 
+	ctx->fd = perf_event_open(attr, 0, -1,
 			  leader_ctx ? leader_ctx->fd : -1, 0);
 	if (ctx->fd < 0) {
 		perror("perf_event_open");

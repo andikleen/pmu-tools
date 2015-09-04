@@ -1,3 +1,8 @@
+#ifndef JEVENTS_H
+#define JEVENTS_H 1
+
+#include <sys/types.h>
+
 int json_events(const char *fn,
 		int (*func)(void *data, char *name, char *event, char *desc),
 		void *data);
@@ -15,3 +20,7 @@ int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc
 char *format_raw_event(struct perf_event_attr *attr, char *name);
 int rmap_event(unsigned event, char **name, char **desc);
 
+int perf_event_open(struct perf_event_attr *attr, pid_t pid,
+		    int cpu, int group_fd, unsigned long flags);
+
+#endif
