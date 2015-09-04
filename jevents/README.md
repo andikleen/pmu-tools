@@ -30,6 +30,7 @@ event_download.py script for this.
 * showevent: Convert JSON name or perf alias to perf format and test with perf
 * event-rmap: Map low level perf event to named high-level event
 * addr: Profile a loadable test kernel with address profiling
+* jstat: Simple perf stat like tool with JSON event resolution.
 
 ## self profiling 
 
