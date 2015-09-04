@@ -1,6 +1,7 @@
 # jevents
 
 jevents is a C library to use from C programs to make access to the kernel Linux perf interface easier.
+It also includes some examples to use the library.
 
 ## Features
 
@@ -16,6 +17,19 @@ For more details see the [API reference](http://halobates.de/jevents.html)
 	make
 	sudo make install
 
+## Downloading event lists
+
+Before using event lists they need to be downloaded. Use the pmu-tools
+event_download.py script for this.
+
+	% event_download.py
+
+## Examples
+
+* listevents: List all named perf and JSON events
+* showevent: Convert JSON name or perf alias to perf format and test with perf
+* event-rmap: Map low level perf event to named high-level event
+* addr: Profile a loadable test kernel with address profiling
 
 ## self profiling 
 
