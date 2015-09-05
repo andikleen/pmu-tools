@@ -193,6 +193,7 @@ int jevent_name_to_attr(char *str, struct perf_event_attr *attr)
 
 	memset(attr, 0, sizeof(struct perf_event_attr));
 	attr->size = PERF_ATTR_SIZE_VER1;
+	attr->type = PERF_TYPE_RAW;
 
 	if (sscanf(str, "r%llx%n", &attr->config, &qual_off) == 1) {
 		if (str[qual_off] == 0)
