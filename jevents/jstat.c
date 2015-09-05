@@ -55,10 +55,12 @@ struct event *new_event(char *s)
 
 void parse_events(char *events)
 {
-	char *s;
+	char *s, *tmp;
 
 	events = strdup(events);
-	for (s = strtok(events, ","); s; s = strtok(NULL, ",")) {
+	for (s = strtok_r(events, ",", &tmp);
+	     s;
+	     s = strtok_r(NULL, ",", &tmp)) {
 		struct event *e = new_event(s);
 
 		if (resolve_event(s, &e->attr) < 0) {
