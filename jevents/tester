@@ -1,0 +1,31 @@
+#!/bin/bash
+# tests for jevents
+# may need executing event_download.py first
+set -e 
+set -x
+
+failed() {
+        echo FAILED
+}
+trap failed ERR 0
+
+PATH=$PATH:.
+
+
+listevents > l
+[ $(wc -l < l) -gt 50 ] 
+grep -q offcore_response l
+
+jstat true
+jstat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,br_misp_retired.near_taken true
+jstat -a sleep 1
+
+showevent br_misp_retired.near_taken
+
+event-rmap br_misp_retired.all_branches
+
+trap "" ERR 0
+
+echo SUCCEEDED
+
+
