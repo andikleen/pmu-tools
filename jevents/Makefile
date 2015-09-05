@@ -4,7 +4,8 @@ BIN := ${PREFIX}/bin
 INCLUDE := ${PREFIX}/include
 CFLAGS := -g -Wall -O2
 OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o \
-       perf-iter.o interrupts.o rdpmc.o measure.o perf_event_open.o
+       perf-iter.o interrupts.o rdpmc.o measure.o perf_event_open.o \
+       session.o
 KDOC = /usr/src/linux/scripts/kernel-doc
 
 all: libjevents.a showevent listevents event-rmap
@@ -15,7 +16,7 @@ install: libjevents.a listevents showevent event-rmap
 	install -d ${INCLUDE}
 	install -m 755 listevents showevent event-rmap ${BIN}
 	install -m 644 libjevents.a ${LIB}
-	install -m 644 rdpmc.h jevents.h measure.h perf.h ${INCLUDE}
+	install -m 644 rdpmc.h jevents.h measure.h perf.h jsession.h ${INCLUDE}
 	# xxx install man page
 
 libjevents.a: ${OBJ}
@@ -36,7 +37,8 @@ listevents: listevents.o libjevents.a
 
 event-rmap: event-rmap.o libjevents.a
 
-DOCFILES := cache.c jevents.c cpustr.c rawevent.c perf.c interrupts.c measure.c rdpmc.c
+DOCFILES := cache.c jevents.c cpustr.c rawevent.c interrupts.c measure.c rdpmc.c \
+	    session.c
 
 html: jevents.html
 
