@@ -1603,6 +1603,7 @@ if args.quiet:
     args.no_desc = True
     args.no_util = True
 
+# XXX retrieve version
 if cpu.cpu == "ivb":
     import ivb_client_ratios
     ivb_client_ratios.smt_enabled = cpu.ht
