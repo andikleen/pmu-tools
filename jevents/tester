@@ -9,7 +9,7 @@ failed() {
 }
 trap failed ERR 0
 
-PATH=$PATH:.
+PATH=$PATH:.:./examples
 
 
 listevents > l
