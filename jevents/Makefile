@@ -7,7 +7,7 @@ OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o \
        perf-iter.o interrupts.o rdpmc.o measure.o perf_event_open.o
 KDOC = /usr/src/linux/scripts/kernel-doc
 
-all: libjevents.a showevent listevents event-rmap jstat
+all: libjevents.a showevent listevents event-rmap
 
 install: libjevents.a listevents showevent event-rmap
 	install -d ${BIN}
@@ -35,8 +35,6 @@ showevent: showevent.o libjevents.a
 listevents: listevents.o libjevents.a
 
 event-rmap: event-rmap.o libjevents.a
-
-jstat: jstat.o libjevents.a
 
 DOCFILES := cache.c jevents.c cpustr.c rawevent.c perf.c interrupts.c measure.c rdpmc.c
 

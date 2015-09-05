@@ -4,13 +4,13 @@ CXXFLAGS := -g -Wall  -O2
 LDFLAGS := -L ..
 LDLIBS = -ljevents
 
-all: addr rtest rtest2
+all: addr rtest rtest2 jstat
 
 # no deps on the includes
 
-OBJ := addr.o hist.o cpu.o
+ADDR_OBJ := addr.o hist.o cpu.o
 
-addr: ${OBJ}
+addr: ${ADDR_OBJ}
 
 addr: LDLIBS += -lstdc++ -ldl
 
@@ -21,6 +21,6 @@ rtest: rtest.o
 rtest2: rtest2.o
 
 clean:
-	rm -f addr ${OBJ}
+	rm -f addr ${ADDR_OBJ} jstat jstat.o
 	rm -f rtest2 rtest2.o rtest rtest.o 
 
