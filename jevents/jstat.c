@@ -27,6 +27,7 @@ struct event {
 	struct event *next;
 	struct perf_event_attr attr;
 	char *event;
+	bool end_group, group_leader;
 	struct efd {
 		int fd;
 		uint64_t val;
@@ -61,8 +62,20 @@ void parse_events(char *events)
 	for (s = strtok_r(events, ",", &tmp);
 	     s;
 	     s = strtok_r(NULL, ",", &tmp)) {
-		struct event *e = new_event(s);
+		bool group_leader = false, end_group = false;
+		int len;
 
+		if (s[0] == '{') {
+			s++;
+			group_leader = true;
+		} else if (len = strlen(s), len > 0 && s[len - 1] == '}') {
+			s[len - 1] = 0;
+			end_group = true;
+		}
+
+		struct event *e = new_event(s);
+		e->group_leader = group_leader;
+		e->end_group = end_group;
 		if (resolve_event(s, &e->attr) < 0) {
 			fprintf(stderr, "Cannot resolve %s\n", e->event);
 			exit(1);
@@ -87,7 +100,7 @@ static bool cpu_online(int i)
 	return ret;
 }
 
-void setup_event(struct event *e, int cpu)
+void setup_event(struct event *e, int cpu, struct event *leader)
 {
 	e->attr.inherit = 1;
 	if (!measure_all) {
@@ -98,7 +111,10 @@ void setup_event(struct event *e, int cpu)
 				PERF_FORMAT_TOTAL_TIME_RUNNING;
 
 	e->efd[cpu].fd = perf_event_open(&e->attr,
-			measure_all ? -1 : measure_pid, cpu, -1, 0);
+			measure_all ? -1 : measure_pid,
+			cpu,
+			leader ? leader->efd[cpu].fd : -1,
+			0);
 
 	if (e->efd[cpu].fd < 0) {
 		/* Handle offline CPU */
@@ -113,12 +129,18 @@ void setup_event(struct event *e, int cpu)
 
 void setup_events(void)
 {
-	struct event *e;
+	struct event *e, *leader = NULL;
 	int i;
 
-	for (e = eventlist; e; e = e->next)
-		for (i = 0; i < num_cpus; i++)
-			setup_event(e, i);
+	for (e = eventlist; e; e = e->next) {
+		for (i = 0; i < num_cpus; i++) {
+			setup_event(e, i, leader);
+		}
+		if (e->group_leader)
+			leader = e;
+		if (e->end_group)
+			leader = NULL;
+	}
 }
 
 void read_event(struct event *e, int cpu)
@@ -173,7 +195,7 @@ void usage(void)
 {
 	fprintf(stderr, "Usage: jstat [-a] [-e events] program\n"
 			"--all -a  Measure global system\n"
-			"-e --events list  Comma separate list of events to measure\n"
+			"-e --events list  Comma separate list of events to measure. Use {} for groups\n"
 			"Run event_download.py once first to use symbolic events\n");
 	exit(1);
 }
