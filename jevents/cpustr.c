@@ -50,7 +50,7 @@ char *get_cpu_str(void)
 	if (!f)
 		return NULL;
 	while (getline(&line, &llen, f) > 0) {
-		if (sscanf(line, "vendor_id : %30s", vendor) == 1)
+		if (sscanf(line, "vendor_id : %29s", vendor) == 1)
 			found++;
 		else if (sscanf(line, "model : %d", &model) == 1)
 			found++;
