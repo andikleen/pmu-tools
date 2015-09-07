@@ -66,7 +66,7 @@ struct perf_file_header {
 	/* event_types is ignored */
 	struct perf_file_section	event_types;
 	/*DECLARE_BITMAP(adds_features, HEADER_FEAT_BITS);*/
-    char adds_features[32];
+	char adds_features[32];
 };
 
 struct perf_header {
@@ -125,7 +125,7 @@ void init_header(FILE *f)
 void gen_attr(FILE *out)
 {
 	struct perf_event_attr attr;
-    struct perf_file_attr f_attr;
+	struct perf_file_attr f_attr;
 	memset(&attr, 0, sizeof(struct perf_event_attr));
 	attr.type = PERF_TYPE_RAW;
 	attr.size = sizeof(struct perf_event_attr);
@@ -133,13 +133,13 @@ void gen_attr(FILE *out)
 	attr.sample_period = PERIOD;
 	attr.sample_type = PERF_SAMPLE_IP | PERF_SAMPLE_TID;
 	attr.read_format = 0;
-    f_attr = (struct perf_file_attr){
-        .attr = attr,
-        .ids = {
-            .offset = sizeof(struct perf_file_header) + 0 * sizeof(uint64_t),
-            .size = 0 * sizeof(uint64_t),
-        }
-    };
+	f_attr = (struct perf_file_attr){
+		.attr = attr,
+		.ids = {
+			.offset = sizeof(struct perf_file_header) + 0 * sizeof(uint64_t),
+			.size = 0 * sizeof(uint64_t),
+		}
+	};
 	fwrite(&f_attr, sizeof(struct perf_file_attr), 1, out);
 }
 
@@ -147,7 +147,7 @@ void gen_header(FILE *out)
 {
 	struct perf_file_header h;
 	size_t datasize;
-    int num_attrs = 1;
+	int num_attrs = 1;
 
 	memset(&h, 0, sizeof(struct perf_file_header));
 	datasize = ftell(out) - DATA_OFFSET;
@@ -226,29 +226,29 @@ struct elf64_phdr {
 };
 
 struct elf32_shdr {
-    uint32_t sh_name;
-    uint32_t sh_type;
-    uint32_t sh_flags;
-    uint32_t sh_addr;
-    uint32_t sh_offset;
-    uint32_t sh_size;
-    uint32_t sh_link;
-    uint32_t sh_info;
-    uint32_t sh_addralign;
-    uint32_t sh_entsize;
+	uint32_t sh_name;
+	uint32_t sh_type;
+	uint32_t sh_flags;
+	uint32_t sh_addr;
+	uint32_t sh_offset;
+	uint32_t sh_size;
+	uint32_t sh_link;
+	uint32_t sh_info;
+	uint32_t sh_addralign;
+	uint32_t sh_entsize;
 };
 
 struct elf64_shdr {
-    uint32_t sh_name;
-    uint32_t sh_type;
-    uint64_t sh_flags;
-    uint64_t sh_addr;
-    uint64_t sh_offset;
-    uint64_t sh_size;
-    uint32_t sh_link;
-    uint32_t sh_info;
-    uint64_t sh_addralign;
-    uint64_t sh_entsize;
+	uint32_t sh_name;
+	uint32_t sh_type;
+	uint64_t sh_flags;
+	uint64_t sh_addr;
+	uint64_t sh_offset;
+	uint64_t sh_size;
+	uint32_t sh_link;
+	uint32_t sh_info;
+	uint64_t sh_addralign;
+	uint64_t sh_entsize;
 };
 
 #define PT_LOAD	 1
@@ -259,8 +259,8 @@ uint64_t get_load_address(char *fn, uint64_t *pgoff, uint64_t *len)
 {
 	size_t size;
 	struct elf32_hdr *elf32 = mapfile(fn, &size);
-    struct elf64_hdr *elf64 = (struct elf64_hdr *)elf32;
-    int use64 = 0;
+	struct elf64_hdr *elf64 = (struct elf64_hdr *)elf32;
+	int use64 = 0;
 	char *end = (char *)elf32 + size;
 	struct elf32_phdr *phdr32;
 	struct elf64_phdr *phdr64;
@@ -278,49 +278,49 @@ uint64_t get_load_address(char *fn, uint64_t *pgoff, uint64_t *len)
 	    elf32->e_ident[1] != 'E' ||
 	    elf32->e_ident[2] != 'L' ||
 	    elf32->e_ident[3] != 'F' ||
-        (elf32->e_ident[4] != ELFCLASS32 &&
-        elf32->e_ident[4] != ELFCLASS64) ||
+	    (elf32->e_ident[4] != ELFCLASS32 &&
+	     elf32->e_ident[4] != ELFCLASS64) ||
 	    elf32->e_ident[5] != ELFDATA2LSB) {
 		fprintf(stderr, "%s not an LE ELF file\n", fn);
 		goto out;
 	}
 	*pgoff = 0;
 
-    if (elf32->e_ident[4] == ELFCLASS64)
-        use64 = 1;
+	if (elf32->e_ident[4] == ELFCLASS64)
+		use64 = 1;
 
 	/* find load addr */
-    if (use64) {
-        phdr64 = (struct elf64_phdr *)((char *)elf64 + elf64->e_phoff);
-        for (i = 0; i < elf64->e_phnum; i++, phdr64++) {
-            if (phdr64->p_flags & PF_X) {
-                if ((char *)(phdr64 + 1) > end || (char *)phdr64 < (char *)elf64) {
-                    fprintf(stderr, "%s has bad phdr64 offset\n", fn);
-                    goto out;
-                }
-                if (phdr64->p_vaddr < addr) {
-                    *pgoff = phdr64->p_offset >> PAGE_SHIFT;
-                    addr = phdr64->p_vaddr;
-                }
-                if (phdr64->p_vaddr + phdr64->p_memsz > end_addr)
-                    end_addr = phdr64->p_vaddr + phdr64->p_memsz;
-            }
-        }
-    } else {
-        phdr32 = (struct elf32_phdr *)((char *)elf32 + elf32->e_phoff);
-        for (i = 0; i < elf32->e_phnum; i++, phdr32++) {
-            if ((char *)(phdr32 + 1) > end || (char *)phdr32 < (char *)elf32) {
-                fprintf(stderr, "%s has bad phdr32 offset\n", fn);
-                goto out;
-            }
-            if (phdr32->p_vaddr < addr) {
-                *pgoff = phdr32->p_offset >> PAGE_SHIFT;
-                addr = phdr32->p_vaddr;
-            }
-            if (phdr32->p_vaddr + phdr32->p_memsz > end_addr)
-                end_addr = phdr32->p_vaddr + phdr32->p_memsz;
-        }
-    }
+	if (use64) {
+		phdr64 = (struct elf64_phdr *)((char *)elf64 + elf64->e_phoff);
+		for (i = 0; i < elf64->e_phnum; i++, phdr64++) {
+			if (phdr64->p_flags & PF_X) {
+				if ((char *)(phdr64 + 1) > end || (char *)phdr64 < (char *)elf64) {
+					fprintf(stderr, "%s has bad phdr64 offset\n", fn);
+					goto out;
+				}
+				if (phdr64->p_vaddr < addr) {
+					*pgoff = phdr64->p_offset >> PAGE_SHIFT;
+					addr = phdr64->p_vaddr;
+				}
+				if (phdr64->p_vaddr + phdr64->p_memsz > end_addr)
+					end_addr = phdr64->p_vaddr + phdr64->p_memsz;
+			}
+		}
+	} else {
+		phdr32 = (struct elf32_phdr *)((char *)elf32 + elf32->e_phoff);
+		for (i = 0; i < elf32->e_phnum; i++, phdr32++) {
+			if ((char *)(phdr32 + 1) > end || (char *)phdr32 < (char *)elf32) {
+				fprintf(stderr, "%s has bad phdr32 offset\n", fn);
+				goto out;
+			}
+			if (phdr32->p_vaddr < addr) {
+				*pgoff = phdr32->p_offset >> PAGE_SHIFT;
+				addr = phdr32->p_vaddr;
+			}
+			if (phdr32->p_vaddr + phdr32->p_memsz > end_addr)
+				end_addr = phdr32->p_vaddr + phdr32->p_memsz;
+		}
+	}
 	*len = ((end_addr - addr + (1 << PAGE_SHIFT) - 1) / (1 << PAGE_SHIFT)) * (1 << PAGE_SHIFT);
 out:
 	unmapfile(elf32, size);
@@ -336,31 +336,31 @@ void mmap_event(FILE *out, char *fn)
 	m.start = get_load_address(fn, &m.pgoff, &m.len);
 	m.pid = m.tid = 1;
 	fwrite(&m, sizeof(struct mmap_event), 1, out);
-    fwrite(fn, strlen(fn)+1, 1, out);
+	fwrite(fn, strlen(fn)+1, 1, out);
 }
 
 void mmap2_event(FILE *out, char *fn)
 {
-    struct mmap2_event m;
-    memset(&m, 0, sizeof(struct mmap2_event));
-    m.header.type = PERF_RECORD_MMAP2;
-    m.header.size = sizeof(struct mmap2_event) + strlen(fn) + 1;
-    m.start = get_load_address(fn, &m.pgoff, &m.len);
+	struct mmap2_event m;
+	memset(&m, 0, sizeof(struct mmap2_event));
+	m.header.type = PERF_RECORD_MMAP2;
+	m.header.size = sizeof(struct mmap2_event) + strlen(fn) + 1;
+	m.start = get_load_address(fn, &m.pgoff, &m.len);
 
-    m.header.misc |= PERF_RECORD_MISC_USER;
-    m.pid = m.tid = 1;
+	m.header.misc |= PERF_RECORD_MISC_USER;
+	m.pid = m.tid = 1;
 	fwrite(&m, sizeof(struct mmap2_event), 1, out);
-    fwrite(fn, strlen(fn)+1, 1, out);
+	fwrite(fn, strlen(fn)+1, 1, out);
 }
 
 void comm_event(FILE *out, char *cn)
 {
-    struct comm_event c;
-    memset(&c, 0, sizeof(struct comm_event));
-    c.header.type = PERF_RECORD_COMM;
-    c.header.size = sizeof(struct comm_event);
-    strcpy(c.comm, cn);
-    fwrite(&c, sizeof(struct comm_event), 1, out);
+	struct comm_event c;
+	memset(&c, 0, sizeof(struct comm_event));
+	c.header.type = PERF_RECORD_COMM;
+	c.header.size = sizeof(struct comm_event);
+	strcpy(c.comm, cn);
+	fwrite(&c, sizeof(struct comm_event), 1, out);
 }
 
 size_t gen_sample(FILE *out, uint64_t ip)
@@ -369,9 +369,9 @@ size_t gen_sample(FILE *out, uint64_t ip)
 	memset(&s, 0, sizeof(struct sample_event));
 	s.header.type = PERF_RECORD_SAMPLE;
 	s.header.size = sizeof(struct sample_event);
-    s.header.misc |= PERF_RECORD_MISC_USER;
+	s.header.misc |= PERF_RECORD_MISC_USER;
 	s.array[0] = ip;
-    s.array[1] = ((uint64_t)1 << 32) | 1;
+	s.array[1] = ((uint64_t)1 << 32) | 1;
 	fwrite(&s, sizeof(struct sample_event), 1, out);
 	return sizeof(struct sample_event);
 }
