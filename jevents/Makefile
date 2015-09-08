@@ -8,7 +8,13 @@ OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o \
        session.o
 KDOC = /usr/src/linux/scripts/kernel-doc
 
-all: libjevents.a showevent listevents event-rmap
+all: libjevents.a showevent listevents event-rmap all-examples
+
+clean-examples:
+	make -C examples clean
+
+all-examples:
+	make -C examples
 
 install: libjevents.a listevents showevent event-rmap
 	install -d ${BIN}
@@ -24,7 +30,7 @@ libjevents.a: ${OBJ}
 	ar q libjevents.a $^
 	ranlib libjevents.a
 
-clean:
+clean: clean-examples
 	rm -f ${OBJ} libjevents.a resolve showevent listfiles jevents.html rmap event-rmap.o event-rmap \
 		listevents resolve-test showevent.o listevents.o
 
