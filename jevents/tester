@@ -9,20 +9,28 @@ failed() {
 }
 trap failed ERR 0
 
-PATH=$PATH:.:./examples
+PATH=.:./examples:$PATH
 
 
 listevents > l
 [ $(wc -l < l) -gt 50 ] 
 grep -q offcore_response l
 
+if grep -q br_misp_retired.taken l ; then
+	E=br_misp_retired.taken
+elif grep -q br_misp_retired.near_taken l ; then
+	E=br_misp_retired.near_taken
+else
+	E=instructions
+fi
+
 jstat true
-jstat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,br_misp_retired.near_taken true
+jstat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
 jstat -a sleep 1
 
-showevent br_misp_retired.near_taken
+showevent $E
 
-event-rmap br_misp_retired.all_branches
+event-rmap $E
 
 trap "" ERR 0
 
