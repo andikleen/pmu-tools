@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fnmatch.h>
+#include <assert.h>
 #include "jevents.h"
 
 int verbose = 0;
@@ -37,6 +38,7 @@ static int store_event(void *data, char *name, char *event, char *desc)
 
 	if (wd->match && fnmatch(wd->match, name, 0))
 		return 0;
+	assert(wd->ind < wd->count);
 	struct event *e = &wd->events[wd->ind++];
 	e->name = strdup(name);
 	e->event = strdup(event);
