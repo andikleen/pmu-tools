@@ -32,9 +32,11 @@
 #define _GNU_SOURCE 1
 #include "jevents.h"
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <linux/perf_event.h>
 
 /**
@@ -59,16 +61,31 @@ struct event {
 	char *event;
 };
 
-/* Could add a hash table, but right now expected accesses are not frequent */
-static struct event *eventlist;
+#define HASHSZ 37
+
+static struct event *eventlist[HASHSZ];
+static bool eventlist_init;
+
+/* Weinberg's identifier hash */
+static unsigned hashfn(char *s)
+{
+	unsigned h = 0;
+	while (*s) {
+		int c = tolower(*s);
+		s++;
+		h = h * 67 + (c - 113);
+	}
+	return h % HASHSZ;
+}
 
 static int collect_events(void *data, char *name, char *event, char *desc)
 {
+	unsigned h = hashfn(name);
 	struct event *e = malloc(sizeof(struct event));
 	if (!e)
 		exit(ENOMEM);
-	e->next = eventlist;
-	eventlist = e;
+	e->next = eventlist[h];
+	eventlist[h] = e;
 	e->name = strdup(name);
 	e->desc = strdup(desc);
 	e->event = strdup(event);
@@ -78,12 +95,15 @@ static int collect_events(void *data, char *name, char *event, char *desc)
 static void free_events(void)
 {
 	struct event *e, *next;
-
-	for (e = eventlist; e; e = next) {
-		next = e->next;
-		free(e);
+	int i;
+	for (i = 0; i < HASHSZ; i++) {
+		for (e = eventlist[i]; e; e = next) {
+			next = e->next;
+			free(e);
+		}
+		eventlist[i] = NULL;
 	}
-	eventlist = NULL;
+	eventlist_init = false;
 }
 
 /**
@@ -98,8 +118,10 @@ static void free_events(void)
  */
 int read_events(char *fn)
 {
-	if (eventlist)
+	if (!eventlist_init)
 		free_events();
+	eventlist_init = true;
+	/* ??? free on error */
 	return json_events(fn, collect_events, NULL);
 }
 
@@ -141,12 +163,13 @@ int resolve_event(char *name, struct perf_event_attr *attr)
 	struct event *e;
 	char *buf;
 	int ret;
+	unsigned h = hashfn(name);
 
-	if (!eventlist) {
+	if (!eventlist_init) {
 		if (read_events(NULL) < 0)
 			return -1;
 	}
-	for (e = eventlist; e; e = e->next) {
+	for (e = eventlist[h]; e; e = e->next) {
 		if (!strcasecmp(e->name, name)) {
 			char *event = real_event(e->name, e->event);
 			asprintf(&buf, "cpu/%s/", event);
@@ -182,17 +205,20 @@ int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
 		void *data)
 {
 	struct event *e;
-	if (!eventlist) {
+	if (!eventlist_init) {
 		if (read_events(NULL) < 0)
 			return -1;
 	}
-	for (e = eventlist; e; e = e->next) {
-		char *buf;
-		asprintf(&buf, "cpu/%s/", e->event);
-		int ret = func(data, e->name, buf, e->desc);
-		free(buf);
-		if (ret)
-			return ret;
+	int i;
+	for (i = 0; i < HASHSZ; i++) {
+		for (e = eventlist[i]; e; e = e->next) {
+			char *buf;
+			asprintf(&buf, "cpu/%s/", e->event);
+			int ret = func(data, e->name, buf, e->desc);
+			free(buf);
+			if (ret)
+				return ret;
+		}
 	}
 	return 0;
 }
@@ -205,32 +231,35 @@ int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
  *
  * Offcore matrix events are not fully supported.
  * Ignores bits other than umask/event for now, so some events using cmask,inv
- * may be misidentified.
+ * may be misidentified. May be slow.
  * Return: -1 on failure, otherwise 0.
  */
 
 int rmap_event(unsigned event, char **name, char **desc)
 {
 	struct event *e;
-	if (!eventlist) {
+	if (!eventlist_init) {
 		if (read_events(NULL) < 0)
 			return -1;
 	}
-	for (e = eventlist; e; e = e->next) {
-		// XXX should cache the numeric value
-		char *s;
-		unsigned event = 0, umask = 0;
-		s = strstr(e->event, "event=");
-		if (s)
-			sscanf(s, "event=%x", &event);
-		s = strstr(e->event, "umask=");
-		if (s)
-			sscanf(s, "umask=%x", &umask);
-		if ((event | (umask << 8)) == (event & 0xffff)) {
-			*name = e->name;
-			if (desc)
-				*desc = e->desc;
-			return 0;
+	int i;
+	for (i = 0; i < HASHSZ; i++) {
+		for (e = eventlist[i]; e; e = e->next) {
+			// XXX should cache the numeric value
+			char *s;
+			unsigned event = 0, umask = 0;
+			s = strstr(e->event, "event=");
+			if (s)
+				sscanf(s, "event=%x", &event);
+			s = strstr(e->event, "umask=");
+			if (s)
+				sscanf(s, "umask=%x", &umask);
+			if ((event | (umask << 8)) == (event & 0xffff)) {
+				*name = e->name;
+				if (desc)
+					*desc = e->desc;
+				return 0;
+			}
 		}
 	}
 	return -1;
