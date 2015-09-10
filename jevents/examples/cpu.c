@@ -34,7 +34,7 @@ static int snb_models[] = { 42, 45, 58, 62, 0 };
 
 #define MEM_LOADS_HSW MEM_LOADS_SNB
 #define MEM_STORES_HSW 0x82d0
-static int hsw_models[] = { 60, 70, 71, 63, 0 };
+static int hsw_models[] = { 60, 70, 71, 63, 61, 0 };
 
 /* Nehalem and Westmere */
 #define MEM_LOADS_NHM 0x100b	/* MEM_INST_RETIRED.LOAD_LATENCY */
