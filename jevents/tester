@@ -1,6 +1,6 @@
 #!/bin/bash
 # tests for jevents
-# may need executing event_download.py first
+# may need executing event_download.py first to get event list for this cpu
 set -e 
 set -x
 
@@ -31,6 +31,10 @@ jstat -a sleep 1
 showevent $E
 
 event-rmap $E
+
+examples/addr
+examples/rtest
+examples/rtest2
 
 trap "" ERR 0
 
