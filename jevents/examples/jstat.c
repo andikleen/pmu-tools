@@ -62,7 +62,7 @@ void print_data(struct eventlist *el)
 }
 
 static struct option opts[] = {
-	{ "all", no_argument, 0, 'a' },
+	{ "all-cpus", no_argument, 0, 'a' },
 	{ "events", required_argument, 0, 'e'},
 	{},
 };
