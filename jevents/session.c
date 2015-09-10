@@ -141,7 +141,7 @@ int setup_event(struct event *e, int cpu, struct event *leader,
 		e->attr.disabled = 1;
 		e->attr.enable_on_exec = 1;
 	}
-	e->attr.read_format = PERF_FORMAT_TOTAL_TIME_ENABLED |
+	e->attr.read_format |= PERF_FORMAT_TOTAL_TIME_ENABLED |
 				PERF_FORMAT_TOTAL_TIME_RUNNING;
 
 	e->efd[cpu].fd = perf_event_open(&e->attr,
