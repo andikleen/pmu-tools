@@ -24,9 +24,9 @@ else
 	E=instructions
 fi
 
-jstat true
-jstat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
-jstat -a sleep 1
+jestat true
+jestat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
+jestat -a sleep 1
 
 showevent $E
 
