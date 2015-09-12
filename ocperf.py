@@ -334,6 +334,12 @@ def check_uncore_event(e):
         missing_boxes.add(e.unit)
     return None
 
+fixed_counters = {
+    "inst_retired.any": (0xc0, 0, 0),
+    "cpu_clk_unhalted.thread": (0x3c, 0, 0),
+    "cpu_clk_unhalted.thread_any": (0x3c, 0, 1),
+}
+
 class Emap(object):
     """Read an event table."""
 
@@ -359,15 +365,14 @@ class Emap(object):
             name = get('name').lower().rstrip()
             code = gethex('code')
             umask = gethex('umask')
-            # hack for now to handle fixed counter 2 correctly
-            if name.startswith("cpu_clk_unhalted.thread"):
-                code = 0x3c
-                umask = 0
+            anyf = 0
+            if name in fixed_counters:
+                code, umask, anyf = fixed_counters[name]
             if 'other' in m and m['other'] in row:
                 other = gethex('other') << 16
             else:
                 other = gethex('edge') << 18
-                other |= gethex('any') << 21
+                other |= (gethex('any') | anyf) << 21
                 other |= getdec('cmask') << 24
                 other |= gethex('invert') << 23
             val = code | (umask << 8) | other
