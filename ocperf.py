@@ -659,6 +659,9 @@ def process_events(event, print_only, period):
             ev = emap.getevent(i)
             if ev:
                 i = ev.output(flags=extra, period=period)
+            else:
+               if extra:
+                   i += ":" + extra
         if ev:
             if ev.msr:
                 msr.checked_writemsr(ev.msr, ev.msrval, print_only)
