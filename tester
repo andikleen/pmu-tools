@@ -41,6 +41,7 @@ checklist()
 BASELEN=$($PERF list | wc -l)
 
 checklist hsw 100
+checklist hsx 100
 checklist wsm-sp 100
 checklist wsm-dp 100
 checklist snb-client 100
@@ -51,6 +52,9 @@ checklist nhm-ep 100
 checklist bnl 100
 checklist ivt 100
 checklist slm 100
+checklist bdw-de 100
+checklist bdw 100
+checklist skl 100
 
 set -e
 $WRAP ./ocperf.py stat -e inst_retired.any /bin/true
