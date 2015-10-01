@@ -15,3 +15,4 @@ cpus[bnl]=GenuineIntel-6-35
 cpus[bdw]=GenuineIntel-6-3D
 cpus[hsx]=GenuineIntel-6-3F
 cpus[skl]=GenuineIntel-6-5E
+cpus[bdw-de]=GenuineIntel-6-56

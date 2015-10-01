@@ -159,24 +159,6 @@ Display the memory read and write bandwidth
 "--scale GB" scales the metric to GB/s. The values are printed every second
 (can be changed with -I)
 
-Display the QPI bandwidth and PCI-e bandwidth on socket 0 in GB/s This
-system has four memory controllers per socket, which are accounted
-separately
-
-	# ucevent.py -S0 "QPI_LL.DATA_FROM_QPI / GB" "CBO.PCIE_DATA_BYTES / GB"
-        ...
-        iMC.MEM_BW_WRITES / GB
-	|     iMC.MEM_BW_WRITES / GB
-	|     |     iMC.MEM_BW_WRITES / GB
-	|     |     |     iMC.MEM_BW_WRITES / GB
-	|     |     |     |     iMC.MEM_BW_WRITES / GB
-	|     |     |     |     |     iMC.MEM_BW_WRITES / GB
-	|     |     |     |     |     |     iMC.MEM_BW_WRITES / GB
-	|     |     |     |     |     |     |     iMC.MEM_BW_WRITES / GB
-	0.30  0.29  0.30  0.29  0.37  0.37  0.40  0.38  
-	0.34  0.33  0.35  0.33  0.43  0.44  0.47  0.45  
-	0.32  0.31  0.32  0.31  0.42  0.42  0.45  0.43  
-
 Display the percentage of time the uncore was running higher than
 2.0Ghz and higher than 3.0Ghz.  The filter uses a multiplier of
 100. Make sure to use the right filter for the right band.  Upto 4
