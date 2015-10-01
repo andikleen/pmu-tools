@@ -17,6 +17,7 @@
 # event_download.py -a      download all
 # event_download.py cpustr...  Download for specific CPU
 import sys
+import re
 from urllib2 import urlopen, URLError
 import os
 import string
@@ -69,7 +70,8 @@ def getfile(url, dir, fn):
     o.close()
     f.close()
 
-def download(match, key=["core"]):
+allowed_chars = string.ascii_letters + '_-.' + string.digits
+def download(match, key=["core"], link=False):
     found = 0
     dir = getdir()
     try:
@@ -77,11 +79,19 @@ def download(match, key=["core"]):
         models = open(os.path.join(dir, "mapfile.csv"))
         for j in models:
             cpu, version, name, type  = j.rstrip().split(",")
-            if not fnmatch(cpu, match) or (key is not None and type not in key):
+            if not fnmatch(cpu, match) or (key is not None and type not in key) or type.startswith("EventType"):
                 continue
-            cpu = sanitize(cpu, string.ascii_letters + '-' + string.digits)
+            cpu = sanitize(cpu, allowed_chars)
             url = urlpath + name
-            getfile(url, dir, "%s-%s.json" % (cpu, type))
+            fn = "%s-%s.json" % (cpu, type)
+            getfile(url, dir, fn)
+            if link:
+                lname = re.sub(r'.*/', '', name)
+                lname = sanitize(lname, allowed_chars)
+                try:
+                    os.link(os.path.join(dir, fn), os.path.join(dir, lname))
+                except OSError as e:
+                    print >>sys.stderr, "Cannot link %s to %s:" % (name, lname), e
             found += 1
         models.close()
         getfile(urlpath + "/readme.txt", dir, "readme.txt")
@@ -90,16 +100,16 @@ def download(match, key=["core"]):
         print >>sys.stderr, "If you need a proxy to access the internet please set it with:"
         print >>sys.stderr, "\texport https_proxy=http://proxyname..."
         print >>sys.stderr, "If you are not connected to the internet please run this on a connected system:"
-        print >>sys.stderr, "\tevent_download.py %s" % (match)
+        print >>sys.stderr, "\tevent_download.py '%s'" % (match)
         print >>sys.stderr, "and then copy ~/.cache/pmu-events to the system under test"
     except OSError as e:
         print >>sys.stderr, "Cannot write events file:", e
     return found
 
-def download_current():
+def download_current(link=False):
     """Download JSON event list for current cpu.
        Returns >0 when a event list is found"""
-    return download(get_cpustr())
+    return download(get_cpustr(), link=link)
 
 def eventlist_name(name=None, key="core"):
     if not name:
@@ -115,7 +125,8 @@ if __name__ == '__main__':
     p.add_argument('--all', '-a', help='Download all available event files', action='store_true')
     p.add_argument('--verbose', '-v', help='Be verbose', action='store_true')
     p.add_argument('--mine', help='Print name of current CPU', action='store_true')
-    p.add_argument('cpus', help='Cpu strings to download', nargs='*')
+    p.add_argument('--link', help='Create links with the original event file name', action='store_true')
+    p.add_argument('cpus', help='CPU identifiers to download', nargs='*')
     args = p.parse_args()
 
     cpustr = get_cpustr()
@@ -125,13 +136,13 @@ if __name__ == '__main__':
         sys.exit(0)
     d = getdir()
     if args.all:
-        found = download('*', None)
+        found = download('*', key=None, link=args.link)
     elif len(args.cpus) == 0:
-        found = download_current()
+        found = download_current(link=args.link)
     else:
         found = 0
         for j in args.cpus:
-            found += download(j)
+            found += download(j, link=args.link)
 
     if found == 0:
         print >>sys.stderr, "Nothing found"
