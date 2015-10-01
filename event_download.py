@@ -77,7 +77,7 @@ def download(match, key=["core"]):
         models = open(os.path.join(dir, "mapfile.csv"))
         for j in models:
             cpu, version, name, type  = j.rstrip().split(",")
-            if not fnmatch(cpu, match) or type not in key:
+            if not fnmatch(cpu, match) or (key is not None and type not in key):
                 continue
             cpu = sanitize(cpu, string.ascii_letters + '-' + string.digits)
             url = urlpath + name
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         sys.exit(0)
     d = getdir()
     if args.all:
-        found = download('*')
+        found = download('*', None)
     elif len(args.cpus) == 0:
         found = download_current()
     else:
