@@ -549,7 +549,7 @@ static void simple_pebs_cpu_init(void *arg)
 	init_waitqueue_head(this_cpu_ptr(&simple_pebs_wait));
 
 	/* Check if someone else is using the PMU */
-	rdmsrl(MSR_IA32_PERFCTR0, val);
+	rdmsrl(MSR_IA32_EVNTSEL0, val);
 	if (val & EVTSEL_EN) {
 		pr_err("Someone else using perf counter 0\n");
 		pebs_error = 1;
