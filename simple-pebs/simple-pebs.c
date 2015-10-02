@@ -639,7 +639,7 @@ static int simple_pebs_init(void)
 	put_online_cpus();
 	if (pebs_error) {
 		pr_err("PEBS initialization failed\n");
-		err = pebs_error;
+		err = -EIO;
 		goto out_notifier;
 	}
 
