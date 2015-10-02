@@ -506,6 +506,11 @@ static int simple_pebs_get_vector(void)
 	}
 	set_bit(pebs_vector, used_vectors);
 	idt = (gate_desc *)kallsyms_lookup_name("idt_table");
+	if (!idt) {
+		pr_err("Could not resolve idt_table. Did you enable CONFIG_KALLSYMS_ALL?\n");
+		return -1;
+	}
+
 	pack_gate(&desc, GATE_INTERRUPT, (unsigned long)simple_pebs_entry,
 			0, 0, 0);
 	write_idt_entry(idt, pebs_vector,&desc);
