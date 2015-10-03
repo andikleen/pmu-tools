@@ -7,15 +7,6 @@
 # format is a printf format with %d
 # %d will be replaced with the cpu number
 # format can be offline to offline the cpu or online to online
-# Examples:
-# print all cores on socket 0
-# cputop "socket == 0"
-# print all first threads in each core on socket 0
-# cputop "thread == 0 and socket == 0"
-# disable all second threads (disable hyper threading)
-# cputop "thread == 1" offline
-# reenable all offlined cpus
-# cputop offline online
 # Author: Andi Kleen
 import sys, os, re, argparse
 
@@ -38,9 +29,25 @@ query is a python expression, using variables:
 socket, core, thread
 or "offline" to query all offline cpus
 format is a printf format with %d
-%d will be replaced with the cpu number''')
+%d will be replaced with the cpu number''',
+epilog='''
+Examples:
+print all cores on socket 0
+cputop "socket == 0"
+
+print all first threads in each core on socket 0
+cputop "thread == 0 and socket == 0"
+
+disable all second threads (disable hyper threading)
+cputop "thread == 1" offline
+
+reenable all offlined cpus
+cputop offline online
+
+print all online cpus
+cputop True ''', formatter_class=argparse.RawTextHelpFormatter)
 ap.add_argument('expr', help='python expression with socket/core/thread')
-ap.add_argument('fmt', help='Output format string with %d, or online/offline', nargs='?')
+ap.add_argument('fmt', help='Output format string with %%d, or online/offline', nargs='?')
 args = ap.parse_args()
 
 special = {
