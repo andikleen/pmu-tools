@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # Copyright (c) 2012-2015, Intel Corporation
 # Author: Andi Kleen
 #
@@ -91,7 +91,7 @@ ingroup_events = frozenset(fixed_to_num.keys())
 
 outgroup_events = set()
 
-nonperf_events = {"interval-ns"}
+nonperf_events = ["interval-ns"]
 
 valid_events = [r"cpu/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
 
