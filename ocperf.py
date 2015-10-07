@@ -708,8 +708,7 @@ def process_args():
         if sys.argv[i] == "--print":
             print_only = True
         elif sys.argv[i] == "--force-download":
-            global force_download
-            force_download = True
+           pass
         elif sys.argv[i] == "--no-period":
             record = never
         # XXX does not handle options between perf and record
@@ -785,6 +784,9 @@ def perf_cmd(cmd):
         sys.exit(subprocess.call(cmd))
 
 if __name__ == '__main__':
+    for j in sys.argv:
+        if j == "--force-download":
+            force_download = True
     emap = find_emap()
     if not emap:
         sys.exit("Do not recognize CPU or cannot find CPU map file")
