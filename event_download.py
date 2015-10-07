@@ -52,11 +52,19 @@ def sanitize(s, a):
 def getdir():
     try:
         d = os.getenv("XDG_CACHE_HOME")
+	xd = d
         if not d:
             home = os.getenv("HOME")
             d = "%s/.cache" % (home)
         d += "/pmu-events"
         if not os.path.isdir(d):
+            # try to handle the sudo case
+	    if not xd:
+                user = os.getenv("SUDO_USER")
+                if user:
+                    nd = os.path.expanduser("~" + user) + "/.cache/pmu-events"
+		    if os.path.isdir(nd):
+		        return nd
             os.makedirs(d)
         return d
     except OSError:
