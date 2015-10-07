@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # plot toplev -I... -x, -o ...csv output as bar plot
 #
 import matplotlib.pyplot as plt

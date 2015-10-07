@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # resolve ELF and DWARF symbol tables using elftools
 #
 # Copyright (c) 2013-2014, Intel Corporation

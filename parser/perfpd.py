@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # Import perf.data into a pandas DataFrame
 #
 # Copyright (c) 2013-2014, Intel Corporation

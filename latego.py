@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # configure latego workaround on Sandy Bridge EP
 # can be run as a standalone tool or used as module
 # latego enable|disable hexevent
