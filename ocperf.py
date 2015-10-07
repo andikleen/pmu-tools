@@ -279,11 +279,11 @@ class UncoreEvent:
 
         # explode boxes if needed
         def box_name(n):
-            return "uncore_%s_%d" % (e.unit, n)
+            return "%s_%d" % (e.unit, n)
         def box_n_exists(n):
             return box_exists(box_name(n))
         if not box_exists(e.unit) and box_n_exists(0):
-            return ",".join([box_name(x) + o.replace("_NUM", "_%d" % (x)) for x in
+            return ",".join(["uncore_" + box_name(x) + o.replace("_NUM", "_%d" % (x)) for x in
                              itertools.takewhile(box_n_exists, itertools.count())])
         return "uncore_%s%s" % (e.unit, o.replace("_NUM", ""))
 
@@ -325,7 +325,9 @@ missing_boxes = set()
 
 def check_uncore_event(e):
     if e.unit not in uncore_boxes:
-        if os.path.exists("/sys/devices/uncore_%s" % e.unit) or os.getenv("FORCE_UNCORE"):
+        if (os.path.exists("/sys/devices/uncore_%s" % e.unit) or 
+		os.path.exists("/sys/devices/uncore_%s_0" % e.unit) or
+		os.getenv("FORCE_UNCORE")):
             uncore_boxes.add(e.unit)
     if e.unit in uncore_boxes:
         return e
