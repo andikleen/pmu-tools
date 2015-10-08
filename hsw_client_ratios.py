@@ -2125,7 +2125,7 @@ class Setup:
 	n = Metric_Turbo_Utilization() ; r.metric(n)
 	n = Metric_SMT_2T_Utilization() ; r.metric(n)
 	n = Metric_Kernel_Utilization() ; r.metric(n)
-	n = Metric_MEM_Request_Latency() ; r.metric(n)
+	#n = Metric_MEM_Request_Latency() ; r.metric(n)
         n = Metric_MUX() ; r.metric(n)
         n = Metric_CLKS() ; r.metric(n)
         n = Metric_CORE_CLKS() ; r.metric(n)
