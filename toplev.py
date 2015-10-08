@@ -1562,7 +1562,9 @@ def print_sample(sample_obj, rest):
     sperf = [perf, "record", "-g", "-e", sample] + [x for x in rest if x != "-A"]
     print " ".join(sperf)
     if args.run_sample:
-	os.system(" ".join(sperf))
+	ret = os.system(" ".join(sperf))
+        if ret:
+            sys.exit(ret)
         print "Run `" + perf + " report' to show the sampling results"
 
 def sysctl(name):
