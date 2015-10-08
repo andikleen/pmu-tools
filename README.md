@@ -5,7 +5,9 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
-* jevents now has a perf stat like tool called jstat.
+* toplev can print the critical bottleneck with --bottleneck
+* The tools can now find event lists for the original user of sudo
+* jevents now has a perf stat like tool called jstat (renamed to jestat)
 * jevents can now list and automatically resolve perf style events and aliases
 * simple-pebs is a simple reference Linux PEBS driver
 * ocperf now supports uncore events on some systems (experimential)

@@ -294,6 +294,7 @@ p.add_argument('--force-events', help='Assume kernel supports all events. May gi
 p.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
 p.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
 p.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
+p.add_argument('--bottleneck', help='Show critical bottleneck', action='store_true')
 args, rest = p.parse_known_args()
 
 if len(rest) > 0 and rest[0] == "--":
@@ -407,6 +408,9 @@ class Output:
     def flush(self):
 	pass
 
+    def bottleneck(self, key, name, val):
+	pass
+
 class OutputHuman(Output):
     """Generate human readable single-column output."""
     def __init__(self, logfile):
@@ -459,6 +463,11 @@ class OutputHuman(Output):
             val = "%13.2f" % (l)
         self.item(area, name, val, timestamp, unit, desc, title,
                   None, valstat)
+
+    def bottleneck(self, key, name, val):
+	if key:
+	    key += " "
+	print >>out.logf, "%sBOTTLENECK %s %.2f%%" % (key, name, val * 100.)
 
 class OutputColumns(OutputHuman):
     """Human-readable output data in per-cpu columns."""
@@ -902,6 +911,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             st = [combine_valstat(z) for z in itertools.izip(*[valstats[j] for j in cpus])]
             runner.compute(r, rev[cpus[0]], st, env, smt_node, stat)
             runner.print_res(out, interval, core_fmt(core), smt_node)
+	    if args.bottleneck:
+		runner.print_bottleneck(out, core_fmt(core), smt_node)
 
         # print the non SMT nodes
         # recompute the nodes so we get up-to-date values
@@ -910,12 +921,16 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, stat)
             runner.print_res(out, interval, thread_fmt(j), not_smt_node)
+	    if args.bottleneck:
+		runner.print_bottleneck(out, thread_fmt(core), not_smt_node)
     else:
         for j in sorted(res.keys()):
             if j != "" and int(j) not in runner.allowed_threads:
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, lambda obj: True, stat)
             runner.print_res(out, interval, j, lambda obj: True)
+	    if args.bottleneck:
+		runner.print_bottleneck(out, j, lambda obj: True)
     out.flush()
     stat.referenced_check(res)
     stat.compute_errors()
@@ -1302,6 +1317,28 @@ def node_filter(obj, test):
                 return True
     return test()
 
+SIB_THRESH = 5.0
+
+# look for highest sibling, or parent if siblings are inconclusive
+def find_final(bn):
+    pct = lambda x: float(x[1])
+    prefix = ""
+    prev = None
+    for j in bn:
+	if not j[0].startswith(prefix):
+	    return prev
+        siblings = [x for x in bn
+              if x[0].startswith(prefix) and x[0].count('.') == j[0].count(".")]
+	siblings = sorted(siblings, key=pct, reverse=True)
+	# ambigious? use parent
+	if (prev and
+		len(siblings) > 1 and
+		pct(siblings[0]) - pct(siblings[1]) <= SIB_THRESH):
+	    return prev
+	prefix = j[0]
+	prev = j
+    return j
+
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
@@ -1534,6 +1571,15 @@ class Runner:
                             obj.valstat)
 		    if obj.thresh or args.verbose:
 			self.sample_obj.add(obj)
+
+    def print_bottleneck(self, out, key, match):
+	bn = [(full_name(o), o.val) for o in self.olist if match(o) and o.thresh and not o.metric]
+	if len(bn) == 0:
+	    return
+	b = sorted(bn, key=lambda x: x[0].count("."))
+	b = sorted(bn, key=lambda x: float(x[1]), reverse=True)
+	final = find_final(b)
+	out.bottleneck(key, final[0], final[1])
 
 def remove_pp(s):
     if s.endswith(":pp"):
