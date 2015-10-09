@@ -93,7 +93,8 @@ outgroup_events = set()
 
 nonperf_events = set(["interval-ns"])
 
-valid_events = [r"cpu/.*?/", "ref-cycles", r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
+valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles",
+		r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
 
 # workaround for broken event files for now
 event_fixes = {
@@ -700,7 +701,7 @@ fixed_set = frozenset(fixed_counters.keys())
 fixed_to_name = dict(zip(fixed_counters.values(), fixed_counters.keys()))
 
 def separator(x):
-    if x.startswith("cpu") or x.startswith("power"):
+    if x.startswith("cpu") or x.startswith("power") or x.startswith("uncore"):
         return ""
     return ":"
 
@@ -771,7 +772,7 @@ def perf_args(evstr, rest):
     add = []
     if interval_mode:
         add += ['-I', str(interval_mode)]
-    return [perf, "stat", "-x,", "--log-fd", "X", "-e", evstr]  + add + rest
+    return [perf, "stat", "-x;", "--log-fd", "X", "-e", evstr]  + add + rest
 
 def setup_perf(evstr, rest):
     prun = PerfRun()
@@ -1028,7 +1029,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
         except KeyboardInterrupt:
             continue
         if interval_mode:
-            m = re.match(r"\s*([0-9.]+),(.*)", l)
+            m = re.match(r"\s*([0-9.]+);(.*)", l)
             if m:
                 interval = float(m.group(1))
                 l = m.group(2)
@@ -1040,10 +1041,9 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                         rev = defaultdict(list)
                         valstats = defaultdict(list)
                     prev_interval = interval
-        # cannot just split on commas, as they are inside cpu/..../
-        # code later relies on the regex stripping ku flags
-        fields = "(" + "|".join(valid_events + perf_fields) + "),?"
-        n = re.findall(fields, l)
+
+	n = l.strip().split(";")
+
         # filter out the empty unit field added by 3.14
         n = filter(lambda x: x != "" and x != "Joules", n)
 
@@ -1062,6 +1062,9 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
             print "unparseable perf output"
             sys.stdout.write(l)
             continue
+	title = title.replace("CPU", "")
+	# code later relies on stripping ku flags
+	event = event.replace("/k", "/").replace("/u", "/")
 
 	multiplex = float('nan')
         event = event.rstrip()
@@ -1092,12 +1095,12 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
 
         account[event].total += 1
 
-        # power events are only output once for every socket. duplicate them
+	# power/uncore events are only output once for every socket. duplicate them
         # to all cpus in the socket to make the result lists match
 	# unless we use -A ??
         # also -C xxx causes them to be duplicated too, unless single thread
-	if event.startswith("power") and title != "" and (
-                not (args.core and not args.single_thread)):
+	if ((event.startswith("power") or event.startswith("uncore")) and
+		title != "" and (not (args.core and not args.single_thread))):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
             for j in cpu.sockettocpus[socket]:

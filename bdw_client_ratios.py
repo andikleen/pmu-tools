@@ -2223,7 +2223,7 @@ class Setup:
 	n = Metric_Turbo_Utilization() ; r.metric(n)
 	n = Metric_SMT_2T_Utilization() ; r.metric(n)
 	n = Metric_Kernel_Utilization() ; r.metric(n)
-	#n = Metric_MEM_Request_Latency() ; r.metric(n)
+	n = Metric_MEM_Request_Latency() ; r.metric(n)
 	n = Metric_TSX_Transactional_Cycles() ; r.metric(n)
 	n = Metric_TSX_Aborted_Cycles() ; r.metric(n)
         n = Metric_MUX() ; r.metric(n)
