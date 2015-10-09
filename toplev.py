@@ -70,6 +70,11 @@ unsup_events = (
     ("MEM_LOAD_UOPS_RETIRED.*", ivb_ht_39),
     ("MEM_LOAD_UOPS_L*_MISS_RETIRED.*", ivb_ht_39),
     ("MEM_UOPS_RETIRED.*", ivb_ht_39),
+    # commit 5e176213a6b2bc
+    # the event works, but it cannot put into the same group as
+    # any other CYCLE_ACTIVITY.* event. For now black list, but
+    # could also special case this in the group scheduler.
+    ("CYCLE_ACTIVITY.STALLS_TOTAL", (("bdw", (4, 4), None))),
     # commit 91f1b70582c62576
     ("CYCLE_ACTIVITY.*", (("bdw"), (4, 1), None)),
     ("L1D_PEND_MISS.PENDING", (("bdw"), (4, 1), None)),
