@@ -14,7 +14,7 @@ addr: ${ADDR_OBJ}
 
 addr: LDLIBS += -lstdc++ -ldl
 
-rtest2: LDFLAGS += -lm
+rtest2: LDLIBS += -lm
 
 rtest: rtest.o
 
