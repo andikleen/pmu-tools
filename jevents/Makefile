@@ -22,7 +22,7 @@ install: libjevents.a listevents showevent event-rmap
 	install -d ${INCLUDE}
 	install -m 755 listevents showevent event-rmap ${BIN}
 	install -m 644 libjevents.a ${LIB}
-	install -m 644 rdpmc.h jevents.h measure.h perf.h jsession.h ${INCLUDE}
+	install -m 644 rdpmc.h jevents.h measure.h perf-iter.h jsession.h ${INCLUDE}
 	# xxx install man page
 
 libjevents.a: ${OBJ}
