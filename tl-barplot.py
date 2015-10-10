@@ -44,13 +44,19 @@ elif len(data.cpus) > 0:
     cpu = sorted(data.cpus)[0]
 else:
     cpu = None
+aliases = [x for x in data.cpus if x.startswith(cpu) and x != cpu]
 if cpu:
-    print "plotting cpu", cpu
+    print "plotting cpus", cpu, " ".join(sorted(aliases))
 
 for d in data.vals:
+    print d
     for j in data.headers:
+	for k in aliases:
+	    if (j, k) in d and (j, cpu) not in d:
+		d[(j, cpu)] = d[(j, k)]
         if (j, cpu) not in d:
             d[(j, cpu)] = float('nan')
+
 for d in data.vals:
     for k, c in d.keys():
         if c == cpu:
