@@ -753,13 +753,16 @@ def get_pager():
 def perf_cmd(cmd):
     if len(sys.argv) >= 2 and sys.argv[1] == "list":
         pager, proc = get_pager()
-        l = subprocess.Popen(cmd, stdout=pager)
-        l.wait()
-        print >>pager
-        emap.dumpevents(pager, proc is not None)
-        if proc:
-            pager.close()
-            proc.wait()
+        try:
+            l = subprocess.Popen(cmd, stdout=pager)
+            l.wait()
+            print >>pager
+            emap.dumpevents(pager, proc is not None)
+            if proc:
+                pager.close()
+                proc.wait()
+        except IOError:
+            pass
     elif len(sys.argv) >= 2 and (sys.argv[1] == "report" or sys.argv[1] == "stat"):
         direct = version.has_name
         if not direct:
@@ -771,15 +774,18 @@ def perf_cmd(cmd):
             ret = subprocess.call(cmd)
             latego.cleanup()
             sys.exit(ret)
-        pipe = subprocess.Popen(cmd, 
-                                stdout=subprocess.PIPE, 
-                                stderr=subprocess.STDOUT).stdout
-        raw = lambda e: " " + emap.getraw(int(e.group(1), 16))
-        for i in pipe:
-            i = re.sub("[rR]aw 0x([0-9a-f]{4,})", raw, i)
-            i = re.sub("r([0-9a-f]{4,})", raw, i)
-            i = re.sub("(cpu/.*?/)", lambda e: emap.getperf(e.group(1)), i)
-            print i,
+        try:
+            pipe = subprocess.Popen(cmd,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT).stdout
+            raw = lambda e: " " + emap.getraw(int(e.group(1), 16))
+            for i in pipe:
+                i = re.sub("[rR]aw 0x([0-9a-f]{4,})", raw, i)
+                i = re.sub("r([0-9a-f]{4,})", raw, i)
+                i = re.sub("(cpu/.*?/)", lambda e: emap.getperf(e.group(1)), i)
+                print i,
+        except IOError:
+            pass
         pipe.close()
         latego.cleanup()
     else:
