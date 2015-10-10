@@ -479,7 +479,7 @@ For bugs please open an issue on https://github.com/andikleen/pmu-tools/issues
 
 # Licenses
 
-ocperf, toplev, ucevent are under GPLv2, self and addr under the modified BSD license.
+ocperf, toplev, ucevent, parser are under GPLv2, jevents is under the modified BSD license.
 
 Andi Kleen
 pmu-tools@halobates.de
