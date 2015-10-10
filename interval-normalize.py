@@ -45,8 +45,11 @@ for row in rc:
     # 1.354075473,CPU0,0,cpu-migrations                             old perf w/ cpu
     # 0.799553738,137765150,,branches                               new perf with unit
     # 0.799553738,CPU1,137765150,,branches                        new perf with unit and cpu
+    # 0.100879059,402.603109,,task-clock,402596410,100.00         new perf with unit without cpu and stats
     # 0.200584389,FrontendBound.Branch Resteers,15.87%,above,"",    toplev single thread
     # 0.200584389,0,FrontendBound.Branch Resteers,15.87%,above,"",  toplev w/ cpu
+    if len(row) == 0:
+        continue
     ts = row[0].strip()
     if len(row) == 3: # old perf
         cpu, ev, val = None, row[2], row[1]
@@ -57,11 +60,20 @@ for row in rc:
             cpu, ev, val = None, row[3], row[1]
     elif len(row) == 5: # new perf w/ CPU
         cpu, ev, val = row[1], row[4], row[2]
-    elif len(row) > 5: # toplev
-        if "." in row[2] and is_number(row[2]):
+    elif len(row) > 5: # toplev or new perf
+        if is_number(row[1]) and is_number(row[4]):     # new perf w/o CPU
+            cpu, ev, val = None, row[3], row[1]
+        elif is_cpu(row[1]) and is_number(row[2]) and is_number(row[5]):
+            CPU, EV, val = row[1], row[4], row[2]
+        elif "." in row[2] and is_number(row[2]):
             cpu, ev, val = None, row[1], row[2].replace("%", "")
         else:
             cpu, ev, val = row[1], row[2], row[3].replace("%", "")
+    elif row[0].startswith("#"):    # comment
+        continue
+    else:
+        print "PARSE-ERROR", row
+        continue
 
     ev = ev.strip()
     if ts != timestamp or cpu != lastcpu:
