@@ -18,10 +18,11 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import exceptions, argparse, time, types, fnmatch, csv, copy, math
-import locale
-from collections import defaultdict, Counter, namedtuple
-#sys.path.append("../pmu-tools")
+import exceptions, argparse, time, types, fnmatch, csv, copy
+from collections import defaultdict, Counter
+
+from tl_stat import format_valstat, combine_valstat, ComputeStat, ValStat
+import tl_output
 import ocperf
 
 known_cpus = (
@@ -368,245 +369,6 @@ def check_ratio(l):
 def isnan(x):
     return x != x
 
-def format_valstat(valstat):
-    vs = ""
-    if valstat and (valstat.stddev or valstat.multiplex):
-        vs = "\t"
-        if valstat.stddev:
-            vs += "+-%6.2f%% " % valstat.stddev
-        if valstat.multiplex and not isnan(valstat.multiplex):
-            vs += "[%6.2f%%]" % valstat.multiplex
-    return vs
-
-class Output:
-    """Abstract base class for Output classes."""
-    def __init__(self, logfile):
-        self.logf = logfile
-        self.printed_descs = set()
-        self.hdrlen = 30
-
-    # pass all possible hdrs in advance to compute suitable padding
-    def set_hdr(self, hdr, area):
-        if area:
-            hdr = "%-7s %s" % (area, hdr)
-        self.hdrlen = max(len(hdr) + 1, self.hdrlen)
-
-    def set_cpus(self, cpus):
-	pass
-
-    def item(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
-        if desc in self.printed_descs:
-            desc = ""
-        else:
-            self.printed_descs.add(desc)
-        if not area:
-            area = ""
-        self.show(timestamp, title, area, name, l, remark, desc, sample, valstat)
-
-    def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
-        self.item(area, name, "%13.2f" % (100.0 * l), timestamp, "%" + remark, desc, title,
-                  sample, valstat)
-
-    def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
-        self.item(area, name, "%13.2f" % l, timestamp, unit, desc, title,
-                  None, valstat)
-
-    def flush(self):
-	pass
-
-    def bottleneck(self, key, name, val):
-	pass
-
-class OutputHuman(Output):
-    """Generate human readable single-column output."""
-    def __init__(self, logfile):
-        Output.__init__(self, logfile)
-        locale.setlocale(locale.LC_ALL, '')
-
-    def print_desc(self, desc, sample):
-	if desc and not args.no_desc:
-	    print >>self.logf, "\t" + desc
-	if desc and sample and not args.no_desc:
-	    print >>self.logf, "\t" + "Sampling events: ", sample
-
-    def print_timestamp(self, timestamp):
-	if timestamp:
-	    self.logf.write("%6.9f%s" % (timestamp, " "))
-
-    def print_header(self, area, hdr):
-	hdr = "%-7s %s" % (area, hdr)
-	self.logf.write("%-*s " % (self.hdrlen, hdr + ":"))
-
-    # timestamp Timestamp in interval mode
-    # title     CPU
-    # area      FE/BE ...
-    # hdr       Node Name
-    # s         Formatted measured value
-    # remark    above/below/""
-    # desc      Object description
-    # sample    Sample Objects (string)
-    # vs        Statistics object
-    # Example:
-    # C0    BE      Backend_Bound:                                62.00 %
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
-	self.print_timestamp(timestamp)
-        write = self.logf.write
-        if title:
-            write("%-6s" % (title))
-        vs = format_valstat(valstat)
-	self.print_header(area, hdr)
-        if vs:
-            val = "%-20s %s" % (s + " " + remark, vs)
-        else:
-            val = "%s %s" % (s, remark)
-        write(val + "\n")
-	self.print_desc(desc, sample)
-
-    def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
-        if l > 1000:
-            val = locale.format("%13u", round(l), grouping=True)
-        else:
-            val = "%13.2f" % (l)
-        self.item(area, name, val, timestamp, unit, desc, title,
-                  None, valstat)
-
-    def bottleneck(self, key, name, val):
-	if key:
-	    key += " "
-	print >>out.logf, "%sBOTTLENECK %s %.2f%%" % (key, name, val * 100.)
-
-class OutputColumns(OutputHuman):
-    """Human-readable output data in per-cpu columns."""
-    def __init__(self, logfile):
-	OutputHuman.__init__(self, logfile)
-	self.nodes = dict()
-	self.timestamp = None
-	self.cpunames = set()
-
-    def set_cpus(self, cpus):
-	self.cpunames = cpus
-
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
-        if args.single_thread:
-            OutputHuman.show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat)
-            return
-	self.timestamp = timestamp
-	key = (area, hdr)
-	if key not in self.nodes:
-	    self.nodes[key] = dict()
-	assert title not in self.nodes[key]
-	self.nodes[key][title] = (s, remark, desc, sample, valstat)
-
-    def flush(self):
-	VALCOL_LEN = 14
-	write = self.logf.write
-
-	cpunames = sorted(self.cpunames)
-
-	if self.timestamp:
-	    write("%9s" % "")
-	write("%*s" % (self.hdrlen, ""))
-	for j in cpunames:
-	    write("%*s " % (VALCOL_LEN, j))
-
-	write("\n")
-        for key in sorted(sorted(self.nodes.keys(), key=lambda x: x[1]), key=lambda x: x[0] == ""):
-	    node = self.nodes[key]
-	    desc = None
-	    sample = None
-            remark = None
-	    if self.timestamp:
-		self.print_timestamp(self.timestamp)
-
-	    self.print_header(key[0], key[1])
-            vlist = []
-	    for cpuname in cpunames:
-		if cpuname in node:
-		    cpu = node[cpuname]
-		    desc, sample, remark, valstat = cpu[2], cpu[3], cpu[1], cpu[4]
-                    if remark in ("above", "below", "Metric", "CoreMetric", "CoreClocks"): # XXX
-                        remark = ""
-                    if valstat:
-                        vlist.append(valstat)
-		    write("%*s " % (VALCOL_LEN, cpu[0]))
-		else:
-		    write("%*s " % (VALCOL_LEN, ""))
-            if remark:
-                write(" " + remark + format_valstat(combine_valstat(vlist)))
-	    write("\n")
-	    self.print_desc(desc, sample)
-	self.nodes = dict()
-
-class OutputColumnsCSV(OutputColumns):
-    """Columns output in CSV mode."""
-
-    def __init__(self, logfile, sep):
-        OutputColumns.__init__(self, logfile)
-        self.writer = csv.writer(self.logf, delimiter=sep)
-        self.printed_header = False
-
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
-	self.timestamp = timestamp
-	key = (area, hdr)
-	if key not in self.nodes:
-	    self.nodes[key] = dict()
-	assert title not in self.nodes[key]
-	self.nodes[key][title] = (s, remark, desc, sample, valstat)
-
-    def flush(self):
-        cpunames = sorted(self.cpunames)
-        if not self.printed_header:
-            ts = ["Timestamp"] if self.timestamp else []
-            self.writer.writerow(ts + ["Area", "Node"] + cpunames + ["Description", "Sample", "Stddev", "Multiplex"])
-            self.printed_header = True
-        for key in sorted(sorted(self.nodes.keys(), key=lambda x: x[1]), key=lambda x: x[0] == ""):
-	    node = self.nodes[key]
-            ts = [self.timestamp] if self.timestamp else []
-            l = ts + [key[0], key[1]]
-            vlist = []
-            ol = dict()
-            desc, sample = "", ""
-            for cpuname in cpunames:
-                if cpuname in node:
-		    cpu = node[cpuname]
-                    if cpu[2]:
-                        desc = cpu[2]
-                    if cpu[3]:
-                        sample = cpu[3]
-                    # ignore remark for now
-                    if cpu[4]:
-                        vlist.append(cpu[4])
-                    ol[cpuname] = float(cpu[0])
-            l += [ol[x] if x in ol else "" for x in cpunames]
-            l.append(desc)
-            l.append(sample)
-            vs = combine_valstat(vlist)
-            if vs:
-                l += (vs.stddev, vs.multiplex if not isnan(vs.multiplex) else "")
-            else:
-                l += ["", ""]
-            self.writer.writerow(l)
-        self.nodes = dict()
-
-class OutputCSV(Output):
-    """Output data in CSV format."""
-    def __init__(self, logfile, sep):
-        Output.__init__(self, logfile)
-        self.writer = csv.writer(self.logf, delimiter=sep)
-
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
-        if args.no_desc:
-            desc = ""
-        desc = re.sub(r"\s+", " ", desc)
-        l = []
-        if timestamp:
-            l.append(timestamp)
-        if title:
-            l.append(title)
-        stddev = valstat.stddev if (valstat and valstat.stddev) else ""
-        multiplex = valstat.multiplex if (valstat and valstat.multiplex == valstat.multiplex) else ""
-        self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample, stddev, multiplex])
-
 class CPU:
     """Detect the CPU."""
     # overrides for easy regression tests
@@ -882,43 +644,6 @@ def core_fmt(core):
 def thread_fmt(j):
     return core_fmt(key_to_coreid(j)) + ("-T%d" % cpu.cputothread[int(j)])
 
-class ComputeStat:
-    """Maintain statistics on measurement data."""
-    def __init__(self):
-        self.referenced = set()
-        self.already_warned = set()
-        self.errcount = 0
-        self.errors = set()
-        self.prev_errors = set()
-        self.mismeasured = set()
-        self.prev_mismeasured = set()
-
-    def referenced_check(self, res):
-        referenced = self.referenced
-        referenced = referenced - self.already_warned
-        if not referenced:
-            return
-        self.already_warned |= referenced
-
-        # sanity check: did we reference all results?
-        if len(res.keys()) > 0:
-            r = res[res.keys()[0]]
-            if len(referenced) != len(r) and not args.quiet:
-                print >>sys.stderr, "warning: %d results not referenced:" % (len(r) - len(referenced)),
-                print >>sys.stderr, " ".join(["%d" % x for x in sorted(set(range(len(r))) - referenced)])
-
-    def compute_errors(self):
-        if self.errcount > 0 and self.errors != self.prev_errors:
-            if not args.quiet:
-                print >>sys.stderr, "warning: %d division by zero errors:" % (self.errcount),
-                print >>sys.stderr, " ".join(self.errors)
-            self.errcount = 0
-            self.prev_errors = self.errors
-            self.errors = set()
-        if self.mismeasured and self.mismeasured > self.prev_mismeasured and not args.quiet:
-            print "warning: Mismeasured:", " ".join(self.mismeasured)
-            self.prev_mismeasured = self.mismeasured
-
 def display_core(cpunum, ignore_thread=False):
     for match in args.core.split(","):
         m = re.match(r'(?P<socket>S\d+)?-?(?P<core>C\d+)?-?(?P<thread>T\d+)?', match, re.I)
@@ -935,16 +660,6 @@ def display_core(cpunum, ignore_thread=False):
             continue
         return True
     return False
-
-def geoadd(l):
-    return math.sqrt(sum([x**2 for x in l]))
-
-# use geomean of stddevs and minimum of multiplex ratios for combining
-# XXX better way to combine multiplex ratios?
-def combine_valstat(l):
-    if not l:
-        return []
-    return ValStat(geoadd([x.stddev for x in l]), min([x.multiplex for x in l]))
 
 def print_keys(runner, res, rev, valstats, out, interval, env):
     stat = runner.stat
@@ -1064,8 +779,6 @@ perf_fields = [
     r"raw 0x[0-9a-f]+",
     r"Joules",
     ""]
-
-ValStat = namedtuple('ValStat', ['stddev', 'multiplex'])
 
 def do_execute(runner, events, out, rest, res, rev, valstats, env):
     evstr = ",".join(map(event_group, events))
@@ -1410,7 +1123,7 @@ class Runner:
         self.max_level = max_level
         self.missed = 0
 	self.sample_obj = set()
-        self.stat = ComputeStat()
+        self.stat = ComputeStat(args.quiet)
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv)
 	    self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value",
@@ -1842,13 +1555,13 @@ if not args.quiet:
 runner.collect()
 if csv_mode:
     if args.columns:
-        out = OutputColumnsCSV(args.output, csv_mode)
+        out = tl_output.OutputColumnsCSV(args.output, csv_mode, args)
     else:
-        out = OutputCSV(args.output, csv_mode)
+        out = tl_output.OutputCSV(args.output, csv_mode, args)
 elif args.columns:
-    out = OutputColumns(args.output)
+    out = tl_output.OutputColumns(args.output, args)
 else:
-    out = OutputHuman(args.output)
+    out = tl_output.OutputHuman(args.output, args)
 runner.schedule()
 try:
     if args.no_multiplex:
