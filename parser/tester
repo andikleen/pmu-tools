@@ -1,6 +1,11 @@
 #!/bin/bash
 # test different variants of the perf format
 
+failed() {
+	echo FAILED
+}
+trap failed ERR 0
+
 set -e
 set -x
 
@@ -48,3 +53,6 @@ check -e cycles,branches,branch-misses -c 1000
 
 # XXX sw trace points
 
+trap "" ERR 0
+
+echo SUCCEEDED

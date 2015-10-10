@@ -5,7 +5,6 @@
 # for non root set kernel.perf_event_paranoid = -1
 
 set -e
-set -x
 
 WRAP=${WRAP:-}
 
@@ -23,6 +22,8 @@ int main() {
 	return 0;
 }
 EOL
+
+set -x
 
 LOAD="-- gcc -o /dev/null hello.c"
 LOAD0="-- taskset -c 0 gcc -o /dev/null hello.c"

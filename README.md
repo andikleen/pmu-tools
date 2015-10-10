@@ -472,6 +472,10 @@ trace points in modules. It works with later and earlier kernels.
 event-rmap [cpu] prints the currently running events. This provides
 an easier answer to question Q2j in Vince Weaver's perf events FAQ.
 
+# Testing
+
+The all-tester script runs all test suites.
+
 # Mailing list
 
 Please post to the linux-perf-users@vger.kernel.org mailing list.

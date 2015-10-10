@@ -1,0 +1,28 @@
+#!/bin/sh
+# one stop shop to test all pmu-tools test suites
+
+set -e
+set -x
+PATH=$PATH:.
+
+# test ocperf
+tester
+
+# test toplev
+tl-tester
+
+# test other tools
+other-tester
+
+# test jevents
+make -C jevents
+cd jevents
+tester
+cd ..
+
+# test perf.data parser
+# this requires construct and pandas and some other libraries
+# XXX check for missing dependencies
+#cd parser
+#tester
+#cd ..
