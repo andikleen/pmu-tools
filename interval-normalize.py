@@ -30,7 +30,11 @@ def is_number(n):
     return re.match(r'[0-9.]+%?', n) != None
 
 def is_cpu(n):
-    return re.match(r'(CPU)|(S\d+(-C\d+)?)', row[1]) != None
+    return re.match(r'(CPU)|(S\d+(-C\d+)?)', n) is not None
+
+def is_socket(n):
+    return re.match(r'S\d+', n) is not None
+
 
 events = dict()
 out = []
@@ -41,6 +45,8 @@ res = []
 writer = csv.writer(args.output)
 lastcpu = None
 for row in rc:
+    # distinguish the bewildering variety of perf/toplev CSV formats
+
     # 1.354075473,0,cpu-migrations                                  old perf w/o cpu
     # 1.354075473,CPU0,0,cpu-migrations                             old perf w/ cpu
     # 0.799553738,137765150,,branches                               new perf with unit
@@ -48,6 +54,8 @@ for row in rc:
     # 0.100879059,402.603109,,task-clock,402596410,100.00         new perf with unit without cpu and stats
     # 0.200584389,FrontendBound.Branch Resteers,15.87%,above,"",    toplev single thread
     # 0.200584389,0,FrontendBound.Branch Resteers,15.87%,above,"",  toplev w/ cpu
+    # 1.001365014,CPU2,1819888,,instructions,93286388,100.00      new perf w/ unit w/ cpu and stats
+    # 0.609113353,S0,4,405.454531,,task-clock,405454468,100.00      perf --per-socket with cores
     if len(row) == 0:
         continue
     ts = row[0].strip()
@@ -64,7 +72,9 @@ for row in rc:
         if is_number(row[1]) and is_number(row[4]):     # new perf w/o CPU
             cpu, ev, val = None, row[3], row[1]
         elif is_cpu(row[1]) and is_number(row[2]) and is_number(row[5]):
-            CPU, EV, val = row[1], row[4], row[2]
+            cpu, ev, val = row[1], row[4], row[2]
+        elif len(row) > 6 and is_socket(row[1]) and is_number(row[3]) and is_number(row[6]):
+            cpu, ev, val = row[2], row[5], row[3]
         elif "." in row[2] and is_number(row[2]):
             cpu, ev, val = None, row[1], row[2].replace("%", "")
         else:
