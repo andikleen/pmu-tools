@@ -722,6 +722,7 @@ def print_perf(r):
     if args.quiet:
         return
     l = ["'" + x + "'" if x.find("{") >= 0 else x for x in r]
+    l = [x.replace(";", "\;") for x in l]
     i = l.index('--log-fd')
     del l[i:i+2]
     print " ".join(l)
