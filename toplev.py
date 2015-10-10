@@ -21,7 +21,7 @@ import sys, os, re, itertools, textwrap, platform, pty, subprocess
 import exceptions, argparse, time, types, fnmatch, csv, copy
 from collections import defaultdict, Counter
 
-from tl_stat import format_valstat, combine_valstat, ComputeStat, ValStat
+from tl_stat import format_valstat, combine_valstat, ComputeStat, ValStat, isnan
 import tl_output
 import ocperf
 
@@ -365,9 +365,6 @@ def check_ratio(l):
     if print_all:
         return True
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
-
-def isnan(x):
-    return x != x
 
 class CPU:
     """Detect the CPU."""
