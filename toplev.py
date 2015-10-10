@@ -18,7 +18,7 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import exceptions, argparse, time, types, fnmatch, csv, copy, math, operator
+import exceptions, argparse, time, types, fnmatch, csv, copy, math
 import locale
 from collections import defaultdict, Counter, namedtuple
 #sys.path.append("../pmu-tools")
