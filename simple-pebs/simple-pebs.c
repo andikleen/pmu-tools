@@ -506,6 +506,11 @@ static int simple_pebs_get_vector(void)
 	}
 	set_bit(pebs_vector, used_vectors);
 	idt = (gate_desc *)kallsyms_lookup_name("idt_table");
+	if (!idt) {
+		pr_err("Could not resolve idt_table. Did you enable CONFIG_KALLSYMS_ALL?\n");
+		return -1;
+	}
+
 	pack_gate(&desc, GATE_INTERRUPT, (unsigned long)simple_pebs_entry,
 			0, 0, 0);
 	write_idt_entry(idt, pebs_vector,&desc);
@@ -544,7 +549,7 @@ static void simple_pebs_cpu_init(void *arg)
 	init_waitqueue_head(this_cpu_ptr(&simple_pebs_wait));
 
 	/* Check if someone else is using the PMU */
-	rdmsrl(MSR_IA32_PERFCTR0, val);
+	rdmsrl(MSR_IA32_EVNTSEL0, val);
 	if (val & EVTSEL_EN) {
 		pr_err("Someone else using perf counter 0\n");
 		pebs_error = 1;
@@ -634,7 +639,7 @@ static int simple_pebs_init(void)
 	put_online_cpus();
 	if (pebs_error) {
 		pr_err("PEBS initialization failed\n");
-		err = pebs_error;
+		err = -EIO;
 		goto out_notifier;
 	}
 
