@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import collections
 import argparse
 import re
+import csv_formats
 
 p = argparse.ArgumentParser(
         usage='plot interval CSV output from perf stat/toplev',
@@ -63,17 +64,11 @@ def isnum(x):
     return re.match(r'[0-9.]+', x)
 
 val = ""
-for r in rc:
-    # timestamp,event,value
-    if len(r) < 3:
+for row in rc:
+    r = csv_formats.parse_csv_row(row)
+    if r is None:
         continue
-    print r
-    if len(r) >= 5 and not isnum(r[1]):
-        ts, event, val, thresh, desc = r[:5]
-    elif len(r) >= 4:
-        ts, val, unit, event = r[:4]
-    else:
-        ts, val, event = r
+    ts, cpu, event, val = r.ts, r.cpu, r.ev, r.val
     if event not in assigned:
         level = gen_level.get_level(event)
         assigned[event] = cur_colors[level][0]
@@ -88,9 +83,7 @@ for r in rc:
     except ValueError:
         value[event].append(0.0)
 
-levels = dict()
-for j in assigned.keys():
-    levels[gen_level.get_level(j)] = True
+levels = set(map(gen_level.get_level, assigned.keys()))
 
 if args.xkcd:
     try:
@@ -99,7 +92,7 @@ if args.xkcd:
         print "Please update matplotlib. Cannot enable xkcd mode."
 
 n = 1
-for l in levels.keys():
+for l in levels:
     ax = plt.subplot(len(levels), 1, n)
     if val.find('%') >= 0:
         ax.set_ylim(0, 100)

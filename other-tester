@@ -29,7 +29,7 @@ grep -q branch-misses,branches,context-switches,cpu-migrations,cycles,instructio
 #plot-normalized.py y.csv
 
 # interval-plot.py
-#interval-plot.py < x.csv
+interval-plot.py x.csv -o x.png
 
 done
 
