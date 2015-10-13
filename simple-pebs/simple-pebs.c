@@ -249,7 +249,7 @@ static void status_dump(char *where)
 
 static void start_stop_cpu(void *arg)
 {
-	wrmsrl(MSR_IA32_GLOBAL_CTRL, arg ? 0 : 1);
+	wrmsrl(MSR_IA32_GLOBAL_CTRL, arg ? 1 : 0);
 	status_dump("stop");
 }	
 
