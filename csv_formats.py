@@ -2,54 +2,92 @@
 import re
 from collections import namedtuple
 
-def is_number(n):
-    return re.match(r'[0-9.]+%?', n) != None
+def is_val(n):
+    return re.match(r'[0-9.%]+|<.*>', n) != None
 
 def is_cpu(n):
-    return re.match(r'(CPU)|(S\d+(-C\d+)?)', n) is not None
+    return re.match(r'(CPU)|(S\d+(-C\d+)?)|C\d+', n) is not None
 
 def is_socket(n):
     return re.match(r'S\d+', n) is not None
 
+def is_event(n):
+    return re.match(r'[a-zA-Z.-]+', n) is not None
+
+def is_number(n):
+    return re.match(r'[0-9]+', n) is not None
+
+def is_ts(n):
+    return re.match(r'\s*[0-9.]+', n) is not None
+
+def is_unit(n):
+    return re.match(r'[a-zA-Z]*', n) is not None
+
+is_running = is_number
+is_enabled = is_number
+
+formats = (
+# 1.354075473,0,cpu-migrations				  old perf w/o cpu
+	(is_ts, is_val, is_event),
+# 1.354075473,CPU0,0,cpu-migrations			     old perf w/ cpu
+	(is_ts, is_cpu, is_val, is_event),
+# 0.799553738,137765150,,branches			       new perf with unit
+	(is_ts, is_val, is_unit, is_event),
+# 0.799553738,CPU1,137765150,,branches			new perf with unit and cpu
+	(is_ts, is_cpu, is_val, is_unit, is_event),
+# 0.100879059,402.603109,,task-clock,402596410,100.00	 new perf with unit without cpu and stats
+	(is_ts, is_val, is_unit, is_event, is_running, is_enabled),
+# 0.200584389,0,FrontendBound.Branch Resteers,15.87%,above,"",  toplev w/ cpu
+	(is_ts, is_cpu, is_event, is_val),
+# 1.001365014,CPU2,1819888,,instructions,93286388,100.00      new perf w/ unit w/ cpu and stats
+	(is_ts, is_cpu, is_val, is_unit, is_event, is_running, is_enabled),
+# 0.609113353,S0,4,405.454531,,task-clock,405454468,100.00      perf --per-socket with cores
+	(is_ts, is_socket, is_number, is_val, is_unit, is_event, is_running, is_enabled),
+# 0.806231582,S0,4,812751,,instructions			 older perf --per-socket w/ cores w/o stats
+	(is_ts, is_socket, is_number, is_val, is_unit, is_event),
+# 0.200584389,FrontendBound.Branch Resteers,15.87%,above,"",    toplev single thread
+	(is_ts, is_event, is_val),
+# 0.936482669,C1-T0,Frontend_Bound.Frontend_Latency.ITLB_Misses,0.39,%below,,itlb_misses.walk_completed,,
+# 0.301553743,C1,Retiring,31.81,%,,,,
+	(is_ts, is_cpu, is_event, is_val),
+)
+
+fmtmaps = {
+    is_ts: 0,
+    is_cpu: 1,
+    is_event: 2,
+    is_val: 3,
+}
+
 Row = namedtuple('Row', ['ts', 'cpu', 'ev', 'val'])
 
+def check_format(fmt, row):
+    if len(row) < len(fmt):
+       False
+    if all([x(n) for (x, n) in zip(fmt, row)]):
+	vals = [None,None,None,None]
+	for i, j in enumerate(fmt):
+	    if j in fmtmaps:
+		vals[fmtmaps[j]] = row[i]
+	r = Row._make(vals)
+	return r;
+    return False
+
+fmt_cache = formats[0]
+
 def parse_csv_row(row):
-    # 1.354075473,0,cpu-migrations                                  old perf w/o cpu
-    # 1.354075473,CPU0,0,cpu-migrations                             old perf w/ cpu
-    # 0.799553738,137765150,,branches                               new perf with unit
-    # 0.799553738,CPU1,137765150,,branches                        new perf with unit and cpu
-    # 0.100879059,402.603109,,task-clock,402596410,100.00         new perf with unit without cpu and stats
-    # 0.200584389,FrontendBound.Branch Resteers,15.87%,above,"",    toplev single thread
-    # 0.200584389,0,FrontendBound.Branch Resteers,15.87%,above,"",  toplev w/ cpu
-    # 1.001365014,CPU2,1819888,,instructions,93286388,100.00      new perf w/ unit w/ cpu and stats
-    # 0.609113353,S0,4,405.454531,,task-clock,405454468,100.00      perf --per-socket with cores
     if len(row) == 0:
         return None
-    ts = row[0].strip()
-    if len(row) == 3: # old perf
-        cpu, ev, val = None, row[2], row[1]
-    elif len(row) == 4: # new perf w/ unit or old perf w/ CPU
-        if is_cpu(row[1]):  # old
-            cpu, ev, val = row[1], row[3], row[2]
-        else: # new
-            cpu, ev, val = None, row[3], row[1]
-    elif len(row) == 5: # new perf w/ CPU
-        cpu, ev, val = row[1], row[4], row[2]
-    elif len(row) > 5: # toplev or new perf
-        if is_number(row[1]) and is_number(row[4]):     # new perf w/o CPU
-            cpu, ev, val = None, row[3], row[1]
-        elif is_cpu(row[1]) and is_number(row[2]) and is_number(row[5]):
-            cpu, ev, val = row[1], row[4], row[2]
-        elif len(row) > 6 and is_socket(row[1]) and is_number(row[3]) and is_number(row[6]):
-            cpu, ev, val = row[2], row[5], row[3]
-        elif "." in row[2] and is_number(row[2]):
-            cpu, ev, val = None, row[1], row[2].replace("%", "")
-        else:
-            cpu, ev, val = row[1], row[2], row[3].replace("%", "")
-    elif row[0].startswith("#"):    # comment
+    global fmt_cache
+    r = check_format(fmt_cache, row)
+    if r:
+	return r
+    for fmt in formats:
+	r = check_format(fmt, row)
+	if r:
+	    fmt_cache = fmt
+	    return r
+    if row[0].startswith("#"):    # comment
         return None
-    else:
-        print "PARSE-ERROR", row
-        return None
-    ev = ev.strip()
-    return Row(ts=ts, cpu=cpu, ev=ev, val=val)
+    print "PARSE-ERROR", row
+    return None
