@@ -15,7 +15,7 @@ def TurboUtilization(EV, level):
     return EV("cycles", level) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
 
 def DurationTimeInSeconds(EV, level):
-    return EV("interval-ns", 0) / 1e+09 / 1000
+    return EV("interval-ns", 0) / 1e+06 / 1000
 
 # Run duration time in seconds
 def Time(EV, level):

@@ -104,7 +104,7 @@ def SLOTS(EV, level):
     return Pipeline_Width * CORE_CLKS(EV, level)
 
 def DurationTimeInSeconds(EV, level):
-    return 0 if 0 > 0 else(EV("interval-ns", 0) / 1e+09 / 1000 )
+    return 0 if 0 > 0 else(EV("interval-ns", 0) / 1e+06 / 1000 )
 
 # Instructions Per Cycle (per logical thread)
 def IPC(EV, level):
