@@ -3,7 +3,7 @@ import re
 from collections import namedtuple
 
 def is_val(n):
-    return re.match(r'[0-9.%]+|<.*>', n) != None
+    return re.match(r'-?[0-9.]+%?|<.*>', n) != None
 
 def is_cpu(n):
     return re.match(r'(CPU)|(S\d+(-C\d+)?)|C\d+', n) is not None

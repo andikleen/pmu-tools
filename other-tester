@@ -21,10 +21,11 @@ ${PERF} stat -I100 $args -a -x, -o x.csv sleep 1
 interval-normalize.py < x.csv
 interval-normalize.py < x.csv > y.csv
 
+grep -vq PARSE-ERROR y.csv
 grep -q branch-misses,branches,context-switches,cpu-migrations,cycles,instructions,page-faults,stalled-cycles-backend,stalled-cycles-frontend,task-clock y.csv
 
 # plot-normalized.py
-#plot-normalized.py y.csv
+plot-normalized.py -o x2.png y.csv
 
 # interval-plot.py
 interval-plot.py x.csv -o x.png
@@ -37,11 +38,12 @@ EVENTMAP=${cpus[hsw]} FORCECPU=$DCPU toplev.py -I 100 $args -o x.csv -x, -a slee
 interval-normalize.py < x.csv
 interval-normalize.py < x.csv > y.csv
 
+grep -vq PARSE-ERROR y.csv
 grep Frontend y.csv
 interval-plot.py x.csv -o x.png
 
 # plot-normalized.py
-#plot-normalized.py y.csv
+plot-normalized.py -o x2.png y.csv
 
 
 done
