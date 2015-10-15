@@ -247,3 +247,6 @@ class OutputCSV(Output):
         stddev = valstat.stddev if (valstat and valstat.stddev) else ""
         multiplex = valstat.multiplex if (valstat and valstat.multiplex == valstat.multiplex) else ""
         self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample, stddev, multiplex])
+
+    def bottleneck(self, key, name, val):
+        self.writer.writerow((key, "BOTTLENECK", name, val * 100.))
