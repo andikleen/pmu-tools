@@ -331,7 +331,7 @@ if args.graph:
 	title = args.title
     else:
 	title = "cpu %d" % (args.graph_cpu if args.graph_cpu else 0)
-    extra += '--title "' + args.title + '" '
+    extra += '--title "' + title + '" '
     if args.xkcd:
         extra += '--xkcd '
     if args.output != sys.stderr:
