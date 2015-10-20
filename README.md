@@ -383,14 +383,16 @@ implements a stacked barplot plot.
 
 Requires matplotlib to be installed.
 
-	toplev.py -I 100 -l3 --title "GNU grep" --graph grep -r foo /usr/*
+	toplev.py --single-thread -l3 --title "GNU grep" --graph grep -r foo /usr/*
 
 ![tl-barplot-example] (http://halobates.de/grep.3.svg)
 
+This assumes the workload is single threaded. tl-barplot can only
+display a single CPU, if --single-thread is not appropiate then
+the CPU to plot needs to be specified with --graph-cpu.
+
 With a new enough matplotlib you can also enable xkcd mode
 (install Humor Sans first)
-
-	toplev.py -I 100 -l2 --title "povray" --xkcd povray --benchmark
 
 ![tl-barplot-xkcd] (http://halobates.de/povray.2.png)
 
