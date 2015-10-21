@@ -327,19 +327,40 @@ def print_event(name, desc, f, human, wrap):
     else:
         print >>f, " [%s]" % (desc,)
 
-uncore_boxes = set()
+exists = set()
+does_not_exist = set()
+
+def cached_exists(fn):
+    if fn in exists:
+        return True
+    if fn in does_not_exist:
+        return False
+    return os.path.exists(fn)
+
+force_uncore = os.getenv("FORCE_UNCORE")
+
+def uncore_exists(box, postfix=""):
+    if force_uncore:
+        return True
+    if cached_exists("/sys/devices/uncore_" + box + postfix):
+        return True
+    if cached_exists("/sys/devices/uncore_" + box + " _0" + postfix):
+        return True
+    return False
+
 missing_boxes = set()
 
 def check_uncore_event(e):
-    if e.unit not in uncore_boxes:
-        if (os.path.exists("/sys/devices/uncore_%s" % e.unit) or 
-		os.path.exists("/sys/devices/uncore_%s_0" % e.unit) or
-		os.getenv("FORCE_UNCORE")):
-            uncore_boxes.add(e.unit)
-    if e.unit in uncore_boxes:
+    if uncore_exists(e.unit):
+        if e.cmask and not uncore_exists(e.unit, "cmask"):
+            print >>sys.stderr, "Uncore unit", e.unit, "missing cmask"
+            return None
+        if e.umask and not uncore_exists(e.unit, "umask"):
+            print "Uncore unit", e.unit, "missing umask"
+            return None
         return e
     if e.unit not in missing_boxes:
-        print "Uncore unit", e.unit, "missing"
+        print >>sys.stderr, "Uncore unit", e.unit, "missing"
         missing_boxes.add(e.unit)
     return None
 
