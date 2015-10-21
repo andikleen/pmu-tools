@@ -1,13 +1,18 @@
 #!/bin/bash
 # test different variants of the perf format
 
+PERF=${PERF:-perf}
+
 failed() {
 	echo FAILED
+	exit 1
 }
 trap failed ERR 0
 
 set -e
 set -x
+set -o pipefail
+set -E
 
 CMD=${1:-bash -c /bin/true}
 
@@ -18,16 +23,18 @@ check() {
 	FN=data/perf.$(echo -- "$@" | tr -d '{} ')
 	FN=${FN/--/}
 	rm -f $FN
-	perf record -o $FN "$@" -- $CMD
+	if ! $PERF record -o $FN "$@" -- $CMD ; then
+		return
+	fi
 	if [ $(stat -c %s $FN) == 0 ] ; then
 		return
 	fi
-	python perfdata.py $FN > /dev/null
-	python perfpd.py $FN > /dev/null
+	python perfdata.py $FN > pdata.txt
+	python perfpd.py $FN > ppd.txt
 
 	# XXX check more fields
-	AS=$(python perfdata.py $FN | grep -c SAMPLE)
-	BS=$(perf report -i $FN -D | grep -c "PERF_RECORD_SAMPLE")
+	AS=$(grep -c SAMPLE pdata.txt)
+	BS=$($PERF report -i $FN -D | grep -c "PERF_RECORD_SAMPLE")
 	[ $AS -eq $BS ]
 }
 
@@ -35,7 +42,9 @@ check
 check -c 1000
 check -g -c 1000
 check -b -c 1000
-check -b -g fp -c 1000
+if ! check -b -g fp -c 1000 ; then
+	check -b -g -c 1000
+fi
 check -P -c 10000
 check -T -c 10003
 #check -e cycles:S 
