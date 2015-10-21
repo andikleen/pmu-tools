@@ -97,7 +97,8 @@ def download(match, key=["core"], link=False):
                 lname = re.sub(r'.*/', '', name)
                 lname = sanitize(lname, allowed_chars)
                 try:
-                    os.link(os.path.join(dir, fn), os.path.join(dir, lname))
+                    os.remove(os.path.join(dir, lname))
+                    os.symlink(fn, os.path.join(dir, lname))
                 except OSError as e:
                     print >>sys.stderr, "Cannot link %s to %s:" % (name, lname), e
             found += 1
