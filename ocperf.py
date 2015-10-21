@@ -108,6 +108,7 @@ qual_map = (
     ("i1", "inv=1", EVENTSEL_INV, ""),
     ("tx", "in_tx=1", 0, ""),
     ("sup", "", 0, "k"),
+    ("SUP", "", 0, "k"),
     ("usr=yes", "", 0, "u"),
     ("usr=no", "", 0, "k"),
     ("anythr=yes", "any=1", 0, ""),
@@ -272,6 +273,12 @@ class UncoreEvent:
         o = "/event=%#x" % e.code
         if e.umask:
             o += ",umask=%#x" % e.umask
+        if e.cmask:
+            o += ",cmask=%#x" % e.cmask
+        if e.edge:
+            o += ",edge=1"
+        if e.inv:
+            o += ",inv=1"
         # xxx subctr, occ_sel, filters
         if version.has_name and not noname:
             o += ",name=" + e.name.replace(".", "_") + "_NUM"
