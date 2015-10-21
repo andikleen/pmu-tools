@@ -828,4 +828,7 @@ if __name__ == '__main__':
         sys.exit("Do not recognize CPU or cannot find CPU map file")
     msr = MSR()
     cmd = process_args()
-    perf_cmd(cmd)
+    try:
+        perf_cmd(cmd)
+    except KeyboardInterrupt:
+        pass
