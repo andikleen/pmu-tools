@@ -514,6 +514,7 @@ fixed_counters = {
     "CPU_CLK_UNHALTED.REF_TSC": "ref-cycles",
     "CPU_CLK_UNHALTED.REF_TSC:amt1": "cpu/event=0x0,umask=0x3,any=1/",
     "CPU_CLK_UNHALTED.REF_TSC:sup": "cpu/event=0x0,umask=0x3/k",
+    "CPU_CLK_UNHALTED.REF_TSC:SUP": "cpu/event=0x0,umask=0x3/k",
 }
 
 fixed_set = frozenset(fixed_counters.keys())
@@ -913,7 +914,7 @@ def ev_append(ev, level, obj):
 
 def canon_event(e):
     m = re.match(r"(.*?):(.*)", e)
-    if m and m.group(2) != "amt1" and m.group(2) != "sup":
+    if m and m.group(2) != "amt1" and m.group(2) not in ("sup", "SUP"):
         e = m.group(1)
     if e in fixed_counters:
         return fixed_counters[e]
