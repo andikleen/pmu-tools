@@ -344,7 +344,7 @@ def uncore_exists(box, postfix=""):
         return True
     if cached_exists("/sys/devices/uncore_" + box + postfix):
         return True
-    if cached_exists("/sys/devices/uncore_" + box + " _0" + postfix):
+    if cached_exists("/sys/devices/uncore_" + box + "_0" + postfix):
         return True
     return False
 
@@ -352,10 +352,10 @@ missing_boxes = set()
 
 def check_uncore_event(e):
     if uncore_exists(e.unit):
-        if e.cmask and not uncore_exists(e.unit, "cmask"):
+        if e.cmask and not uncore_exists(e.unit, "/format/cmask"):
             print >>sys.stderr, "Uncore unit", e.unit, "missing cmask"
             return None
-        if e.umask and not uncore_exists(e.unit, "umask"):
+        if e.umask and not uncore_exists(e.unit, "/format/umask"):
             print "Uncore unit", e.unit, "missing umask"
             return None
         return e
