@@ -79,7 +79,7 @@ def getfile(url, dir, fn):
     f.close()
 
 allowed_chars = string.ascii_letters + '_-.' + string.digits
-def download(match, key=["core"], link=False):
+def download(match, key=["core"], link=True):
     found = 0
     dir = getdir()
     try:
