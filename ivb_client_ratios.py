@@ -128,17 +128,11 @@ def Retire_Uop_Fraction(self, EV, level):
 def SLOTS(self, EV, level):
     return Pipeline_Width * CORE_CLKS(self, EV, level)
 
-def DurationTimeInMilliSeconds(self, EV, level):
-    return 0
-
 def DurationTimeInSeconds(self, EV, level):
-    return 0 if 0 > 0 else(DurationTimeInMilliSeconds(self, EV, level) / 1000 )
+    return 0 if 0 > 0 else(EV("interval-ns", 0) / 1e+06 / 1000 )
 
 def r2r_delta(self, EV, level):
     return max_delta_clk
-
-def SMT_on(self, EV, level):
-    return 1 if knob.nthreads >=2 else 0
 
 # Instructions Per Cycle (per logical thread)
 def IPC(self, EV, level):
@@ -1857,7 +1851,7 @@ Instructions Per Cycle (per logical thread)"""
 
     def compute(self, EV):
         try:
-            self.val = IPC(self, EV, 0)
+	    self.val = IPC(self, EV, 0)
         except ZeroDivisionError:
             print_error("IPC zero division")
             self.errcount += 1
@@ -1873,7 +1867,7 @@ Uops Per Instruction"""
 
     def compute(self, EV):
         try:
-            self.val = UPI(self, EV, 0)
+	    self.val = UPI(self, EV, 0)
         except ZeroDivisionError:
             print_error("UPI zero division")
             self.errcount += 1
@@ -1889,7 +1883,7 @@ Instruction per taken branch"""
 
     def compute(self, EV):
         try:
-            self.val = IPTB(self, EV, 0)
+	    self.val = IPTB(self, EV, 0)
         except ZeroDivisionError:
             print_error("IPTB zero division")
             self.errcount += 1
@@ -1906,7 +1900,7 @@ approximate PGO-likelihood for non-loopy codes."""
 
     def compute(self, EV):
         try:
-            self.val = BPTB(self, EV, 0)
+	    self.val = BPTB(self, EV, 0)
         except ZeroDivisionError:
             print_error("BPTB zero division")
             self.errcount += 1
@@ -1923,7 +1917,7 @@ were likely consumed by program instructions"""
 
     def compute(self, EV):
         try:
-            self.val = IFetch_Line_Utilization(self, EV, 0)
+	    self.val = IFetch_Line_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("IFetch_Line_Utilization zero division")
             self.errcount += 1
@@ -1940,7 +1934,7 @@ cache)"""
 
     def compute(self, EV):
         try:
-            self.val = DSB_Coverage(self, EV, 0)
+	    self.val = DSB_Coverage(self, EV, 0)
         except ZeroDivisionError:
             print_error("DSB_Coverage zero division")
             self.errcount += 1
@@ -1956,7 +1950,7 @@ Cycles Per Instruction (threaded)"""
 
     def compute(self, EV):
         try:
-            self.val = CPI(self, EV, 0)
+	    self.val = CPI(self, EV, 0)
         except ZeroDivisionError:
             print_error("CPI zero division")
             self.errcount += 1
@@ -1972,7 +1966,7 @@ Per-thread actual clocks when the thread is active"""
 
     def compute(self, EV):
         try:
-            self.val = CLKS(self, EV, 0)
+	    self.val = CLKS(self, EV, 0)
         except ZeroDivisionError:
             print_error("CLKS zero division")
             self.errcount += 1
@@ -1989,7 +1983,7 @@ core"""
 
     def compute(self, EV):
         try:
-            self.val = CORE_CLKS(self, EV, 0)
+	    self.val = CORE_CLKS(self, EV, 0)
         except ZeroDivisionError:
             print_error("CORE_CLKS zero division")
             self.errcount += 1
@@ -2005,7 +1999,7 @@ Instructions Per Cycle (per physical core)"""
 
     def compute(self, EV):
         try:
-            self.val = CoreIPC(self, EV, 0)
+	    self.val = CoreIPC(self, EV, 0)
         except ZeroDivisionError:
             print_error("CoreIPC zero division")
             self.errcount += 1
@@ -2021,7 +2015,7 @@ Floating Point Operations Per Cycle"""
 
     def compute(self, EV):
         try:
-            self.val = FLOPc(self, EV, 0)
+	    self.val = FLOPc(self, EV, 0)
         except ZeroDivisionError:
             print_error("FLOPc zero division")
             self.errcount += 1
@@ -2038,7 +2032,7 @@ executed when there is at least 1 uop executed)"""
 
     def compute(self, EV):
         try:
-            self.val = ILP(self, EV, 0)
+	    self.val = ILP(self, EV, 0)
         except ZeroDivisionError:
             print_error("ILP zero division")
             self.errcount += 1
@@ -2055,7 +2049,7 @@ load when there is at least 1 such miss)"""
 
     def compute(self, EV):
         try:
-            self.val = MLP(self, EV, 0)
+	    self.val = MLP(self, EV, 0)
         except ZeroDivisionError:
             print_error("MLP zero division")
             self.errcount += 1
@@ -2072,7 +2066,7 @@ triggered by instruction/Load/Store accesses"""
 
     def compute(self, EV):
         try:
-            self.val = Page_Walks_Use(self, EV, 0)
+	    self.val = Page_Walks_Use(self, EV, 0)
         except ZeroDivisionError:
             print_error("Page_Walks_Use zero division")
             self.errcount += 1
@@ -2088,7 +2082,7 @@ Actual Average Latency for L1 data-cache miss demand loads"""
 
     def compute(self, EV):
         try:
-            self.val = Load_Miss_Real_Latency(self, EV, 0)
+	    self.val = Load_Miss_Real_Latency(self, EV, 0)
         except ZeroDivisionError:
             print_error("Load_Miss_Real_Latency zero division")
             self.errcount += 1
@@ -2104,7 +2098,7 @@ Giga Floating Point Operations Per Second"""
 
     def compute(self, EV):
         try:
-            self.val = GFLOPs(self, EV, 0)
+	    self.val = GFLOPs(self, EV, 0)
         except ZeroDivisionError:
             print_error("GFLOPs zero division")
             self.errcount += 1
@@ -2120,7 +2114,7 @@ Average Frequency Utilization relative nominal frequency"""
 
     def compute(self, EV):
         try:
-            self.val = Turbo_Utilization(self, EV, 0)
+	    self.val = Turbo_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("Turbo_Utilization zero division")
             self.errcount += 1
@@ -2136,7 +2130,7 @@ Fraction of cycles where both hardware threads were active"""
 
     def compute(self, EV):
         try:
-            self.val = SMT_2T_Utilization(self, EV, 0)
+	    self.val = SMT_2T_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("SMT_2T_Utilization zero division")
             self.errcount += 1
@@ -2152,7 +2146,7 @@ Fraction of cycles spent in Kernel mode"""
 
     def compute(self, EV):
         try:
-            self.val = Kernel_Utilization(self, EV, 0)
+	    self.val = Kernel_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("Kernel_Utilization zero division")
             self.errcount += 1
@@ -2169,7 +2163,7 @@ Average external Memory Bandwidth Use for reads and writes
 
     def compute(self, EV):
         try:
-            self.val = MEM_BW_GBs(self, EV, 0)
+	    self.val = MEM_BW_GBs(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_BW_GBs zero division")
             self.errcount += 1
@@ -2186,7 +2180,7 @@ Uncore cycles)"""
 
     def compute(self, EV):
         try:
-            self.val = MEM_Request_Latency(self, EV, 0)
+	    self.val = MEM_Request_Latency(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_Request_Latency zero division")
             self.errcount += 1
@@ -2203,7 +2197,7 @@ Uncore cycles). Accounts for all requests"""
 
     def compute(self, EV):
         try:
-            self.val = MEM_Parallel_Requests(self, EV, 0)
+	    self.val = MEM_Parallel_Requests(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_Parallel_Requests zero division")
             self.errcount += 1
@@ -2219,7 +2213,7 @@ Run duration time in seconds"""
 
     def compute(self, EV):
         try:
-            self.val = Time(self, EV, 0)
+	    self.val = Time(self, EV, 0)
         except ZeroDivisionError:
             print_error("Time zero division")
             self.errcount += 1
@@ -2235,7 +2229,7 @@ PerfMon Event Multiplexing accuracy indicator"""
 
     def compute(self, EV):
         try:
-            self.val = MUX(self, EV, 0)
+	    self.val = MUX(self, EV, 0)
         except ZeroDivisionError:
             print_error("MUX zero division")
             self.errcount += 1
@@ -2251,7 +2245,7 @@ class Metric_Socket_CLKS:
 
     def compute(self, EV):
         try:
-            self.val = Socket_CLKS(self, EV, 0)
+	    self.val = Socket_CLKS(self, EV, 0)
         except ZeroDivisionError:
             print_error("Socket_CLKS zero division")
             self.errcount += 1
@@ -2264,8 +2258,8 @@ import sys
 
 class Setup:
     def __init__(self, r):
-        print >>sys.stderr, "TMAM 3.02r"
-        o = dict()
+	print >>sys.stderr, "TMAM 3.02r"
+	o = dict()
         n = Frontend_Bound() ; r.run(n) ; o["Frontend_Bound"] = n
         n = Frontend_Latency() ; r.run(n) ; o["Frontend_Latency"] = n
         n = ICache_Misses() ; r.run(n) ; o["ICache_Misses"] = n
