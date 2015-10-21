@@ -111,6 +111,8 @@ def download(match, key=["core"], link=True):
         print >>sys.stderr, "If you are not connected to the internet please run this on a connected system:"
         print >>sys.stderr, "\tevent_download.py '%s'" % (match)
         print >>sys.stderr, "and then copy ~/.cache/pmu-events to the system under test"
+        print >>sys.stderr, "To get events for all possible CPUs use:"
+        print >>sys.stderr, "\tevent_download.py -a"
     except OSError as e:
         print >>sys.stderr, "Cannot write events file:", e
     return found
