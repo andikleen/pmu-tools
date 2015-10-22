@@ -340,7 +340,12 @@ def cached_exists(fn):
         return True
     if fn in does_not_exist:
         return False
-    return os.path.exists(fn)
+    e = os.path.exists(fn)
+    if e:
+        exists.add(fn)
+    else:
+        does_not_exist.add(fn)
+    return e
 
 force_uncore = os.getenv("FORCE_UNCORE")
 
