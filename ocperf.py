@@ -268,7 +268,6 @@ class UncoreEvent:
     def output_newstyle(self, extra="", noname=False, period=False, name="", flags=""):
         # xxx multiply boxes
         # name ignored for now
-        # flags ignored
         e = self
         o = "/event=%#x" % e.code
         if e.umask:
@@ -280,6 +279,12 @@ class UncoreEvent:
         if e.inv:
             o += ",inv=1"
         # xxx subctr, occ_sel, filters
+        if flags:
+            m = re.match(r'Match=(0x[0-9a-f])', flags)
+            if m:
+                o += ",filter_occ=" + m.group(1)
+            else:
+                print >>sys.stderr, "Uncore cannot parse %s", flags
         if version.has_name and not noname:
             o += ",name=" + e.name.replace(".", "_") + "_NUM"
         o += "/" + extra
