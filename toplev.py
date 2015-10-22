@@ -551,12 +551,17 @@ def raw_event(i, name="", period=False):
                 notfound_cache.add(i)
                 print >>sys.stderr, "%s not found" % (i,)
 	    return "dummy"
+        oi = i
 	i = e.output(noname=True, name=name, period=period)
+        if len(re.findall(r'[a-z0-9_]+/.*?/[a-z]*', i)) > 1:
+            print "Event", oi, "maps to multiple units. Ignored."
+            return "dummy" # FIXME
         emap.update_event(e.output(noname=True), e)
+        # next two things should be moved somewhere else
         if i.startswith("uncore"):
             outgroup_events.add(i)
         if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
-            # for now only use the first counter only to simplify
+            # for now use the first counter only to simplify
             # the assignment. This is sufficient for current
             # CPUs
             limited_counters[i] = int(e.counter.split(",")[0])
