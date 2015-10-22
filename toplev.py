@@ -95,7 +95,7 @@ unsup_events = (
 
 ingroup_events = frozenset(fixed_to_num.keys())
 
-outgroup_events = set()
+outgroup_events = set(["dummy"])
 
 nonperf_events = set(["interval-ns"])
 
@@ -553,6 +553,8 @@ def raw_event(i, name="", period=False):
 	    return "dummy"
 	i = e.output(noname=True, name=name, period=period)
         emap.update_event(e.output(noname=True), e)
+        if i.startswith("uncore"):
+            outgroup_events.add(i)
         if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
             # for now only use the first counter only to simplify
             # the assignment. This is sufficient for current
@@ -906,7 +908,7 @@ def ev_append(ev, level, obj):
     if not (ev, level, obj.name) in obj.evlevels:
         obj.evlevels.append((ev, level, obj.name))
     if has(obj, 'nogroup') and obj.nogroup:
-        outgroup_events.add(ev)
+        outgroup_events.add(ev.lower())
     if not ev.startswith("cpu"):
         # add first to overwrite more generic regexprs list r...
         valid_events.insert(0, ev)
@@ -932,7 +934,9 @@ def event_rmap(e):
         return n
     if n.upper() in fixes:
         n = fixes[n.upper()].lower()
-    return n
+        if n:
+            return n
+    return "dummy"
 
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff = -1):
     if ev in env:
