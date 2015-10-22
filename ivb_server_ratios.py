@@ -214,6 +214,14 @@ def Kernel_Utilization(self, EV, level):
 def MEM_BW_GBs(self, EV, level):
     return 64 *(EV("UNC_M_CAS_COUNT.RD", level) + EV("UNC_M_CAS_COUNT.WR", level)) / OneMillion / DurationTimeInSeconds(self, EV, level) / 1000
 
+# Average latency of data read request to external memory (in Uncore cycles). Accounts for demand loads and L1/L2 prefetches
+def MEM_Read_Latency(self, EV, level):
+    return EV("UNC_C_TOR_OCCUPANCY.MISS_OPCODE:Match=0x182", level) / EV("UNC_C_TOR_INSERTS.MISS_OPCODE:Match=0x182", level)
+
+# Average number of parallel data read requests to external memory (in Uncore cycles). Accounts for demand loads and L1/L2 prefetches
+def MEM_Parallel_Reads(self, EV, level):
+    return EV("UNC_C_TOR_OCCUPANCY.MISS_OPCODE:Match=0x182", level) / EV("UNC_C_TOR_OCCUPANCY.MISS_OPCODE:Match=0x182:c1", level)
+
 # Run duration time in seconds
 def Time(self, EV, level):
     return DurationTimeInSeconds(self, EV, level)
@@ -2204,6 +2212,42 @@ Average external Memory Bandwidth Use for reads and writes
             self.errcount += 1
 	    self.val = 0
 
+class Metric_MEM_Read_Latency:
+    name = "MEM_Read_Latency"
+    desc = """
+Average latency of data read request to external memory (in
+Uncore cycles). Accounts for demand loads and L1/L2
+prefetches"""
+    domain = "Metric"
+    maxval = 1000
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = MEM_Read_Latency(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("MEM_Read_Latency zero division")
+            self.errcount += 1
+	    self.val = 0
+
+class Metric_MEM_Parallel_Reads:
+    name = "MEM_Parallel_Reads"
+    desc = """
+Average number of parallel data read requests to external
+memory (in Uncore cycles). Accounts for demand loads and
+L1/L2 prefetches"""
+    domain = "Metric"
+    maxval = 100
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = MEM_Parallel_Reads(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("MEM_Parallel_Reads zero division")
+            self.errcount += 1
+	    self.val = 0
+
 class Metric_Time:
     name = "Time"
     desc = """
@@ -2429,6 +2473,8 @@ class Setup:
         n = Metric_Turbo_Utilization() ; r.metric(n)
         n = Metric_SMT_2T_Utilization() ; r.metric(n)
         n = Metric_Kernel_Utilization() ; r.metric(n)
-        n = Metric_MEM_BW_GBs() ; r.metric(n)
+        #n = Metric_MEM_BW_GBs() ; r.metric(n)
+        #n = Metric_MEM_Read_Latency() ; r.metric(n)
+        #n = Metric_MEM_Parallel_Reads() ; r.metric(n)
         n = Metric_Time() ; r.metric(n)
         n = Metric_MUX() ; r.metric(n)
