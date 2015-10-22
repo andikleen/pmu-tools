@@ -358,10 +358,10 @@ missing_boxes = set()
 def check_uncore_event(e):
     if uncore_exists(e.unit):
         if e.cmask and not uncore_exists(e.unit, "/format/cmask"):
-            print >>sys.stderr, "Uncore unit", e.unit, "missing cmask"
+            print >>sys.stderr, "Uncore unit", e.unit, "missing cmask for", e.name
             return None
         if e.umask and not uncore_exists(e.unit, "/format/umask"):
-            print "Uncore unit", e.unit, "missing umask"
+            print "Uncore unit", e.unit, "missing umask for", e.name
             return None
         return e
     if e.unit not in missing_boxes:
