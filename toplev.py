@@ -1100,27 +1100,29 @@ def node_filter(obj, test):
                 return True
     return test()
 
+def find_bn(bn):
+    b = sorted(bn, key=lambda x: x)
+    return b
+
 SIB_THRESH = 5.0
 
-# look for highest sibling, or parent if siblings are inconclusive
-def find_final(bn):
+def _find_final(bn, level):
+    get_level = lambda x: x.count(".")
     pct = lambda x: float(x[1])
-    prefix = ""
-    prev = None
-    for j in bn:
-	if not j[0].startswith(prefix):
-	    return prev
-        siblings = [x for x in bn
-              if x[0].startswith(prefix) and x[0].count('.') == j[0].count(".")]
-	siblings = sorted(siblings, key=pct, reverse=True)
-	# ambigious? use parent
-	if (prev and
-		len(siblings) > 1 and
-		pct(siblings[0]) - pct(siblings[1]) <= SIB_THRESH):
-	    return prev
-	prefix = j[0]
-	prev = j
-    return j
+
+    siblings = sorted([x for x in bn if get_level(x[0]) == level], key=pct, reverse=True)
+    if len(siblings) == 0:
+        return None
+    # ambigious
+    if level > 1 and len(siblings) > 1 and pct(siblings[0]) - pct(siblings[1]) <= SIB_THRESH:
+        return None
+    n = _find_final([x for x in bn if x[0].startswith(siblings[0][0])], level + 1)
+    if n is None:
+        return siblings[0]
+    return n
+
+def find_final(bn):
+    return _find_final(bn, 0)
 
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
@@ -1359,10 +1361,9 @@ class Runner:
 	bn = [(full_name(o), o.val) for o in self.olist if match(o) and o.thresh and not o.metric]
 	if len(bn) == 0:
 	    return
-	b = sorted(bn, key=lambda x: x[0].count("."))
-	b = sorted(bn, key=lambda x: float(x[1]), reverse=True)
-	final = find_final(b)
-	out.bottleneck(key, final[0], final[1])
+        bn = find_bn(bn)
+	final = find_final(bn)
+        out.bottleneck(key, final[0], final[1])
 
 def remove_pp(s):
     if s.endswith(":pp"):
