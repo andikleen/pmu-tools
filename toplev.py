@@ -1363,7 +1363,8 @@ class Runner:
 	    return
         bn = find_bn(bn)
 	final = find_final(bn)
-        out.bottleneck(key, final[0], final[1])
+        if final:
+            out.bottleneck(key, final[0], final[1])
 
 def remove_pp(s):
     if s.endswith(":pp"):
