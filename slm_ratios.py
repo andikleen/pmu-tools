@@ -5,6 +5,7 @@
 #
 
 print_error = lambda msg: False
+version = "1.0"
 
 # Instructions Per Cycle
 def IPC(EV, level):

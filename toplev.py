@@ -1436,64 +1436,59 @@ if args.quiet:
     args.no_desc = True
     args.no_util = True
 
-# XXX retrieve version
 if cpu.cpu == "ivb":
     import ivb_client_ratios
     ivb_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
-    ivb_client_ratios.print_error = pe
-    ivb_client_ratios.Setup(runner)
+    model = ivb_client_ratios
 elif cpu.cpu == "ivt":
     import ivb_server_ratios
     ivb_server_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
-    ivb_server_ratios.print_error = pe
-    ivb_server_ratios.Setup(runner)
+    model = ivb_server_ratios
 elif cpu.cpu == "snb":
     import snb_client_ratios
     snb_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
-    snb_client_ratios.print_error = pe
-    snb_client_ratios.Setup(runner)
+    model = snb_client_ratios
 elif cpu.cpu == "jkt":
     import jkt_server_ratios
     jkt_server_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
-    jkt_server_ratios.print_error = pe
-    jkt_server_ratios.Setup(runner)
+    model = jkt_server_ratios
 elif cpu.cpu == "hsw":
     import hsw_client_ratios
     hsw_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
-    hsw_client_ratios.print_error = pe
-    hsw_client_ratios.Setup(runner)
+    model = hsw_client_ratios
 elif cpu.cpu == "hsx":
     import hsx_server_ratios
     hsx_server_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
-    hsx_server_ratios.print_error = pe
-    hsx_server_ratios.Setup(runner)
+    model = hsx_server_ratios
 elif cpu.cpu == "bdw":
     import bdw_client_ratios
     bdw_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
-    bdw_client_ratios.print_error = pe
-    bdw_client_ratios.Setup(runner)
+    model = bdw_client_ratios
 elif cpu.cpu == "skl":
     import skl_client_ratios
     skl_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
-    skl_client_ratios.Setup(runner)
+    model = skl_client_ratios
 elif cpu.cpu == "slm":
     import slm_ratios
-    slm_ratios.Setup(runner)
+    model = slm_ratios
 else:
     ht_warning()
     if detailed_model and not args.quiet:
         print >>sys.stderr, "Sorry, no detailed model for your CPU. Only Level 1 supported."
     import simple_ratios
-    simple_ratios.print_error = pe
-    simple_ratios.Setup(runner)
+    model = simple_ratios
+
+version = model.version
+model.print_error = pe
+model.Setup(runner)
 
 def setup_with_metrics(p, runner):
     old_metrics = args.metrics
@@ -1567,13 +1562,13 @@ if not args.quiet:
 runner.collect()
 if csv_mode:
     if args.columns:
-        out = tl_output.OutputColumnsCSV(args.output, csv_mode, args)
+        out = tl_output.OutputColumnsCSV(args.output, csv_mode, args, version)
     else:
-        out = tl_output.OutputCSV(args.output, csv_mode, args)
+        out = tl_output.OutputCSV(args.output, csv_mode, args, version)
 elif args.columns:
-    out = tl_output.OutputColumns(args.output, args)
+    out = tl_output.OutputColumns(args.output, args, version)
 else:
-    out = tl_output.OutputHuman(args.output, args)
+    out = tl_output.OutputHuman(args.output, args, version)
 runner.schedule()
 try:
     if args.no_multiplex:

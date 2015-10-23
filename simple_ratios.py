@@ -3,6 +3,7 @@
 #
 
 print_error = lambda msg: False
+version = "1.0"
 
 # Constants
 

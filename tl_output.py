@@ -19,10 +19,11 @@ from tl_stat import format_valstat, combine_valstat, isnan
 
 class Output:
     """Abstract base class for Output classes."""
-    def __init__(self, logfile):
+    def __init__(self, logfile, version):
         self.logf = logfile
         self.printed_descs = set()
         self.hdrlen = 30
+        self.version = version
 
     # pass all possible hdrs in advance to compute suitable padding
     def set_hdr(self, hdr, area):
@@ -58,8 +59,8 @@ class Output:
 
 class OutputHuman(Output):
     """Generate human readable single-column output."""
-    def __init__(self, logfile, args):
-        Output.__init__(self, logfile)
+    def __init__(self, logfile, args, version):
+        Output.__init__(self, logfile, version)
         locale.setlocale(locale.LC_ALL, '')
         self.args = args
 
@@ -117,8 +118,8 @@ class OutputHuman(Output):
 
 class OutputColumns(OutputHuman):
     """Human-readable output data in per-cpu columns."""
-    def __init__(self, logfile, args):
-	OutputHuman.__init__(self, logfile, args)
+    def __init__(self, logfile, args, version):
+	OutputHuman.__init__(self, logfile, args, version)
 	self.nodes = dict()
 	self.timestamp = None
 	self.cpunames = set()
@@ -180,8 +181,8 @@ class OutputColumns(OutputHuman):
 class OutputColumnsCSV(OutputColumns):
     """Columns output in CSV mode."""
 
-    def __init__(self, logfile, sep, args):
-        OutputColumns.__init__(self, logfile, args)
+    def __init__(self, logfile, sep, args, version):
+        OutputColumns.__init__(self, logfile, args, version)
         self.writer = csv.writer(self.logf, delimiter=sep)
         self.printed_header = False
 
@@ -230,8 +231,8 @@ class OutputColumnsCSV(OutputColumns):
 
 class OutputCSV(Output):
     """Output data in CSV format."""
-    def __init__(self, logfile, sep, args):
-        Output.__init__(self, logfile)
+    def __init__(self, logfile, sep, args, version):
+        Output.__init__(self, logfile, version)
         self.writer = csv.writer(self.logf, delimiter=sep)
         self.args = args
 
