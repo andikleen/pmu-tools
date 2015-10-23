@@ -6,12 +6,12 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 # Recent new features:
 
 * toplev updated to Ahmad Yasin's TopDown/TMAM 3.02:
-    	- Tuned Memory_Bound vs Core_Bound threshold
-    	- Vastly improved Tuning hints
-    	- Fix Stores_Bound before Skylake
-    	- Fix RS_Empty nodes
-    	- Improve IFetch_Line_Utilization
-    	- Uncore support is disabled for now
+	- Tuned Memory_Bound vs Core_Bound threshold
+	- Vastly improved Tuning hints
+	- Fix Stores_Bound before Skylake
+	- Fix RS_Empty nodes
+	- Improve IFetch_Line_Utilization
+	- Uncore support is disabled for now
 * toplev now supports columnar output in CSV mode (-x, --column)
 * toplev can print the critical bottleneck with --bottleneck
 * The tools can now find event lists for the original user of sudo
