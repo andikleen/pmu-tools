@@ -38,6 +38,8 @@ class TLData:
         prevts = None
         val = dict()
         for r in csvf:
+            if r[0].strip().startswith("#"):
+                continue
             if re.match(r'[CS]\d+.*', r[1]):
                 ts, cpu, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4], r[5]
             else:
