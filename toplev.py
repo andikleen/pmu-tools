@@ -1114,7 +1114,7 @@ def _find_final(bn, level):
     if len(siblings) == 0:
         return None
     # ambigious
-    if level > 1 and len(siblings) > 1 and pct(siblings[0]) - pct(siblings[1]) <= SIB_THRESH:
+    if level > 0 and len(siblings) > 1 and pct(siblings[0]) - pct(siblings[1]) <= SIB_THRESH:
         return None
     n = _find_final([x for x in bn if x[0].startswith(siblings[0][0])], level + 1)
     if n is None:
