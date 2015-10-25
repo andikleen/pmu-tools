@@ -67,6 +67,41 @@ def throttle(name):
                   UNInt64("stream_id"),
                   sample_id())
 
+def hweight64(ctx):
+    return bin(ctx._.attr.perf_event_attr.sample_regs_user).count("1")
+
+def read_format_flags(ctx):
+    return ctx._.attr.perf_event_attr.read_format
+
+def read_format_with_group():
+    return Struct("read_format1",
+                  UNInt64("nr"),
+                  If(lambda ctx: read_format_flags(ctx).time_enabled,
+                     UNInt64("time_enabled")),
+                  If(lambda ctx: read_format_flags(ctx).time_running,
+                     UNInt64("time_running")),
+                  Array(lambda ctx: ctx.nr,
+                        Struct(None,
+                               UNInt64("value"),
+                               If(lambda ctx: read_format_flags(ctx).id,
+                                  UNInt64("id")))))
+
+def read_format_without_group():
+    return Struct("read_format2",
+                  UNInt64("value"),
+                  If(lambda ctx: read_format_flags(ctx).time_enabled,
+                     UNInt64("time_enabled")),
+                  If(lambda ctx: read_format_flags(ctx).time_running,
+                     UNInt64("time_running")),
+                  If(lambda ctx: read_format_flags(ctx).id,
+                     UNInt64("id")))
+
+def read_format():
+    return IfThenElse("read_format",
+                      lambda ctx: read_format_flags(ctx).group,
+                      read_format_with_group(),
+                      read_format_without_group())
+
 def event():
     return Embedded(
         Struct("event",
@@ -92,8 +127,8 @@ def event():
                                    UNInt32("res")))),
                 If(lambda ctx: sample_type(ctx).period,
                    UNInt64("period")),
-                #If(lambda ctx: ctx.attr.sample_type.read,
-                #   read_format()),
+                If(lambda ctx: sample_type(ctx).read,
+                   read_format()),
                 If(lambda ctx: sample_type(ctx).callchain,
                    Struct("callchain",
                           UNInt64("nr"),
@@ -124,7 +159,7 @@ def event():
                                NONE = 0,
                                ABI_32 = 1,
                                ABI_64 = 2),
-                          Array(lambda ctx: sample_regs_user,
+                          Array(lambda ctx: hweight64(ctx),
                                 UNInt64("reg")))),
                 If(lambda ctx: sample_type(ctx).stack_user,
                    Struct("stack_user", 
@@ -135,6 +170,16 @@ def event():
                    UNInt64("weight")),
                 If(lambda ctx: sample_type(ctx).data_src,
                    UNInt64("data_src")),
+                If(lambda ctx: sample_type(ctx).transaction,
+                   UNInt64("transaction")),
+                If(lambda ctx: sample_type(ctx).regs_intr,
+                   Struct("regs_intr",
+                          Enum(UNInt64("abi"),
+                               NONE = 0,
+                               ABI_32 = 1,
+                               ABI_64 = 2),
+                          Array(lambda ctx: hweight64(ctx),
+                                UNInt64("reg")))),
                 Anchor("end_event"),
                 Padding(lambda ctx: max(0, ctx.size - ctx.end_event))))
 
@@ -284,7 +329,7 @@ def perf_event():
 def perf_event_seq(attr):
     return GreedyRange(perf_event(attr))
 
-perf_event_attr_sizes = (64, 72, 80, 96)
+perf_event_attr_sizes = (64, 72, 80, 96, 104)
 
 perf_event_attr = Struct("perf_event_attr",
                          Anchor("start"),                         
@@ -318,8 +363,10 @@ perf_event_attr = Struct("perf_event_attr",
                                    Flag("raw"),
                                    Flag("stream_id"),
                                    Flag("period"),
-                                   
-                                   Padding(7),
+
+                                   Padding(5),
+                                   Flag("regs_intr"),
+                                   Flag("transaction"),
                                    Flag("identifier"),
 
                                    Padding(64 - 3*8)),
@@ -366,6 +413,8 @@ perf_event_attr = Struct("perf_event_attr",
                                             UNInt64("sample_regs_user"),
                                             UNInt32("sample_stack_user"),
                                             UNInt32("__reserved_2")))),
+                         If(lambda ctx: ctx.size >= perf_event_attr_sizes[4],
+                            UNInt64("sample_regs_intr")),
                          Anchor("end"),
                          Value("perf_event_attr_size",
                                lambda ctx: ctx.end - ctx.start),
