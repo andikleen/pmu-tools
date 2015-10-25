@@ -67,6 +67,9 @@ def throttle(name):
                   UNInt64("stream_id"),
                   sample_id())
 
+def hweight64(ctx):
+    return bin(ctx._.attr.perf_event_attr.sample_regs_user).count("1")
+
 def event():
     return Embedded(
         Struct("event",
@@ -124,7 +127,7 @@ def event():
                                NONE = 0,
                                ABI_32 = 1,
                                ABI_64 = 2),
-                          Array(lambda ctx: sample_regs_user,
+                          Array(lambda ctx: hweight64(ctx),
                                 UNInt64("reg")))),
                 If(lambda ctx: sample_type(ctx).stack_user,
                    Struct("stack_user", 
