@@ -70,6 +70,38 @@ def throttle(name):
 def hweight64(ctx):
     return bin(ctx._.attr.perf_event_attr.sample_regs_user).count("1")
 
+def read_format_flags(ctx):
+    return ctx._.attr.perf_event_attr.read_format
+
+def read_format_with_group():
+    return Struct("read_format1",
+                  UNInt64("nr"),
+                  If(lambda ctx: read_format_flags(ctx).time_enabled,
+                     UNInt64("time_enabled")),
+                  If(lambda ctx: read_format_flags(ctx).time_running,
+                     UNInt64("time_running")),
+                  Array(lambda ctx: ctx.nr,
+                        Struct(None,
+                               UNInt64("value"),
+                               If(lambda ctx: read_format_flags(ctx).id,
+                                  UNInt64("id")))))
+
+def read_format_without_group():
+    return Struct("read_format2",
+                  UNInt64("value"),
+                  If(lambda ctx: read_format_flags(ctx).time_enabled,
+                     UNInt64("time_enabled")),
+                  If(lambda ctx: read_format_flags(ctx).time_running,
+                     UNInt64("time_running")),
+                  If(lambda ctx: read_format_flags(ctx).id,
+                     UNInt64("id")))
+
+def read_format():
+    return IfThenElse("read_format",
+                      lambda ctx: read_format_flags(ctx).group,
+                      read_format_with_group(),
+                      read_format_without_group())
+
 def event():
     return Embedded(
         Struct("event",
@@ -95,8 +127,8 @@ def event():
                                    UNInt32("res")))),
                 If(lambda ctx: sample_type(ctx).period,
                    UNInt64("period")),
-                #If(lambda ctx: ctx.attr.sample_type.read,
-                #   read_format()),
+                If(lambda ctx: sample_type(ctx).read,
+                   read_format()),
                 If(lambda ctx: sample_type(ctx).callchain,
                    Struct("callchain",
                           UNInt64("nr"),
