@@ -75,7 +75,7 @@ unsup_events = (
     # the event works, but it cannot put into the same group as
     # any other CYCLE_ACTIVITY.* event. For now black list, but
     # could also special case this in the group scheduler.
-    ("CYCLE_ACTIVITY.STALLS_TOTAL", (("bdw", (4, 3), None))),
+    ("CYCLE_ACTIVITY.STALLS_TOTAL", (("bdw", (4, 4), None))),
     # commit 91f1b70582c62576
     ("CYCLE_ACTIVITY.*", (("bdw"), (4, 1), None)),
     ("L1D_PEND_MISS.PENDING", (("bdw"), (4, 1), None)),
