@@ -138,6 +138,16 @@ def event():
                    UNInt64("weight")),
                 If(lambda ctx: sample_type(ctx).data_src,
                    UNInt64("data_src")),
+                If(lambda ctx: sample_type(ctx).transaction,
+                   UNInt64("transaction")),
+                If(lambda ctx: sample_type(ctx).regs_intr,
+                   Struct("regs_intr",
+                          Enum(UNInt64("abi"),
+                               NONE = 0,
+                               ABI_32 = 1,
+                               ABI_64 = 2),
+                          Array(lambda ctx: hweight64(ctx),
+                                UNInt64("reg")))),
                 Anchor("end_event"),
                 Padding(lambda ctx: max(0, ctx.size - ctx.end_event))))
 
@@ -287,7 +297,7 @@ def perf_event():
 def perf_event_seq(attr):
     return GreedyRange(perf_event(attr))
 
-perf_event_attr_sizes = (64, 72, 80, 96)
+perf_event_attr_sizes = (64, 72, 80, 96, 104)
 
 perf_event_attr = Struct("perf_event_attr",
                          Anchor("start"),                         
@@ -321,8 +331,10 @@ perf_event_attr = Struct("perf_event_attr",
                                    Flag("raw"),
                                    Flag("stream_id"),
                                    Flag("period"),
-                                   
-                                   Padding(7),
+
+                                   Padding(5),
+                                   Flag("regs_intr"),
+                                   Flag("transaction"),
                                    Flag("identifier"),
 
                                    Padding(64 - 3*8)),
@@ -369,6 +381,8 @@ perf_event_attr = Struct("perf_event_attr",
                                             UNInt64("sample_regs_user"),
                                             UNInt32("sample_stack_user"),
                                             UNInt32("__reserved_2")))),
+                         If(lambda ctx: ctx.size >= perf_event_attr_sizes[4],
+                            UNInt64("sample_regs_intr")),
                          Anchor("end"),
                          Value("perf_event_attr_size",
                                lambda ctx: ctx.end - ctx.start),
