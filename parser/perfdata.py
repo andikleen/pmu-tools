@@ -218,7 +218,9 @@ def perf_event_header():
                                 UNTHROTTLE		= 6,
                                 FORK			= 7,
                                 READ			= 8,
-                                SAMPLE			= 9),
+                                SAMPLE			= 9,
+                                MMAP2			= 10,
+                                FINISHED_ROUND          = 68),
                            Embedded(BitStruct(None,
                                               Padding(1),
                                               Enum(BitField("cpumode", 7),
@@ -255,6 +257,21 @@ def mmap():
                                       ctx.size + ctx.start - 
                                       sample_id_size(ctx),
                                       sample_id()))))
+def mmap2():
+    return Struct("mmap2",
+                  SNInt32("pid"),
+                  SNInt32("tid"),
+                  UNInt64("addr"),
+                  UNInt64("len"),
+                  UNInt64("pgoff"),
+                  UNInt32("maj"),
+                  UNInt32("min"),
+                  UNInt64("ino"),
+                  UNInt64("ino_generation"),
+                  UNInt32("prot"),
+                  UNInt32("flags"),
+                  CString("filename"),
+                  sample_id())
 
 def read_flags(ctx):
     return ctx._.attr.read_format
@@ -294,6 +311,7 @@ def perf_event():
                            lambda ctx: ctx.type,
                            {
                               "MMAP": mmap(),
+                              "MMAP2": mmap2(),
                               "LOST": Struct("lost",
                                               UNInt64("id"),
                                               UNInt64("lost"),
@@ -306,6 +324,7 @@ def perf_event():
                               "EXIT": fork_exit("exit"),
                               "THROTTLE": throttle("throttle"),
                               "UNTHROTTLE": throttle("unthrottle"),
+                              "FINISHED_ROUND": Pass,
                               "FORK": fork_exit("fork"),
                               "READ": Embedded(Struct("read_event",
                                                       SNInt32("pid"),
