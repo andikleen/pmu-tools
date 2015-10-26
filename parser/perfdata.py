@@ -239,14 +239,6 @@ def perf_event_header():
                                    UNInt64("end_id"))),
                            Value("attr", lookup_event_attr)))
 
-def PaddedCString(name):
-    return Embedded(Struct(name,
-                           Anchor("sstart"),
-                           CString(name),
-                           Anchor("send"),
-                           Padding(lambda ctx:
-                                       8 - ((ctx.send - ctx.sstart) % 8))))
-
 def mmap():
     return Struct("mmap",
                   SNInt32("pid"),
@@ -309,7 +301,7 @@ def perf_event():
                               "COMM": Struct("comm",
                                              SNInt32("pid"),
                                              SNInt32("tid"),
-                                             PaddedCString("comm"),
+                                             CString("comm"),
                                              sample_id()),
                               "EXIT": fork_exit("exit"),
                               "THROTTLE": throttle("throttle"),
