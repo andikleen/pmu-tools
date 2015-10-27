@@ -18,7 +18,8 @@
 # TBD:
 # Generic Bitfield adapter that handles endian properly?
 # check size in all cases (or use optional+tunnel)
-# read_format?
+# tracing support
+# processor trace (aux) data and extra info headers
 # 
 
 from construct import *
