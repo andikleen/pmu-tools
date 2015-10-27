@@ -70,38 +70,6 @@ def throttle(name):
 def hweight64(ctx):
     return bin(ctx._.attr.perf_event_attr.sample_regs_user).count("1")
 
-def read_format_flags(ctx):
-    return ctx._.attr.perf_event_attr.read_format
-
-def read_format_with_group():
-    return Struct("read_format1",
-                  UNInt64("nr"),
-                  If(lambda ctx: read_format_flags(ctx).time_enabled,
-                     UNInt64("time_enabled")),
-                  If(lambda ctx: read_format_flags(ctx).time_running,
-                     UNInt64("time_running")),
-                  Array(lambda ctx: ctx.nr,
-                        Struct(None,
-                               UNInt64("value"),
-                               If(lambda ctx: read_format_flags(ctx).id,
-                                  UNInt64("id")))))
-
-def read_format_without_group():
-    return Struct("read_format2",
-                  UNInt64("value"),
-                  If(lambda ctx: read_format_flags(ctx).time_enabled,
-                     UNInt64("time_enabled")),
-                  If(lambda ctx: read_format_flags(ctx).time_running,
-                     UNInt64("time_running")),
-                  If(lambda ctx: read_format_flags(ctx).id,
-                     UNInt64("id")))
-
-def read_format():
-    return IfThenElse("read_format",
-                      lambda ctx: read_format_flags(ctx).group,
-                      read_format_with_group(),
-                      read_format_without_group())
-
 def event():
     return Embedded(
         Struct("event",
@@ -218,7 +186,9 @@ def perf_event_header():
                                 UNTHROTTLE		= 6,
                                 FORK			= 7,
                                 READ			= 8,
-                                SAMPLE			= 9),
+                                SAMPLE			= 9,
+                                MMAP2			= 10,
+                                FINISHED_ROUND          = 68),
                            Embedded(BitStruct(None,
                                               Padding(1),
                                               Enum(BitField("cpumode", 7),
@@ -239,14 +209,6 @@ def perf_event_header():
                                    UNInt64("end_id"))),
                            Value("attr", lookup_event_attr)))
 
-def PaddedCString(name):
-    return Embedded(Struct(name,
-                           Anchor("sstart"),
-                           CString(name),
-                           Anchor("send"),
-                           Padding(lambda ctx:
-                                       8 - ((ctx.send - ctx.sstart) % 8))))
-
 def mmap():
     return Struct("mmap",
                   SNInt32("pid"),
@@ -263,6 +225,21 @@ def mmap():
                                       ctx.size + ctx.start - 
                                       sample_id_size(ctx),
                                       sample_id()))))
+def mmap2():
+    return Struct("mmap2",
+                  SNInt32("pid"),
+                  SNInt32("tid"),
+                  UNInt64("addr"),
+                  UNInt64("len"),
+                  UNInt64("pgoff"),
+                  UNInt32("maj"),
+                  UNInt32("min"),
+                  UNInt64("ino"),
+                  UNInt64("ino_generation"),
+                  UNInt32("prot"),
+                  UNInt32("flags"),
+                  CString("filename"),
+                  sample_id())
 
 def read_flags(ctx):
     return ctx._.attr.read_format
@@ -302,6 +279,7 @@ def perf_event():
                            lambda ctx: ctx.type,
                            {
                               "MMAP": mmap(),
+                              "MMAP2": mmap2(),
                               "LOST": Struct("lost",
                                               UNInt64("id"),
                                               UNInt64("lost"),
@@ -309,11 +287,12 @@ def perf_event():
                               "COMM": Struct("comm",
                                              SNInt32("pid"),
                                              SNInt32("tid"),
-                                             PaddedCString("comm"),
+                                             CString("comm"),
                                              sample_id()),
                               "EXIT": fork_exit("exit"),
                               "THROTTLE": throttle("throttle"),
                               "UNTHROTTLE": throttle("unthrottle"),
+                              "FINISHED_ROUND": Pass,
                               "FORK": fork_exit("fork"),
                               "READ": Embedded(Struct("read_event",
                                                       SNInt32("pid"),
