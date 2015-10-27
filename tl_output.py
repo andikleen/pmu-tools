@@ -181,10 +181,11 @@ class OutputColumns(OutputHuman):
 class OutputColumnsCSV(OutputColumns):
     """Columns output in CSV mode."""
 
-    def __init__(self, logfile, sep, args, version):
+    def __init__(self, logfile, sep, args, version, cpu):
         OutputColumns.__init__(self, logfile, args, version)
         self.writer = csv.writer(self.logf, delimiter=sep)
         self.printed_header = False
+        self.writer.writerow(["# " + version + " on " + cpu.name])
 
     def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
 	self.timestamp = timestamp
@@ -231,10 +232,11 @@ class OutputColumnsCSV(OutputColumns):
 
 class OutputCSV(Output):
     """Output data in CSV format."""
-    def __init__(self, logfile, sep, args, version):
+    def __init__(self, logfile, sep, args, version, cpu):
         Output.__init__(self, logfile, version)
         self.writer = csv.writer(self.logf, delimiter=sep)
         self.args = args
+        self.writer.writerow(["# " + version + " on " + cpu.name])
 
     def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
         if self.args.no_desc:

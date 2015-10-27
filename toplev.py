@@ -418,6 +418,7 @@ class CPU:
         self.sockettocpus = defaultdict(list)
         self.cputosocket = {}
         self.allcpus = []
+        self.name = ""
         with open("/proc/cpuinfo", "r") as f:
             ok = 0
             for l in f:
@@ -442,6 +443,7 @@ class CPU:
                     m = re.search(r"@ (\d+\.\d+)Ghz", l)
                     if m:
                         self.freq = float(m.group(1))
+                    self.name = " ".join(n[3:])
                 elif (n[0], n[1]) == ("physical", "id"):
                     physid = int(n[3])
                     sockets[physid] += 1
@@ -1562,9 +1564,9 @@ if not args.quiet:
 runner.collect()
 if csv_mode:
     if args.columns:
-        out = tl_output.OutputColumnsCSV(args.output, csv_mode, args, version)
+        out = tl_output.OutputColumnsCSV(args.output, csv_mode, args, version, cpu)
     else:
-        out = tl_output.OutputCSV(args.output, csv_mode, args, version)
+        out = tl_output.OutputCSV(args.output, csv_mode, args, version, cpu)
 elif args.columns:
     out = tl_output.OutputColumns(args.output, args, version)
 else:
