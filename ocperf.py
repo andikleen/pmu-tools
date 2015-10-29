@@ -434,6 +434,8 @@ class Emap(object):
                     e.newextra = ",offcore_rsp=0x%x" % (msrval, )
                 elif version.ldlat and msrnum in (0x3f6,):
                     e.newextra = ",ldlat=0x%x" % (msrval, )
+                elif msrnum == 0x3f7:
+                    e.newextra = ",frontend=%#x" % (msrval, )
                 # add new msr here
                 else:
                     e.msrval = msrval
