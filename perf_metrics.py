@@ -18,6 +18,23 @@ than the number of cores."""
         except ZeroDivisionError:
             self.val = 0
 
+class MUX:
+    name = "MUX"
+    desc = """
+PerfMon Event Multiplexing accuracy indicator"""
+    domain = "Metric"
+    maxval = 0
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = EV("mux", 0)
+        except ZeroDivisionError:
+            print_error("MUX zero division")
+            self.errcount += 1
+	    self.val = 0
+
 class Setup:
     def __init__(self, r):
         r.metric(CPU_Utilization())
+        r.metric(MUX())

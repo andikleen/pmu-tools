@@ -97,7 +97,7 @@ ingroup_events = frozenset(fixed_to_num.keys())
 
 outgroup_events = set(["dummy"])
 
-nonperf_events = set(["interval-ns"])
+nonperf_events = set(["interval-ns", "mux"])
 
 valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles",
 		r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
@@ -945,9 +945,11 @@ def event_rmap(e):
             return n
     return "dummy"
 
-def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff = -1):
+def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     if ev in env:
         return env[ev]
+    if ev == "mux":
+        return combine_valstat(st).multiplex
     #
     # when the model passed in a lambda run the function for each logical cpu
     # (by resolving its EVs to only that CPU)
@@ -958,7 +960,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff = -1):
     #
     if isinstance(ev, types.LambdaType):
         return sum([ev(lambda ev, level:
-                       lookup_res(res, rev, ev, obj, env, level, referenced, off), level)
+                       lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
                        for off in range(cpu.threads)])
 
     index = obj.res_map[(ev, level, obj.name)]
@@ -1306,7 +1308,7 @@ class Runner:
                 continue
             ref = set()
             obj.compute(lambda e, level:
-                            lookup_res(res, rev, e, obj, env, level, ref))
+                            lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
             stat.referenced |= ref
             obj.valstat = combine_valstat([valstats[i] for i in ref])
             if not obj.res_map and not all([x in env for x in obj.evnum]):

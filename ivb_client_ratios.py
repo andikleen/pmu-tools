@@ -2444,5 +2444,5 @@ class Setup:
         n = Metric_MEM_Request_Latency() ; r.metric(n)
         n = Metric_MEM_Parallel_Requests() ; r.metric(n)
         n = Metric_Time() ; r.metric(n)
-        n = Metric_MUX() ; r.metric(n)
+        #n = Metric_MUX() ; r.metric(n)
         n = Metric_Socket_CLKS() ; r.metric(n)

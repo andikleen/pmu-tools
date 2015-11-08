@@ -2433,4 +2433,4 @@ class Setup:
         n = Metric_SMT_2T_Utilization() ; r.metric(n)
         n = Metric_Kernel_Utilization() ; r.metric(n)
         n = Metric_Time() ; r.metric(n)
-        n = Metric_MUX() ; r.metric(n)
+        #n = Metric_MUX() ; r.metric(n)

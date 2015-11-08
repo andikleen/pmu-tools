@@ -2356,4 +2356,4 @@ class Setup:
         n = Metric_MEM_Read_Latency() ; r.metric(n)
         n = Metric_MEM_Parallel_Reads() ; r.metric(n)
         n = Metric_Time() ; r.metric(n)
-        n = Metric_MUX() ; r.metric(n)
+        #n = Metric_MUX() ; r.metric(n)
