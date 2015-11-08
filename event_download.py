@@ -86,18 +86,30 @@ def download(match, key=["core"], link=True):
         getfile(modelpath, dir, "mapfile.csv")
         models = open(os.path.join(dir, "mapfile.csv"))
         for j in models:
-            cpu, version, name, type  = j.rstrip().split(",")
+            n = j.rstrip().split(",")
+            if len(n) < 4:
+                if len(n) > 0:
+                    print "Cannot parse", n
+                continue
+            cpu, version, name, type = n
             if not fnmatch(cpu, match) or (key is not None and type not in key) or type.startswith("EventType"):
                 continue
             cpu = sanitize(cpu, allowed_chars)
             url = urlpath + name
             fn = "%s-%s.json" % (cpu, type)
+            try:
+                os.remove(os.path.join(dir, fn))
+            except OSError:
+                pass
             getfile(url, dir, fn)
             if link:
                 lname = re.sub(r'.*/', '', name)
                 lname = sanitize(lname, allowed_chars)
                 try:
                     os.remove(os.path.join(dir, lname))
+                except OSError:
+                    pass
+                try:
                     os.symlink(fn, os.path.join(dir, lname))
                 except OSError as e:
                     print >>sys.stderr, "Cannot link %s to %s:" % (name, lname), e
