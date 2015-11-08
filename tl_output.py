@@ -97,7 +97,7 @@ class OutputHuman(Output):
         vs = format_valstat(valstat)
 	self.print_header(area, hdr)
         if vs:
-            val = "%-20s %s" % (s + " " + remark, vs)
+            val = "%-23s %s" % (s + " " + remark, vs)
         else:
             val = "%s %s" % (s, remark)
         write(val + "\n")
