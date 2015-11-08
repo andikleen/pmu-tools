@@ -22,7 +22,7 @@ class MUX:
     name = "MUX"
     desc = """
 PerfMon Event Multiplexing accuracy indicator"""
-    domain = "Metric"
+    unit = "%"
     maxval = 0
     errcount = 0
 
