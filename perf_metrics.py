@@ -31,5 +31,5 @@ PerfMon Event Multiplexing accuracy indicator"""
 
 class Setup:
     def __init__(self, r):
-        r.metric(CPU_Utilization())
+        #r.metric(CPU_Utilization())
         r.metric(MUX())
