@@ -23,16 +23,11 @@ class MUX:
     desc = """
 PerfMon Event Multiplexing accuracy indicator"""
     unit = "%"
-    maxval = 0
+    maxval = 100.0
     errcount = 0
 
     def compute(self, EV):
-        try:
-	    self.val = EV("mux", 0)
-        except ZeroDivisionError:
-            print_error("MUX zero division")
-            self.errcount += 1
-	    self.val = 0
+	self.val = EV("mux", 0)
 
 class Setup:
     def __init__(self, r):
