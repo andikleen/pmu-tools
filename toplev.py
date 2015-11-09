@@ -304,8 +304,7 @@ p.add_argument('--quiet', help='Avoid unnecessary status output', action='store_
 p.add_argument('--bottleneck', help='Show critical bottleneck', action='store_true')
 args, rest = p.parse_known_args()
 
-if len(rest) > 0 and rest[0] == "--":
-    rest = rest[1:]
+rest = [x for x in rest if x != "--"]
 
 if args.version:
     print "toplev"
