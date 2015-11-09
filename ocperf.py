@@ -599,7 +599,10 @@ class EmapNativeJSON(Emap):
         data = json.load(open(name, "rb"))
         for row in data:
             name = row['EventName'].lower()
-            self.uncore_events[name] = UncoreEvent(name, row)
+            try:
+                self.uncore_events[name] = UncoreEvent(name, row)
+            except UnicodeEncodeError:
+                pass
 
 def json_with_extra(el):
     emap = EmapNativeJSON(event_download.eventlist_name(el, "core"))
