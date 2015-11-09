@@ -673,7 +673,7 @@ def display_core(cpunum, ignore_thread=False):
 
 def print_keys(runner, res, rev, valstats, out, interval, env):
     stat = runner.stat
-    if len(res.keys()) > 1:
+    if len(res.keys()) > 1 and smt_mode:
         cores = [key_to_coreid(x) for x in res.keys() if int(x) in runner.allowed_threads]
         threads = map(thread_fmt, runner.allowed_threads)
         out.set_cpus(set(map(core_fmt, cores) + threads))
