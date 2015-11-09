@@ -217,6 +217,7 @@ class OutputColumnsCSV(OutputColumns):
 		    cpu = node[cpuname]
                     if cpu[2]:
                         desc = cpu[2]
+                        desc = re.sub(r"\s+", " ", desc)
                     if cpu[3]:
                         sample = cpu[3]
                     # ignore remark for now
