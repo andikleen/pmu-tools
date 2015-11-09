@@ -123,6 +123,7 @@ class OutputColumns(OutputHuman):
 	self.nodes = dict()
 	self.timestamp = None
 	self.cpunames = set()
+        self.printed_header = False
 
     def set_cpus(self, cpus):
 	self.cpunames = cpus
@@ -144,13 +145,15 @@ class OutputColumns(OutputHuman):
 
 	cpunames = sorted(self.cpunames)
 
-	if self.timestamp:
-	    write("%9s" % "")
-	write("%*s" % (self.hdrlen, ""))
-	for j in cpunames:
-	    write("%*s " % (VALCOL_LEN, j))
+        if not self.printed_header:
+	    if self.timestamp:
+	        write("%9s" % "")
+	    write("%*s" % (self.hdrlen, ""))
+	    for j in cpunames:
+	        write("%*s " % (VALCOL_LEN, j))
+	    write("\n")
+            self.printed_header = True
 
-	write("\n")
         for key in sorted(sorted(self.nodes.keys(), key=lambda x: x[1]), key=lambda x: x[0] == ""):
 	    node = self.nodes[key]
 	    desc = None
