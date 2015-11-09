@@ -173,7 +173,8 @@ class OutputColumns(OutputHuman):
 		else:
 		    write("%*s " % (VALCOL_LEN, ""))
             if remark:
-                write(" " + remark + format_valstat(combine_valstat(vlist)))
+                vs = format_valstat(combine_valstat(vlist))
+                write(" %-5s %s" % (remark, vs))
 	    write("\n")
 	    self.print_desc(desc, sample)
 	self.nodes = dict()
