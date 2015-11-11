@@ -4,9 +4,11 @@
 #include <sys/types.h>
 
 int json_events(const char *fn,
-		int (*func)(void *data, char *name, char *event, char *desc),
+		int (*func)(void *data, char *name, char *event, char *desc,
+			    char *pmu),
 		void *data);
 char *get_cpu_str(void);
+char *get_cpu_str_type(char *type);
 
 struct perf_event_attr;
 

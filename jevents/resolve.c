@@ -221,7 +221,7 @@ int jevent_name_to_attr(char *str, struct perf_event_attr *attr)
  * @func: Callback function to call for each event.
  * @data: data pointer to pass to func.
  */
-int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc),
+int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc, char *pmu),
 		     void *data)
 {
 	int ret = 0;
@@ -257,7 +257,7 @@ int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc
 
 		char *buf;
 		asprintf(&buf, "%s/%s/", pmu, event);
-		ret = func(data, buf, val2, "");
+		ret = func(data, buf, val2, "", pmu);
 		free(val2);
 		free(buf);
 		if (ret)

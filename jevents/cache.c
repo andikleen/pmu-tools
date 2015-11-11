@@ -59,6 +59,7 @@ struct event {
 	char *name;
 	char *desc;
 	char *event;
+	char *pmu;
 };
 
 #define HASHSZ 37
@@ -78,7 +79,8 @@ static unsigned hashfn(char *s)
 	return h % HASHSZ;
 }
 
-static int collect_events(void *data, char *name, char *event, char *desc)
+static int collect_events(void *data, char *name, char *event, char *desc,
+			  char *pmu)
 {
 	unsigned h = hashfn(name);
 	struct event *e = malloc(sizeof(struct event));
@@ -89,6 +91,7 @@ static int collect_events(void *data, char *name, char *event, char *desc)
 	e->name = strdup(name);
 	e->desc = strdup(desc);
 	e->event = strdup(event);
+	e->pmu = strdup(pmu);
 	return 0;
 }
 
@@ -99,6 +102,10 @@ static void free_events(void)
 	for (i = 0; i < HASHSZ; i++) {
 		for (e = eventlist[i]; e; e = next) {
 			next = e->next;
+			free(e->name);
+			free(e->desc);
+			free(e->event);
+			free(e->pmu);
 			free(e);
 		}
 		eventlist[i] = NULL;
@@ -213,7 +220,7 @@ int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
 	for (i = 0; i < HASHSZ; i++) {
 		for (e = eventlist[i]; e; e = e->next) {
 			char *buf;
-			asprintf(&buf, "cpu/%s/", e->event);
+			asprintf(&buf, "%s/%s/", e->pmu, e->event);
 			int ret = func(data, e->name, buf, e->desc);
 			free(buf);
 			if (ret)

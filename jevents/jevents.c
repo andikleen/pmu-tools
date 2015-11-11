@@ -40,10 +40,10 @@
 #include "json.h"
 #include "jevents.h"
 
-static const char *json_default_name(void)
+static const char *json_default_name(char *type)
 {
 	char *cache;
-	char *idstr = get_cpu_str();
+	char *idstr = get_cpu_str_type(type);
 	char *res = NULL;
 	char *home = NULL;
 	char *emap;
@@ -52,10 +52,10 @@ static const char *json_default_name(void)
 	if (emap) {
 		if (access(emap, R_OK) == 0)
 			return emap;
-		idstr = malloc(strlen(emap) + strlen("-core") + 1);
+		idstr = malloc(strlen(emap) + strlen(type) + 1);
 		if (!idstr)
 			exit(ENOMEM);
-		sprintf(idstr, "%s-core", emap);
+		sprintf(idstr, "%s%s", emap, type);
 	}
 
 	cache = getenv("XDG_CACHE_HOME");
@@ -117,6 +117,27 @@ static void fixdesc(char *s)
 		*e = 0;
 }
 
+static struct map {
+	const char *json;
+	const char *perf;
+} unit_to_pmu[] = {
+	{ "CBO", "cbox" },
+	{ "QPI LL", "qpi" },
+	{ "SBO", "sbox" },
+	{}
+};
+
+static const char *field_to_perf(struct map *table, char *map, jsmntok_t *val)
+{
+	int i;
+
+	for (i = 0; table[i].json; i++) {
+		if (json_streq(map, val, table[i].json))
+			return table[i].perf;
+	}
+	return NULL;
+}
+
 #define EXPECT(e, t, m) do { if (!(e)) {			\
 	jsmntok_t *loc = (t);					\
 	if (!(t)->start && (t) > tokens)			\
@@ -141,7 +162,6 @@ static struct field {
 	const char *field;
 	const char *kernel;
 } fields[] = {
-	{ "EventCode",	"event=" },
 	{ "UMask",	"umask=" },
 	{ "CounterMask", "cmask=" },
 	{ "Invert",	"inv=" },
@@ -170,6 +190,9 @@ static int match_field(char *map, jsmntok_t *field, int nz,
 
 	for (f = fields; f->field; f++)
 		if (json_streq(map, field, f->field) && nz) {
+			if (json_streq(map, val, "0x00") ||
+			     json_streq(map, val, "0x0"))
+				return 1;
 			cut_comma(map, &newval);
 			addfield(map, event, ",", f->kernel, &newval);
 			return 1;
@@ -208,7 +231,7 @@ static struct msrmap *lookup_msr(char *map, jsmntok_t *val)
  * Return: -1 on failure, otherwise 0.
  */
 int json_events(const char *fn,
-	  int (*func)(void *data, char *name, char *event, char *desc),
+	  int (*func)(void *data, char *name, char *event, char *desc, char *pmu),
 	  void *data)
 {
 	int err = -EIO;
@@ -216,9 +239,11 @@ int json_events(const char *fn,
 	jsmntok_t *tokens, *tok;
 	int i, j, len;
 	char *map;
+	char buf[128];
+	const char *orig_fn = fn;
 
 	if (!fn)
-		fn = json_default_name();
+		fn = json_default_name("-core");
 	tokens = parse_json(fn, &map, &size, &len);
 	if (!tokens)
 		return -EIO;
@@ -226,6 +251,9 @@ int json_events(const char *fn,
 	tok = tokens + 1;
 	for (i = 0; i < tokens->size; i++) {
 		char *event = NULL, *desc = NULL, *name = NULL;
+		char *pmu = NULL;
+		char *filter = NULL;
+		unsigned long long eventcode = 0;
 		struct msrmap *msr = NULL;
 		jsmntok_t *msrval = NULL;
 		jsmntok_t *precise = NULL;
@@ -246,6 +274,16 @@ int json_events(const char *fn,
 			nz = !json_streq(map, val, "0");
 			if (match_field(map, field, nz, &event, val)) {
 				/* ok */
+			} else if (json_streq(map, field, "EventCode")) {
+				char *code = NULL;
+				addfield(map, &code, "", "", val);
+				eventcode |= strtoul(code, NULL, 0);
+				free(code);
+			} else if (json_streq(map, field, "ExtSel")) {
+				char *code = NULL;
+				addfield(map, &code, "", "", val);
+				eventcode |= strtoul(code, NULL, 0) << 21;
+				free(code);
 			} else if (json_streq(map, field, "EventName")) {
 				addfield(map, &name, "", "", val);
 			} else if (json_streq(map, field, "BriefDescription")) {
@@ -266,6 +304,22 @@ int json_events(const char *fn,
 				addfield(map, &desc, ". ",
 					" Supports address when precise",
 					NULL);
+			} else if (json_streq(map, field, "Unit")) {
+				const char *ppmu;
+				char *s;
+
+				ppmu = field_to_perf(unit_to_pmu, map, val);
+				if (ppmu) {
+					pmu = strdup(ppmu);
+				} else {
+					addfield(map, &pmu, "", "", val);
+					for (s = pmu; *s; s++)
+						*s = tolower(*s);
+				}
+				addfield(map, &desc, ". ", "Unit: ", NULL);
+				addfield(map, &desc, "", pmu, NULL);
+			} else if (json_streq(map, field, "Filter")) {
+				addfield(map, &filter, "", "", val);
 			}
 			/* ignore unknown fields */
 		}
@@ -277,16 +331,24 @@ int json_events(const char *fn,
 				addfield(map, &desc, " ",
 						"(Precise event)", NULL);
 		}
+		snprintf(buf, sizeof buf, "event=%#llx", eventcode);
+		addfield(map, &event, ",", buf, NULL);
+		if (filter)
+			addfield(map, &event, ",", filter, NULL);
 		if (msr != NULL)
 			addfield(map, &event, ",", msr->pname, msrval);
+		if (!pmu)
+			pmu = strdup("cpu");
 		err = -EIO;
 		if (name && event) {
 			fixname(name);
-			err = func(data, name, event, desc);
+			err = func(data, name, event, desc, pmu);
 		}
 		free(event);
 		free(desc);
 		free(name);
+		free(pmu);
+		free(filter);
 		if (err)
 			break;
 		tok += j;
@@ -295,5 +357,14 @@ int json_events(const char *fn,
 	err = 0;
 out_free:
 	free_json(map, size, tokens);
+	if (!orig_fn && !err) {
+		fn = json_default_name("-uncore");
+		err = json_events(fn, func, data);
+		/* Ignore open error */
+		if (err == -EIO)
+			return 0;
+	}
+	if (!orig_fn)
+		free((char *)fn);
 	return err;
 }

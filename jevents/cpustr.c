@@ -39,6 +39,15 @@
  */
 char *get_cpu_str(void)
 {
+	return get_cpu_str_type("-core");
+}
+
+/**
+ * get_cpu_str - Return string describing the current CPU for type
+ * @type: "-core" or "-uncore"
+ */
+char *get_cpu_str_type(char *type)
+{
 	char *line = NULL;
 	size_t llen = 0;
 	int found = 0, n;
@@ -57,7 +66,7 @@ char *get_cpu_str(void)
 		else if (sscanf(line, "cpu family : %d", &fam) == 1)
 			found++;
 		if (found == 3) {
-			n = asprintf(&res, "%s-%d-%X-core", vendor, fam, model);
+			n = asprintf(&res, "%s-%d-%X%s", vendor, fam, model, type);
 			if (n < 0)
 				res = NULL;
 			break;
