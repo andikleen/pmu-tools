@@ -90,6 +90,12 @@ int rdpmc_open_attr(struct perf_event_attr *attr, struct rdpmc_ctx *ctx,
 		perror("mmap on perf fd");
 		return -1;
 	}
+	/* Not sure why this happens? */
+	if (ctx->buf->index == 0) {
+		munmap(ctx->buf, sysconf(_SC_PAGESIZE));
+		close(ctx->fd);
+		return -1;
+	}
 	return 0;
 }
 
