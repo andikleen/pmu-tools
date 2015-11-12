@@ -215,10 +215,11 @@ int jevent_name_to_attr(char *str, struct perf_event_attr *attr)
 		return -1;
 	char *type = NULL;
 	/* FIXME need interface for multiple outputs and try more instances */
-	if (try_pmu_type(&type, "%s", pmu) < 0)
-	    if (try_pmu_type(&type, "uncore_%s", pmu) < 0)
-		if (try_pmu_type(&type, "uncore_%s_1", pmu) < 0)
-			return -1;
+	if (try_pmu_type(&type, "%s", pmu) < 0 &&
+	    try_pmu_type(&type, "uncore_%s", pmu) < 0 &&
+	    try_pmu_type(&type, "uncore_%s_0", pmu) < 0 &&
+	    try_pmu_type(&type, "uncore_%s_1", pmu) < 0)
+		return -1;
 	attr->type = atoi(type);
 	free(type);
 	if (parse_terms(pmu, config, attr, 0) < 0)
