@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* jevents has now limited support for Uncore events
 * toplev updated to Ahmad Yasin's TopDown/TMAM 3.02:
 	- Tuned Memory_Bound vs Core_Bound threshold
 	- Vastly improved Tuning hints
