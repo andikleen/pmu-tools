@@ -176,13 +176,22 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 	return 0;
 }
 
+static int try_pmu_type(char **type, char *fmt, char *pmu)
+{
+	char newpmu[30];
+	snprintf(newpmu, 30, fmt, pmu);
+	int ret = read_file(type, "/sys/devices/%s/type", newpmu);
+	if (ret >= 0)
+		strcpy(pmu, newpmu);
+	return ret;
+}
 
 /**
  * jevent_name_to_attr - Resolve perf style event to perf_attr
  * @str: perf style event (e.g. cpu/event=1/)
  * @attr: perf_attr to fill in.
  *
- * Resolve perf new style event descriptor to perf ATTR. User must initialize
+ * Resolve perf new style event descriptor to perf ATTR. User must initiali
  * attr->sample_type and attr->read_format as needed after this call,
  * and possibly other fields. Returns 0 when succeeded.
  */
@@ -205,8 +214,11 @@ int jevent_name_to_attr(char *str, struct perf_event_attr *attr)
 	if (sscanf(str, "%30[^/]/%200[^/]/%n", pmu, config, &qual_off) < 2)
 		return -1;
 	char *type = NULL;
-	if (read_file(&type, "/sys/devices/%s/type", pmu) < 0)
-		return -1;
+	/* FIXME need interface for multiple outputs and try more instances */
+	if (try_pmu_type(&type, "%s", pmu) < 0)
+	    if (try_pmu_type(&type, "uncore_%s", pmu) < 0)
+		if (try_pmu_type(&type, "uncore_%s_1", pmu) < 0)
+			return -1;
 	attr->type = atoi(type);
 	free(type);
 	if (parse_terms(pmu, config, attr, 0) < 0)
