@@ -279,6 +279,32 @@ int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc
 	return ret;
 }
 
+/* Should cache pmus. Caller must free return value. */
+char *resolve_pmu(int type)
+{
+	glob_t g;
+	if (glob("/sys/devices/*/type", 0, NULL, &g))
+		return NULL;
+	int i;
+	char *pmun = NULL;
+	for (i = 0; i < g.gl_pathc; i++) {
+		char pmu[30];
+		if (sscanf(g.gl_pathv[i], "/sys/devices/%30[^/]/type", pmu) != 1)
+			continue;
+		char *numbuf;
+		int num;
+		if (read_file(&numbuf, g.gl_pathv[i]) < 0 ||
+		    sscanf(numbuf, "%d", &num) != 1)
+			break;
+		if (num == type) {
+			pmun = strdup(pmu);
+			break;
+		}
+	}
+	globfree(&g);
+	return pmun;
+}
+
 #ifdef TEST
 #include "jevents.h"
 int main(int ac, char **av)

@@ -179,7 +179,7 @@ int resolve_event(char *name, struct perf_event_attr *attr)
 	for (e = eventlist[h]; e; e = e->next) {
 		if (!strcasecmp(e->name, name)) {
 			char *event = real_event(e->name, e->event);
-			asprintf(&buf, "cpu/%s/", event);
+			asprintf(&buf, "%s/%s/", e->pmu, event);
 			ret = jevent_name_to_attr(buf, attr);
 			free(buf);
 			return ret;

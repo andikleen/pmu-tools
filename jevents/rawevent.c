@@ -31,6 +31,8 @@
 #include <linux/perf_event.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include "jevents.h"
 
 #define BUFS 1024
 
@@ -45,14 +47,19 @@ char *format_raw_event(struct perf_event_attr *attr, char *name)
 {
 	char buf[BUFS];
 	int off = 0;
+	char *pmu;
 
-	off = sprintf(buf, "cpu/config=%#llx", attr->config);
+	pmu = resolve_pmu(attr->type);
+	if (!pmu)
+		return NULL;
+	off = snprintf(buf, BUFS, "%s/config=%#llx", pmu, attr->config);
+	free(pmu);
 	if (attr->config1)
 		off += sprintf(buf + off, ",config1=%#llx", attr->config1);
 	if (attr->config2)
 		off += sprintf(buf + off, ",config2=%#llx", attr->config2);
 	if (name)
 		off += snprintf(buf + off, BUFS - off, ",name=%s", name);
-	off += sprintf(buf + off, "/");
+	off += snprintf(buf + off, BUFS - off, "/");
 	return strdup(buf);
 }
