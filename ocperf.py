@@ -56,6 +56,7 @@ import latego
 import event_download
 
 force_download = False
+pebs_enable = "p"
 
 def has_format(s):
     return os.path.isfile("/sys/devices/cpu/format/" + s)
@@ -448,8 +449,8 @@ class Emap(object):
                 e.overflow = None
             e.pebs = get('pebs')
             if e.pebs and int(e.pebs):
-                if name.endswith("_ps"):
-                    e.extra += "p"
+                if name.endswith("_ps") or int(e.pebs) == 2:
+                    e.extra += pebs_enable
                     d += " (Uses PEBS)"
                 else:
                     d = d.replace("(Precise Event)","") + " (Supports PEBS)"

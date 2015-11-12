@@ -122,6 +122,7 @@ checkp CPU_CLK_UNHALTED.THREAD:amt1:cp 'any=1'
 checkp CPU_CLK_UNHALTED.THREAD:c3 'cmask=3'
 checkp CPU_CLK_UNHALTED.THREAD:sa=10000 'period=10000'
 checkp CPU_CLK_UNHALTED.THREAD:ppp '/ppp'
+checkp INST_RETIRED.PREC_DIST "/p"
 
 # following tests need new enough perf
 
