@@ -124,6 +124,7 @@ static struct map {
 	{ "CBO", "cbox" },
 	{ "QPI LL", "qpi" },
 	{ "SBO", "sbox" },
+	{ "IMPH-U", "cbox" },
 	{}
 };
 
