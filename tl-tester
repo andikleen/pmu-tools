@@ -124,6 +124,7 @@ EVENTMAP=${cpus[$cpu]} FORCECPU=$cpu $WRAP ./toplev.py -o /dev/null --no-desc -v
 cat log
 grep -v UNC log | grep "not found" && exit 1
 grep /p log
+[ "$cpu" = hsw ] && grep /pp log
 done
 for cpu in $NOSMTCPUS ; do
 EVENTMAP=${cpus[$cpu]} FORCECPU=$cpu $WRAP ./toplev.py -o /dev/null --no-desc -v --all --show-sample $LOAD >&log
