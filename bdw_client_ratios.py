@@ -2235,7 +2235,7 @@ import sys
 
 class Setup:
     def __init__(self, r):
-	print >>sys.stderr, "TMAM 3.02r"
+	#print >>sys.stderr, "TMAM 3.02r"
 	o = dict()
         n = Frontend_Bound() ; r.run(n) ; o["Frontend_Bound"] = n
         n = Frontend_Latency() ; r.run(n) ; o["Frontend_Latency"] = n
