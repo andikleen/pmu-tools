@@ -18,7 +18,7 @@
 # Handles a variety of perf versions, but older ones have various limitations.
 
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import exceptions, argparse, time, types, fnmatch, csv, copy
+import exceptions, argparse, time, types, fnmatch, csv, copy, glob
 from collections import defaultdict, Counter
 
 from tl_stat import format_valstat, combine_valstat, ComputeStat, ValStat, isnan
@@ -368,6 +368,15 @@ def check_ratio(l):
         return True
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
+def num_offline_cpus():
+    cpus = glob.glob("/sys/devices/system/cpu/cpu[0-9]*/online")
+    offline = 0
+    for fn in cpus:
+        with open(fn, "r") as f:
+            if int(f.read()) == 0:
+                offline += 1
+    return offline
+
 class CPU:
     """Detect the CPU."""
     # overrides for easy regression tests
@@ -403,6 +412,7 @@ class CPU:
         self.ht = False
         self.counters = 0
         self.has_tsx = False
+        self.hypervisor = False
         self.freq = 0.0
         self.siblings = {}
         self.threads = 0
@@ -461,6 +471,7 @@ class CPU:
                 elif n[0] == "flags":
                     ok += 1
                     self.has_tsx = "rtm" in n
+                    self.hypervisor = "hypervisor" in n
         if ok >= 6:
             for i in known_cpus:
                 if self.model in i[1]:
@@ -473,10 +484,16 @@ class CPU:
             if self.cpu == "slm":
                 self.counters = 2
                 self.standard_counters = "0,1"
-            elif self.ht:
+            # when running in a hypervisor always assume worst case HT in on
+            # also when CPUs are offline assume SMT is on
+            elif self.ht or self.hypervisor or num_offline_cpus() > 0:
                 self.counters = 4
             else:
                 self.counters = 8
+            # chicken bit to override if we get it wrong
+            counters = os.getenv("TLCOUNTERS")
+            if counters:
+                self.counters = int(counters)
         self.sockets = len(sockets.keys())
 
 cpu = CPU()
