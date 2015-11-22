@@ -733,7 +733,13 @@ def execute_no_multiplex(runner, out, rest):
     num_runs = len(groups) - count(is_outgroup, groups)
     outg = []
     n = 0
-    # runs could be further reduced by some reordering
+    # hack to make < file work
+    try:
+        startoffset = sys.stdin.tell()
+    except exceptions.IOError:
+        startoffset = None
+    # runs could be further reduced by tweaking
+    # the scheduler to avoid any duplicated events
     for g in groups:
         if is_outgroup(g):
             outg.append(g)
@@ -742,6 +748,8 @@ def execute_no_multiplex(runner, out, rest):
         print "RUN #%d of %d" % (n, num_runs)
         ret, res, rev, interval, valstats = do_execute(runner, outg + [g], out, rest,
                                                  res, rev, valstats, env)
+        if startoffset is not None:
+            sys.stdin.seek(startoffset)
         outg = []
     assert num_runs == n
     print_keys(runner, res, rev, valstats, out, interval, env)
