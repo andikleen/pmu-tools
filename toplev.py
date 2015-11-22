@@ -329,7 +329,7 @@ if args.graph:
     if args.title:
 	title = args.title
     else:
-	title = "cpu %d" % (args.graph_cpu if args.graph_cpu else 0)
+	title = "cpu %s" % (args.graph_cpu if args.graph_cpu else 0)
     extra += '--title "' + title + '" '
     if args.xkcd:
         extra += '--xkcd '
