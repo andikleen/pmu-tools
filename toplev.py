@@ -739,6 +739,19 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
 def is_outgroup(x):
     return set(x) - outgroup_events == set()
 
+class SaveContext:
+    """Save (some) environment context, in this case stdin seek offset to make < file work
+       when we reexecute the workload multiple times."""
+    def __init__(self):
+        try:
+            self.startoffset = sys.stdin.tell()
+        except exceptions.IOError:
+            self.startoffset = None
+
+    def restore(self):
+        if self.startoffset is not None:
+            sys.stdin.seek(self.startoffset)
+
 def execute_no_multiplex(runner, out, rest):
     if args.interval: # XXX
         sys.exit('--no-multiplex is not supported with interval mode')
@@ -750,11 +763,7 @@ def execute_no_multiplex(runner, out, rest):
     num_runs = len(groups) - count(is_outgroup, groups)
     outg = []
     n = 0
-    # hack to make < file work
-    try:
-        startoffset = sys.stdin.tell()
-    except exceptions.IOError:
-        startoffset = None
+    ctx = SaveContext()
     # runs could be further reduced by tweaking
     # the scheduler to avoid any duplicated events
     for g in groups:
@@ -765,8 +774,7 @@ def execute_no_multiplex(runner, out, rest):
         print "RUN #%d of %d" % (n, num_runs)
         ret, res, rev, interval, valstats = do_execute(runner, outg + [g], out, rest,
                                                  res, rev, valstats, env)
-        if startoffset is not None:
-            sys.stdin.seek(startoffset)
+        ctx.restore()
         outg = []
     assert num_runs == n
     print_keys(runner, res, rev, valstats, out, interval, env)
@@ -775,12 +783,14 @@ def execute_no_multiplex(runner, out, rest):
 def execute(runner, out, rest):
     env = dict()
     events = filter(lambda x: len(x) > 0, runner.evgroups)
+    ctx = SaveContext()
     ret, res, rev, interval, valstats = do_execute(runner, events,
                                          out, rest,
                                          defaultdict(list),
                                          defaultdict(list),
                                          defaultdict(list),
                                          env)
+    ctx.restore()
     print_keys(runner, res, rev, valstats, out, interval, env)
     return ret
 
