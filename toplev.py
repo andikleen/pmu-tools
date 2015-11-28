@@ -21,7 +21,7 @@ import sys, os, re, itertools, textwrap, platform, pty, subprocess
 import exceptions, argparse, time, types, fnmatch, csv, copy, glob
 from collections import defaultdict, Counter
 
-from tl_stat import format_valstat, combine_valstat, ComputeStat, ValStat, isnan
+from tl_stat import combine_valstat, ComputeStat, ValStat
 import tl_output
 import ocperf
 
