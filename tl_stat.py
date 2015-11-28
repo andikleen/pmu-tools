@@ -34,7 +34,7 @@ def format_valstat(valstat):
     vs = ""
     if valstat:
         if valstat.stddev:
-            vs += "+-%6.2f%% " % valstat.stddev
+            vs += "+-%6.2f " % valstat.stddev
         if valstat.multiplex and not isnan(valstat.multiplex):
             vs += "[%6.2f%%]" % valstat.multiplex
     if vs:
