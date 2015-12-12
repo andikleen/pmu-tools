@@ -36,6 +36,7 @@
 #include <linux/kallsyms.h>
 #include <linux/percpu.h>
 #include <linux/module.h>
+#include <linux/version.h>
 #include <asm/msr.h>
 #include <asm/processor.h>
 #include <asm/cpufeature.h>
@@ -75,7 +76,11 @@ static unsigned pebs_version;
 
 static char *handler_names[] = {
 	[1] = "intel_pmu_drain_pebs_nhm",
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0)
 	[2] = "intel_pmu_drain_pebs_hsw",
+#else
+	[2] = "intel_pmu_drain_pebs_nhm",
+#endif
 };
 
 static unsigned pebs_record_size[] = {
