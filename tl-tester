@@ -43,6 +43,10 @@ fi
 DCPU=hsw
 
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
+
+# test with a locale that outputs FP numbers with , (github issue #43)
+LC_ALL=pl_PL.utf8 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
+
 DIRECT_MSR=1 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 $LOAD
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 --single-thread $LOAD
