@@ -139,18 +139,24 @@ The other tools are for more obscure usages.
 
 All tools (except for parser/) should work with a python 2.7
 standard installation.  All need a reasonably recent perf (RHEL5 is too old)
+
 ocperf.py should work with python 2.6, or likely 2.5 when the json
-module is installed.
+module is installed. msr.py will also work with 2.6 if
+argparse is installed (it is enough to copy those files from
+a python 2.7 installation)
 
 Except for the modules in parser/ there are no special
 dependencies outside a standard python install on a recent
 Linux system with perf. 
 
-old. parser/ needs a scipy stack with pandas and pyelftools.
+parser/ needs a scipy stack with pandas and pyelftools.
 
 The perf tool should not be too old.
 
 toplev has kernel dependencies, please see https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
+
+simple-pebs and pebs-grabber require a Linux kernel source tree to build.
+They may not build on some older versions of Linux (patches welcome)
 
 # Tools
 
