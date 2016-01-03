@@ -63,7 +63,7 @@ with simple-pmu described there can be used with jevents too.
 
 Resolving named events to a perf event and set up reading from the perf ring buffer.
 
-First run event_download.sh to download a current event list for your CPU.
+First run event_download.py to download a current event list for your CPU.
 
 ```C
 	#include "jevents.h"
