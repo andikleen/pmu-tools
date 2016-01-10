@@ -248,7 +248,7 @@ workload is rerun multiple times until all data is collected.
 Do not use together with sleep.
 
 toplev needs a new enough perf tool and has specific requirements on
-the kernel. See http://github.com/andikleen/pmu-toolls/toplev-kernel-support
+the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
 
 Other CPUs can be forced with FORCECPU=name
 This usually requires setting the correct event map with EVENTMAP=...
