@@ -7,6 +7,7 @@ import math
 from collections import defaultdict
 import gen_level
 import tldata
+import re
 
 def parse_args():
     p = argparse.ArgumentParser(usage='plot toplev -I...  -x, output as bar plot')
@@ -41,27 +42,33 @@ ratios = defaultdict(list)
 if args.cpu:
     cpu = args.cpu
 elif len(data.cpus) > 0:
-    cpu = sorted(data.cpus)[0]
+    cpu = sorted(sorted(data.cpus), key=len, reverse=True)[0]
 else:
     cpu = None
-aliases = [x for x in data.cpus if x.startswith(cpu) and x != cpu]
+
+def cpumatch(x, match, base):
+    return x.startswith(cpu) or x == base
+
 if cpu:
-    print "plotting cpus", cpu, " ".join(sorted(aliases))
+    base = None
+    m = re.match(r'C\d+', cpu)
+    if m:
+	base = m.group(0)
+    aliases = [x for x in data.cpus if cpumatch(x, cpu, base)]
+    print "plotting cpus:", " ".join(sorted(aliases))
+else:
+    aliases = []
+if len(aliases) == 0:
+    aliases = [None]
 
-for d in data.vals:
-    print d
-    for j in data.headers:
-	for k in aliases:
-	    if (j, k) in d and (j, cpu) not in d:
-		d[(j, cpu)] = d[(j, k)]
-        if (j, cpu) not in d:
-            d[(j, cpu)] = float('nan')
+for h in data.headers:
+    def findval(d):
+	for c in aliases:
+	    if (h, c) in d:
+		return d[(h, c)]
+	return float('nan')
 
-for d in data.vals:
-    for k, c in d.keys():
-        if c == cpu:
-            ratios[k].append(d[(k, cpu)])
-    assert len(ratios.keys()) == len(filter(lambda x: x[1] == cpu, d.keys()))
+    ratios[h] = map(findval, data.vals)
 
 def valid_row(r):
     s = sum(r)
@@ -99,16 +106,15 @@ legend_bbox = (0., 0., -0.07, -0.03)
 legend_loc = 2
 
 for l in tldata.level_order(data):
-    non_null = filter(lambda x: valid_row(ratios[x]), levels[l])
+    non_null = [x for x in  levels[l] if valid_row(ratios[x])]
     if not non_null:
-        print "nothing in level", l
         n += 1
         continue
     all_colors = get_colors(non_null)
     ax = plt.subplot2grid((numplots, 1), (n, 0), sharex=xaxis)
     plt.tight_layout()
     set_title(ax, l)
-    r = [ratios[x] for x in non_null]
+    r = [[y if y == y else 0.0 for y in ratios[x]] for x in non_null]
 
     if gen_level.is_metric(non_null[0]):
         for j, name in zip(r, non_null):
@@ -122,7 +128,7 @@ for l in tldata.level_order(data):
         if not math.isnan(low) and not math.isnan(high):
             ax.yaxis.set_ticks([low, math.trunc(((high - low)/2.0)/100.)*100., high])
     else:
-        stack = ax.stackplot(timestamps, *r, colors=all_colors)
+	stack = ax.stackplot(timestamps, *r)
         ax.set_ylim(0, 100)
         ax.yaxis.set_ticks([0., 50., 100.])
         p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
@@ -151,7 +157,7 @@ plt.subplots_adjust(hspace=1.5 if max_legend > 6 else 0.9, bottom=0.20,
                     top=0.95)
 
 if args.title:
-    plt.subplot(numplots, 1, 1)
+    #plt.subplot(numplots, 1, 1)
     plt.title(args.title)
 
 if args.output:
