@@ -128,7 +128,7 @@ for l in tldata.level_order(data):
         if not math.isnan(low) and not math.isnan(high):
             ax.yaxis.set_ticks([low, math.trunc(((high - low)/2.0)/100.)*100., high])
     else:
-	stack = ax.stackplot(timestamps, *r)
+	stack = ax.stackplot(timestamps, *r, colors=all_colors)
         ax.set_ylim(0, 100)
         ax.yaxis.set_ticks([0., 50., 100.])
         p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
