@@ -19,7 +19,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 * jevents now has a perf stat like tool called jstat (renamed to jestat)
 * jevents can now list and automatically resolve perf style events and aliases
 * simple-pebs is a simple reference Linux PEBS driver
-* ocperf now supports uncore events on some systems (experimential)
+* ocperf now supports uncore events on some systems (experimental)
 * libjevents now supports handling the perf ring buffer and reading performance counters from ring 3 in C programs, in addition to resolving symbolic event names. For more details see the [API reference](http://halobates.de/jevents.html) and the [jevents README](https://github.com/andikleen/pmu-tools/tree/master/jevents)
 * Support for Airmont and Broadwell with Iris CPUs
 * toplev updates to Ahmad Yasin's TopDown 3.0 (only Haswell and up for now):
@@ -402,7 +402,7 @@ Requires matplotlib to be installed.
 ![tl-barplot-example] (http://halobates.de/grep.3.svg)
 
 This assumes the workload is single threaded. tl-barplot can only
-display a single CPU, if --single-thread is not appropiate then
+display a single CPU, if --single-thread is not appropriate then
 the CPU to plot needs to be specified with --graph-cpu.
 
 With a new enough matplotlib you can also enable xkcd mode
