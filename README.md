@@ -108,6 +108,13 @@ and experimental purposes.
 
 ---
 
+# Help wanted
+
+- The plotting tools could use a lot of improvements. Both tl-serve and tl-barplot.
+If you're good in python or JS plotting any help improving those would be appreciated.
+
+---
+
 # Usage:
 
 Check out the repository. Run the tools from the directory you
