@@ -87,6 +87,9 @@ class Aux:
     def getid(self, id):
         return self.ids[id]
 
+    def __getitem__(self, id):
+	return self.ids[id]
+
 cpumodes = {
     'UNKNOWN': (0, 0, 0),
     'KERNEL': (1, 0, 0),
@@ -95,10 +98,6 @@ cpumodes = {
     'GUEST_KERNEL': (1, 0, 1),
     'GUEST_USER': (0, 0, 1),
 }
-
-def do_add(d, u, k, i):
-    d[k].append(i)
-    u[k] += 1
 
 def samples_to_df(h, need_line):
     """Convert a parsed perf event list to a pandas table.
@@ -122,7 +121,9 @@ def samples_to_df(h, need_line):
             continue
 
         mm.update_sample(j)
-        add = lambda k, i: do_add(data, used, k, i)
+	def add(k, i):
+	    data[k].append(i)
+	    used[k] += 1
 
         filename, mmap_base, foffset = mm.resolve(j.pid, j.ip)
         if filename == "[kernel.kallsyms]_text":
