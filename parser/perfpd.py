@@ -170,18 +170,31 @@ def read_samples(fn, need_line=True):
 
 if __name__ == '__main__':
     import argparse
+    import sys
 
     args = argparse.ArgumentParser()
     args.add_argument('file', nargs='?', help='perf.data file to read', 
                           default='perf.data')
     args.add_argument('--repl', action='store_true',
                              help='start python shell with data')
+    args.add_argument('--ipython', action='store_true',
+			     help='start ipython shell with data')
     p = args.parse_args()
     df, _, _ = read_samples(p.file)
     if p.repl:
-        import code, sys
+        import code
         print df
         code.interact(banner='perf.data is in df', local=locals())
+        sys.exit(0)
+
+    if p.ipython:
+        try:
+            from IPython.terminal.embed import InteractiveShellEmbed
+        except NameError:
+            sys.exit("Ipython not installed")
+        print df
+        ipshell = InteractiveShellEmbed(banner1="perf.data is in df")
+        ipshell()
         sys.exit(0)
 
     print df
