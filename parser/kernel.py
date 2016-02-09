@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # resolve kernel symbols through kallsyms (when no vmlinux is available)
 #
 # Copyright (c) 2014, Intel Corporation

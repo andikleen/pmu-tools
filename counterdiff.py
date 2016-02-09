@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # counterdiff.py < plog program ..      (or general perf arguments)
 # verify plog.* output from toplev by running event one by one
 # this can be used to estimate multiplexing measurement errors
