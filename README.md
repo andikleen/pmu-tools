@@ -284,90 +284,102 @@ with SMT on the whole system is measured.
 [IVB model] (http://halobates.de/ivb-hierarchy.svg)
 [Simple model] (http://halobates.de/simple-hierarchy.svg)
 
-Usage:
+## Examples:
 
-usage: toplev [options] perf-arguments
+toplev.py -l2 program
+measure whole system in level 2 while program is running
 
-Estimate on which part of the CPU pipeline a workload bottlenecks using the TopDown model.
-The bottlenecks are expressed as a tree with different levels.
+toplev.py -l1 --single-thread program
+measure single threaded program. system must be idle.
 
-Examples:
+toplev.py -l3 --no-desc -I 100 -x, sleep X
+measure whole system for X seconds every 100ms, outputting in CSV format.
 
-./toplev.py -l2 program
-measure program in level 2
-
-./toplev.py --all -a sleep X
-measure whole system for X seconds
-
-./toplev.py -o logfile.csv -x, -p PID
-measure pid PID, outputting in CSV format
+toplev.py --all --core C0 taskset -c 0,1 program
+Measure program running on core 0 with all nodes and metrics enables
 
 ## Options:
 
-	-h, --help            show this help message and exit
-	--verbose, -v         Print all results even when below threshold
-	--kernel              Only measure kernel code
-	--user                Only measure user code
-	--print-group, -g     Print event group assignments
-	--no-desc             Don't print event descriptions
-	--csv CSV, -x CSV     Enable CSV mode with specified delimiter
-	--interval INTERVAL, -I INTERVAL
-	                      Enable interval mode with ms interval
-	--output OUTPUT, -o OUTPUT
-	                      Set output file
-	--graph               Automatically graph interval output with tl-barplot.py
-	--title TITLE         Set title of graph
-	--xkcd                Use xkcd plotting mode for graph
-	--level LEVEL, -l LEVEL
-	                      Measure upto level N (max 5)
-	--metrics, -m         Print extra metrics
-	--raw                 Print raw values
-	--sw                  Measure perf Linux metrics
-	--tsx                 Measure TSX metrics
-	--all                 Measure everything available
-	--frequency           Measure frequency
-	--no-group            Don't use groups
-	--no-multiplex        Do not multiplex, but run the workload multiple times
-	                      as needed. Requires reproducible workloads.
-	--show-sample         Show command line to rerun workload with sampling
-	--run-sample          Automatically rerun workload with sampling
-	--valcsv VALCSV, -V VALCSV
-	                      Write raw counter values into CSV file
-	--stats               Show statistics on what events counted
-	--power               Display power metrics
+  -h, --help            show this help message and exit
+  --verbose, -v         Print all results even when below threshold or
+                        exceeding boundaries. Note this can result in bogus
+                        values, as the TopDown methodology relies on
+                        thresholds to correctly characterize workloads.
+  --kernel              Only measure kernel code
+  --user                Only measure user code
+  --print-group, -g     Print event group assignments
+  --no-desc             Do not print event descriptions
+  --csv CSV, -x CSV     Enable CSV mode with specified delimeter
+  --interval INTERVAL, -I INTERVAL
+                        Enable interval mode with ms interval
+  --output OUTPUT, -o OUTPUT
+                        Set output file
+  --graph               Automatically graph interval output with tl-barplot.py
+  --graph-cpu GRAPH_CPU
+                        CPU to graph using --graph
+  --title TITLE         Set title of graph
+  --xkcd                Use xkcd plotting mode for graph
+  --level LEVEL, -l LEVEL
+                        Measure upto level N (max 5)
+  --metrics, -m         Print extra metrics
+  --raw                 Print raw values
+  --sw                  Measure perf Linux metrics
+  --no-util             Do not measure CPU utilization
+  --tsx                 Measure TSX metrics
+  --all                 Measure everything available
+  --frequency           Measure frequency
+  --no-group            Dont use groups
+  --no-multiplex        Do not multiplex, but run the workload multiple times
+                        as needed. Requires reproducible workloads.
+  --show-sample         Show command line to rerun workload with sampling
+  --run-sample          Automatically rerun workload with sampling
+  --valcsv VALCSV, -V VALCSV
+                        Write raw counter values into CSV file
+  --stats               Show statistics on what events counted
+  --power               Display power metrics
+  --core CORE           Limit output to cores. Comma list of Sx-Cx-Tx. All
+                        parts optional.
+  --single-thread, -S   Measure workload as single thread. Workload must run
+                        single threaded. In SMT mode other thread must be
+                        idle.
+  --long-desc           Print long descriptions instead of abbreviated ones.
+  --force-events        Assume kernel supports all events. May give wrong
+                        results.
+  --columns             Print CPU output in multiple columns
+  --nodes NODES         Include or exclude nodes (with + to add, ^ to remove,
+                        comma separated list, wildcards allowed)
+  --quiet               Avoid unnecessary status output
+  --bottleneck          Show critical bottleneck
 
 Other perf arguments allowed (see the perf documentation)
-After -- perf arguments conflicting with toplevel can be used.
+After -- perf arguments conflicting with toplev can be used.
 
-### Some caveats:
+## Some caveats:
+
+toplev defaults to measuring the full system and show data
+for all CPUs. Use taskset to limit the workload to known CPUs if needed.
+In some cases (idle system, single threaded workload) --single-thread
+can also be used.
 
 The lower levels of the measurement tree are less reliable
-than the higher levels.  They also rely on counter multi-plexing
-and cannot use groups, which can cause larger measurement errors
-with non steady state workloads. Enabling metrics will also
-force multi-plexing.
+than the higher levels.  They also rely on counter multi-plexing,
+and can not run each equation in a single group, which can cause larger
+measurement errors with non steady state workloads
 
 (If you don't understand this terminology; it means measurements
-in higher levels are less accurate and it works best with programs that
-primarily do the same thing over and over)
+in higher levels are less accurate and it works best with programs that primarily
+do the same thing over and over)
 
-If the program is very reproducible it is possible to avoid
-multiplexing with --no-multiplex. This will run the program many times.
-The perf -r option (to rerun multiple times to measure the standard deviation)
-is currently not supported by toplev though.
+If the program is very reproducible -- such as a simple kernel --
+it is also possible to use --no-multiplex. In this case the
+workload is rerun multiple times until all data is collected.
+Do not use together with sleep.
 
-When using level > 1, it's recommended to measure the work load only after
-the startup phase by using interval mode or attaching later.
-level 1 or running without -d is generally the most reliable.
-The startup phase tends to be multiplexing unfriendly, as it does not
-execute for long enough.
+toplev needs a new enough perf tool and has specific requirements on
+the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
 
-If your perf stat is new enough (3.12+) the --initial-delay option
-is useful to skip the startup phase.
-
-Toplev uses many events and is demand of the kernel perf driver.
-A number of kernel workarounds may be needed. See
-https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
+Other CPUs can be forced with FORCECPU=name
+This usually requires setting the correct event map with EVENTMAP=...
 
 ## ucevent uncore monitoring
 

@@ -254,7 +254,7 @@ Other CPUs can be forced with FORCECPU=name
 This usually requires setting the correct event map with EVENTMAP=...
 Valid CPU names: ''' + " ".join([x[0] for x in known_cpus]),
 formatter_class=argparse.RawDescriptionHelpFormatter)
-p.add_argument('--verbose', '-v', help='Print all results even when below threshold',
+p.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
                action='store_true')
 p.add_argument('--kernel', help='Only measure kernel code', action='store_true')
 p.add_argument('--user', help='Only measure user code', action='store_true')
