@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # convert README.md to include files for help2man
 import sys
 import re

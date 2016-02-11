@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # generate dot diagram of top down tree from module
 import sys
 

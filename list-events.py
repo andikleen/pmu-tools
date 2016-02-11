@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # print all events in a eventmap
 import ocperf
 import sys

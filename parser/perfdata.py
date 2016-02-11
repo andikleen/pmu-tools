@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # A description of the perf.data file format in "construct"
 #
 # Copyright (c) 2011-2013, Intel Corporation

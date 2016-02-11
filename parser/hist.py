@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # print histogram for perf.data
 import perfpd
 import pfeat
