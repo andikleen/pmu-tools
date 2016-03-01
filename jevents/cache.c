@@ -232,7 +232,7 @@ int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
 
 /**
  * rmap_event - Map numeric event back to name and description.
- * @event:  Event code (umask +
+ * @target:  Event code to match (umask + event).
  * @name: Put pointer to event name into this. No need to free.
  * @desc: Put pointer to description into this. No need to free. Can be NULL.
  *
@@ -242,7 +242,7 @@ int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
  * Return: -1 on failure, otherwise 0.
  */
 
-int rmap_event(unsigned event, char **name, char **desc)
+int rmap_event(unsigned target, char **name, char **desc)
 {
 	struct event *e;
 	if (!eventlist_init) {
@@ -261,7 +261,7 @@ int rmap_event(unsigned event, char **name, char **desc)
 			s = strstr(e->event, "umask=");
 			if (s)
 				sscanf(s, "umask=%x", &umask);
-			if ((event | (umask << 8)) == (event & 0xffff)) {
+			if ((event | (umask << 8)) == (target & 0xffff)) {
 				*name = e->name;
 				if (desc)
 					*desc = e->desc;
