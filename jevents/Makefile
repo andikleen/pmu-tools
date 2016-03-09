@@ -2,7 +2,7 @@ PREFIX := /usr/local
 LIB := ${PREFIX}/lib64
 BIN := ${PREFIX}/bin
 INCLUDE := ${PREFIX}/include
-CFLAGS := -g -Wall -O2
+CFLAGS := -g -Wall -O2 -Wno-unused-result
 OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o \
        perf-iter.o interrupts.o rdpmc.o measure.o perf_event_open.o \
        session.o

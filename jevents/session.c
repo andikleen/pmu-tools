@@ -79,6 +79,7 @@ int parse_events(struct eventlist *el, char *events)
 	char *s, *tmp;
 
 	events = strdup(events);
+	if (! events) return -1;
 	for (s = strtok_r(events, ",", &tmp);
 	     s;
 	     s = strtok_r(NULL, ",", &tmp)) {
