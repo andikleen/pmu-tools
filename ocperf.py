@@ -116,8 +116,8 @@ qual_map = (
     ("cp", "in_tx_cp=1", 0, ""))
 
 qualval_map = (
-    (r"c(mask=)?([0-9]+)", "cmask=%d", 24),
-    (r"(sa|sample-after)=([0-9x]+)", "period=%d", 0))
+    (r"c(mask=)?(0x[0-9a-f]+|[0-9]+)", "cmask=%d", 24),
+    (r"(sa|sample-after)=([0-9]+)", "period=%d", 0))
 
 # newe gets modified
 def convert_extra(extra, val, newe):
@@ -131,8 +131,8 @@ def convert_extra(extra, val, newe):
             m = re.match(j[0], extra)
             if m:
                 if j[2]:
-                    val |= int(m.group(2)) << j[2]
-                newe.append(j[1] % (int(m.group(2))))
+                    val |= int(m.group(2), 0) << j[2]
+                newe.append(j[1] % (int(m.group(2), 0)))
                 extra = extra[len(m.group(0)):]
                 found = True
                 break
