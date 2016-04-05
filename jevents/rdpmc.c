@@ -123,13 +123,16 @@ unsigned long long rdpmc_read(struct rdpmc_ctx *ctx)
 	unsigned seq;
 	u64 offset; 
 	typeof (ctx->buf) buf = ctx->buf;
+	unsigned index;
 
 	do {
 		seq = buf->lock;
 		rmb();
-		/* XXX fallback */
-		val = __builtin_ia32_rdpmc(buf->index - 1);
+		index = buf->index;
 		offset = buf->offset;
+		if (index == 0) /* rdpmc not allowed */
+			return offset;
+		val = __builtin_ia32_rdpmc(index - 1);
 		rmb();
 	} while (buf->lock != seq);
 	return val + offset;
