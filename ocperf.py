@@ -412,9 +412,14 @@ class Emap(object):
             if 'other' in m and m['other'] in row:
                 other = gethex('other') << 16
             else:
-                other = gethex('edge') << 18
+                other = 0
+            if 'edge' in m:
+                other |= gethex('edge') << 18
+            if 'any' in m:
                 other |= (gethex('any') | anyf) << 21
+            if 'cmask' in m:
                 other |= getdec('cmask') << 24
+            if 'invert' in m:
                 other |= gethex('invert') << 23
             val = code | (umask << 8) | other
             val &= EVMASK
@@ -427,6 +432,11 @@ class Emap(object):
             counter = get('counter')
             e.pname = "r%x" % (val,)
             e.newextra = ""
+            if other & ((1<<16)|(1<<17)):
+                if other & (1<<16):
+                    e.extra += "u"
+                if other & (1<<17):
+                    e.extra += "k"
             if ('msr_index' in m and m['msr_index'] in row
                     and get('msr_index') and get('msr_value')):
                 msrnum = gethex('msr_index')
