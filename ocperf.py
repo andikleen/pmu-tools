@@ -545,14 +545,15 @@ class EmapNativeJSON(Emap):
             'overflow': u'SampleAfterValue',
             'errata': u'Errata',
             'sav': u'SampleAfterValue',
+            'other': u'Other',
         }
         super(EmapNativeJSON, self).__init__()
         if name.find("JKT") >= 0:
             self.latego = True
         try:
             data = json.load(open(name, 'rb'))
-        except ValueError:
-            print >>sys.stderr, "Cannot open", name
+        except ValueError as e:
+            print >>sys.stderr, "Cannot open", name + ":", e.message
             return
         if u'PublicDescription' not in data[0]:
             mapping['desc'] = u'BriefDescription'
