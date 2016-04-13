@@ -252,9 +252,6 @@ def print_events(cat, desc, equation):
         ehdr = EventsHeader(c, f)
         ecount += print_list(f, events, c, desc, equation, ehdr)
         dcount += print_list(f, derived, c, desc, equation, ehdr)
-    if not cat:
-        assert ecount == len(events)
-        assert dcount == len(derived)
     if proc:
         f.close()
         proc.wait()
