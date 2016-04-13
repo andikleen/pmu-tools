@@ -1,5 +1,11 @@
 #!/bin/sh
 
+CPULIST="${CPULIST:-jkt ivt hsx bdxde}"
+
+for cpu in $CPULIST ; do
+
+export FORCECPU=$cpu
+
 for i in CHECK-* SANITY-ALL MOCK-ALL ; do 
 	echo $i 
 	./$i
@@ -7,3 +13,6 @@ for i in CHECK-* SANITY-ALL MOCK-ALL ; do
 done
 
 ./uctester | tee res-tester
+
+
+done
