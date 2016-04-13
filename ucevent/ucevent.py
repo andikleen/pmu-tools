@@ -85,7 +85,9 @@ class CPU:
         return max(self.socket)
 
     def socket_to_cpu(self, s):
-        return self.socket[s]
+        if s in self.socket:
+            return self.socket[s]
+        sys.exit("Invalid socket %d" % s)
         
 cpu = CPU()
 cputype = os.getenv("FORCECPU")
