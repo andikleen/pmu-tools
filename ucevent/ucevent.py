@@ -228,6 +228,8 @@ def cmp_cat(a, b):
     return cmp(a.lower(), b.lower())
 
 def get_pager():
+    if args.no_pager:
+	return sys.stdout, None
     f = sys.stdout
     if f.isatty():
         try:
@@ -1055,6 +1057,8 @@ or use that CPU for the (very few) events that use core events''', type=int)
                    type=argparse.FileType('w'))
     p.add_argument('--resolve', action='store_true',
                    help='Only print resolved event names. Do not run perf.')
+    p.add_argument("--no-pager", action='store_true',
+		   help='Do not use a pager')
     p.add_argument('--debug', help=argparse.SUPPRESS)
     args = p.parse_args()
 
