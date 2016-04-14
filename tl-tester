@@ -30,7 +30,7 @@ LOAD0="-- taskset -c 0 gcc -o /dev/null hello.c"
 
 set -o pipefail
 
-SMTCPUS="snb jkt ivb ivt hsw hsx bdw skl"
+SMTCPUS="snb jkt ivb ivt hsw hsx bdw skl bdx"
 NOSMTCPUS="slm simple"
 ALLCPUS="$SMTCPUS $NOSMTCPUS"
 

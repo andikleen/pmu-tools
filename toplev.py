@@ -34,7 +34,8 @@ known_cpus = (
     ("hsw", (60, 70, 69 )),
     ("hsx", (63, )),
     ("slm", (55, 77, 76, )),
-    ("bdw", (61, 86, 71, )),
+    ("bdw", (61, 71, )),
+    ("bdx", (79, 86, )),
     ("simple", ()),
     ("skl", (94, 78, )),
 )
@@ -1384,6 +1385,11 @@ elif cpu.cpu == "bdw":
     bdw_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
     model = bdw_client_ratios
+elif cpu.cpu == "bdx":
+    import bdx_server_ratios
+    bdx_server_ratios.smt_enabled = cpu.ht
+    smt_mode = cpu.ht
+    model = bdx_server_ratios
 elif cpu.cpu == "skl":
     import skl_client_ratios
     skl_client_ratios.smt_enabled = cpu.ht
