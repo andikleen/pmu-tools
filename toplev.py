@@ -413,11 +413,13 @@ fixed_set = frozenset(fixed_counters.keys())
 fixed_to_name = dict(zip(fixed_counters.values(), fixed_counters.keys()))
 
 def separator(x):
-    if x.startswith("cpu") or x.startswith("power") or x.startswith("uncore"):
+    if x.startswith("cpu"):
         return ""
     return ":"
 
 def add_filter_event(e):
+    if "/" in e and not e.startswith("cpu"):
+        return e
     s = separator(e)
     if not e.endswith(s + ring_filter):
         return e + s + ring_filter
@@ -713,6 +715,12 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
             l = inf.readline()
             if not l:
                 break
+            l = l.strip()
+
+            # some perf versions break CSV output lines incorrectly for power events
+            if l.endswith("Joules"):
+                l2 = inf.readline()
+                l = l + l2.strip()
         except exceptions.IOError:
              # handle pty EIO
              break
@@ -732,7 +740,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                         valstats = defaultdict(list)
                     prev_interval = interval
 
-	n = l.strip().split(";")
+	n = l.split(";")
 
         # filter out the empty unit field added by 3.14
         n = filter(lambda x: x != "" and x != "Joules", n)
@@ -1038,6 +1046,19 @@ def _find_final(bn, level):
 def find_final(bn):
     return _find_final(bn, 0)
 
+pmu_does_not_exist = set()
+
+def missing_pmu(e):
+    m = re.match(r"([a-z0-9_]+)/", e)
+    if m:
+        pmu = m.group(1)
+        if pmu in pmu_does_not_exist:
+            return True
+        if not os.path.isdir("/sys/devices/%s" % pmu):
+            pmu_does_not_exist.add(pmu)
+            return True
+    return False
+
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
@@ -1135,6 +1156,7 @@ class Runner:
     def collect(self):
         bad_nodes = set()
         bad_events = set()
+        unsup_nodes = set()
 	min_kernel = []
         for obj in self.olist:
             obj.evlevels = []
@@ -1146,6 +1168,9 @@ class Runner:
             if any(unsup):
                 bad_nodes.add(obj)
                 bad_events |= set(unsup)
+            unsup = [x for x in obj.evlist if missing_pmu(x)]
+            if any(unsup):
+                unsup_nodes.add(obj)
         if len(bad_nodes) > 0 and not args.quiet:
             if args.force_events:
                 pwrap("warning: Using --force-events. Nodes: " +
@@ -1159,6 +1184,9 @@ class Runner:
 		    print "Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0])
 	        print "Use --force-events to override (may result in wrong measurements)"
                 self.olist = [x for x in self.olist if x not in bad_nodes]
+        if len(unsup_nodes) > 0 and not args.quiet:
+            pwrap("Nodes " + " ".join(x.name for x in unsup_nodes) + " has unsupported PMUs")
+            self.olist = [x for x in self.olist if x not in unsup_nodes]
 
     # fit events into available counters
     # simple first fit algorithm
