@@ -199,6 +199,10 @@ def TSX_Transactional_Cycles(self, EV, level):
 def TSX_Aborted_Cycles(self, EV, level):
     return (EV("CPU_CLK_UNHALTED.THREAD_P:tx", level) - EV("CPU_CLK_UNHALTED.THREAD_P:cp", level)) / EV("CPU_CLK_UNHALTED.THREAD", level)
 
+# Average CPU Utilization
+def CPU_Utilization(self, EV, level):
+    return EV("CPU_CLK_UNHALTED.REF_TSC", level) / EV("msr/tsc/", 0)
+
 # Average Frequency Utilization relative nominal frequency
 def Turbo_Utilization(self, EV, level):
     return CLKS(self, EV, level) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
@@ -222,10 +226,6 @@ def MEM_Request_Latency(self, EV, level):
 # Run duration time in seconds
 def Time(self, EV, level):
     return DurationTimeInSeconds(self, EV, level)
-
-# PerfMon Event Multiplexing accuracy indicator
-def MUX(self, EV, level):
-    return EV("CPU_CLK_UNHALTED.THREAD_P", level) / EV("CPU_CLK_UNHALTED.THREAD", level)
 
 def Socket_CLKS(self, EV, level):
     return EV("UNC_CLOCK.SOCKET", level)
@@ -2007,6 +2007,22 @@ Memory mode (HLE or RTM)"""
             self.errcount += 1
 	    self.val = 0
 
+class Metric_CPU_Utilization:
+    name = "CPU_Utilization"
+    desc = """
+Average CPU Utilization"""
+    domain = "Metric"
+    maxval = 100
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = CPU_Utilization(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("CPU_Utilization zero division")
+            self.errcount += 1
+	    self.val = 0
+
 class Metric_Turbo_Utilization:
     name = "Turbo_Utilization"
     desc = """
@@ -2102,22 +2118,6 @@ Run duration time in seconds"""
 	    self.val = Time(self, EV, 0)
         except ZeroDivisionError:
             print_error("Time zero division")
-            self.errcount += 1
-	    self.val = 0
-
-class Metric_MUX:
-    name = "MUX"
-    desc = """
-PerfMon Event Multiplexing accuracy indicator"""
-    domain = "Clocks"
-    maxval = 0
-    errcount = 0
-
-    def compute(self, EV):
-        try:
-	    self.val = MUX(self, EV, 0)
-        except ZeroDivisionError:
-            print_error("MUX zero division")
             self.errcount += 1
 	    self.val = 0
 
@@ -2326,12 +2326,12 @@ class Setup:
         n = Metric_Load_Miss_Real_Latency() ; r.metric(n)
         n = Metric_TSX_Transactional_Cycles() ; r.metric(n)
         n = Metric_TSX_Aborted_Cycles() ; r.metric(n)
+        n = Metric_CPU_Utilization() ; r.metric(n)
         n = Metric_Turbo_Utilization() ; r.metric(n)
         n = Metric_SMT_2T_Utilization() ; r.metric(n)
         n = Metric_Kernel_Utilization() ; r.metric(n)
         n = Metric_MEM_BW_GBs() ; r.metric(n)
         n = Metric_MEM_Request_Latency() ; r.metric(n)
         n = Metric_Time() ; r.metric(n)
-        #n = Metric_MUX() ; r.metric(n)
         n = Metric_Socket_CLKS() ; r.metric(n)
         n = Metric_SLOTS() ; r.metric(n)

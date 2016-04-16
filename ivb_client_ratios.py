@@ -202,6 +202,10 @@ def CORE_CLKS(self, EV, level):
 def Load_Miss_Real_Latency(self, EV, level):
     return EV("L1D_PEND_MISS.PENDING", level) /(EV("MEM_LOAD_UOPS_RETIRED.L1_MISS", level) + EV("MEM_LOAD_UOPS_RETIRED.HIT_LFB", level))
 
+# Average CPU Utilization
+def CPU_Utilization(self, EV, level):
+    return EV("CPU_CLK_UNHALTED.REF_TSC", level) / EV("msr/tsc/", 0)
+
 # Giga Floating Point Operations Per Second
 def GFLOPs(self, EV, level):
     return FLOP_Count(self, EV, level) / OneBillion / DurationTimeInSeconds(self, EV, level)
@@ -233,10 +237,6 @@ def MEM_Parallel_Requests(self, EV, level):
 # Run duration time in seconds
 def Time(self, EV, level):
     return DurationTimeInSeconds(self, EV, level)
-
-# PerfMon Event Multiplexing accuracy indicator
-def MUX(self, EV, level):
-    return EV("CPU_CLK_UNHALTED.THREAD_P", level) / EV("CPU_CLK_UNHALTED.THREAD", level)
 
 def Socket_CLKS(self, EV, level):
     return EV("UNC_CLOCK.SOCKET", level)
@@ -2127,6 +2127,22 @@ Actual Average Latency for L1 data-cache miss demand loads"""
             self.errcount += 1
 	    self.val = 0
 
+class Metric_CPU_Utilization:
+    name = "CPU_Utilization"
+    desc = """
+Average CPU Utilization"""
+    domain = "Metric"
+    maxval = 100
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = CPU_Utilization(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("CPU_Utilization zero division")
+            self.errcount += 1
+	    self.val = 0
+
 class Metric_GFLOPs:
     name = "GFLOPs"
     desc = """
@@ -2255,22 +2271,6 @@ Run duration time in seconds"""
 	    self.val = Time(self, EV, 0)
         except ZeroDivisionError:
             print_error("Time zero division")
-            self.errcount += 1
-	    self.val = 0
-
-class Metric_MUX:
-    name = "MUX"
-    desc = """
-PerfMon Event Multiplexing accuracy indicator"""
-    domain = "Clocks"
-    maxval = 0
-    errcount = 0
-
-    def compute(self, EV):
-        try:
-	    self.val = MUX(self, EV, 0)
-        except ZeroDivisionError:
-            print_error("MUX zero division")
             self.errcount += 1
 	    self.val = 0
 
@@ -2495,6 +2495,7 @@ class Setup:
         n = Metric_Page_Walks_Use() ; r.metric(n)
         n = Metric_CORE_CLKS() ; r.metric(n)
         n = Metric_Load_Miss_Real_Latency() ; r.metric(n)
+        n = Metric_CPU_Utilization() ; r.metric(n)
         n = Metric_GFLOPs() ; r.metric(n)
         n = Metric_Turbo_Utilization() ; r.metric(n)
         n = Metric_SMT_2T_Utilization() ; r.metric(n)
@@ -2503,6 +2504,5 @@ class Setup:
         n = Metric_MEM_Request_Latency() ; r.metric(n)
         n = Metric_MEM_Parallel_Requests() ; r.metric(n)
         n = Metric_Time() ; r.metric(n)
-        #n = Metric_MUX() ; r.metric(n)
         n = Metric_Socket_CLKS() ; r.metric(n)
         n = Metric_SLOTS() ; r.metric(n)
