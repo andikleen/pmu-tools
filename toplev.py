@@ -714,6 +714,12 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
             l = inf.readline()
             if not l:
                 break
+            l = l.strip()
+
+            # some perf versions break CSV output lines incorrectly for power events
+            if l.endswith("Joules"):
+                l2 = inf.readline()
+                l = l + l2.strip()
         except exceptions.IOError:
              # handle pty EIO
              break
@@ -733,7 +739,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                         valstats = defaultdict(list)
                     prev_interval = interval
 
-	n = l.strip().split(";")
+	n = l.split(";")
 
         # filter out the empty unit field added by 3.14
         n = filter(lambda x: x != "" and x != "Joules", n)
