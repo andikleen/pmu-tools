@@ -118,6 +118,8 @@ limited_set = set(limited_counters.keys())
 
 smt_mode = False
 
+errata_events = dict()
+
 perf = os.getenv("PERF")
 if not perf:
     perf = "perf"
@@ -303,6 +305,7 @@ p.add_argument('--columns', help='Print CPU output in multiple columns', action=
 p.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
 p.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
 p.add_argument('--bottleneck', help='Show critical bottleneck', action='store_true')
+p.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true')
 args, rest = p.parse_known_args()
 
 rest = [x for x in rest if x != "--"]
@@ -432,6 +435,7 @@ def add_filter(s):
 notfound_cache = set()
 
 def raw_event(i, name="", period=False):
+    orig_i = i
     if i.count(".") > 0:
         if i in fixed_counters:
             return fixed_counters[i]
@@ -450,7 +454,7 @@ def raw_event(i, name="", period=False):
             print "Event", oi, "maps to multiple units. Ignored."
             return "dummy" # FIXME
         emap.update_event(e.output(noname=True), e)
-        # next two things should be moved somewhere else
+	# next three things should be moved somewhere else
         if i.startswith("uncore"):
             outgroup_events.add(i)
         if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
@@ -459,6 +463,8 @@ def raw_event(i, name="", period=False):
             # CPUs
             limited_counters[i] = int(e.counter.split(",")[0])
             limited_set.add(i)
+	if e.errata:
+	    errata_events[orig_i] = e.errata
     return i
 
 # generate list of converted raw events from events string
@@ -471,8 +477,12 @@ def mark_fixed(s):
         return "%s[F]" % s
     return s
 
-def pwrap(s, linelen=60, indent=""):
+def pwrap(s, linelen=70, indent=""):
     print indent + ("\n" + indent).join(textwrap.wrap(s, linelen, break_long_words=False))
+
+def pwrap_not_quiet(s, linelen=70, indent=""):
+    if not args.quiet:
+	pwrap(s, linelen, indent)
 
 def has(obj, name):
     return name in obj.__class__.__dict__
@@ -1156,6 +1166,8 @@ class Runner:
         bad_nodes = set()
         bad_events = set()
         unsup_nodes = set()
+	errata_nodes = set()
+	errata_names = set()
 	min_kernel = []
         for obj in self.olist:
             obj.evlevels = []
@@ -1163,6 +1175,8 @@ class Runner:
             obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist)
             obj.nc = needed_counters(obj.evnum)
+
+	    # work arounds for lots of different problems
 	    unsup = [x for x in obj.evlist if unsup_event(x, unsup_events, min_kernel)]
             if any(unsup):
                 bad_nodes.add(obj)
@@ -1170,22 +1184,32 @@ class Runner:
             unsup = [x for x in obj.evlist if missing_pmu(x)]
             if any(unsup):
                 unsup_nodes.add(obj)
-        if len(bad_nodes) > 0 and not args.quiet:
+	    errata = [errata_events[x] for x in obj.evlist if x in errata_events]
+	    if any(errata):
+		errata_nodes.add(obj)
+		errata_names |= set(errata)
+	if bad_nodes:
             if args.force_events:
-                pwrap("warning: Using --force-events. Nodes: " +
-		   " ".join([x.name for x in bad_nodes]) + " may be unreliable")
+		pwrap_not_quiet("warning: Using --force-events. Nodes: " +
+			" ".join([x.name for x in bad_nodes]) + " may be unreliable")
             else:
-	        pwrap("warning: removing " +
+		if not args.quiet:
+		    pwrap("warning: removing " +
 		       " ".join([x.name for x in bad_nodes]) +
 		       " due to unsupported events in kernel: " +
 		       " ".join(sorted(bad_events)), 80, "")
-	        if min_kernel:
-		    print "Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0])
-	        print "Use --force-events to override (may result in wrong measurements)"
+		    if min_kernel:
+			print "Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0])
+		    print "Use --force-events to override (may result in wrong measurements)"
                 self.olist = [x for x in self.olist if x not in bad_nodes]
-        if len(unsup_nodes) > 0 and not args.quiet:
-            pwrap("Nodes " + " ".join(x.name for x in unsup_nodes) + " has unsupported PMUs")
+	if unsup_nodes:
+	    pwrap_not_quiet("Nodes " + " ".join(x.name for x in unsup_nodes) + " has unsupported PMUs")
             self.olist = [x for x in self.olist if x not in unsup_nodes]
+	if errata_nodes and not args.ignore_errata:
+	    pwrap_not_quiet("Nodes " + " ".join(x.name for x in errata_nodes) + " have errata " +
+			" ".join(errata_names) + " and were disabled. " +
+			"Override with --ignore-errata")
+	    self.olist = [x for x in self.olist if x in errata_nodes]
 
     # fit events into available counters
     # simple first fit algorithm
