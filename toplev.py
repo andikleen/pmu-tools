@@ -934,6 +934,7 @@ class BadEvent:
     def __init__(self, name):
         self.event = name
 
+# XXX check for errata
 def sample_event(e):
     ev = emap.getevent(e.replace("_PS", ""))
     if not ev:
