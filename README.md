@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now checks for event errata and automatically disables affected nodes, unless --ignore-errata is specified.
 * ucevents now supports Broadwell Xeon-D
 * jevents has now limited support for Uncore events
 * toplev updated to Ahmad Yasin's TopDown/TMAM 3.02:
