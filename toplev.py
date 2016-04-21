@@ -1361,18 +1361,21 @@ def do_sample(sample_obj, rest, count):
     sl = [raw_event(s[0], s[1] + "_" + remove_pp(s[0]).replace(".", "_"), period=True) for s in nsamp]
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
-    print "Sampling:"
+    if not args.quiet:
+        print "Sampling:"
     extra_args = args.sample_args.replace("+", "-").split()
     perf_data = args.sample_basename
     if count:
         perf_data += ".%d" % count
     sperf = [perf, "record" ] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
-    print " ".join(sperf)
+    if not args.quiet:
+        print " ".join(sperf)
     if args.run_sample:
 	ret = os.system(" ".join(sperf))
         if ret:
             sys.exit(ret)
-        print "Run `" + perf + " report -i %s%s' to show the sampling results" % (
+	if not args.quiet:
+            print "Run `" + perf + " report -i %s%s' to show the sampling results" % (
 		perf_data,
 		" --no-branch-history"  if "-b" in extra_args else "")
 
