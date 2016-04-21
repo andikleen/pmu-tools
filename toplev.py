@@ -293,6 +293,7 @@ p.add_argument('--show-sample', help='Show command line to rerun workload with s
 p.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
 p.add_argument('--sample-args', help='Extra rguments to pass to perf record for sampling. Use + to specify -', default='-g')
 p.add_argument('--sample-repeat', help='Repeat measurement and sampling N times. This interleaves counting and sampling', type=int)
+p.add_argument('--sample-basename', help='Base name of sample perf.data files', default="perf.data")
 p.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file', type=argparse.FileType('w'))
 p.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
 p.add_argument('--power', help='Display power metrics', action='store_true')
@@ -1362,9 +1363,9 @@ def do_sample(sample_obj, rest, count):
     sample = ",".join([x for x in sl if x])
     print "Sampling:"
     extra_args = args.sample_args.replace("+", "-").split()
-    perf_data = "perf.data"
+    perf_data = args.sample_basename
     if count:
-        perf_data = "perf.data.%d" % count
+        perf_data += ".%d" % count
     sperf = [perf, "record" ] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
     print " ".join(sperf)
     if args.run_sample:

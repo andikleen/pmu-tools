@@ -5,6 +5,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now supports --sample-basename to specify the basename of the
+sample perf.data file
 * toplev now supports --sample-repeat to interleave measuring and sampling for
 longer workloads.
 * toplev now supports --sample-args to pass different arguments to the sample perf.
