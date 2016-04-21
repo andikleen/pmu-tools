@@ -82,6 +82,9 @@ def ORO_DRD_Any_Cycles(self, EV, level):
 def ORO_DRD_BW_Cycles(self, EV, level):
     return EV(lambda EV , level : min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("OFFCORE_REQUESTS_OUTSTANDING.ALL_DATA_RD:c6", level)) , level )
 
+def ORO_Demand_RFO_C1(self, EV, level):
+    return EV(lambda EV , level : min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("OFFCORE_REQUESTS_OUTSTANDING.CYCLES_WITH_DEMAND_RFO", level)) , level )
+
 def Store_L2_Hit_Cycles(self, EV, level):
     return 0
 
@@ -815,6 +818,31 @@ performance penalty of such blocked loads."""
             self.thresh = False
         return self.val
 
+class Lock_Latency:
+    name = "Lock_Latency"
+    domain = "Clocks"
+    area = "BE/Mem"
+    desc = """
+This metric represents cycles fraction the CPU spent
+handling cache misses due to lock operations. Due to the
+microarchitecture handling of locks, they are classified as
+L1_Bound regardless of what memory source satisfied them."""
+    level = 4
+    htoff = False
+    sample = ['MEM_UOPS_RETIRED.LOCK_LOADS:pp']
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+        try:
+            self.val = Mem_Lock_St_Fraction(self, EV, 4)* ORO_Demand_RFO_C1(self, EV, 4) / CLKS(self, EV, 4 )
+            self.thresh = (self.val > 0.2) and self.parent.thresh
+        except ZeroDivisionError:
+            print_error("Lock_Latency zero division")
+            self.errcount += 1
+            self.val = 0
+            self.thresh = False
+        return self.val
+
 class Split_Loads:
     name = "Split_Loads"
     domain = "Clocks"
@@ -1148,6 +1176,30 @@ flagged should any of these cases be a bottleneck."""
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
             print_error("Stores_Bound zero division")
+            self.errcount += 1
+            self.val = 0
+            self.thresh = False
+        return self.val
+
+class Store_Latency:
+    name = "Store_Latency"
+    domain = "Clocks"
+    area = "BE/Mem"
+    desc = """
+This metric represents cycles fraction the CPU spent
+handling long-latency store misses (missing 2nd level
+cache)."""
+    level = 4
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+        try:
+            self.val = (Store_L2_Hit_Cycles(self, EV, 4) +(1 - Mem_Lock_St_Fraction(self, EV, 4))* ORO_Demand_RFO_C1(self, EV, 4)) / CLKS(self, EV, 4 )
+            self.thresh = (self.val > 0.2) and self.parent.thresh
+        except ZeroDivisionError:
+            print_error("Store_Latency zero division")
             self.errcount += 1
             self.val = 0
             self.thresh = False
@@ -1681,6 +1733,34 @@ such as vectorization."""
             self.thresh = False
         return self.val
 
+class X87_Use:
+    name = "X87_Use"
+    domain = "Uops"
+    area = "RET"
+    desc = """
+This metric serves as an approximation of legacy x87 usage.
+It accounts for instructions beyond X87 FP arithmetic
+operations; hence may be used as a thermometer to avoid X87
+high usage and preferably upgrade to modern ISA. Tip:
+consider compiler flags to generate newer AVX (or SSE)
+instruction sets, which typically perform better and feature
+vectors."""
+    level = 4
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+        try:
+            self.val = EV("INST_RETIRED.X87", 4)* UPI(self, EV, 4) / EV("UOPS_RETIRED.RETIRE_SLOTS", 4 )
+            self.thresh = (self.val > 0.1) and self.parent.thresh
+        except ZeroDivisionError:
+            print_error("X87_Use zero division")
+            self.errcount += 1
+            self.val = 0
+            self.thresh = False
+        return self.val
+
 class Microcode_Sequencer:
     name = "Microcode_Sequencer"
     domain = "Slots"
@@ -2180,6 +2260,7 @@ class Setup:
         n = L1_Bound() ; r.run(n) ; o["L1_Bound"] = n
         n = DTLB_Load() ; r.run(n) ; o["DTLB_Load"] = n
         n = Store_Fwd_Blk() ; r.run(n) ; o["Store_Fwd_Blk"] = n
+        n = Lock_Latency() ; r.run(n) ; o["Lock_Latency"] = n
         n = Split_Loads() ; r.run(n) ; o["Split_Loads"] = n
         n = G4K_Aliasing() ; r.run(n) ; o["G4K_Aliasing"] = n
         n = FB_Full() ; r.run(n) ; o["FB_Full"] = n
@@ -2193,6 +2274,7 @@ class Setup:
         n = MEM_Bandwidth() ; r.run(n) ; o["MEM_Bandwidth"] = n
         n = MEM_Latency() ; r.run(n) ; o["MEM_Latency"] = n
         n = Stores_Bound() ; r.run(n) ; o["Stores_Bound"] = n
+        n = Store_Latency() ; r.run(n) ; o["Store_Latency"] = n
         n = False_Sharing() ; r.run(n) ; o["False_Sharing"] = n
         n = Split_Stores() ; r.run(n) ; o["Split_Stores"] = n
         n = DTLB_Store() ; r.run(n) ; o["DTLB_Store"] = n
@@ -2213,6 +2295,7 @@ class Setup:
         n = Port_7() ; r.run(n) ; o["Port_7"] = n
         n = Retiring() ; r.run(n) ; o["Retiring"] = n
         n = Base() ; r.run(n) ; o["Base"] = n
+        n = X87_Use() ; r.run(n) ; o["X87_Use"] = n
         n = Microcode_Sequencer() ; r.run(n) ; o["Microcode_Sequencer"] = n
         n = Assists() ; r.run(n) ; o["Assists"] = n
 
@@ -2235,6 +2318,7 @@ class Setup:
         o["L1_Bound"].parent = o["Memory_Bound"]
         o["DTLB_Load"].parent = o["L1_Bound"]
         o["Store_Fwd_Blk"].parent = o["L1_Bound"]
+        o["Lock_Latency"].parent = o["L1_Bound"]
         o["Split_Loads"].parent = o["L1_Bound"]
         o["G4K_Aliasing"].parent = o["L1_Bound"]
         o["FB_Full"].parent = o["L1_Bound"]
@@ -2248,6 +2332,7 @@ class Setup:
         o["MEM_Bandwidth"].parent = o["MEM_Bound"]
         o["MEM_Latency"].parent = o["MEM_Bound"]
         o["Stores_Bound"].parent = o["Memory_Bound"]
+        o["Store_Latency"].parent = o["Stores_Bound"]
         o["False_Sharing"].parent = o["Stores_Bound"]
         o["Split_Stores"].parent = o["Stores_Bound"]
         o["DTLB_Store"].parent = o["Stores_Bound"]
@@ -2267,6 +2352,7 @@ class Setup:
         o["Port_6"].parent = o["G3m_Ports_Utilized"]
         o["Port_7"].parent = o["G3m_Ports_Utilized"]
         o["Base"].parent = o["Retiring"]
+        o["X87_Use"].parent = o["Base"]
         o["Microcode_Sequencer"].parent = o["Retiring"]
         o["Assists"].parent = o["Microcode_Sequencer"]
 
@@ -2298,10 +2384,12 @@ class Setup:
 	o["MS_Switches"].sibling = o["Microcode_Sequencer"]
 	o["Bad_Speculation"].sibling = o["Branch_Resteers"]
 	o["L1_Bound"].sibling = o["G1_Port_Utilized"]
+	o["Lock_Latency"].sibling = o["Store_Latency"]
 	o["FB_Full"].sibling = o["SQ_Full"]
 	o["Contested_Accesses"].sibling = o["False_Sharing"]
 	o["SQ_Full"].sibling = o["FB_Full"]
 	o["MEM_Bandwidth"].sibling = o["FB_Full"]
+	o["Store_Latency"].sibling = o["Lock_Latency"]
 	o["False_Sharing"].sibling = o["Contested_Accesses"]
 	o["Split_Stores"].sibling = o["Port_4"]
 	o["G1_Port_Utilized"].sibling = o["L1_Bound"]

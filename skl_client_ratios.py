@@ -218,9 +218,32 @@ def SMT_2T_Utilization(self, EV, level):
 def Kernel_Utilization(self, EV, level):
     return EV("CPU_CLK_UNHALTED.REF_TSC:sup", level) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
 
+# Average external Memory Bandwidth Use for reads and writes [GB / sec]
+def MEM_BW_GBs(self, EV, level):
+    return 64 *(EV("UNC_ARB_TRK_REQUESTS.ALL", level) + EV("UNC_ARB_COH_TRK_REQUESTS.ALL", level)) / OneMillion / DurationTimeInSeconds(self, EV, level) / 1000
+
+# Average latency of all requests to external memory (in Uncore cycles)
+def MEM_Request_Latency(self, EV, level):
+    return EV("UNC_ARB_TRK_OCCUPANCY.ALL", level) / EV("UNC_ARB_TRK_REQUESTS.ALL", level)
+
+# Average number of parallel requests to external memory (in Uncore cycles). Accounts for all requests
+def MEM_Parallel_Requests(self, EV, level):
+    return EV("UNC_ARB_TRK_OCCUPANCY.ALL", level) / EV("UNC_ARB_TRK_OCCUPANCY.CYCLES_WITH_ANY_REQUEST", level)
+
+# Average latency of data read request to external memory (in Uncore cycles). Accounts for demand loads and L1/L2 prefetches
+def MEM_Read_Latency(self, EV, level):
+    return EV("UNC_ARB_TRK_OCCUPANCY.DRD_DIRECT", level) / EV("UNC_ARB_TRK_REQUESTS.DRD_DIRECT", level)
+
+# Average number of parallel data read requests to external memory (in Uncore cycles). Accounts for demand loads and L1/L2 prefetches
+def MEM_Parallel_Reads(self, EV, level):
+    return EV("UNC_ARB_TRK_OCCUPANCY.DRD_DIRECT", level) / EV("UNC_ARB_TRK_OCCUPANCY.DRD_DIRECT:c1", level)
+
 # Run duration time in seconds
 def Time(self, EV, level):
     return DurationTimeInSeconds(self, EV, level)
+
+def Socket_CLKS(self, EV, level):
+    return EV("UNC_CLOCK.SOCKET", level)
 
 # Total issue-pipeline slots
 def SLOTS(self, EV, level):
@@ -926,6 +949,8 @@ performance."""
         try:
             self.val = (1 if self.FB_Full.compute(EV)< 1.5 else LOAD_L2_HIT(self, EV, 3) /(LOAD_L2_HIT(self, EV, 3) + EV("L1D_PEND_MISS.FB_FULL:c1", 3)))* L2_Bound_Fraction(self, EV, 3 )
             EV("L1D_PEND_MISS.FB_FULL:c1", 3)
+            LOAD_L2_HIT(self, EV, 3)
+            L2_Bound_Fraction(self, EV, 3)
             self.thresh = (self.val > 0.03) and self.parent.thresh
         except ZeroDivisionError:
             print_error("L2_Bound zero division")
@@ -2242,6 +2267,93 @@ Fraction of cycles spent in Kernel mode"""
             self.errcount += 1
 	    self.val = 0
 
+class Metric_MEM_BW_GBs:
+    name = "MEM_BW_GBs"
+    desc = """
+Average external Memory Bandwidth Use for reads and writes
+[GB / sec]"""
+    domain = "Metric"
+    maxval = 100
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = MEM_BW_GBs(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("MEM_BW_GBs zero division")
+            self.errcount += 1
+	    self.val = 0
+
+class Metric_MEM_Request_Latency:
+    name = "MEM_Request_Latency"
+    desc = """
+Average latency of all requests to external memory (in
+Uncore cycles)"""
+    domain = "Metric"
+    maxval = 1000
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = MEM_Request_Latency(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("MEM_Request_Latency zero division")
+            self.errcount += 1
+	    self.val = 0
+
+class Metric_MEM_Parallel_Requests:
+    name = "MEM_Parallel_Requests"
+    desc = """
+Average number of parallel requests to external memory (in
+Uncore cycles). Accounts for all requests"""
+    domain = "Metric"
+    maxval = 100
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = MEM_Parallel_Requests(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("MEM_Parallel_Requests zero division")
+            self.errcount += 1
+	    self.val = 0
+
+class Metric_MEM_Read_Latency:
+    name = "MEM_Read_Latency"
+    desc = """
+Average latency of data read request to external memory (in
+Uncore cycles). Accounts for demand loads and L1/L2
+prefetches"""
+    domain = "Metric"
+    maxval = 1000
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = MEM_Read_Latency(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("MEM_Read_Latency zero division")
+            self.errcount += 1
+	    self.val = 0
+
+class Metric_MEM_Parallel_Reads:
+    name = "MEM_Parallel_Reads"
+    desc = """
+Average number of parallel data read requests to external
+memory (in Uncore cycles). Accounts for demand loads and
+L1/L2 prefetches"""
+    domain = "Metric"
+    maxval = 100
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = MEM_Parallel_Reads(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("MEM_Parallel_Reads zero division")
+            self.errcount += 1
+	    self.val = 0
+
 class Metric_Time:
     name = "Time"
     desc = """
@@ -2255,6 +2367,22 @@ Run duration time in seconds"""
 	    self.val = Time(self, EV, 0)
         except ZeroDivisionError:
             print_error("Time zero division")
+            self.errcount += 1
+	    self.val = 0
+
+class Metric_Socket_CLKS:
+    name = "Socket_CLKS"
+    desc = """
+"""
+    domain = "Count"
+    maxval = 0
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = Socket_CLKS(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("Socket_CLKS zero division")
             self.errcount += 1
 	    self.val = 0
 
@@ -2468,5 +2596,11 @@ class Setup:
         n = Metric_Turbo_Utilization() ; r.metric(n)
         n = Metric_SMT_2T_Utilization() ; r.metric(n)
         n = Metric_Kernel_Utilization() ; r.metric(n)
+        n = Metric_MEM_BW_GBs() ; r.metric(n)
+        n = Metric_MEM_Request_Latency() ; r.metric(n)
+        n = Metric_MEM_Parallel_Requests() ; r.metric(n)
+        n = Metric_MEM_Read_Latency() ; r.metric(n)
+        n = Metric_MEM_Parallel_Reads() ; r.metric(n)
         n = Metric_Time() ; r.metric(n)
+        n = Metric_Socket_CLKS() ; r.metric(n)
         n = Metric_SLOTS() ; r.metric(n)

@@ -77,6 +77,9 @@ def ORO_DRD_Any_Cycles(self, EV, level):
 def ORO_DRD_BW_Cycles(self, EV, level):
     return EV(lambda EV , level : min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("OFFCORE_REQUESTS_OUTSTANDING.ALL_DATA_RD:c4", level)) , level )
 
+def ORO_Demand_RFO_C1(self, EV, level):
+    return EV(lambda EV , level : min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("OFFCORE_REQUESTS_OUTSTANDING.CYCLES_WITH_DEMAND_RFO", level)) , level )
+
 def Store_L2_Hit_Cycles(self, EV, level):
     return EV("L2_RQSTS.RFO_HIT", level)* Mem_L2_Store_Cost *(1 - Mem_Lock_St_Fraction(self, EV, level))
 
@@ -225,6 +228,18 @@ def MEM_BW_GBs(self, EV, level):
 # Average latency of all requests to external memory (in Uncore cycles)
 def MEM_Request_Latency(self, EV, level):
     return EV("UNC_ARB_TRK_OCCUPANCY.ALL", level) / EV("UNC_ARB_TRK_REQUESTS.ALL", level)
+
+# Average number of parallel requests to external memory (in Uncore cycles). Accounts for all requests
+def MEM_Parallel_Requests(self, EV, level):
+    return EV("UNC_ARB_TRK_OCCUPANCY.ALL", level) / EV("UNC_ARB_TRK_OCCUPANCY.CYCLES_WITH_ANY_REQUEST", level)
+
+# Average latency of data read request to external memory (in Uncore cycles). Accounts for demand loads and L1/L2 prefetches
+def MEM_Read_Latency(self, EV, level):
+    return EV("UNC_ARB_TRK_OCCUPANCY.DRD_DIRECT", level) / EV("UNC_ARB_TRK_REQUESTS.DRD_DIRECT", level)
+
+# Average number of parallel data read requests to external memory (in Uncore cycles). Accounts for demand loads and L1/L2 prefetches
+def MEM_Parallel_Reads(self, EV, level):
+    return EV("UNC_ARB_TRK_OCCUPANCY.DRD_DIRECT", level) / EV("UNC_ARB_TRK_OCCUPANCY.DRD_DIRECT:c1", level)
 
 # Run duration time in seconds
 def Time(self, EV, level):
@@ -818,6 +833,31 @@ performance penalty of such blocked loads."""
             self.thresh = False
         return self.val
 
+class Lock_Latency:
+    name = "Lock_Latency"
+    domain = "Clocks"
+    area = "BE/Mem"
+    desc = """
+This metric represents cycles fraction the CPU spent
+handling cache misses due to lock operations. Due to the
+microarchitecture handling of locks, they are classified as
+L1_Bound regardless of what memory source satisfied them."""
+    level = 4
+    htoff = False
+    sample = ['MEM_UOPS_RETIRED.LOCK_LOADS:pp']
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+        try:
+            self.val = Mem_Lock_St_Fraction(self, EV, 4)* ORO_Demand_RFO_C1(self, EV, 4) / CLKS(self, EV, 4 )
+            self.thresh = (self.val > 0.2) and self.parent.thresh
+        except ZeroDivisionError:
+            print_error("Lock_Latency zero division")
+            self.errcount += 1
+            self.val = 0
+            self.thresh = False
+        return self.val
+
 class Split_Loads:
     name = "Split_Loads"
     domain = "Clocks"
@@ -1151,6 +1191,30 @@ flagged should any of these cases be a bottleneck."""
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
             print_error("Stores_Bound zero division")
+            self.errcount += 1
+            self.val = 0
+            self.thresh = False
+        return self.val
+
+class Store_Latency:
+    name = "Store_Latency"
+    domain = "Clocks"
+    area = "BE/Mem"
+    desc = """
+This metric represents cycles fraction the CPU spent
+handling long-latency store misses (missing 2nd level
+cache)."""
+    level = 4
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    def compute(self, EV):
+        try:
+            self.val = (Store_L2_Hit_Cycles(self, EV, 4) +(1 - Mem_Lock_St_Fraction(self, EV, 4))* ORO_Demand_RFO_C1(self, EV, 4)) / CLKS(self, EV, 4 )
+            self.thresh = (self.val > 0.2) and self.parent.thresh
+        except ZeroDivisionError:
+            print_error("Store_Latency zero division")
             self.errcount += 1
             self.val = 0
             self.thresh = False
@@ -2237,6 +2301,59 @@ Uncore cycles)"""
             self.errcount += 1
 	    self.val = 0
 
+class Metric_MEM_Parallel_Requests:
+    name = "MEM_Parallel_Requests"
+    desc = """
+Average number of parallel requests to external memory (in
+Uncore cycles). Accounts for all requests"""
+    domain = "Metric"
+    maxval = 100
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = MEM_Parallel_Requests(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("MEM_Parallel_Requests zero division")
+            self.errcount += 1
+	    self.val = 0
+
+class Metric_MEM_Read_Latency:
+    name = "MEM_Read_Latency"
+    desc = """
+Average latency of data read request to external memory (in
+Uncore cycles). Accounts for demand loads and L1/L2
+prefetches"""
+    domain = "Metric"
+    maxval = 1000
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = MEM_Read_Latency(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("MEM_Read_Latency zero division")
+            self.errcount += 1
+	    self.val = 0
+
+class Metric_MEM_Parallel_Reads:
+    name = "MEM_Parallel_Reads"
+    desc = """
+Average number of parallel data read requests to external
+memory (in Uncore cycles). Accounts for demand loads and
+L1/L2 prefetches"""
+    domain = "Metric"
+    maxval = 100
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = MEM_Parallel_Reads(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("MEM_Parallel_Reads zero division")
+            self.errcount += 1
+	    self.val = 0
+
 class Metric_Time:
     name = "Time"
     desc = """
@@ -2312,6 +2429,7 @@ class Setup:
         n = L1_Bound() ; r.run(n) ; o["L1_Bound"] = n
         n = DTLB_Load() ; r.run(n) ; o["DTLB_Load"] = n
         n = Store_Fwd_Blk() ; r.run(n) ; o["Store_Fwd_Blk"] = n
+        n = Lock_Latency() ; r.run(n) ; o["Lock_Latency"] = n
         n = Split_Loads() ; r.run(n) ; o["Split_Loads"] = n
         n = G4K_Aliasing() ; r.run(n) ; o["G4K_Aliasing"] = n
         n = FB_Full() ; r.run(n) ; o["FB_Full"] = n
@@ -2325,6 +2443,7 @@ class Setup:
         n = MEM_Bandwidth() ; r.run(n) ; o["MEM_Bandwidth"] = n
         n = MEM_Latency() ; r.run(n) ; o["MEM_Latency"] = n
         n = Stores_Bound() ; r.run(n) ; o["Stores_Bound"] = n
+        n = Store_Latency() ; r.run(n) ; o["Store_Latency"] = n
         n = Split_Stores() ; r.run(n) ; o["Split_Stores"] = n
         n = DTLB_Store() ; r.run(n) ; o["DTLB_Store"] = n
         n = Core_Bound() ; r.run(n) ; o["Core_Bound"] = n
@@ -2371,6 +2490,7 @@ class Setup:
         o["L1_Bound"].parent = o["Memory_Bound"]
         o["DTLB_Load"].parent = o["L1_Bound"]
         o["Store_Fwd_Blk"].parent = o["L1_Bound"]
+        o["Lock_Latency"].parent = o["L1_Bound"]
         o["Split_Loads"].parent = o["L1_Bound"]
         o["G4K_Aliasing"].parent = o["L1_Bound"]
         o["FB_Full"].parent = o["L1_Bound"]
@@ -2384,6 +2504,7 @@ class Setup:
         o["MEM_Bandwidth"].parent = o["MEM_Bound"]
         o["MEM_Latency"].parent = o["MEM_Bound"]
         o["Stores_Bound"].parent = o["Memory_Bound"]
+        o["Store_Latency"].parent = o["Stores_Bound"]
         o["Split_Stores"].parent = o["Stores_Bound"]
         o["DTLB_Store"].parent = o["Stores_Bound"]
         o["Core_Bound"].parent = o["Backend_Bound"]
@@ -2442,9 +2563,11 @@ class Setup:
 	o["MS_Switches"].sibling = o["Microcode_Sequencer"]
 	o["Bad_Speculation"].sibling = o["Branch_Resteers"]
 	o["L1_Bound"].sibling = o["G1_Port_Utilized"]
+	o["Lock_Latency"].sibling = o["Store_Latency"]
 	o["FB_Full"].sibling = o["SQ_Full"]
 	o["SQ_Full"].sibling = o["FB_Full"]
 	o["MEM_Bandwidth"].sibling = o["FB_Full"]
+	o["Store_Latency"].sibling = o["Lock_Latency"]
 	o["Split_Stores"].sibling = o["Port_4"]
 	o["G1_Port_Utilized"].sibling = o["L1_Bound"]
 	o["Port_4"].sibling = o["Split_Stores"]
@@ -2476,6 +2599,9 @@ class Setup:
         n = Metric_Kernel_Utilization() ; r.metric(n)
         n = Metric_MEM_BW_GBs() ; r.metric(n)
         n = Metric_MEM_Request_Latency() ; r.metric(n)
+        n = Metric_MEM_Parallel_Requests() ; r.metric(n)
+        n = Metric_MEM_Read_Latency() ; r.metric(n)
+        n = Metric_MEM_Parallel_Reads() ; r.metric(n)
         n = Metric_Time() ; r.metric(n)
         n = Metric_Socket_CLKS() ; r.metric(n)
         n = Metric_SLOTS() ; r.metric(n)
