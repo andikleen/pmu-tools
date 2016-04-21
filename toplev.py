@@ -289,6 +289,8 @@ p.add_argument('--no-multiplex',
                action='store_true')
 p.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
 p.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
+p.add_argument('--sample-args', help='Extra rguments to pass to perf record for sampling. Use + to specify -', default='-g')
+p.add_argument('--sample-repeat', help='Repeat measurement and sampling N times. This interleaves counting and sampling', type=int)
 p.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file', type=argparse.FileType('w'))
 p.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
 p.add_argument('--power', help='Display power metrics', action='store_true')
@@ -343,6 +345,9 @@ if args.graph:
     if not args.quiet:
         print cmd
     args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
+
+if args.sample_repeat:
+    args.run_sample = True
 
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
@@ -1285,13 +1290,12 @@ def remove_pp(s):
 	return s[:-3]
     return s
 
-def print_sample(sample_obj, rest):
-    samples = []
+def do_sample(sample_obj, rest, count):
+    # XXX use :ppp if available
+    samples = [("cycles:pp", "Precise cycles", )]
     for obj in sample_obj:
 	for s in obj.sample:
 	    samples.append((s, obj.name))
-    if len(samples) == 0:
-	return
     nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
     nsamp = [(remove_pp(x[0]), x[1]) if unsup_event(x[0], unsup_pebs) else x
 		for x in nsamp]
@@ -1304,13 +1308,19 @@ def print_sample(sample_obj, rest):
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
     print "Sampling:"
-    sperf = [perf, "record", "-g", "-e", sample] + [x for x in rest if x != "-A"]
+    extra_args = args.sample_args.replace("+", "-").split()
+    perf_data = "perf.data"
+    if count:
+        perf_data = "perf.data.%d" % count
+    sperf = [perf, "record" ] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
     print " ".join(sperf)
     if args.run_sample:
 	ret = os.system(" ".join(sperf))
         if ret:
             sys.exit(ret)
-        print "Run `" + perf + " report' to show the sampling results"
+        print "Run `" + perf + " report -i %s%s' to show the sampling results" % (
+		perf_data,
+		" --no-branch-history"  if "-b" in extra_args else "")
 
 def sysctl(name):
     try:
@@ -1484,14 +1494,26 @@ elif args.columns:
 else:
     out = tl_output.OutputHuman(args.output, args, version)
 runner.schedule()
-try:
-    if args.no_multiplex:
-        ret = execute_no_multiplex(runner, out, rest)
-    else:
-        ret = execute(runner, out, rest)
-except KeyboardInterrupt:
-    sys.exit(1)
-runner.stat.compute_errors()
-if args.show_sample or args.run_sample:
-    print_sample(runner.sample_obj, rest)
+
+def measure_and_sample(count):
+    try:
+        if args.no_multiplex:
+            ret = execute_no_multiplex(runner, out, rest)
+        else:
+            ret = execute(runner, out, rest)
+    except KeyboardInterrupt:
+        sys.exit(1)
+    runner.stat.compute_errors()
+    if args.show_sample or args.run_sample:
+        do_sample(runner.sample_obj, rest, count)
+    return ret
+
+if args.sample_repeat:
+    for j in range(args.sample_repeat):
+        ret = measure_and_sample(j + 1)
+	if ret:
+            break
+else:
+    ret = measure_and_sample(None)
+
 sys.exit(ret)
