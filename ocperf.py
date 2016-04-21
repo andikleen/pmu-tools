@@ -116,8 +116,8 @@ qual_map = (
     ("cp", "in_tx_cp=1", 0, ""))
 
 qualval_map = (
-    (r"c(mask=)?([0-9]+)", "cmask=%d", 24),
-    (r"(sa|sample-after)=([0-9x]+)", "period=%d", 0))
+    (r"c(mask=)?(0x[0-9a-f]+|[0-9]+)", "cmask=%d", 24),
+    (r"(sa|sample-after)=([0-9]+)", "period=%d", 0))
 
 # newe gets modified
 def convert_extra(extra, val, newe):
@@ -131,8 +131,8 @@ def convert_extra(extra, val, newe):
             m = re.match(j[0], extra)
             if m:
                 if j[2]:
-                    val |= int(m.group(2)) << j[2]
-                newe.append(j[1] % (int(m.group(2))))
+                    val |= int(m.group(2), 0) << j[2]
+                newe.append(j[1] % (int(m.group(2), 0)))
                 extra = extra[len(m.group(0)):]
                 found = True
                 break
@@ -253,6 +253,10 @@ class UncoreEvent:
         e.msr = None
         e.overflow = 0
         e.counter = "1" # dummy for toplev
+	if 'Errata' in row:
+	    e.errata = row['Errata']
+	else:
+	    e.errata = None
 
     #  {
     # "Unit": "CBO",
@@ -412,9 +416,14 @@ class Emap(object):
             if 'other' in m and m['other'] in row:
                 other = gethex('other') << 16
             else:
-                other = gethex('edge') << 18
+                other = 0
+            if 'edge' in m:
+                other |= gethex('edge') << 18
+            if 'any' in m:
                 other |= (gethex('any') | anyf) << 21
+            if 'cmask' in m:
                 other |= getdec('cmask') << 24
+            if 'invert' in m:
                 other |= gethex('invert') << 23
             val = code | (umask << 8) | other
             val &= EVMASK
@@ -427,6 +436,11 @@ class Emap(object):
             counter = get('counter')
             e.pname = "r%x" % (val,)
             e.newextra = ""
+            if other & ((1<<16)|(1<<17)):
+                if other & (1<<16):
+                    e.extra += "u"
+                if other & (1<<17):
+                    e.extra += "k"
             if ('msr_index' in m and m['msr_index'] in row
                     and get('msr_index') and get('msr_value')):
                 msrnum = gethex('msr_index')
@@ -454,9 +468,11 @@ class Emap(object):
                     d += " (Uses PEBS)"
                 else:
                     d = d.replace("(Precise Event)","") + " (Supports PEBS)"
+	    e.errata = None
             try:
                 if get('errata') != "null":
                     d += " Errata: " + get('errata')
+		    e.errata = get('errata')
             except KeyError:
                 pass
             e.desc = d
@@ -545,14 +561,15 @@ class EmapNativeJSON(Emap):
             'overflow': u'SampleAfterValue',
             'errata': u'Errata',
             'sav': u'SampleAfterValue',
+            'other': u'Other',
         }
         super(EmapNativeJSON, self).__init__()
         if name.find("JKT") >= 0:
             self.latego = True
         try:
             data = json.load(open(name, 'rb'))
-        except ValueError:
-            print >>sys.stderr, "Cannot open", name
+        except ValueError as e:
+            print >>sys.stderr, "Cannot open", name + ":", e.message
             return
         if u'PublicDescription' not in data[0]:
             mapping['desc'] = u'BriefDescription'

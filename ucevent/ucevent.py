@@ -44,6 +44,7 @@ cpu_mapping = {
     45: "jkt",
     62: "ivt",
     63: "hsx",
+    86: "bdxde",
 }
 
 args = None
@@ -85,7 +86,9 @@ class CPU:
         return max(self.socket)
 
     def socket_to_cpu(self, s):
-        return self.socket[s]
+        if s in self.socket:
+            return self.socket[s]
+        sys.exit("Invalid socket %d" % s)
         
 cpu = CPU()
 cputype = os.getenv("FORCECPU")
@@ -226,6 +229,8 @@ def cmp_cat(a, b):
     return cmp(a.lower(), b.lower())
 
 def get_pager():
+    if args.no_pager:
+	return sys.stdout, None
     f = sys.stdout
     if f.isatty():
         try:
@@ -248,9 +253,6 @@ def print_events(cat, desc, equation):
         ehdr = EventsHeader(c, f)
         ecount += print_list(f, events, c, desc, equation, ehdr)
         dcount += print_list(f, derived, c, desc, equation, ehdr)
-    if not cat:
-        assert ecount == len(events)
-        assert dcount == len(derived)
     if proc:
         f.close()
         proc.wait()
@@ -1053,6 +1055,8 @@ or use that CPU for the (very few) events that use core events''', type=int)
                    type=argparse.FileType('w'))
     p.add_argument('--resolve', action='store_true',
                    help='Only print resolved event names. Do not run perf.')
+    p.add_argument("--no-pager", action='store_true',
+		   help='Do not use a pager')
     p.add_argument('--debug', help=argparse.SUPPRESS)
     args = p.parse_args()
 

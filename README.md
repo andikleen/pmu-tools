@@ -10,6 +10,8 @@ longer workloads.
 * toplev now supports --sample-args to pass different arguments to the sample perf.
 The arguments need to be specified with + instead of - (--sample-args "+b")
 * toplev now automatically includes cycles with sampling
+* toplev now checks for event errata and automatically disables affected nodes, unless --ignore-errata is specified.
+* ucevents now supports Broadwell Xeon-D
 * jevents has now limited support for Uncore events
 * toplev updated to Ahmad Yasin's TopDown/TMAM 3.02:
 	- Tuned Memory_Bound vs Core_Bound threshold
