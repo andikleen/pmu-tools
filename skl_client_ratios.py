@@ -276,6 +276,7 @@ Bound."""
     sample = ['FRONTEND_RETIRED.LATENCY_GE_8:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = EV("IDQ_UOPS_NOT_DELIVERED.CORE", 1) / SLOTS(self, EV, 1 )
@@ -303,6 +304,7 @@ some period."""
     sample = ['FRONTEND_RETIRED.LATENCY_GE_16:pp', 'FRONTEND_RETIRED.LATENCY_GE_32:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = Pipeline_Width * EV("IDQ_UOPS_NOT_DELIVERED.CYCLES_0_UOPS_DELIV.CORE", 2) / SLOTS(self, EV, 2 )
@@ -328,6 +330,7 @@ improved hot code layout."""
     sample = ['FRONTEND_RETIRED.L2_MISS:pp', 'FRONTEND_RETIRED.L1I_MISS:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = EV("ICACHE_16B.IFDATA_STALL", 3) / CLKS(self, EV, 3 )
@@ -352,6 +355,7 @@ be considered here."""
     sample = ['FRONTEND_RETIRED.STLB_MISS:pp', 'FRONTEND_RETIRED.ITLB_MISS:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = EV("ICACHE_64B.IFTAG_STALL", 3) / CLKS(self, EV, 3 )
@@ -380,6 +384,7 @@ node may overlap with its siblings."""
     sample = ['BR_MISP_RETIRED.ALL_BRANCHES:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (EV("INT_MISC.CLEAR_RESTEER_CYCLES", 3) + 9 * EV("BACLEARS.ANY", 3)) / CLKS(self, EV, 3 )
@@ -413,6 +418,7 @@ manual.html"""
     sample = ['FRONTEND_RETIRED.DSB_MISS:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = EV("DSB2MITE_SWITCHES.PENALTY_CYCLES", 3) / CLKS(self, EV, 3 )
@@ -438,6 +444,7 @@ this."""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = EV("ILD_STALL.LCP", 3) / CLKS(self, EV, 3 )
@@ -470,6 +477,7 @@ when dealing with Denormals."""
     sample = ['IDQ.MS_SWITCHES']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = MS_Switches_Cost * EV("IDQ.MS_SWITCHES", 3) / CLKS(self, EV, 3 )
@@ -498,6 +506,7 @@ the Backend (less than four)."""
     sample = ['FRONTEND_RETIRED.LATENCY_GE_2_BUBBLES_GE_1:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = self.Frontend_Bound.compute(EV) - self.Frontend_Latency.compute(EV )
@@ -525,6 +534,7 @@ here."""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = (EV("IDQ.ALL_MITE_CYCLES_ANY_UOPS", 3) - EV("IDQ.ALL_MITE_CYCLES_4_UOPS", 3)) / CORE_CLKS(self, EV, 3 )
@@ -551,6 +561,7 @@ categorized here."""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = (EV("IDQ.ALL_DSB_CYCLES_ANY_UOPS", 3) - EV("IDQ.ALL_DSB_CYCLES_4_UOPS", 3)) / CORE_CLKS(self, EV, 3 )
@@ -578,6 +589,7 @@ suit well the LSD structure."""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = (EV("LSD.CYCLES_ACTIVE", 3) - EV("LSD.CYCLES_4_UOPS", 3)) / CORE_CLKS(self, EV, 3 )
@@ -607,6 +619,7 @@ Ordering Nukes is another example."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (EV("UOPS_ISSUED.ANY", 1) - EV("UOPS_RETIRED.RETIRE_SLOTS", 1) + Pipeline_Width * Recovery_Cycles(self, EV, 1)) / SLOTS(self, EV, 1 )
@@ -638,6 +651,7 @@ technology/64-ia-32-architectures-optimization-manual.html"""
     sample = ['BR_MISP_RETIRED.ALL_BRANCHES:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = Mispred_Clears_Fraction(self, EV, 2)* self.Bad_Speculation.compute(EV )
@@ -668,6 +682,7 @@ Guide and:. https://software.intel.com/sites/default/files/m
     sample = ['MACHINE_CLEARS.COUNT']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = self.Bad_Speculation.compute(EV) - self.Branch_Mispredicts.compute(EV )
@@ -700,6 +715,7 @@ Bound."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = 1 -(self.Frontend_Bound.compute(EV) + self.Bad_Speculation.compute(EV) + self.Retiring.compute(EV))
@@ -730,6 +746,7 @@ pipeline when many of them get buffered at the same time
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = Memory_Bound_Fraction(self, EV, 2)* self.Backend_Bound.compute(EV )
@@ -760,6 +777,7 @@ without having that demand load missing the L1 cache."""
     sample = ['MEM_LOAD_RETIRED.L1_HIT:pp', 'MEM_LOAD_RETIRED.FB_HIT:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (EV("CYCLE_ACTIVITY.STALLS_MEM_ANY", 3) - EV("CYCLE_ACTIVITY.STALLS_L1D_MISS", 3)) / CLKS(self, EV, 3 )
@@ -790,6 +808,7 @@ a hardware page walk on an STLB miss.."""
     sample = ['MEM_INST_RETIRED.STLB_MISS_LOADS:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (Mem_STLB_Hit_Cost * EV("DTLB_LOAD_MISSES.STLB_HIT", 4) + EV("DTLB_LOAD_MISSES.WALK_ACTIVE", 4)) / CLKS(self, EV, 4 )
@@ -819,6 +838,7 @@ performance penalty of such blocked loads."""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = Mem_SFB_Cost * EV("LD_BLOCKS.STORE_FORWARD", 4) / CLKS(self, EV, 4 )
@@ -844,6 +864,7 @@ L1_Bound regardless of what memory source satisfied them."""
     sample = ['MEM_INST_RETIRED.LOCK_LOADS:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = Mem_Lock_St_Fraction(self, EV, 4)* ORO_Demand_RFO_C1(self, EV, 4) / CLKS(self, EV, 4 )
@@ -867,6 +888,7 @@ aligning data."""
     sample = ['MEM_INST_RETIRED.SPLIT_LOADS:pp']
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = Load_Miss_Real_Latency(self, EV, 4)* EV("LD_BLOCKS.NO_SR", 4) / CLKS(self, EV, 4 )
@@ -891,6 +913,7 @@ optimization manual for more details."""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = Mem_4K_Alias_Cost * EV("LD_BLOCKS_PARTIAL.ADDRESS_ALIAS", 4) / CLKS(self, EV, 4 )
@@ -920,6 +943,7 @@ memory BW limited."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = Load_Miss_Real_Latency(self, EV, 4)* EV("L1D_PEND_MISS.FB_FULL:c1", 4) / CLKS(self, EV, 4 )
@@ -945,6 +969,7 @@ performance."""
     sample = ['MEM_LOAD_RETIRED.L2_HIT:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (1 if self.FB_Full.compute(EV)< 1.5 else LOAD_L2_HIT(self, EV, 3) /(LOAD_L2_HIT(self, EV, 3) + EV("L1D_PEND_MISS.FB_FULL:c1", 3)))* L2_Bound_Fraction(self, EV, 3 )
@@ -973,6 +998,7 @@ the latency and increase performance."""
     sample = ['MEM_LOAD_RETIRED.L3_HIT:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (EV("CYCLE_ACTIVITY.STALLS_L2_MISS", 3) - EV("CYCLE_ACTIVITY.STALLS_L3_MISS", 3)) / CLKS(self, EV, 3 )
@@ -996,6 +1022,7 @@ sharing, unnecessary writes, and localize data."""
     sample = ['MEM_LOAD_L3_HIT_RETIRED.XSNP_HIT:pp', 'MEM_LOAD_L3_HIT_RETIRED.XSNP_MISS:pp']
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = Mem_XSNP_HitM_Cost *(LOAD_XSNP_HITM(self, EV, 4) + LOAD_XSNP_MISS(self, EV, 4)) / CLKS(self, EV, 4 )
@@ -1017,6 +1044,7 @@ class Data_Sharing:
     sample = ['MEM_LOAD_L3_HIT_RETIRED.XSNP_HITM:pp']
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = MEM_XSNP_Hit_Cost * LOAD_XSNP_HIT(self, EV, 4) / CLKS(self, EV, 4 )
@@ -1045,6 +1073,7 @@ its siblings."""
     sample = ['MEM_LOAD_RETIRED.L3_HIT:pp']
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = MEM_XSNP_None_Cost * LOAD_L3_HIT(self, EV, 4) / CLKS(self, EV, 4 )
@@ -1070,6 +1099,7 @@ requests to access the L2 cache or to go out to the Uncore."""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = SQ_Full_Cycles(self, EV, 4) / CORE_CLKS(self, EV, 4 )
@@ -1094,6 +1124,7 @@ can improve the latency and increase performance."""
     sample = ['MEM_LOAD_RETIRED.L3_MISS:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = EV("CYCLE_ACTIVITY.STALLS_L3_MISS", 3) / CLKS(self, EV, 3) + L2_Bound_Fraction(self, EV, 3) - self.L2_Bound.compute(EV )
@@ -1131,6 +1162,7 @@ prefetches will not help BW-limited application.."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = ORO_DRD_BW_Cycles(self, EV, 4) / CLKS(self, EV, 4 )
@@ -1159,6 +1191,7 @@ Prefetches (also through the compiler).."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = ORO_DRD_Any_Cycles(self, EV, 4) / CLKS(self, EV, 4) - self.MEM_Bandwidth.compute(EV )
@@ -1185,6 +1218,7 @@ flagged should any of these cases be a bottleneck."""
     sample = ['MEM_INST_RETIRED.ALL_STORES:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = EV("EXE_ACTIVITY.BOUND_ON_STORES", 3) / CLKS(self, EV, 3 )
@@ -1209,6 +1243,7 @@ cache)."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (Store_L2_Hit_Cycles(self, EV, 4) +(1 - Mem_Lock_St_Fraction(self, EV, 4))* ORO_Demand_RFO_C1(self, EV, 4)) / CLKS(self, EV, 4 )
@@ -1233,6 +1268,7 @@ granularity."""
     sample = ['MEM_INST_RETIRED.SPLIT_STORES:pp']
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = EV("MEM_INST_RETIRED.SPLIT_STORES", 4) / CORE_CLKS(self, EV, 4 )
@@ -1261,6 +1297,7 @@ large amounts of frequently-used data."""
     sample = ['MEM_INST_RETIRED.STLB_MISS_STORES:pp']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (Mem_STLB_Hit_Cost * EV("DTLB_STORE_MISSES.STLB_HIT", 4) + EV("DTLB_STORE_MISSES.WALK_ACTIVE", 4)) / CORE_CLKS(self, EV, 4 )
@@ -1291,6 +1328,7 @@ consider Port Saturation analysis as next step."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = self.Backend_Bound.compute(EV) - self.Memory_Bound.compute(EV )
@@ -1317,6 +1355,7 @@ subtraction, or multiplication."""
     sample = ['ARITH.DIVIDER_ACTIVE']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = EV("ARITH.DIVIDER_ACTIVE", 3) / CLKS(self, EV, 3 )
@@ -1350,6 +1389,7 @@ same uop."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (Backend_Bound_Cycles(self, EV, 3) - EV("CYCLE_ACTIVITY.STALLS_MEM_ANY", 3) - EV("EXE_ACTIVITY.BOUND_ON_STORES", 3)) / CLKS(self, EV, 3 )
@@ -1373,6 +1413,7 @@ uops on any execution port."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = Cycles_0_Ports_Utilized(self, EV, 4) / CORE_CLKS(self, EV, 4 )
@@ -1405,6 +1446,7 @@ as next step."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = Cycles_1_Port_Utilized(self, EV, 4) / CORE_CLKS(self, EV, 4 )
@@ -1433,6 +1475,7 @@ same uop."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = Cycles_2_Ports_Utilized(self, EV, 4) / CORE_CLKS(self, EV, 4 )
@@ -1458,6 +1501,7 @@ step"""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = Cycles_3m_Ports_Utilized(self, EV, 4) / CORE_CLKS(self, EV, 4 )
@@ -1482,6 +1526,7 @@ branch)"""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = EV("UOPS_DISPATCHED_PORT.PORT_0", 5) / CORE_CLKS(self, EV, 5 )
@@ -1505,6 +1550,7 @@ uops on execution port 1 (ALU)"""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = EV("UOPS_DISPATCHED_PORT.PORT_1", 5) / CORE_CLKS(self, EV, 5 )
@@ -1528,6 +1574,7 @@ uops on execution port 2 (Loads and Store-address)"""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = EV("UOPS_DISPATCHED_PORT.PORT_2", 5) / CORE_CLKS(self, EV, 5 )
@@ -1551,6 +1598,7 @@ uops on execution port 3 (Loads and Store-address)"""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = EV("UOPS_DISPATCHED_PORT.PORT_3", 5) / CORE_CLKS(self, EV, 5 )
@@ -1574,6 +1622,7 @@ uops on execution port 4 (Store-data)"""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = EV("UOPS_DISPATCHED_PORT.PORT_4", 5) / CORE_CLKS(self, EV, 5 )
@@ -1597,6 +1646,7 @@ uops on execution port 5 (SNB+: Branches and ALU; HSW+: ALU)"""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = EV("UOPS_DISPATCHED_PORT.PORT_5", 5) / CORE_CLKS(self, EV, 5 )
@@ -1620,6 +1670,7 @@ uops on execution port 6 (Branches and simple ALU)"""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = EV("UOPS_DISPATCHED_PORT.PORT_6", 5) / CORE_CLKS(self, EV, 5 )
@@ -1643,6 +1694,7 @@ uops on execution port 7 (simple Store-address)"""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = EV("UOPS_DISPATCHED_PORT.PORT_7", 5) / CORE_CLKS(self, EV, 5 )
@@ -1679,6 +1731,7 @@ improving the performance."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = EV("UOPS_RETIRED.RETIRE_SLOTS", 1) / SLOTS(self, EV, 1 )
@@ -1710,6 +1763,7 @@ such as vectorization."""
     sample = ['INST_RETIRED.PREC_DIST']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = self.Retiring.compute(EV) - self.Microcode_Sequencer.compute(EV )
@@ -1733,6 +1787,7 @@ This metric represents overall arithmetic floating-point
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = self.X87_Use.compute(EV) + self.FP_Scalar.compute(EV) + self.FP_Vector.compute(EV )
@@ -1761,6 +1816,7 @@ vectors."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = EV("UOPS_EXECUTED.X87", 4) / EV("UOPS_EXECUTED.THREAD", 4 )
@@ -1785,6 +1841,7 @@ what limits (compiler) generation of vector code."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (EV("FP_ARITH_INST_RETIRED.SCALAR_SINGLE", 4) + EV("FP_ARITH_INST_RETIRED.SCALAR_DOUBLE", 4)) / EV("UOPS_RETIRED.RETIRE_SLOTS", 4 )
@@ -1809,6 +1866,7 @@ across all vector widths.. Check if vector width is expected"""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = (EV("FP_ARITH_INST_RETIRED.128B_PACKED_DOUBLE", 4) + EV("FP_ARITH_INST_RETIRED.128B_PACKED_SINGLE", 4) + EV("FP_ARITH_INST_RETIRED.256B_PACKED_DOUBLE", 4) + EV("FP_ARITH_INST_RETIRED.256B_PACKED_SINGLE", 4)) / EV("UOPS_RETIRED.RETIRE_SLOTS", 4 )
@@ -1834,6 +1892,7 @@ Cycle), this node will likely be biggest fraction."""
     sample = []
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = 1 - self.FP_Arith.compute(EV )
@@ -1862,6 +1921,7 @@ avoided.."""
     sample = ['IDQ.MS_UOPS']
     errcount = 0
     sibling = None
+    server = True
     def compute(self, EV):
         try:
             self.val = Retire_Uop_Fraction(self, EV, 2)* EV("IDQ.MS_UOPS", 2) / SLOTS(self, EV, 2 )
@@ -1895,6 +1955,7 @@ to performance and they can be avoided in many cases."""
     sample = []
     errcount = 0
     sibling = None
+    server = False
     def compute(self, EV):
         try:
             self.val = 300 *(EV("FP_ASSIST.ANY", 3) + EV("OTHER_ASSISTS.ANY", 3)) / CLKS(self, EV, 3 )
@@ -1912,6 +1973,7 @@ class Metric_IPC:
 Instructions Per Cycle (per logical thread)"""
     domain = "Metric"
     maxval = 5
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -1928,6 +1990,7 @@ class Metric_UPI:
 Uops Per Instruction"""
     domain = "Metric"
     maxval = 2
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -1944,6 +2007,7 @@ class Metric_IPTB:
 Instruction per taken branch"""
     domain = "Metric"
     maxval = 0
+    server = False
     errcount = 0
 
     def compute(self, EV):
@@ -1961,6 +2025,7 @@ Branch instructions per taken branch. Can be used to
 approximate PGO-likelihood for non-loopy codes."""
     domain = "Metric"
     maxval = 0
+    server = False
     errcount = 0
 
     def compute(self, EV):
@@ -1978,6 +2043,7 @@ Rough Estimation of fraction of fetched lines bytes that
 were likely consumed by program instructions"""
     domain = "Metric"
     maxval = 1
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -1995,6 +2061,7 @@ Fraction of Uops delivered by the DSB (decoded instructions
 cache)"""
     domain = "Metric"
     maxval = 1
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2011,6 +2078,7 @@ class Metric_CPI:
 Cycles Per Instruction (threaded)"""
     domain = "Metric"
     maxval = 0
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2027,6 +2095,7 @@ class Metric_CLKS:
 Per-thread actual clocks when the thread is active"""
     domain = "Count"
     maxval = 0
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2043,6 +2112,7 @@ class Metric_CoreIPC:
 Instructions Per Cycle (per physical core)"""
     domain = "CoreMetric"
     maxval = 5
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2059,6 +2129,7 @@ class Metric_FLOPc:
 Floating Point Operations Per Cycle"""
     domain = "CoreMetric"
     maxval = 10
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2076,6 +2147,7 @@ Instruction-Level-Parallelism (average number of uops
 executed when there is at least 1 uop executed)"""
     domain = "CoreMetric"
     maxval = 10
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2093,6 +2165,7 @@ Memory-Level-Parallelism (average number of L1 miss demand
 load when there is at least 1 such miss)"""
     domain = "CoreMetric"
     maxval = 10
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2110,6 +2183,7 @@ Utilization of the core's Page Walker(s) serving STLB misses
 triggered by instruction/Load/Store accesses"""
     domain = "CoreMetric"
     maxval = 1
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2127,6 +2201,7 @@ Core actual clocks when any thread is active on the physical
 core"""
     domain = "Count"
     maxval = 0
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2143,6 +2218,7 @@ class Metric_Load_Miss_Real_Latency:
 Actual Average Latency for L1 data-cache miss demand loads"""
     domain = "Metric"
     maxval = 1000
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2160,6 +2236,7 @@ Fraction of cycles where the CPU is running in Transactional
 Memory mode (HLE or RTM)"""
     domain = "Clocks"
     maxval = 0
+    server = False
     errcount = 0
 
     def compute(self, EV):
@@ -2177,6 +2254,7 @@ Fraction of cycles where the CPU is running in Transactional
 Memory mode (HLE or RTM)"""
     domain = "Clocks"
     maxval = 0
+    server = False
     errcount = 0
 
     def compute(self, EV):
@@ -2193,6 +2271,7 @@ class Metric_CPU_Utilization:
 Average CPU Utilization"""
     domain = "Metric"
     maxval = 100
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2209,6 +2288,7 @@ class Metric_GFLOPs:
 Giga Floating Point Operations Per Second"""
     domain = "Metric"
     maxval = 100
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2225,6 +2305,7 @@ class Metric_Turbo_Utilization:
 Average Frequency Utilization relative nominal frequency"""
     domain = "CoreMetric"
     maxval = 10
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2241,6 +2322,7 @@ class Metric_SMT_2T_Utilization:
 Fraction of cycles where both hardware threads were active"""
     domain = "Metric"
     maxval = 1
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2257,6 +2339,7 @@ class Metric_Kernel_Utilization:
 Fraction of cycles spent in Kernel mode"""
     domain = "Metric"
     maxval = 1
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2274,6 +2357,7 @@ Average external Memory Bandwidth Use for reads and writes
 [GB / sec]"""
     domain = "Metric"
     maxval = 100
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2291,6 +2375,7 @@ Average latency of all requests to external memory (in
 Uncore cycles)"""
     domain = "Metric"
     maxval = 1000
+    server = False
     errcount = 0
 
     def compute(self, EV):
@@ -2308,6 +2393,7 @@ Average number of parallel requests to external memory (in
 Uncore cycles). Accounts for all requests"""
     domain = "Metric"
     maxval = 100
+    server = False
     errcount = 0
 
     def compute(self, EV):
@@ -2326,6 +2412,7 @@ Uncore cycles). Accounts for demand loads and L1/L2
 prefetches"""
     domain = "Metric"
     maxval = 1000
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2344,6 +2431,7 @@ memory (in Uncore cycles). Accounts for demand loads and
 L1/L2 prefetches"""
     domain = "Metric"
     maxval = 100
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2360,6 +2448,7 @@ class Metric_Time:
 Run duration time in seconds"""
     domain = "Count"
     maxval = 0
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2376,6 +2465,7 @@ class Metric_Socket_CLKS:
 """
     domain = "Count"
     maxval = 0
+    server = True
     errcount = 0
 
     def compute(self, EV):
@@ -2392,6 +2482,7 @@ class Metric_SLOTS:
 Total issue-pipeline slots"""
     domain = "Count"
     maxval = 0
+    server = True
     errcount = 0
 
     def compute(self, EV):

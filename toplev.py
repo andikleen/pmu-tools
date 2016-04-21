@@ -304,6 +304,7 @@ p.add_argument('--columns', help='Print CPU output in multiple columns', action=
 p.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
 p.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
 p.add_argument('--bottleneck', help='Show critical bottleneck', action='store_true')
+p.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 args, rest = p.parse_known_args()
 
 rest = [x for x in rest if x != "--"]
@@ -1084,6 +1085,8 @@ class Runner:
     # remove unwanted nodes after their parent relation ship has been set up
     def filter_nodes(self):
         def want_node(obj):
+            if args.reduced and has(obj, 'server') and not obj.server:
+                return False
             if not obj.metric:
                 return node_filter(obj, lambda: obj.level <= self.max_level)
             else:
