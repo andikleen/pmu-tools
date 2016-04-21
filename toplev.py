@@ -1253,7 +1253,8 @@ class Runner:
                     continue
 		desc = obj_desc(obj, self.olist[1 + 1:])
                 if obj.metric:
-                    out.metric(obj.area if has(obj, 'area') else None,
+		    if obj.val != 0:
+			out.metric(obj.area if has(obj, 'area') else None,
                             obj.name, val, timestamp,
 			    desc,
                             title,
