@@ -119,6 +119,8 @@ limited_set = set(limited_counters.keys())
 
 smt_mode = False
 
+errata_events = dict()
+
 perf = os.getenv("PERF")
 if not perf:
     perf = "perf"
@@ -290,6 +292,9 @@ p.add_argument('--no-multiplex',
                action='store_true')
 p.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
 p.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
+p.add_argument('--sample-args', help='Extra rguments to pass to perf record for sampling. Use + to specify -', default='-g')
+p.add_argument('--sample-repeat', help='Repeat measurement and sampling N times. This interleaves counting and sampling', type=int)
+p.add_argument('--sample-basename', help='Base name of sample perf.data files', default="perf.data")
 p.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file', type=argparse.FileType('w'))
 p.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
 p.add_argument('--power', help='Display power metrics', action='store_true')
@@ -304,6 +309,7 @@ p.add_argument('--columns', help='Print CPU output in multiple columns', action=
 p.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
 p.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
 p.add_argument('--bottleneck', help='Show critical bottleneck', action='store_true')
+p.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true')
 args, rest = p.parse_known_args()
 
 rest = [x for x in rest if x != "--"]
@@ -344,6 +350,9 @@ if args.graph:
     if not args.quiet:
         print cmd
     args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
+
+if args.sample_repeat:
+    args.run_sample = True
 
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
@@ -433,6 +442,7 @@ def add_filter(s):
 notfound_cache = set()
 
 def raw_event(i, name="", period=False):
+    orig_i = i
     if i.count(".") > 0:
         if i in fixed_counters:
             return fixed_counters[i]
@@ -451,7 +461,7 @@ def raw_event(i, name="", period=False):
             print "Event", oi, "maps to multiple units. Ignored."
             return "dummy" # FIXME
         emap.update_event(e.output(noname=True), e)
-        # next two things should be moved somewhere else
+	# next three things should be moved somewhere else
         if i.startswith("uncore"):
             outgroup_events.add(i)
         if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
@@ -460,6 +470,8 @@ def raw_event(i, name="", period=False):
             # CPUs
             limited_counters[i] = int(e.counter.split(",")[0])
             limited_set.add(i)
+	if e.errata:
+	    errata_events[orig_i] = e.errata
     return i
 
 # generate list of converted raw events from events string
@@ -472,8 +484,12 @@ def mark_fixed(s):
         return "%s[F]" % s
     return s
 
-def pwrap(s, linelen=60, indent=""):
+def pwrap(s, linelen=70, indent=""):
     print indent + ("\n" + indent).join(textwrap.wrap(s, linelen, break_long_words=False))
+
+def pwrap_not_quiet(s, linelen=70, indent=""):
+    if not args.quiet:
+	pwrap(s, linelen, indent)
 
 def has(obj, name):
     return name in obj.__class__.__dict__
@@ -925,6 +941,7 @@ class BadEvent:
     def __init__(self, name):
         self.event = name
 
+# XXX check for errata
 def sample_event(e):
     ev = emap.getevent(e.replace("_PS", ""))
     if not ev:
@@ -1157,6 +1174,8 @@ class Runner:
         bad_nodes = set()
         bad_events = set()
         unsup_nodes = set()
+	errata_nodes = set()
+	errata_names = set()
 	min_kernel = []
         for obj in self.olist:
             obj.evlevels = []
@@ -1164,6 +1183,8 @@ class Runner:
             obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist)
             obj.nc = needed_counters(obj.evnum)
+
+	    # work arounds for lots of different problems
 	    unsup = [x for x in obj.evlist if unsup_event(x, unsup_events, min_kernel)]
             if any(unsup):
                 bad_nodes.add(obj)
@@ -1171,22 +1192,32 @@ class Runner:
             unsup = [x for x in obj.evlist if missing_pmu(x)]
             if any(unsup):
                 unsup_nodes.add(obj)
-        if len(bad_nodes) > 0 and not args.quiet:
+	    errata = [errata_events[x] for x in obj.evlist if x in errata_events]
+	    if any(errata):
+		errata_nodes.add(obj)
+		errata_names |= set(errata)
+	if bad_nodes:
             if args.force_events:
-                pwrap("warning: Using --force-events. Nodes: " +
-		   " ".join([x.name for x in bad_nodes]) + " may be unreliable")
+		pwrap_not_quiet("warning: Using --force-events. Nodes: " +
+			" ".join([x.name for x in bad_nodes]) + " may be unreliable")
             else:
-	        pwrap("warning: removing " +
+		if not args.quiet:
+		    pwrap("warning: removing " +
 		       " ".join([x.name for x in bad_nodes]) +
 		       " due to unsupported events in kernel: " +
 		       " ".join(sorted(bad_events)), 80, "")
-	        if min_kernel:
-		    print "Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0])
-	        print "Use --force-events to override (may result in wrong measurements)"
+		    if min_kernel:
+			print "Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0])
+		    print "Use --force-events to override (may result in wrong measurements)"
                 self.olist = [x for x in self.olist if x not in bad_nodes]
-        if len(unsup_nodes) > 0 and not args.quiet:
-            pwrap("Nodes " + " ".join(x.name for x in unsup_nodes) + " has unsupported PMUs")
+	if unsup_nodes:
+	    pwrap_not_quiet("Nodes " + " ".join(x.name for x in unsup_nodes) + " has unsupported PMUs")
             self.olist = [x for x in self.olist if x not in unsup_nodes]
+	if errata_nodes and not args.ignore_errata:
+	    pwrap_not_quiet("Nodes " + " ".join(x.name for x in errata_nodes) + " have errata " +
+			" ".join(errata_names) + " and were disabled. " +
+			"Override with --ignore-errata")
+	    self.olist = [x for x in self.olist if x in errata_nodes]
 
     # fit events into available counters
     # simple first fit algorithm
@@ -1241,6 +1272,8 @@ class Runner:
         # step 1: compute
         for obj in self.olist:
             obj.errcount = 0
+            if not obj.metric:
+                obj.thresh = False
 
             if not match(obj):
                 continue
@@ -1282,7 +1315,8 @@ class Runner:
                     continue
 		desc = obj_desc(obj, self.olist[1 + 1:])
                 if obj.metric:
-                    out.metric(obj.area if has(obj, 'area') else None,
+		    if obj.val != 0:
+			out.metric(obj.area if has(obj, 'area') else None,
                             obj.name, val, timestamp,
 			    desc,
                             title,
@@ -1313,13 +1347,12 @@ def remove_pp(s):
 	return s[:-3]
     return s
 
-def print_sample(sample_obj, rest):
-    samples = []
+def do_sample(sample_obj, rest, count):
+    # XXX use :ppp if available
+    samples = [("cycles:pp", "Precise cycles", )]
     for obj in sample_obj:
 	for s in obj.sample:
 	    samples.append((s, obj.name))
-    if len(samples) == 0:
-	return
     nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
     nsamp = [(remove_pp(x[0]), x[1]) if unsup_event(x[0], unsup_pebs) else x
 		for x in nsamp]
@@ -1331,14 +1364,23 @@ def print_sample(sample_obj, rest):
     sl = [raw_event(s[0], s[1] + "_" + remove_pp(s[0]).replace(".", "_"), period=True) for s in nsamp]
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
-    print "Sampling:"
-    sperf = [perf, "record", "-g", "-e", sample] + [x for x in rest if x != "-A"]
-    print " ".join(sperf)
+    if not args.quiet:
+        print "Sampling:"
+    extra_args = args.sample_args.replace("+", "-").split()
+    perf_data = args.sample_basename
+    if count:
+        perf_data += ".%d" % count
+    sperf = [perf, "record" ] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
+    if not args.quiet:
+        print " ".join(sperf)
     if args.run_sample:
 	ret = os.system(" ".join(sperf))
         if ret:
             sys.exit(ret)
-        print "Run `" + perf + " report' to show the sampling results"
+	if not args.quiet:
+            print "Run `" + perf + " report -i %s%s' to show the sampling results" % (
+		perf_data,
+		" --no-branch-history"  if "-b" in extra_args else "")
 
 def sysctl(name):
     try:
@@ -1517,14 +1559,26 @@ elif args.columns:
 else:
     out = tl_output.OutputHuman(args.output, args, version)
 runner.schedule()
-try:
-    if args.no_multiplex:
-        ret = execute_no_multiplex(runner, out, rest)
-    else:
-        ret = execute(runner, out, rest)
-except KeyboardInterrupt:
-    sys.exit(1)
-runner.stat.compute_errors()
-if args.show_sample or args.run_sample:
-    print_sample(runner.sample_obj, rest)
+
+def measure_and_sample(count):
+    try:
+        if args.no_multiplex:
+            ret = execute_no_multiplex(runner, out, rest)
+        else:
+            ret = execute(runner, out, rest)
+    except KeyboardInterrupt:
+        sys.exit(1)
+    runner.stat.compute_errors()
+    if args.show_sample or args.run_sample:
+        do_sample(runner.sample_obj, rest, count)
+    return ret
+
+if args.sample_repeat:
+    for j in range(args.sample_repeat):
+        ret = measure_and_sample(j + 1)
+	if ret:
+            break
+else:
+    ret = measure_and_sample(None)
+
 sys.exit(ret)
