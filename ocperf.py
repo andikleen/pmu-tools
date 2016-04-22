@@ -253,6 +253,10 @@ class UncoreEvent:
         e.msr = None
         e.overflow = 0
         e.counter = "1" # dummy for toplev
+	if 'Errata' in row:
+	    e.errata = row['Errata']
+	else:
+	    e.errata = None
 
     #  {
     # "Unit": "CBO",
@@ -464,9 +468,11 @@ class Emap(object):
                     d += " (Uses PEBS)"
                 else:
                     d = d.replace("(Precise Event)","") + " (Supports PEBS)"
+	    e.errata = None
             try:
                 if get('errata') != "null":
                     d += " Errata: " + get('errata')
+		    e.errata = get('errata')
             except KeyError:
                 pass
             e.desc = d

@@ -62,6 +62,9 @@ EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc --stats -d $A
 grep :k log
 grep /k log
 EVENTMAP=${cpus[$DCPU]} FORCECPU=simple $WRAP ./toplev.py --no-desc -l1 $LOAD
+# check errata handling
+EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py --no-desc --all $LOAD | tee log
+grep BDE70 log
 
 # test L1 uses a single group
 onegroup() {
@@ -115,6 +118,9 @@ EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 --columns -x,
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 --valcsv val.csv --user $LOAD | tee log
 grep :u log
 grep /u log
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --all --sample-repeat 10 -a sleep 0.1  | tee log
+# do all perf.data exist?
+rm perf.data.{1,2,3,4,5,6,7,8,9,10}
 
 # need new perf
 # test other perf output formats
