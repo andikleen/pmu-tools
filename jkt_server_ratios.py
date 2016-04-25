@@ -1,6 +1,6 @@
 
 #
-# auto generated TopDown/TMAM 3.09 description for Intel Xeon E5 (code named SandyBridge EP)
+# auto generated TopDown/TMAM 3.098 description for Intel Xeon E5 (code named SandyBridge EP)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -13,7 +13,7 @@
 
 print_error = lambda msg: False
 smt_enabled = False
-version = "3.09"
+version = "3.098"
 
 
 
@@ -114,6 +114,10 @@ def CPI(self, EV, level):
 def CLKS(self, EV, level):
     return EV("CPU_CLK_UNHALTED.THREAD", level)
 
+# Total issue-pipeline slots
+def SLOTS(self, EV, level):
+    return Pipeline_Width * CORE_CLKS(self, EV, level)
+
 # Instructions Per Cycle (per physical core)
 def CoreIPC(self, EV, level):
     return EV("INST_RETIRED.ANY", level) / CORE_CLKS(self, EV, level)
@@ -165,10 +169,6 @@ def MEM_Parallel_Reads(self, EV, level):
 # Run duration time in seconds
 def Time(self, EV, level):
     return DurationTimeInSeconds(self, EV, level)
-
-# Total issue-pipeline slots
-def SLOTS(self, EV, level):
-    return Pipeline_Width * CORE_CLKS(self, EV, level)
 
 # Event groups
 
@@ -719,8 +719,8 @@ Prefetches (also through the compiler).."""
             self.thresh = False
         return self.val
 
-class Stores_Bound:
-    name = "Stores_Bound"
+class Store_Bound:
+    name = "Store_Bound"
     domain = "Clocks"
     area = "BE/Mem"
     desc = """
@@ -740,7 +740,7 @@ flagged should any of these cases be a bottleneck."""
             self.val = EV("RESOURCE_STALLS.SB", 3) / CLKS(self, EV, 3 )
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
-            print_error("Stores_Bound zero division")
+            print_error("Store_Bound zero division")
             self.errcount += 1
             self.val = 0
             self.thresh = False
@@ -1169,6 +1169,23 @@ Per-thread actual clocks when the thread is active"""
             self.errcount += 1
 	    self.val = 0
 
+class Metric_SLOTS:
+    name = "SLOTS"
+    desc = """
+Total issue-pipeline slots"""
+    domain = "Count"
+    maxval = 0
+    server = True
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = SLOTS(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("SLOTS zero division")
+            self.errcount += 1
+	    self.val = 0
+
 class Metric_CoreIPC:
     name = "CoreIPC"
     desc = """
@@ -1294,7 +1311,7 @@ class Metric_SMT_2T_Utilization:
     name = "SMT_2T_Utilization"
     desc = """
 Fraction of cycles where both hardware threads were active"""
-    domain = "Metric"
+    domain = "CoreMetric"
     maxval = 1
     server = True
     errcount = 0
@@ -1397,23 +1414,6 @@ Run duration time in seconds"""
             self.errcount += 1
 	    self.val = 0
 
-class Metric_SLOTS:
-    name = "SLOTS"
-    desc = """
-Total issue-pipeline slots"""
-    domain = "Count"
-    maxval = 0
-    server = True
-    errcount = 0
-
-    def compute(self, EV):
-        try:
-	    self.val = SLOTS(self, EV, 0)
-        except ZeroDivisionError:
-            print_error("SLOTS zero division")
-            self.errcount += 1
-	    self.val = 0
-
 # Schedule
 
 
@@ -1439,7 +1439,7 @@ class Setup:
         n = MEM_Bound() ; r.run(n) ; o["MEM_Bound"] = n
         n = MEM_Bandwidth() ; r.run(n) ; o["MEM_Bandwidth"] = n
         n = MEM_Latency() ; r.run(n) ; o["MEM_Latency"] = n
-        n = Stores_Bound() ; r.run(n) ; o["Stores_Bound"] = n
+        n = Store_Bound() ; r.run(n) ; o["Store_Bound"] = n
         n = Core_Bound() ; r.run(n) ; o["Core_Bound"] = n
         n = Divider() ; r.run(n) ; o["Divider"] = n
         n = Ports_Utilization() ; r.run(n) ; o["Ports_Utilization"] = n
@@ -1469,7 +1469,7 @@ class Setup:
         o["MEM_Bound"].parent = o["Memory_Bound"]
         o["MEM_Bandwidth"].parent = o["MEM_Bound"]
         o["MEM_Latency"].parent = o["MEM_Bound"]
-        o["Stores_Bound"].parent = o["Memory_Bound"]
+        o["Store_Bound"].parent = o["Memory_Bound"]
         o["Core_Bound"].parent = o["Backend_Bound"]
         o["Divider"].parent = o["Core_Bound"]
         o["Ports_Utilization"].parent = o["Core_Bound"]
@@ -1520,6 +1520,7 @@ class Setup:
         n = Metric_DSB_Coverage() ; r.metric(n)
         n = Metric_CPI() ; r.metric(n)
         n = Metric_CLKS() ; r.metric(n)
+        n = Metric_SLOTS() ; r.metric(n)
         n = Metric_CoreIPC() ; r.metric(n)
         n = Metric_FLOPc() ; r.metric(n)
         n = Metric_ILP() ; r.metric(n)
@@ -1533,4 +1534,3 @@ class Setup:
         n = Metric_MEM_Read_Latency() ; r.metric(n)
         n = Metric_MEM_Parallel_Reads() ; r.metric(n)
         n = Metric_Time() ; r.metric(n)
-        n = Metric_SLOTS() ; r.metric(n)

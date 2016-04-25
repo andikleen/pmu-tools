@@ -1,6 +1,6 @@
 
 #
-# auto generated TopDown/TMAM 3.09 description for Intel Xeon E5 v2 (code named IvyBridge EP)
+# auto generated TopDown/TMAM 3.098 description for Intel Xeon E5 v2 (code named IvyBridge EP)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -13,7 +13,7 @@
 
 print_error = lambda msg: False
 smt_enabled = False
-version = "3.09"
+version = "3.098"
 
 
 
@@ -23,7 +23,6 @@ Pipeline_Width = 4
 Mem_L2_Store_Cost = 9
 Mem_L3_Weight = 7
 Mem_STLB_Hit_Cost = 7
-Mem_SFB_Cost = 13
 Mem_4K_Alias_Cost = 7
 Mem_XSNP_HitM_Cost = 60
 MEM_XSNP_Hit_Cost = 43
@@ -190,6 +189,10 @@ def CPI(self, EV, level):
 def CLKS(self, EV, level):
     return EV("CPU_CLK_UNHALTED.THREAD", level)
 
+# Total issue-pipeline slots
+def SLOTS(self, EV, level):
+    return Pipeline_Width * CORE_CLKS(self, EV, level)
+
 # Instructions Per Cycle (per physical core)
 def CoreIPC(self, EV, level):
     return EV("INST_RETIRED.ANY", level) / CORE_CLKS(self, EV, level)
@@ -253,10 +256,6 @@ def MEM_Parallel_Reads(self, EV, level):
 # Run duration time in seconds
 def Time(self, EV, level):
     return DurationTimeInSeconds(self, EV, level)
-
-# Total issue-pipeline slots
-def SLOTS(self, EV, level):
-    return Pipeline_Width * CORE_CLKS(self, EV, level)
 
 # Event groups
 
@@ -790,7 +789,7 @@ without having that demand load missing the L1 cache."""
     def compute(self, EV):
         try:
             self.val = (STALLS_MEM_ANY(self, EV, 3) - EV("CYCLE_ACTIVITY.STALLS_L1D_PENDING", 3)) / CLKS(self, EV, 3 )
-            self.thresh = ((self.val > 0.07) and self.parent.thresh) | self.DTLB_Load.thresh
+            self.thresh = ((self.val > 0.1) and self.parent.thresh) | self.DTLB_Load.thresh
         except ZeroDivisionError:
             print_error("L1_Bound zero division")
             self.errcount += 1
@@ -834,14 +833,16 @@ class Store_Fwd_Blk:
     domain = "Clocks"
     area = "BE/Mem"
     desc = """
-To streamline memory operations in the pipeline, a load can
-avoid waiting for memory if a prior in-flight store is
-writing the data that the load wants to read (store
-forwarding process). However, in some cases, when the prior
-store is writing a smaller region than the load is reading
-for example, the load is blocked for a significant time
-pending the store forward. This metric measures the
-performance penalty of such blocked loads."""
+This metric roughly estimates cycles fraction when the
+memory subsystem had loads blocked since they could not
+forward data from earlier (in program order) overlapping
+stores. To streamline memory operations in the pipeline, a
+load can avoid waiting for memory if a prior in-flight store
+is writing the data that the load wants to read (store
+forwarding process). However, in some cases the load may be
+blocked for a significant time pending the store forward.
+For example, when the prior store is writing a smaller
+region than the load is reading."""
     level = 4
     htoff = False
     sample = []
@@ -850,7 +851,7 @@ performance penalty of such blocked loads."""
     server = False
     def compute(self, EV):
         try:
-            self.val = Mem_SFB_Cost * EV("LD_BLOCKS.STORE_FORWARD", 4) / CLKS(self, EV, 4 )
+            self.val = 13 * EV("LD_BLOCKS.STORE_FORWARD", 4) / CLKS(self, EV, 4 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             print_error("Store_Fwd_Blk zero division")
@@ -890,8 +891,10 @@ class Split_Loads:
     domain = "Clocks"
     area = "BE/Mem"
     desc = """
-Loads were crossing 64 byte cache lines. Consider naturally
-aligning data."""
+This metric estimates cycles fraction handling memory load
+split accesses - load that cross 64-byte cacheline boundary.
+. Consider aligning data or hot structure fields. See the
+Optimization Guide for more details"""
     level = 4
     htoff = False
     sample = ['MEM_UOPS_RETIRED.SPLIT_LOADS:pp']
@@ -914,9 +917,16 @@ class G4K_Aliasing:
     domain = "Clocks"
     area = "BE/Mem"
     desc = """
-Memory accesses were aliased by nearby others with a 4K
-offset. Reorganize the data to avoid this. See the
-optimization manual for more details."""
+This metric estimates how often memory load accesses were
+aliased by preceding stores (in program order) with a 4K
+address offset. False match is possible, which incur a few
+cycles load re-issue. However, the short re-issue duration
+is often hidden by the out-of-order core and HW
+optimizations; hence a user may safely ignore a high value
+of this metric unless it manages to propagate up into parent
+nodes of the hierarchy (e.g. to L1_Bound).. Consider
+reducing independent loads/stores accesses with 4K offsets.
+See the Optimization Guide for more details"""
     level = 4
     htoff = False
     sample = []
@@ -940,13 +950,13 @@ class FB_Full:
     area = "BE/Mem"
     desc = """
 This metric does a *rough estimation* of how often L1D Fill
-Buffer unavailability limited additional L1D miss demand
-requests to proceed. The higher the metric value, the deeper
-the memory hierarchy level the misses are satisfied from
-(metric values >1 are valid). Often it hints on approaching
-off-core bandwidth limits (external memory or LLC).. See
-$issueBW hints. Avoid adding software prefetches if indeed
-memory BW limited."""
+Buffer unavailability limited additional L1D miss memory
+access requests to proceed. The higher the metric value, the
+deeper the memory hierarchy level the misses are satisfied
+from (metric values >1 are valid). Often it hints on
+approaching bandwidth limits (to L2 cache, L3 cache or
+external memory).. See $issueBW and $issueSL hints. Avoid
+adding software prefetches if indeed memory BW limited."""
     level = 4
     htoff = False
     sample = []
@@ -956,7 +966,7 @@ memory BW limited."""
     def compute(self, EV):
         try:
             self.val = Load_Miss_Real_Latency(self, EV, 4)* EV("L1D_PEND_MISS.FB_FULL:c1", 4) / CLKS(self, EV, 4 )
-            self.thresh = (self.val > 0.1) and self.parent.thresh
+            self.thresh = (self.val > 0.3)
         except ZeroDivisionError:
             print_error("FB_Full zero division")
             self.errcount += 1
@@ -982,7 +992,7 @@ performance."""
     def compute(self, EV):
         try:
             self.val = (EV("CYCLE_ACTIVITY.STALLS_L1D_PENDING", 3) - EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3)) / CLKS(self, EV, 3 )
-            self.thresh = (self.val > 0.03) and self.parent.thresh
+            self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             print_error("L2_Bound zero division")
             self.errcount += 1
@@ -1021,8 +1031,13 @@ class Contested_Accesses:
     domain = "Clocks"
     area = "BE/Mem"
     desc = """
-64 byte cache lines were bouncing between cores. Avoid false
-sharing, unnecessary writes, and localize data."""
+This metric estimates cycles fraction while the memory
+subsystem was handling contested accesses. Contested
+accesses occur when data written by one thread are read by
+another thread on a different physical core. Examples of
+contested accesses include synchronizations such as locks,
+true data sharing such as modified locked variables, and
+false sharing."""
     level = 4
     htoff = False
     sample = ['MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HIT:pp', 'MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_MISS:pp']
@@ -1044,7 +1059,12 @@ class Data_Sharing:
     name = "Data_Sharing"
     domain = "Clocks"
     area = "BE/Mem"
-    desc = ""
+    desc = """
+This metric estimates cycles fraction while the memory
+subsystem was handling data-sharing accesses. Data shared by
+multiple threads (even just read shared) may cause increased
+access latency due to cache coherency. Excessive data
+sharing can drastically harm multithreaded performance."""
     level = 4
     htoff = False
     sample = ['MEM_LOAD_UOPS_LLC_HIT_RETIRED.XSNP_HITM:pp']
@@ -1284,8 +1304,8 @@ often due to non-optimal NUMA allocations."""
             self.thresh = False
         return self.val
 
-class Stores_Bound:
-    name = "Stores_Bound"
+class Store_Bound:
+    name = "Store_Bound"
     domain = "Clocks"
     area = "BE/Mem"
     desc = """
@@ -1305,7 +1325,7 @@ flagged should any of these cases be a bottleneck."""
             self.val = EV("RESOURCE_STALLS.SB", 3) / CLKS(self, EV, 3 )
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
-            print_error("Stores_Bound zero division")
+            print_error("Store_Bound zero division")
             self.errcount += 1
             self.val = 0
             self.thresh = False
@@ -1316,9 +1336,13 @@ class Store_Latency:
     domain = "Clocks"
     area = "BE/Mem"
     desc = """
-This metric represents cycles fraction the CPU spent
-handling long-latency store misses (missing 2nd level
-cache)."""
+This metric estimates cycles fraction the CPU spent handling
+L1D store misses. Store accesses usually less impact out-of-
+order core performance; however, holding resources for
+longer time can lead into undesired implications (e.g.
+contention on L1D fill-buffer entries - see FB_Full).
+Consider to avoid/reduce unnecessary (or easily load-
+able/computable) memory store."""
     level = 4
     htoff = False
     sample = []
@@ -1328,7 +1352,7 @@ cache)."""
     def compute(self, EV):
         try:
             self.val = (Store_L2_Hit_Cycles(self, EV, 4) +(1 - Mem_Lock_St_Fraction(self, EV, 4))* ORO_Demand_RFO_C1(self, EV, 4)) / CLKS(self, EV, 4 )
-            self.thresh = (self.val > 0.2) and self.parent.thresh
+            self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             print_error("Store_Latency zero division")
             self.errcount += 1
@@ -1352,7 +1376,7 @@ granularity."""
     server = False
     def compute(self, EV):
         try:
-            self.val = EV("MEM_UOPS_RETIRED.SPLIT_STORES", 4) / CORE_CLKS(self, EV, 4 )
+            self.val = 2 * EV("MEM_UOPS_RETIRED.SPLIT_STORES", 4) / CORE_CLKS(self, EV, 4 )
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
             print_error("Split_Stores zero division")
@@ -2139,6 +2163,23 @@ Per-thread actual clocks when the thread is active"""
             self.errcount += 1
 	    self.val = 0
 
+class Metric_SLOTS:
+    name = "SLOTS"
+    desc = """
+Total issue-pipeline slots"""
+    domain = "Count"
+    maxval = 0
+    server = True
+    errcount = 0
+
+    def compute(self, EV):
+        try:
+	    self.val = SLOTS(self, EV, 0)
+        except ZeroDivisionError:
+            print_error("SLOTS zero division")
+            self.errcount += 1
+	    self.val = 0
+
 class Metric_CoreIPC:
     name = "CoreIPC"
     desc = """
@@ -2317,7 +2358,7 @@ class Metric_SMT_2T_Utilization:
     name = "SMT_2T_Utilization"
     desc = """
 Fraction of cycles where both hardware threads were active"""
-    domain = "Metric"
+    domain = "CoreMetric"
     maxval = 1
     server = True
     errcount = 0
@@ -2420,23 +2461,6 @@ Run duration time in seconds"""
             self.errcount += 1
 	    self.val = 0
 
-class Metric_SLOTS:
-    name = "SLOTS"
-    desc = """
-Total issue-pipeline slots"""
-    domain = "Count"
-    maxval = 0
-    server = True
-    errcount = 0
-
-    def compute(self, EV):
-        try:
-	    self.val = SLOTS(self, EV, 0)
-        except ZeroDivisionError:
-            print_error("SLOTS zero division")
-            self.errcount += 1
-	    self.val = 0
-
 # Schedule
 
 
@@ -2480,7 +2504,7 @@ class Setup:
         n = Local_DRAM() ; r.run(n) ; o["Local_DRAM"] = n
         n = Remote_DRAM() ; r.run(n) ; o["Remote_DRAM"] = n
         n = Remote_Cache() ; r.run(n) ; o["Remote_Cache"] = n
-        n = Stores_Bound() ; r.run(n) ; o["Stores_Bound"] = n
+        n = Store_Bound() ; r.run(n) ; o["Store_Bound"] = n
         n = Store_Latency() ; r.run(n) ; o["Store_Latency"] = n
         n = Split_Stores() ; r.run(n) ; o["Split_Stores"] = n
         n = DTLB_Store() ; r.run(n) ; o["DTLB_Store"] = n
@@ -2542,10 +2566,10 @@ class Setup:
         o["Local_DRAM"].parent = o["MEM_Latency"]
         o["Remote_DRAM"].parent = o["MEM_Latency"]
         o["Remote_Cache"].parent = o["MEM_Latency"]
-        o["Stores_Bound"].parent = o["Memory_Bound"]
-        o["Store_Latency"].parent = o["Stores_Bound"]
-        o["Split_Stores"].parent = o["Stores_Bound"]
-        o["DTLB_Store"].parent = o["Stores_Bound"]
+        o["Store_Bound"].parent = o["Memory_Bound"]
+        o["Store_Latency"].parent = o["Store_Bound"]
+        o["Split_Stores"].parent = o["Store_Bound"]
+        o["DTLB_Store"].parent = o["Store_Bound"]
         o["Core_Bound"].parent = o["Backend_Bound"]
         o["Divider"].parent = o["Core_Bound"]
         o["Ports_Utilization"].parent = o["Core_Bound"]
@@ -2621,6 +2645,7 @@ class Setup:
         n = Metric_DSB_Coverage() ; r.metric(n)
         n = Metric_CPI() ; r.metric(n)
         n = Metric_CLKS() ; r.metric(n)
+        n = Metric_SLOTS() ; r.metric(n)
         n = Metric_CoreIPC() ; r.metric(n)
         n = Metric_FLOPc() ; r.metric(n)
         n = Metric_ILP() ; r.metric(n)
@@ -2637,4 +2662,3 @@ class Setup:
         n = Metric_MEM_Read_Latency() ; r.metric(n)
         n = Metric_MEM_Parallel_Reads() ; r.metric(n)
         n = Metric_Time() ; r.metric(n)
-        n = Metric_SLOTS() ; r.metric(n)
