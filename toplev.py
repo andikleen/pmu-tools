@@ -1271,8 +1271,6 @@ class Runner:
         # step 1: compute
         for obj in self.olist:
             obj.errcount = 0
-            if not obj.metric:
-                obj.thresh = False
 
             if not match(obj):
                 continue
