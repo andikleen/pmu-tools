@@ -5,6 +5,16 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev updated to Ahmad Yasin's TMAM 3.1:
+	- This release is aimed at Skylake and Broadwell
+	- Support for Broadwell Server (DE and EP)
+	- Improved Mem Bound and Mem_Bandwidth/Latency to account for prefetches
+	- Fixes to Store_Latency metric to include L2_Hit Stores
+	- Account FB_hit in memory related metrics
+	- More accurate Branch_Resteers on Skylake
+	- Improved False Sharing / Congested Accesses
+	- Various other improvements
+	- Support for a new reduced profile with less multiplexing (enable with --redecued)
 * toplev now supports --sample-basename to specify the basename of the
 sample perf.data file
 * toplev now supports --sample-repeat to interleave measuring and sampling for
