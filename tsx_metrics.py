@@ -16,6 +16,7 @@ does not use locks (or other transactions), or the locks are not enabled with lo
     subplot = "TSX"
     unit = "%"
     sample = ["mem_uops_retired.lock_loads"]
+    server = True
     def compute(self, EV):
         try:
             self.val = TXCycles(EV, 1) * 100.
@@ -32,6 +33,7 @@ start sampling for abort causes."""
     subplot = "TSX"
     unit = "%"
     sample = ["cpu/tx-abort/pp", "cpu/hle-abort/pp"]
+    server = True
     def compute(self, EV):
         try:
             self.val = ((EV("cpu/cycles-t/", 1) - EV("cpu/cycles-ct/", 1)) / EV("cycles", 1)) * 100.
@@ -47,6 +49,7 @@ Average RTM transaction length. Assumes most transactions are RTM.
 When low consider increasing the size of the critical sections to lower overhead."""
     subplot = "TSX Latencies"
     unit = "cycles"
+    server = True
     def compute(self, EV):
         try:
             self.val = EV("cpu/cycles-t/", 1) / EV("RTM_RETIRED.START", 1)

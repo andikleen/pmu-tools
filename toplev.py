@@ -34,7 +34,8 @@ known_cpus = (
     ("hsw", (60, 70, 69 )),
     ("hsx", (63, )),
     ("slm", (55, 77, 76, )),
-    ("bdw", (61, 86, 71, )),
+    ("bdw", (61, 71, )),
+    ("bdx", (79, 86, )),
     ("simple", ()),
     ("skl", (94, 78, )),
 )
@@ -308,6 +309,7 @@ p.add_argument('--columns', help='Print CPU output in multiple columns', action=
 p.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
 p.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
 p.add_argument('--bottleneck', help='Show critical bottleneck', action='store_true')
+p.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 p.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true')
 args, rest = p.parse_known_args()
 
@@ -1100,6 +1102,8 @@ class Runner:
     # remove unwanted nodes after their parent relation ship has been set up
     def filter_nodes(self):
         def want_node(obj):
+            if args.reduced and has(obj, 'server') and not obj.server:
+                return False
             if not obj.metric:
                 return node_filter(obj, lambda: obj.level <= self.max_level)
             else:
@@ -1452,6 +1456,11 @@ elif cpu.cpu == "bdw":
     bdw_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
     model = bdw_client_ratios
+elif cpu.cpu == "bdx":
+    import bdx_server_ratios
+    bdx_server_ratios.smt_enabled = cpu.ht
+    smt_mode = cpu.ht
+    model = bdx_server_ratios
 elif cpu.cpu == "skl":
     import skl_client_ratios
     skl_client_ratios.smt_enabled = cpu.ht
