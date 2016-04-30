@@ -605,8 +605,6 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             st = [combine_valstat(z) for z in itertools.izip(*[valstats[j] for j in cpus])]
             runner.compute(r, rev[cpus[0]], st, env, smt_node, stat)
             runner.print_res(out, interval, core_fmt(core), smt_node)
-	    if args.bottleneck:
-		runner.print_bottleneck(out, core_fmt(core), smt_node)
 
         # print the non SMT nodes
         # recompute the nodes so we get up-to-date values
@@ -616,7 +614,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, stat)
             runner.print_res(out, interval, thread_fmt(j), not_smt_node)
 	    if args.bottleneck:
-		runner.print_bottleneck(out, thread_fmt(core), not_smt_node)
+                runner.print_bottleneck(out, thread_fmt(core), lambda obj: True)
     else:
         for j in sorted(res.keys()):
             if j != "" and int(j) not in runner.allowed_threads:
