@@ -1042,7 +1042,7 @@ def find_bn(bn):
     b = sorted(bn, key=lambda x: x)
     return b
 
-SIB_THRESH = 5.0
+SIB_THRESH = 0.05
 
 def _find_final(bn, level):
     get_level = lambda x: x.count(".")
