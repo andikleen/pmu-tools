@@ -286,6 +286,7 @@ p.add_argument('--pid', '-p', help=argparse.SUPPRESS)
 p.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
 p.add_argument('--all', help="Measure everything available", action='store_true')
 p.add_argument('--frequency', help="Measure frequency", action='store_true')
+p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
 p.add_argument('--no-group', help='Dont use groups', action='store_true')
 p.add_argument('--no-multiplex',
                help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
@@ -1546,6 +1547,11 @@ if not args.quiet:
     if not args.level and cpu.cpu != "slm":
         print "Change level with -lX"
     print
+
+if args.repl:
+    import code
+    code.interact(banner='toplev repl', local=locals())
+    sys.exit(0)
 
 runner.collect()
 if csv_mode:
