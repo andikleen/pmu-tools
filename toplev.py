@@ -1378,8 +1378,8 @@ def do_sample(sample_obj, rest, count):
         if ret:
             sys.exit(ret)
 	if not args.quiet:
-            print "Run `" + perf + " report -i %s%s' to show the sampling results" % (
-		perf_data,
+            print "Run `" + perf + " report %s%s' to show the sampling results" % (
+		("-i %s" % perf_data) if perf_data != "perf_data" else "",
 		" --no-branch-history"  if "-b" in extra_args else "")
 
 def sysctl(name):
