@@ -590,32 +590,37 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
     else:
         out.set_cpus(res.keys())
     if smt_mode:
-        # compute non SMT nodes, but don't print yet
-        # this is needed for getting the thresholds correct when
-        # a SMT node depends on a non SMT node
+	printed_cores = set()
         for j in sorted(res.keys()):
-            runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, stat)
+	    if j != "" and int(j) not in runner.allowed_threads:
+		continue
 
-        # collect counts from all threads of cores as lists
-        # this way the model can access all threads individually
-        # print the SMT aware nodes
-        core_keys = sorted(res.keys(), key = key_to_coreid)
-        for core, citer in itertools.groupby(core_keys, key_to_coreid):
-            cpus = list(citer)
-            r = list(itertools.izip(*[res[j] for j in cpus]))
-            st = [combine_valstat(z) for z in itertools.izip(*[valstats[j] for j in cpus])]
-            runner.compute(r, rev[cpus[0]], st, env, smt_node, stat)
-            runner.print_res(out, interval, core_fmt(core), smt_node)
+	    runner.reset_thresh()
 
-        # print the non SMT nodes
-        # recompute the nodes so we get up-to-date values
-        for j in sorted(res.keys()):
-            if j != "" and int(j) not in runner.allowed_threads:
-                continue
-            runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, stat)
+            # collect counts from all threads of cores as lists
+            # this way the model can access all threads individually
+            core = key_to_coreid(j)
+            cpus = [x for x in res.keys() if key_to_coreid(x) == core]
+            combined_res = list(itertools.izip(*[res[x] for x in cpus]))
+            st = [combine_valstat(z) for z in itertools.izip(*[valstats[x] for x in cpus])]
+
+            # repeat a few times to get stable threshold values
+            # in case of mutual dependencies between SMT and non SMT
+            # XXX should use topological sort
+            for _ in range(3):
+                runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, stat)
+                runner.compute(combined_res, rev[cpus[0]], st, env, smt_node, stat)
+
+	    # print the SMT aware nodes
+	    if core not in printed_cores:
+		runner.print_res(out, interval, core_fmt(core), smt_node)
+		printed_cores.add(core)
+
+	    # print the non SMT nodes
+	    # recompute the nodes so we get up-to-date values
             runner.print_res(out, interval, thread_fmt(j), not_smt_node)
 	    if args.bottleneck:
-                runner.print_bottleneck(out, thread_fmt(core), lambda obj: True)
+                runner.print_bottleneck(out, thread_fmt(j), lambda obj: True)
     else:
         for j in sorted(res.keys()):
             if j != "" and int(j) not in runner.allowed_threads:
@@ -1109,6 +1114,10 @@ class Runner:
                 return node_filter(obj, lambda: args.metrics)
 
         self.olist = filter(want_node, self.olist)
+
+    def reset_thresh(self):
+	for obj in self.olist:
+	    obj.thresh = False
 
     def run(self, obj):
         obj.thresh = False
