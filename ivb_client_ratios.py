@@ -1,6 +1,6 @@
 
 #
-# auto generated TopDown/TMAM 3.098 description for Intel 3rd gen Core (code named IvyBridge)
+# auto generated TopDown/TMAM 3.1 description for Intel 3rd gen Core (code named IvyBridge)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -13,7 +13,7 @@
 
 print_error = lambda msg: False
 smt_enabled = False
-version = "3.098"
+version = "3.1"
 
 
 
