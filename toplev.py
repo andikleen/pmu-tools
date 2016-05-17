@@ -607,9 +607,11 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             # repeat a few times to get stable threshold values
             # in case of mutual dependencies between SMT and non SMT
             # XXX should use topological sort
+            used_stat = stat
             for _ in range(3):
-                runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, stat)
-                runner.compute(combined_res, rev[cpus[0]], st, env, smt_node, stat)
+                runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, used_stat)
+                runner.compute(combined_res, rev[cpus[0]], st, env, smt_node, used_stat)
+                used_stat = None
 
 	    # print the SMT aware nodes
 	    if core not in printed_cores:
@@ -1289,16 +1291,19 @@ class Runner:
             ref = set()
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
-            stat.referenced |= ref
+            if stat:
+                stat.referenced |= ref
             obj.valstat = combine_valstat([valstats[i] for i in ref])
             if not obj.res_map and not all([x in env for x in obj.evnum]):
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
 	    if not obj.metric and not check_ratio(obj.val):
 		obj.thresh = False
-		stat.mismeasured.add(obj.name)
-            if has(obj, 'errcount') and obj.errcount > 0:
+                if stat:
+		    stat.mismeasured.add(obj.name)
+            if stat and has(obj, 'errcount') and obj.errcount > 0:
+                if obj.name not in stat.errors:
+                    stat.errcount += obj.errcount
                 stat.errors.add(obj.name)
-                stat.errcount += obj.errcount
 
 	# step 2: propagate siblings
 	for obj in self.olist:
