@@ -95,6 +95,10 @@ unsup_events = (
     # commit 3a632cb229b
     ("CYCLE_ACTIVITY.*", (("hsw", "hsx"), (3, 11), None)))
 
+errata_whitelist = {
+    "BDE69", "BDE70",
+}
+
 ingroup_events = frozenset(fixed_to_num.keys())
 
 outgroup_events = set(["dummy"])
@@ -472,7 +476,7 @@ def raw_event(i, name="", period=False):
             # CPUs
             limited_counters[i] = int(e.counter.split(",")[0])
             limited_set.add(i)
-	if e.errata:
+	if e.errata and e.errata in errata_whitelist:
 	    errata_events[orig_i] = e.errata
     return i
 
