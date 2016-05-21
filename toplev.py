@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2012-2015, Intel Corporation
+# Copyright (c) 2012-2016, Intel Corporation
 # Author: Andi Kleen
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -14,8 +14,9 @@
 # Measure a workload using the topdown performance model:
 # estimate on which part of the CPU pipeline it bottlenecks.
 #
-# must find ocperf in python module path. add to paths below if needed.
-# Handles a variety of perf versions, but older ones have various limitations.
+# Must find ocperf in python module path. add to paths below if needed.
+# Handles a variety of perf and kernel versions, but older ones have various
+# limitations.
 
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
 import exceptions, argparse, time, types, fnmatch, csv, copy
