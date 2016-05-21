@@ -586,14 +586,20 @@ def display_core(cpunum, ignore_thread=False):
         return True
     return False
 
+def display_keys(runner, keys):
+    if len(keys) > 1 and smt_mode:
+        cores = [key_to_coreid(x) for x in keys if int(x) in runner.allowed_threads]
+        threads = map(thread_fmt, runner.allowed_threads)
+        all_cpus = list(set(map(core_fmt, cores) + threads))
+    else:
+        all_cpus = keys
+    if any(map(package_node, runner.olist)):
+        all_cpus += ["S%d" % x for x in range(cpu.sockets)]
+    return all_cpus
+
 def print_keys(runner, res, rev, valstats, out, interval, env):
     stat = runner.stat
-    if len(res.keys()) > 1 and smt_mode:
-        cores = [key_to_coreid(x) for x in res.keys() if int(x) in runner.allowed_threads]
-        threads = map(thread_fmt, runner.allowed_threads)
-        out.set_cpus(set(map(core_fmt, cores) + threads))
-    else:
-        out.set_cpus(res.keys())
+    out.set_cpus(display_keys(runner, res.keys()))
     if smt_mode:
 	printed_cores = set()
         for j in sorted(res.keys()):
@@ -614,28 +620,41 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             # XXX should use topological sort
             used_stat = stat
             for _ in range(3):
-                runner.compute(res[j], rev[j], valstats[j], env, not_smt_node, used_stat)
-                runner.compute(combined_res, rev[cpus[0]], st, env, smt_node, used_stat)
+                runner.compute(res[j], rev[j], valstats[j], env, thread_node, used_stat)
+                runner.compute(combined_res, rev[cpus[0]], st, env, core_node, used_stat)
                 used_stat = None
 
 	    # print the SMT aware nodes
 	    if core not in printed_cores:
-		runner.print_res(out, interval, core_fmt(core), smt_node)
+		runner.print_res(out, interval, core_fmt(core), core_node)
 		printed_cores.add(core)
 
 	    # print the non SMT nodes
 	    # recompute the nodes so we get up-to-date values
-            runner.print_res(out, interval, thread_fmt(j), not_smt_node)
+            runner.print_res(out, interval, thread_fmt(j), thread_node)
 	    if args.bottleneck:
-                runner.print_bottleneck(out, thread_fmt(j), lambda obj: True)
+                runner.print_bottleneck(out, thread_fmt(j), not_package_node)
     else:
         for j in sorted(res.keys()):
             if j != "" and int(j) not in runner.allowed_threads:
                 continue
-            runner.compute(res[j], rev[j], valstats[j], env, lambda obj: True, stat)
-            runner.print_res(out, interval, j, lambda obj: True)
+            runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
+            runner.print_res(out, interval, j, not_package_node)
 	    if args.bottleneck:
-		runner.print_bottleneck(out, j, lambda obj: True)
+		runner.print_bottleneck(out, j, not_package_node)
+    packages = set()
+    for j in sorted(res.keys()):
+        if j == "":
+            continue
+        if int(j) not in runner.allowed_threads:
+            continue
+        p_id = cpu.cputosocket[int(j)]
+        if p_id in packages:
+            continue
+        packages.add(p_id)
+        runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
+        runner.print_res(out, interval, "S%d" % p_id, package_node)
+        # no bottlenecks from package nodes for now
     out.flush()
     stat.referenced_check(res)
     stat.compute_errors()
@@ -993,11 +1012,17 @@ def full_name(obj):
         name = obj.name + "." + name
     return name
 
-def smt_node(obj):
-    return has(obj, 'domain') and obj.domain in smt_domains
+def package_node(obj):
+    return has(obj, 'domain') and obj.domain == "Package"
 
-def not_smt_node(obj):
-    return not smt_node(obj)
+def not_package_node(obj):
+    return not package_node(obj)
+
+def core_node(obj):
+    return has(obj, 'domain') and obj.domain in smt_domains and obj.domain != "Package"
+
+def thread_node(obj):
+    return not core_node(obj) and not package_node(obj)
 
 def count(f, l):
     return len(filter(f, l))
