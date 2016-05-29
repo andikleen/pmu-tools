@@ -125,6 +125,7 @@ limited_set = set(limited_counters.keys())
 smt_mode = False
 
 errata_events = dict()
+errata_warn_events = dict()
 
 perf = os.getenv("PERF")
 if not perf:
@@ -477,8 +478,11 @@ def raw_event(i, name="", period=False):
             # CPUs
             limited_counters[i] = int(e.counter.split(",")[0])
             limited_set.add(i)
-	if e.errata and e.errata in errata_whitelist:
-	    errata_events[orig_i] = e.errata
+        if e.errata:
+            if e.errata in errata_whitelist:
+	        errata_events[orig_i] = e.errata
+            else:
+                errata_warn_events[orig_i] = e.errata
     return i
 
 # generate list of converted raw events from events string
@@ -1113,6 +1117,12 @@ def missing_pmu(e):
             return True
     return False
 
+def query_errata(obj, errata_events, errata_nodes, errata_names):
+    errata = [errata_events[x] for x in obj.evlist if x in errata_events]
+    if any(errata):
+        errata_nodes.add(obj)
+        errata_names |= set(errata)
+
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
@@ -1218,7 +1228,9 @@ class Runner:
         bad_events = set()
         unsup_nodes = set()
 	errata_nodes = set()
+	errata_warn_nodes = set()
 	errata_names = set()
+	errata_warn_names = set()
 	min_kernel = []
         for obj in self.olist:
             obj.evlevels = []
@@ -1235,10 +1247,8 @@ class Runner:
             unsup = [x for x in obj.evlist if missing_pmu(x)]
             if any(unsup):
                 unsup_nodes.add(obj)
-	    errata = [errata_events[x] for x in obj.evlist if x in errata_events]
-	    if any(errata):
-		errata_nodes.add(obj)
-		errata_names |= set(errata)
+            query_errata(obj, errata_events, errata_nodes, errata_names)
+            query_errata(obj, errata_warn_events, errata_warn_nodes, errata_warn_names)
 	if bad_nodes:
             if args.force_events:
 		pwrap_not_quiet("warning: Using --force-events. Nodes: " +
@@ -1261,6 +1271,9 @@ class Runner:
 			" ".join(errata_names) + " and were disabled. " +
 			"Override with --ignore-errata")
 	    self.olist = [x for x in self.olist if x in errata_nodes]
+	if errata_warn_nodes and not args.ignore_errata:
+	    pwrap_not_quiet("Nodes " + " ".join(x.name for x in errata_warn_nodes) + " have errata " +
+			" ".join(errata_warn_names))
 
     # fit events into available counters
     # simple first fit algorithm
