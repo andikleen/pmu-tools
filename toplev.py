@@ -270,6 +270,7 @@ p.add_argument('--user', help='Only measure user code', action='store_true')
 p.add_argument('--print-group', '-g', help='Print event group assignments',
                action='store_true')
 p.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
+p.add_argument('--desc', help='Force event descriptions', action='store_true')
 p.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
 p.add_argument('--interval', '-I', help='Enable interval mode with ms interval',
                type=int)
@@ -1421,15 +1422,13 @@ def do_sample(sample_obj, rest, count):
     sl = [raw_event(s[0], s[1] + "_" + remove_pp(s[0]).replace(".", "_"), period=True) for s in nsamp]
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
-    if not args.quiet:
-        print "Sampling:"
+    print "Sampling:"
     extra_args = args.sample_args.replace("+", "-").split()
     perf_data = args.sample_basename
     if count:
         perf_data += ".%d" % count
     sperf = [perf, "record" ] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
-    if not args.quiet:
-        print " ".join(sperf)
+    print " ".join(sperf)
     if args.run_sample:
 	ret = os.system(" ".join(sperf))
         if ret:
@@ -1476,7 +1475,8 @@ if args.single_thread:
     cpu.ht = False
 
 if args.quiet:
-    args.no_desc = True
+    if not args.desc:
+        args.no_desc = True
     args.no_util = True
 
 if cpu.cpu == "ivb":
