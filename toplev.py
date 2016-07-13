@@ -1160,7 +1160,8 @@ class Runner:
 
     def reset_thresh(self):
 	for obj in self.olist:
-	    obj.thresh = False
+            if not obj.metric:
+	        obj.thresh = False
 
     def run(self, obj):
         obj.thresh = False
