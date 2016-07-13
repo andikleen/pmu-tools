@@ -113,6 +113,8 @@ if python -c 'import matplotlib.pyplot' ; then
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --graph -o x.png -d --metrics -l4 $LOAD
 fi
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 sleep 1
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -o log -m -l4 -I 100 $LOAD
+grep IPC log
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 --columns sleep 1
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 --columns -x, sleep 1
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 --valcsv val.csv --user $LOAD | tee log
