@@ -106,7 +106,9 @@ checkmsr2 slm offcore_response.any_request.any_response "msr 1a6 = 18008"
 # parser checks
 checkp() 
 {
-	$WRAP ./ocperf.py --print stat -e "$1" | grep "$2"
+	$WRAP ./ocperf.py --print stat -e "$1" > tlog
+	grep "$2" tlog
+	rm tlog
 }
 export EVENTMAP=${cpus[hsw]}
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL 'r1c4$'
