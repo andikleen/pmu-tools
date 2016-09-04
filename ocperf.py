@@ -180,7 +180,7 @@ class Event:
 	    if name:
 		e += ",name=" + name
 	    elif not noname:
-		e += ",name=%s" % (self.name.replace(".", "_"),)
+                e += ",name=%s" % (self.name.replace(".", "_").replace(":", "_").replace("=", "_"))
         if period and self.period:
             e += ",period=%d" % self.period
         return e
@@ -385,6 +385,12 @@ fixed_counters = {
     "cpu_clk_unhalted.thread_any": (0x3c, 0, 1),
 }
 
+def update_ename(ev, name):
+    if ev:
+        ev = copy.deepcopy(ev)
+        ev.name = name
+    return ev
+
 class Emap(object):
     """Read an event table."""
 
@@ -488,6 +494,10 @@ class Emap(object):
         e = e.lower()
         extra = ""
         edelim = ""
+        m = re.match(r'([^:]+):request=([^:]+):response=([^:]+)', e)
+        if m:
+            ename = m.group(1) + "." + m.group(2) + "." + m.group(3)
+            return update_ename(self.getevent(ename), e)
         m = re.match(r'(.*?):(.*)', e)
         if m:
             extra = m.group(2)
@@ -503,11 +513,11 @@ class Emap(object):
                 return ev
             return self.events[e]
         elif e.endswith("_ps"):
-            return self.getevent(e[:-3] + ":p" + extra)
+            return update_ename(self.getevent(e[:-3] + ":p" + extra), e)
         elif e.endswith("_0") or e.endswith("_1"):
-            return self.getevent(e.replace("_0","").replace("_1","") + edelim + extra)
+            return update_ename(self.getevent(e.replace("_0","").replace("_1","") + edelim + extra), e)
         elif e.startswith("offcore") and (e + "_0") in self.events:
-            return self.getevent(e + "_0" + edelim + extra)
+            return update_ename(self.getevent(e + "_0" + edelim + extra), e)
         elif e in self.uncore_events:
             return check_uncore_event(self.uncore_events[e])
         return None
@@ -719,17 +729,9 @@ def process_events(event, print_only, period):
                 start = ""
                 end = ""
         else:
-            extra = ""
-            m = re.match("([^:]*):(.*)", i)
-            if m:
-                extra = m.group(2)
-                i = m.group(1)
             ev = emap.getevent(i)
             if ev:
-                i = ev.output(flags=extra, period=period)
-            else:
-               if extra:
-                   i += ":" + extra
+                i = ev.output(period=period)
         if ev:
             if ev.msr:
                 msr.checked_writemsr(ev.msr, ev.msrval, print_only)
