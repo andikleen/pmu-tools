@@ -1,6 +1,6 @@
 
 #
-# auto generated TopDown/TMAM 3.1 description for Intel 5th gen Core / Core M (code named Broadwell)
+# auto generated TopDown/TMAM 3.14 description for Intel 5th gen Core / Core M (code named Broadwell)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -13,7 +13,7 @@
 
 print_error = lambda msg: False
 smt_enabled = False
-version = "3.1"
+version = "3.14"
 
 
 
@@ -52,7 +52,7 @@ def SQ_Full_Cycles(self, EV, level):
     return (EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level) / 2) if smt_enabled else EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
 
 def ITLB_Miss_Cycles(self, EV, level):
-    return (Mem_STLB_Hit_Cost * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION:c1", level))
+    return (9 * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION:c1", level) + 7 * EV("ITLB_MISSES.WALK_COMPLETED", level))
 
 def Frontend_RS_Empty_Cycles(self, EV, level):
     EV("RS_EVENTS.EMPTY_CYCLES", level)
@@ -185,8 +185,8 @@ def MLP(self, EV, level):
     return EV("L1D_PEND_MISS.PENDING", level) / L1D_Miss_Cycles(self, EV, level)
 
 # Utilization of the core's Page Walker(s) serving STLB misses triggered by instruction/Load/Store accesses
-def Page_Walks_Use(self, EV, level):
-    return (EV("ITLB_MISSES.WALK_DURATION:c1", level) + EV("DTLB_LOAD_MISSES.WALK_DURATION:c1", level) + EV("DTLB_STORE_MISSES.WALK_DURATION:c1", level)) / CORE_CLKS(self, EV, level)
+def Page_Walks_Utilization(self, EV, level):
+    return (EV("ITLB_MISSES.WALK_DURATION:c1", level) + EV("DTLB_LOAD_MISSES.WALK_DURATION:c1", level) + EV("DTLB_STORE_MISSES.WALK_DURATION:c1", level) + 7 *(EV("DTLB_STORE_MISSES.WALK_COMPLETED", level) + EV("DTLB_LOAD_MISSES.WALK_COMPLETED", level) + EV("ITLB_MISSES.WALK_COMPLETED", level))) / CORE_CLKS(self, EV, level)
 
 # Core actual clocks when any thread is active on the physical core
 def CORE_CLKS(self, EV, level):
@@ -813,7 +813,7 @@ a hardware page walk on an STLB miss.."""
     server = True
     def compute(self, EV):
         try:
-            self.val = (Mem_STLB_Hit_Cost * EV("DTLB_LOAD_MISSES.STLB_HIT", 4) + EV("DTLB_LOAD_MISSES.WALK_DURATION:c1", 4)) / CLKS(self, EV, 4 )
+            self.val = (Mem_STLB_Hit_Cost * EV("DTLB_LOAD_MISSES.STLB_HIT", 4) + EV("DTLB_LOAD_MISSES.WALK_DURATION:c1", 4) + 7 * EV("DTLB_LOAD_MISSES.WALK_COMPLETED", 4)) / CLKS(self, EV, 4 )
             self.thresh = (self.val > 0.1)
         except ZeroDivisionError:
             print_error("DTLB_Load zero division")
@@ -1324,7 +1324,7 @@ large amounts of frequently-used data."""
     server = True
     def compute(self, EV):
         try:
-            self.val = (Mem_STLB_Hit_Cost * EV("DTLB_STORE_MISSES.STLB_HIT", 4) + EV("DTLB_STORE_MISSES.WALK_DURATION:c1", 4)) / CLKS(self, EV, 4 )
+            self.val = (Mem_STLB_Hit_Cost * EV("DTLB_STORE_MISSES.STLB_HIT", 4) + EV("DTLB_STORE_MISSES.WALK_DURATION:c1", 4) + 7 * EV("DTLB_STORE_MISSES.WALK_COMPLETED", 4)) / CLKS(self, EV, 4 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
             print_error("DTLB_Store zero division")
@@ -2217,8 +2217,8 @@ load when there is at least 1 such miss)"""
             self.errcount += 1
 	    self.val = 0
 
-class Metric_Page_Walks_Use:
-    name = "Page_Walks_Use"
+class Metric_Page_Walks_Utilization:
+    name = "Page_Walks_Utilization"
     desc = """
 Utilization of the core's Page Walker(s) serving STLB misses
 triggered by instruction/Load/Store accesses"""
@@ -2229,9 +2229,9 @@ triggered by instruction/Load/Store accesses"""
 
     def compute(self, EV):
         try:
-	    self.val = Page_Walks_Use(self, EV, 0)
+	    self.val = Page_Walks_Utilization(self, EV, 0)
         except ZeroDivisionError:
-            print_error("Page_Walks_Use zero division")
+            print_error("Page_Walks_Utilization zero division")
             self.errcount += 1
 	    self.val = 0
 
@@ -2703,7 +2703,7 @@ class Setup:
         n = Metric_FLOPc() ; r.metric(n)
         n = Metric_ILP() ; r.metric(n)
         n = Metric_MLP() ; r.metric(n)
-        n = Metric_Page_Walks_Use() ; r.metric(n)
+        n = Metric_Page_Walks_Utilization() ; r.metric(n)
         n = Metric_CORE_CLKS() ; r.metric(n)
         n = Metric_Load_Miss_Real_Latency() ; r.metric(n)
         n = Metric_TSX_Transactional_Cycles() ; r.metric(n)

@@ -1,6 +1,6 @@
 
 #
-# auto generated TopDown/TMAM 3.1 description for Intel 2nd gen Core (code named SandyBridge)
+# auto generated TopDown/TMAM 3.14 description for Intel 2nd gen Core (code named SandyBridge)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -13,7 +13,7 @@
 
 print_error = lambda msg: False
 smt_enabled = False
-version = "3.1"
+version = "3.14"
 
 
 
@@ -40,7 +40,7 @@ def Execute_Cycles(self, EV, level):
     return (EV("UOPS_DISPATCHED.CORE:c1", level) / 2) if smt_enabled else EV("UOPS_DISPATCHED.CORE:c1", level)
 
 def ITLB_Miss_Cycles(self, EV, level):
-    return (Mem_STLB_Hit_Cost * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION", level))
+    return (9 * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION", level))
 
 def Frontend_RS_Empty_Cycles(self, EV, level):
     EV("RS_EVENTS.EMPTY_CYCLES", level)

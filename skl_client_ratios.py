@@ -1,6 +1,6 @@
 
 #
-# auto generated TopDown/TMAM 3.1 description for Intel 6th gen Core (code Named Skykale)
+# auto generated TopDown/TMAM 3.14 description for Intel 6th gen Core (code Named Skykale)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -13,7 +13,7 @@
 
 print_error = lambda msg: False
 smt_enabled = False
-version = "3.1"
+version = "3.14"
 
 
 
@@ -52,6 +52,9 @@ def L2_Bound_Fraction(self, EV, level):
 
 def SQ_Full_Cycles(self, EV, level):
     return (EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level) / 2) if smt_enabled else EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
+
+def ITLB_Miss_Cycles(self, EV, level):
+    return (9 * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_PENDING:c1", level))
 
 def Cycles_0_Ports_Utilized(self, EV, level):
     return EV("UOPS_EXECUTED.CORE_CYCLES_NONE", level) / 2 if smt_enabled else EV("EXE_ACTIVITY.EXE_BOUND_0_PORTS", level)
@@ -182,7 +185,7 @@ def MLP(self, EV, level):
     return EV("L1D_PEND_MISS.PENDING", level) / L1D_Miss_Cycles(self, EV, level)
 
 # Utilization of the core's Page Walker(s) serving STLB misses triggered by instruction/Load/Store accesses
-def Page_Walks_Use(self, EV, level):
+def Page_Walks_Utilization(self, EV, level):
     return (EV("ITLB_MISSES.WALK_PENDING", level) + EV("DTLB_LOAD_MISSES.WALK_PENDING", level) + EV("DTLB_STORE_MISSES.WALK_PENDING", level) + EV("EPT.WALK_PENDING", level)) /(2 * CORE_CLKS(self, EV, level))
 
 # Core actual clocks when any thread is active on the physical core
@@ -332,7 +335,7 @@ improved hot code layout."""
     server = True
     def compute(self, EV):
         try:
-            self.val = EV("ICACHE_16B.IFDATA_STALL", 3) / CLKS(self, EV, 3 )
+            self.val = (EV("ICACHE_16B.IFDATA_STALL", 3) + 2 * EV("ICACHE_16B.IFDATA_STALL:c1:e1", 3)) / CLKS(self, EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
             print_error("ICache_Misses zero division")
@@ -357,7 +360,7 @@ be considered here."""
     server = True
     def compute(self, EV):
         try:
-            self.val = EV("ICACHE_64B.IFTAG_STALL", 3) / CLKS(self, EV, 3 )
+            self.val = ITLB_Miss_Cycles(self, EV, 3) / CLKS(self, EV, 3 )
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
             print_error("ITLB_Misses zero division")
@@ -2217,8 +2220,8 @@ load when there is at least 1 such miss)"""
             self.errcount += 1
 	    self.val = 0
 
-class Metric_Page_Walks_Use:
-    name = "Page_Walks_Use"
+class Metric_Page_Walks_Utilization:
+    name = "Page_Walks_Utilization"
     desc = """
 Utilization of the core's Page Walker(s) serving STLB misses
 triggered by instruction/Load/Store accesses"""
@@ -2229,9 +2232,9 @@ triggered by instruction/Load/Store accesses"""
 
     def compute(self, EV):
         try:
-	    self.val = Page_Walks_Use(self, EV, 0)
+	    self.val = Page_Walks_Utilization(self, EV, 0)
         except ZeroDivisionError:
-            print_error("Page_Walks_Use zero division")
+            print_error("Page_Walks_Utilization zero division")
             self.errcount += 1
 	    self.val = 0
 
@@ -2702,7 +2705,7 @@ class Setup:
         n = Metric_FLOPc() ; r.metric(n)
         n = Metric_ILP() ; r.metric(n)
         n = Metric_MLP() ; r.metric(n)
-        n = Metric_Page_Walks_Use() ; r.metric(n)
+        n = Metric_Page_Walks_Utilization() ; r.metric(n)
         n = Metric_CORE_CLKS() ; r.metric(n)
         n = Metric_Load_Miss_Real_Latency() ; r.metric(n)
         n = Metric_TSX_Transactional_Cycles() ; r.metric(n)

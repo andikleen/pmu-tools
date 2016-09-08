@@ -1,6 +1,6 @@
 
 #
-# auto generated TopDown/TMAM 3.1 description for Intel 3rd gen Core (code named IvyBridge)
+# auto generated TopDown/TMAM 3.14 description for Intel 3rd gen Core (code named IvyBridge)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -13,7 +13,7 @@
 
 print_error = lambda msg: False
 smt_enabled = False
-version = "3.1"
+version = "3.14"
 
 
 
@@ -52,7 +52,7 @@ def SQ_Full_Cycles(self, EV, level):
     return (EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level) / 2) if smt_enabled else EV("OFFCORE_REQUESTS_BUFFER.SQ_FULL", level)
 
 def ITLB_Miss_Cycles(self, EV, level):
-    return (Mem_STLB_Hit_Cost * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION", level))
+    return (9 * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION", level))
 
 def Frontend_RS_Empty_Cycles(self, EV, level):
     EV("RS_EVENTS.EMPTY_CYCLES", level)
@@ -192,10 +192,6 @@ def ILP(self, EV, level):
 # Memory-Level-Parallelism (average number of L1 miss demand load when there is at least 1 such miss)
 def MLP(self, EV, level):
     return EV("L1D_PEND_MISS.PENDING", level) / L1D_Miss_Cycles(self, EV, level)
-
-# Utilization of the core's Page Walker(s) serving STLB misses triggered by instruction/Load/Store accesses
-def Page_Walks_Use(self, EV, level):
-    return (EV("ITLB_MISSES.WALK_DURATION", level) + EV("DTLB_LOAD_MISSES.WALK_DURATION", level) + EV("DTLB_STORE_MISSES.WALK_DURATION", level)) / CORE_CLKS(self, EV, level)
 
 # Core actual clocks when any thread is active on the physical core
 def CORE_CLKS(self, EV, level):
@@ -2190,24 +2186,6 @@ load when there is at least 1 such miss)"""
             self.errcount += 1
 	    self.val = 0
 
-class Metric_Page_Walks_Use:
-    name = "Page_Walks_Use"
-    desc = """
-Utilization of the core's Page Walker(s) serving STLB misses
-triggered by instruction/Load/Store accesses"""
-    domain = "CoreMetric"
-    maxval = 1
-    server = True
-    errcount = 0
-
-    def compute(self, EV):
-        try:
-	    self.val = Page_Walks_Use(self, EV, 0)
-        except ZeroDivisionError:
-            print_error("Page_Walks_Use zero division")
-            self.errcount += 1
-	    self.val = 0
-
 class Metric_CORE_CLKS:
     name = "CORE_CLKS"
     desc = """
@@ -2603,7 +2581,6 @@ class Setup:
         n = Metric_FLOPc() ; r.metric(n)
         n = Metric_ILP() ; r.metric(n)
         n = Metric_MLP() ; r.metric(n)
-        n = Metric_Page_Walks_Use() ; r.metric(n)
         n = Metric_CORE_CLKS() ; r.metric(n)
         n = Metric_Load_Miss_Real_Latency() ; r.metric(n)
         n = Metric_CPU_Utilization() ; r.metric(n)
