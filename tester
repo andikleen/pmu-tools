@@ -143,7 +143,27 @@ export EVENTMAP=${cpus[hsx]}
 checkp OFFCORE_RESPONSE:request=DEMAND_RFO:response=LLC_MISS.REMOTE_HITM  \
 	cpu/event=0xb7,umask=0x1,offcore_rsp=0x107fc00002,name=offcore_response_request_demand_rfo_response_llc_miss_remote_hitm/
 
+checks()
+{
+	$WRAP ./ocperf.py stat -e "$1" true > tlog
+}
+
+checkr()
+{
+	$WRAP ./ocperf.py record -e "$1" true > tlog
+}
+
+checks '{cycles,cpu_clk_unhalted.thread,instructions}'
+checks '{cycles,cpu/cpu_clk_unhalted.thread,cmask=1/}'
+checks '{cpu/cpu_clk_unhalted.thread,cmask=1/u}'
+checkr '{cpu/cpu_clk_unhalted.thread,period=10000/u,instructions}:S'
+checkr '{cpu/cpu_clk_unhalted.thread,period=10000/u,cpu/cpu-cycles/,instructions}:S'
+checks '{cpu/cpu-cycles/,instructions}'
+checkr '{node-stores,instructions}:S'
+checkr '{cpu/cpu-cycles/,instructions}:S'
+checkr '{cpu/instructions,period=1000000/u,cpu_clk_unhalted.thread}:S'
 
 trap "" ERR 0
+rm tlog
 
 echo SUCCEEDED

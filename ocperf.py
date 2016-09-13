@@ -706,24 +706,26 @@ def process_events(event, print_only, period):
     el = event.split(",")
     nl = []
     for i in el:
+	group_start = ""
+	group_end = ""
         start = ""
         end = ""
         if i.startswith('{'):
-            start = "{"
+	    group_start = "{"
             i = i[1:]
-        if i.endswith('}'):
-            end = "}"
-            i = i[:-1]
+	m = re.match(r'(.*)(\}(:.*)?)', i)
+	if m:
+	    group_end = m.group(2)
+	    i = m.group(1)
         i = i.strip()
-        m = re.match(r"(cpu/)([a-zA-Z0-9._]+)(.*?/)([^,]*)", i)
-        if not m:
-            m = re.match(r"(uncore_.+?/)([a-zA-Z0-9_.]+)(.*?/)([^,]*)", i)
+	m = re.match(r'(cpu|uncore_.*?)/([^#]+)(#?.*?)/(.*)', i)
         if m:
-            start += m.group(1)
+	    start = m.group(1) + "/"
             ev = emap.getevent(m.group(2))
-            end += m.group(3)
+	    end = m.group(3) + "/"
             if ev:
-                end += "".join(merge_extra(extra_set(ev.extra), extra_set(m.group(4))))
+		qual = "".join(merge_extra(extra_set(ev.extra), extra_set(m.group(4))))
+		end += qual
                 i = ev.output_newstyle(period=period)
             else:
                 start = ""
@@ -738,7 +740,7 @@ def process_events(event, print_only, period):
             if emap.latego and (ev.val & 0xffff) in latego.latego_events:
                 latego.setup_event(ev.val & 0xffff, 1)
             overflow = ev.overflow
-        event = (start + i + end).replace("#", ",")
+	event = (group_start + start + i + end + group_end).replace("#", ",")
         nl.append(event)
         if ev:
             emap.update_event(event, ev)
