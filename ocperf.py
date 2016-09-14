@@ -705,6 +705,7 @@ def process_events(event, print_only, period):
             event)
     el = event.split(",")
     nl = []
+    group_index = 0
     for i in el:
 	group_start = ""
 	group_end = ""
@@ -713,6 +714,7 @@ def process_events(event, print_only, period):
         if i.startswith('{'):
 	    group_start = "{"
             i = i[1:]
+            group_index = len(nl)
 	m = re.match(r'(.*)(\}(:.*)?)', i)
 	if m:
 	    group_end = m.group(2)
@@ -744,6 +746,9 @@ def process_events(event, print_only, period):
         nl.append(event)
         if ev:
             emap.update_event(event, ev)
+        if "S" in group_end:
+            for j in range(group_index + 1, len(nl)):
+                nl[j] = re.sub(r',period=\d+', '', nl[j])
 
     return str.join(',', nl), overflow
 
@@ -778,7 +783,6 @@ def process_args():
            pass
         elif sys.argv[i] == "--no-period":
             record = never
-        # XXX does not handle options between perf and record
         elif sys.argv[i] == "record" and record == no:
             cmd.append(sys.argv[i])
             record = yes

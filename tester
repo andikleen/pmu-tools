@@ -108,7 +108,11 @@ checkp()
 {
 	$WRAP ./ocperf.py --print stat -e "$1" > tlog
 	grep "$2" tlog
-	rm tlog
+}
+
+checkp_record() {
+	$WRAP ./ocperf.py --print record -e "$1" > tlog
+	grep "$2" tlog
 }
 export EVENTMAP=${cpus[hsw]}
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL 'r1c4$'
@@ -163,7 +167,9 @@ checkr '{node-stores,instructions}:S'
 checkr '{cpu/cpu-cycles/,instructions}:S'
 checkr '{cpu/instructions,period=1000000/u,cpu_clk_unhalted.thread}:S'
 
+checkp_record '{cpu/cpu_clk_unhalted.thread/,cpu/br_inst_retired.all_branches/}:S'  \
+	'{cpu/event=0x3c,umask=0x0,name=cpu_clk_unhalted_thread,period=2000003/,cpu/event=0xc4,umask=0x0,name=br_inst_retired_all_branches/}:S'
 trap "" ERR 0
-rm tlog
+rm -f tlog
 
 echo SUCCEEDED
