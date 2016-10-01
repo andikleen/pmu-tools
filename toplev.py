@@ -908,7 +908,7 @@ def canon_event(e):
 
 fixes = dict(zip(event_fixes.values(), event_fixes.keys()))
 
-def event_rmap(e):
+def do_event_rmap(e):
     n = canon_event(emap.getperf(e))
     if emap.getevent(n):
         return n
@@ -917,6 +917,15 @@ def event_rmap(e):
         if n:
             return n
     return "dummy"
+
+rmap_cache = dict()
+
+def event_rmap(e):
+    if e in rmap_cache:
+        return rmap_cache[e]
+    n = do_event_rmap(e)
+    rmap_cache[e] = n
+    return n
 
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     if ev in env:
