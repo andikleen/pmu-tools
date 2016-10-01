@@ -66,7 +66,7 @@ class OutputHuman(Output):
 	self.titlelen = 7
 
     def set_cpus(self, cpus):
-        self.titlelen = max(map(lambda x: len(x)+1, cpus))
+        self.titlelen = max(map(len, cpus)) + 1
 
     def print_desc(self, desc, sample):
 	if desc and not self.args.no_desc:
