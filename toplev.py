@@ -1387,8 +1387,9 @@ class Runner:
                 if not match(obj):
                     continue
 		desc = obj_desc(obj, self.olist[1 + 1:])
-                if obj.metric and (print_all or obj.val != 0):
-		    out.metric(obj.area if has(obj, 'area') else None,
+                if obj.metric:
+                    if print_all or obj.val != 0:
+		        out.metric(obj.area if has(obj, 'area') else None,
                             obj.name, val, timestamp,
 			    desc,
                             title,
