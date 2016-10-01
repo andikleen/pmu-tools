@@ -117,7 +117,7 @@ qual_map = (
 
 qualval_map = (
     (r"c(mask=)?(0x[0-9a-f]+|[0-9]+)", "cmask=%d", 24),
-    (r"(sa|sample-after)=([0-9]+)", "period=%d", 0))
+    (r"(sa|sample-after|period)=([0-9]+)", "period=%d", 0))
 
 # newe gets modified
 def convert_extra(extra, val, newe):
@@ -181,7 +181,7 @@ class Event:
 		e += ",name=" + name
 	    elif not noname:
                 e += ",name=%s" % (self.name.replace(".", "_").replace(":", "_").replace("=", "_"))
-        if period and self.period:
+        if period and self.period and not ",period=" in e:
             e += ",period=%d" % self.period
         return e
 
@@ -504,6 +504,9 @@ class Emap(object):
             edelim = ":"
             e = m.group(1)
         if e in self.events:
+            # hack for now. Avoid ambiguity with :p
+            # Should handle qualmap properly here
+            extra = extra.replace("period=", "sample-after=")
             extra = extra_set(extra)
             ev = self.events[e]
             ev_extra = extra_set(ev.extra)
