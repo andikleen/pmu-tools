@@ -63,6 +63,10 @@ class OutputHuman(Output):
         Output.__init__(self, logfile, version)
         locale.setlocale(locale.LC_ALL, '')
         self.args = args
+	self.titlelen = 7
+
+    def set_cpus(self, cpus):
+        self.titlelen = max(map(lambda x: len(x)+1, cpus))
 
     def print_desc(self, desc, sample):
 	if desc and not self.args.no_desc:
@@ -93,7 +97,7 @@ class OutputHuman(Output):
 	self.print_timestamp(timestamp)
         write = self.logf.write
         if title:
-            write("%-6s" % (title))
+            write("%-*s" % (self.titlelen, title))
         vs = format_valstat(valstat)
 	self.print_header(area, hdr)
         if vs:
