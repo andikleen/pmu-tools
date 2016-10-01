@@ -552,10 +552,13 @@ def print_account(ad):
 def event_regexp():
     return "|".join(valid_events)
 
+valid_events_str = event_regexp()
+
 def is_event(l, n):
     if len(l) <= n:
         return False
-    return re.match(event_regexp(), l[n])
+    # use static string to make regexpr caching work
+    return re.match(valid_events_str, l[n])
 
 def set_interval(env, d):
     env['interval-ns'] = d * 1e9
