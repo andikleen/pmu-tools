@@ -166,6 +166,7 @@ checks '{cpu/cpu-cycles/,instructions}'
 checkr '{node-stores,instructions}:S'
 checkr '{cpu/cpu-cycles/,instructions}:S'
 checkr '{cpu/instructions,period=1000000/u,cpu_clk_unhalted.thread}:S'
+checkp 'cpu_clk_unhalted:period=123' 'period=123'
 
 checkp_record '{cpu/cpu_clk_unhalted.thread/,cpu/br_inst_retired.all_branches/}:S'  \
 	'{cpu/event=0x3c,umask=0x0,name=cpu_clk_unhalted_thread,period=2000003/,cpu/event=0xc4,umask=0x0,name=br_inst_retired_all_branches/}:S'
