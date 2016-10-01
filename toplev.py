@@ -1027,6 +1027,8 @@ def core_node(obj):
     return has(obj, 'domain') and obj.domain in smt_domains and obj.domain != "Package"
 
 def thread_node(obj):
+    if obj.metric and not (has(obj, 'domain') and obj.domain == "CoreMetric"):
+        return True
     return not core_node(obj) and not package_node(obj)
 
 def count(f, l):
@@ -1373,9 +1375,8 @@ class Runner:
                 if not match(obj):
                     continue
 		desc = obj_desc(obj, self.olist[1 + 1:])
-                if obj.metric:
-		    if obj.val != 0:
-			out.metric(obj.area if has(obj, 'area') else None,
+                if obj.metric and (print_all or obj.val != 0):
+		    out.metric(obj.area if has(obj, 'area') else None,
                             obj.name, val, timestamp,
 			    desc,
                             title,
