@@ -11001,14 +11001,6 @@ derived = {
           "Equation": "(TOR_INSERTS.NID_MISS_OPCODE with:Cn_MSR_PMON_BOX_FILTER1.{opc,nid}={0x182,other_nodes} + TOR_INSERTS.NID_MISS_OPCODE with:Cn_MSR_PMON_BOX_FILTER.{opc,nid}={0x180,other_nodes} ) / (TOR_INSERTS.NID_MISS_OPCODE with:Cn_MSR_PMON_BOX_FILTER.{opc,nid}={0x182,0xF} + TOR_INSERTS.NID_MISS_OPCODE with:Cn_MSR_PMON_BOX_FILTER.{opc,nid}={0x180,0xF} )",
           "Filter": "CBoFilter1[28:20], CBoFilter1[15:0]",
      },
-     "CBO.LLC_MPI": {
-          "Box": "CBO",
-          "Category": "CBO CACHE Events",
-          "Defn": "LLC Misses Per Instruction (code, read, RFO and prefetches)",
-          "Desc": "LLC MPI",
-          "Equation": "LLC_LOOKUP.ANY with:Cn_MSR_PMON_BOX_FILTER0.state=0x1 / INST_RETIRED.ALL (on Core)",
-          "Filter": "CBoFilter0[23:17]",
-     },
      "CBO.LLC_PCIE_DATA_BYTES": {
           "Box": "CBO",
           "Category": "CBO TOR Events",

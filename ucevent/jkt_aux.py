@@ -24,9 +24,12 @@ class Aux:
         "Q_Py_PCI_PMON_PKT_MATCH0[12:00]": "match0",
         "Q_Py_PCI_PMON_PKT_MATCH1[19:16]": "match_rds",
         "Q_Py_PCI_PMON_PKT_MASK0[12:0]": "mask0",
-        "Q_Py_PCI_PMON_PKT_MASK0[17:0]": "mask0",
+        "Q_Py_PCI_PMON_PKT_MASK0[17:0]": "mask0",   # why both?
         "Q_Py_PCI_PMON_PKT_MASK1[19:16]": "mask_rds",
         "Q_Py_PCI_PMON_PKT_MATCH0": "match0",
+        "Q_Py_PCI_PMON_PKT_z_MATCH0": "match0",
+        "Q_Py_PCI_PMON_PKT_z_MASK0[12:0]": "mask0", # XXX correct?
+        "Q_Py_PCI_PMON_PKT_z_MASK0[17:0]": "mask0", # XXX correct?
         "edge_det": "edge",
         "Cn_MSR_PMON_BOX_FILTER.opc": "filter_opc",
         "Cn_MSR_PMON_BOX_FILTER0.opc": "filter_opc",
@@ -36,6 +39,9 @@ class Aux:
         "Cn_MSR_PMON_BOX_FILTER0.tid": "filter_tid",
         "Cn_MSR_PMON_BOX_FILTER0.nc": "filter_nc",
         "Q_Py_PCI_PMON_PKT_MATCH0.dnid": "match_dnid",
+        "Q_Py_PCI_PMON_PKT_z_MATCH0.dnid": "match_dnid", # XXX
+        "Q_Py_PCI_PMON_PKT_z_MATCH1": "match1",
+        "Q_Py_PCI_PMON_PKT_z_MASK1": "mask1",
         "PCUFilter[7:0]": "filter_band0",
         "PCUFilter[15:8]": "filter_band1",
         "PCUFilter[23:16]": "filter_band2",

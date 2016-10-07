@@ -13527,14 +13527,6 @@ derived = {
           "Equation": "LLC_LOOKUP.DATA_READ with:Cn_MSR_PMON_BOX_FILTER0.state=0x1 / LLC_LOOKUP.DATA_READ with:Cn_MSR_PMON_BOX_FILTER.state=0x3F",
           "Filter": "CBoFilter0[23:17]",
      },
-     "CBO.LLC_MPI": {
-          "Box": "CBO",
-          "Category": "CBO CACHE Events",
-          "Defn": "LLC Misses Per Instruction (code, read, RFO and prefetches)",
-          "Desc": "LLC MPI",
-          "Equation": "LLC_LOOKUP.ANY with:Cn_MSR_PMON_BOX_FILTER0.state=0x1 / INST_RETIRED.ALL (on Core)",
-          "Filter": "CBoFilter0[23:17]",
-     },
      "CBO.LLC_RFO_MISS_PCT": {
           "Box": "CBO",
           "Category": "CBO TOR Events",

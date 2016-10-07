@@ -13422,7 +13422,7 @@ derived = {
 	  "Category": "CBO TOR Events",
 	  "Defn": "Average Number of Data Read Entries that Miss the LLC when the TOR is not empty.",
 	  "Desc": "Average Data Read Misses in Non-Empty TOR",
-	  "Equation": "(TOR_OCCUPANCY.MISS_OPCODE / COUNTER0_OCCUPANCY{edge_det,thresh=0x1})) with:Cn_MSR_PMON_BOX_FILTER1.opc=0x182",
+	  "Equation": "(TOR_OCCUPANCY.MISS_OPCODE / COUNTER0_OCCUPANCY{edge_det,thresh=0x1}) with:Cn_MSR_PMON_BOX_FILTER1.opc=0x182",
 	  "Filter": "CBoFilter1[28:20]",
      },
      "CBO.AVG_TOR_DRDS_WHEN_NE": {
@@ -13449,14 +13449,14 @@ derived = {
 	  "Equation": "(TOR_OCCUPANCY.OPCODE / TOR_INSERTS.OPCODE) with:Cn_MSR_PMON_BOX_FILTER1.opc=0x182",
 	  "Filter": "CBoFilter1[28:20]",
      },
-     "CBO.AVG_TOR_DRD_LOC_MISS_LATENCY": {
-	  "Box": "CBO",
-	  "Category": "CBO TOR Events",
-	  "Defn": "Average Latency of Data Reads through the TOR that miss the LLC and were satsified by Local Memory",
-	  "Desc": "Data Read Local Miss Latency through TOR",
-	  "Equation": "(TOR_OCCUPANCY.MISS_OPCODE / TOR_INSERTS.MISS_OPCODE) with:Cn_MSR_PMON_BOX_FILTER1.{opc,nid}={0x182,my_node}",
-	  "Filter": "CBoFilter1[28:20], CBoFilter1[15:0]",
-     },
+     #"CBO.AVG_TOR_DRD_LOC_MISS_LATENCY": {
+	#  "Box": "CBO",
+	#  "Category": "CBO TOR Events",
+	#  "Defn": "Average Latency of Data Reads through the TOR that miss the LLC and were satsified by Local Memory",
+	#  "Desc": "Data Read Local Miss Latency through TOR",
+	#  "Equation": "(TOR_OCCUPANCY.MISS_OPCODE / TOR_INSERTS.MISS_OPCODE) with:Cn_MSR_PMON_BOX_FILTER1.{opc,nid}={0x182,my_node}",
+	#  "Filter": "CBoFilter1[28:20], CBoFilter1[15:0]",
+     #},
      "CBO.AVG_TOR_DRD_MISS_LATENCY": {
 	  "Box": "CBO",
 	  "Category": "CBO TOR Events",
@@ -13465,14 +13465,14 @@ derived = {
 	  "Equation": "(TOR_OCCUPANCY.MISS_OPCODE / TOR_INSERTS.MISS_OPCODE) with:Cn_MSR_PMON_BOX_FILTER1.opc=0x182",
 	  "Filter": "CBoFilter1[28:20]",
      },
-     "CBO.AVG_TOR_DRD_REM_MISS_LATENCY": {
-	  "Box": "CBO",
-	  "Category": "CBO TOR Events",
-	  "Defn": "Average Latency of Data Reads through the TOR that miss the LLC and were satsified by a Remote cache or Remote Memory",
-	  "Desc": "Data Read Remote Miss Latency through TOR",
-	  "Equation": "(TOR_OCCUPANCY.MISS_OPCODE / TOR_INSERTS.MISS_OPCODE) with:Cn_MSR_PMON_BOX_FILTER.{opc,nid}={0x182,other_nodes}",
-	  "Filter": "CBoFilter1[28:20], CBoFilter1[15:0]",
-     },
+     #"CBO.AVG_TOR_DRD_REM_MISS_LATENCY": {
+	#  "Box": "CBO",
+	#  "Category": "CBO TOR Events",
+	#  "Defn": "Average Latency of Data Reads through the TOR that miss the LLC and were satsified by a Remote cache or Remote Memory",
+	#  "Desc": "Data Read Remote Miss Latency through TOR",
+	#  "Equation": "(TOR_OCCUPANCY.MISS_OPCODE / TOR_INSERTS.MISS_OPCODE) with:Cn_MSR_PMON_BOX_FILTER.{opc,nid}={0x182,other_nodes}",
+	#  "Filter": "CBoFilter1[28:20], CBoFilter1[15:0]",
+     #},
      "CBO.CYC_INGRESS_BLOCKED": {
 	  "Box": "CBO",
 	  "Category": "CBO INGRESS Events",
@@ -13539,14 +13539,6 @@ derived = {
 	  "Defn": "LLC Data Read miss ratio",
 	  "Desc": "LLC DRD Miss Ratio",
 	  "Equation": "LLC_LOOKUP.DATA_READ with:Cn_MSR_PMON_BOX_FILTER0.state=0x1 / LLC_LOOKUP.DATA_READ with:Cn_MSR_PMON_BOX_FILTER.state=0x3F",
-	  "Filter": "CBoFilter0[23:17]",
-     },
-     "CBO.LLC_MPI": {
-	  "Box": "CBO",
-	  "Category": "CBO CACHE Events",
-	  "Defn": "LLC Misses Per Instruction (code, read, RFO and prefetches)",
-	  "Desc": "LLC MPI",
-	  "Equation": "LLC_LOOKUP.ANY (Cn_MSR_PMON_BOX_FILTER0.state=0x1) / INST_RETIRED.ALL (on Core)",
 	  "Filter": "CBoFilter0[23:17]",
      },
      "CBO.LLC_RFO_MISS_PCT": {
@@ -13686,7 +13678,7 @@ derived = {
 	  "Category": "QPI_LL CTO Events",
 	  "Defn": "DRS DataC packets received from QPI sent to Node ID 'x'.  Expressed in bytes",
 	  "Desc": "DRS DataC From QPI To Node x",
-	  "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0{[12:0],dnid}={0x1C00,x} Q_Py_PCI_PMON_PKT_z_MASK0[17:0]=0x3FF80) * 64",
+	  "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1c00,Q_Py_PCI_PMON_PKT_z_MATCH0.dnid=x, Q_Py_PCI_PMON_PKT_z_MASK0[17:0]=0x3FF80}) * 64",
 	  "Filter": "QPIRxMask0[17:0],QPIRxMatch0[17:0];QPITxMask0[17:0],QPITxMatch0[17:0]",
      },
      "QPI_LL.DRS_DataC_M_FROM_QPI": {
@@ -13694,7 +13686,7 @@ derived = {
 	  "Category": "QPI_LL CTO Events",
 	  "Defn": "DRS DataC_F packets received from QPI.  Expressed in bytes",
 	  "Desc": "DRS DataC_Fs From QPI",
-	  "Equation": "(CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1C00, Q_Py_PCI_PMON_PKT_z_MASK0[12:0]=0x1FE0}, Q_Py_PCI_PMON_PKT_z_MATCH1[19:16]=0x1, Q_Py_PCI_PMON_PKT_z_MASK1[19:16]=0xF }) * 64",
+	  "Equation": "(CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1C00, Q_Py_PCI_PMON_PKT_z_MASK0[12:0]=0x1FE0, Q_Py_PCI_PMON_PKT_z_MATCH1[19:16]=0x1, Q_Py_PCI_PMON_PKT_z_MASK1[19:16]=0xF }) * 64",
 	  "Filter": "QPIMask0[17:0],QPIMatch0[17:0],QPIMask1[19:16],QPIMatch1[19:16]",
      },
      "QPI_LL.DRS_FULL_CACHELINE_MSGS_FROM_QPI": {
@@ -13702,7 +13694,7 @@ derived = {
 	  "Category": "QPI_LL CTO Events",
 	  "Defn": "DRS Full Cacheline Data Messges From QPI in bytes",
 	  "Desc": "DRS Full Cacheline Data Messges From QPI",
-	  "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1C00,Q_Py_PCI_PMON_PKT_z_MASK0[12:0]=0x1F00}) * 64)",
+	  "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1C00,Q_Py_PCI_PMON_PKT_z_MASK0[12:0]=0x1F00}) * 64",
 	  "Filter": "QPIRxMask0[12:0],QPIRxMatch0[12:0];QPITxMask0[12:0],QPITxMatch0[12:0]",
      },
      "QPI_LL.DRS_F_OR_E_FROM_QPI": {
@@ -13741,7 +13733,7 @@ derived = {
 	  "Category": "QPI_LL CTO Events",
 	  "Defn": "DRS Data packets (Any  - DataC) received from QPI sent to Node ID 'x'.  Expressed in bytes",
 	  "Desc": "DRS Data From QPI To Node x",
-	  "Equation": "((CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0{[12:0],dnid}={0x1C00,x} Q_Py_PCI_PMON_PKT_z_MASK0[17:0]=0x3FE00) - (CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_z_MATCH0{[12:0],dnid}={0x1C00,x} Q_Py_PCI_PMON_PKT_z_MASK0[17:0]=0x3FF80)) * 64",
+	  "Equation": "((CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1c00,Q_Py_PCI_PMON_PKT_z_MATCH0.dnid=x, Q_Py_PCI_PMON_PKT_z_MASK0[17:0]=0x3FE00}) - (CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1C00,Q_Py_PCI_PMON_PKT_z_MATCH0.dnid=x, Q_Py_PCI_PMON_PKT_z_MASK0[17:0]=0x3FF80})) * 64",
 	  "Filter": "QPIRxMask0[17:0],QPIRxMatch0[17:0];QPITxMask0[17:0],QPITxMatch0[17:0]",
      },
      "QPI_LL.DRS_WbE_FROM_QPI": {
@@ -13749,7 +13741,7 @@ derived = {
 	  "Category": "QPI_LL CTO Events",
 	  "Defn": "DRS writeback 'change to E state' packets received from QPI in bytes",
 	  "Desc": "DRS WbE From QPI",
-	  "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1CC0, Q_Py_PCI_PMON_PKT_z_MASK0[12:0]=0x1FE0) * 64",
+	  "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1CC0, Q_Py_PCI_PMON_PKT_z_MASK0[12:0]=0x1FE0}) * 64",
 	  "Filter": "QPIRxMask0[12:0],QPIRxMatch0[12:0];QPITxMask0[12:0],QPITxMatch0[12:0]",
      },
      "QPI_LL.DRS_WbI_FROM_QPI": {
@@ -13757,7 +13749,7 @@ derived = {
 	  "Category": "QPI_LL CTO Events",
 	  "Defn": "DRS writeback 'change to I state' packets received from QPI in bytes",
 	  "Desc": "DRS WbI From QPI",
-	  "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1C80, Q_Py_PCI_PMON_PKT_z_MASK0[12:0]=0x1FE0) * 64",
+	  "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1C80, Q_Py_PCI_PMON_PKT_z_MASK0[12:0]=0x1FE0}) * 64",
 	  "Filter": "QPIRxMask0[12:0],QPIRxMatch0[12:0];QPITxMask0[12:0],QPITxMatch0[12:0]",
      },
      "QPI_LL.DRS_WbS_FROM_QPI": {
@@ -13765,7 +13757,7 @@ derived = {
 	  "Category": "QPI_LL CTO Events",
 	  "Defn": "DRS writeback 'change to S state' packets received from QPI in bytes",
 	  "Desc": "DRS WbSFrom QPI",
-	  "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1CA0, Q_Py_PCI_PMON_PKT_z_MASK0[12:0]=0x1FE0) * 64",
+	  "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1CA0, Q_Py_PCI_PMON_PKT_z_MASK0[12:0]=0x1FE0}) * 64",
 	  "Filter": "QPIRxMask0[12:0],QPIRxMatch0[12:0];QPITxMask0[12:0],QPITxMatch0[12:0]",
      },
      "QPI_LL.NCB_DATA_FROM_QPI_TO_NODEx": {
@@ -13773,7 +13765,7 @@ derived = {
 	  "Category": "QPI_LL CTO Events",
 	  "Defn": "NCB Data packets (Any - Interrupts) received from QPI sent to Node ID 'x'.  Expressed in bytes",
 	  "Desc": "NCB Data From QPI To Node x",
-	  "Equation": "((CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0{[12:0],dnid}={0x1800,x} Q_Py_PCI_PMON_PKT_z_MASK0[17:0]=0x3FE00) - (CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_z_MATCH0{[12:0],dnid}={0x1900,x} Q_Py_PCI_PMON_PKT_z_MASK0[17:0]=0x3FF80)) * 64",
+	  "Equation": "((CTO_COUNT with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1800,Q_Py_PCI_PMON_PKT_z_MATCH0.dnid=x, Q_Py_PCI_PMON_PKT_z_MASK0[17:0]=0x3FE00}) - (CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_z_MATCH0[12:0]=0x1900,Q_Py_PCI_PMON_PKT_z_MATCH0.dnid=x, Q_Py_PCI_PMON_PKT_z_MASK0[17:0]=0x3FF80})) * 64",
 	  "Filter": "QPIRxMask0[17:0],QPIRxMatch0[17:0];QPITxMask0[17:0],QPITxMatch0[17:0]",
      },
      "QPI_LL.NCB_DATA_MSGS_FROM_QPI": {

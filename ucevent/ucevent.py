@@ -899,6 +899,7 @@ def expand_ev(table, name, num):
     for n in range(0, num):
         nev = copy.deepcopy(ev)
         fix_field(nev, "Equation", ",x", n)
+        fix_field(nev, "Equation", "=x", n)
         fix_field(nev, "Equation", "RANKx", n)
         fix_field(nev, "Equation", "NODEx", n)
         fix_field(nev, "Desc", "Rank x", n)
