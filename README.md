@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* ucevent now supports Broadwell EP (Xeon E5/E7 v4)
 * toplev updated to Ahmad Yasin's TMAM 3.1:
 	- This release is aimed at Skylake and Broadwell
 	- Support for Broadwell Server (DE and EP)
@@ -23,7 +24,7 @@ longer workloads.
 The arguments need to be specified with + instead of - (--sample-args "+b")
 * toplev now automatically includes cycles with sampling
 * toplev now checks for event errata and automatically disables affected nodes, unless --ignore-errata is specified.
-* ucevents now supports Broadwell Xeon-D
+* ucevent now supports Broadwell Xeon-D
 * jevents has now limited support for Uncore events
 * toplev updated to Ahmad Yasin's TopDown/TMAM 3.02:
 	- Tuned Memory_Bound vs Core_Bound threshold
