@@ -45,6 +45,7 @@ cpu_mapping = {
     62: "ivt",
     63: "hsx",
     86: "bdxde",
+    79: "bdx",
 }
 
 args = None
