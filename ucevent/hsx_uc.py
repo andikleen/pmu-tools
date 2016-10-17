@@ -13524,7 +13524,7 @@ derived = {
           "Category": "CBO CACHE Events",
           "Defn": "LLC Data Read miss ratio",
           "Desc": "LLC DRD Miss Ratio",
-          "Equation": "LLC_LOOKUP.DATA_READ with:Cn_MSR_PMON_BOX_FILTER0.state=0x1 / LLC_LOOKUP.DATA_READ with:Cn_MSR_PMON_BOX_FILTER.state=0x3F",
+          "Equation": "LLC_LOOKUP.DATA_READ with:Cn_MSR_PMON_BOX_FILTER0.state=0x1 / LLC_LOOKUP.DATA_READ with:Cn_MSR_PMON_BOX_FILTER0.state=0x3F",
           "Filter": "CBoFilter0[23:17]",
      },
      "CBO.LLC_RFO_MISS_PCT": {
