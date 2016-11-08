@@ -401,6 +401,7 @@ class Emap(object):
         self.pevents = {}
         self.latego = False
         self.uncore_events = {}
+        self.error = False
 
     def add_event(self, e):
         self.events[e.name] = e
@@ -583,6 +584,7 @@ class EmapNativeJSON(Emap):
             data = json.load(open(name, 'rb'))
         except ValueError as e:
             print >>sys.stderr, "Cannot open", name + ":", e.message
+            self.error = True
             return
         if u'PublicDescription' not in data[0]:
             mapping['desc'] = u'BriefDescription'
@@ -637,7 +639,7 @@ class EmapNativeJSON(Emap):
 
 def json_with_extra(el):
     emap = EmapNativeJSON(event_download.eventlist_name(el, "core"))
-    if not emap:
+    if not emap or emap.error:
         return None
     add_extra_env(emap, el)
     return emap
@@ -674,8 +676,9 @@ def find_emap():
     if el.find("/") >= 0:
         try:
             emap = EmapNativeJSON(el)
-            if emap:
-                add_extra_env(emap, el)
+            if not emap or emap.error:
+                return None
+            add_extra_env(emap, el)
             return emap
         except IOError:
             return None
@@ -701,6 +704,8 @@ def find_emap():
     return None
 
 def process_events(event, print_only, period):
+    if emap is None:
+        return event, False
     overflow = None
     # replace inner commas so we can split events
     event = re.sub(r"([a-z][a-z0-9]+/)([^/]+)/",
@@ -823,7 +828,9 @@ def get_pager():
     return f, None
 
 def perf_cmd(cmd):
-    if len(sys.argv) >= 2 and sys.argv[1] == "list":
+    if emap is None:
+        sys.exit(subprocess.call(cmd))
+    elif len(sys.argv) >= 2 and sys.argv[1] == "list":
         pager, proc = get_pager()
         try:
             l = subprocess.Popen(cmd, stdout=pager)
@@ -869,7 +876,7 @@ if __name__ == '__main__':
             force_download = True
     emap = find_emap()
     if not emap:
-        sys.exit("Do not recognize CPU or cannot find CPU map file")
+        print >>sys.stderr, "Do not recognize CPU or cannot find CPU map file."
     msr = MSR()
     cmd = process_args()
     try:
