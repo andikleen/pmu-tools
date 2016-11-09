@@ -276,7 +276,7 @@ def find_boxes(prefix):
     if len(box_dir_cache) == 0:
         box_dir_cache += [x for x in os.listdir("/sys/devices/") if x.startswith("uncore")]
     l = [x.replace("uncore_", "") for x in box_dir_cache if x.startswith("uncore_" + prefix)]
-    return l
+    return sorted(l)
 
 box_cache = dict()
 
