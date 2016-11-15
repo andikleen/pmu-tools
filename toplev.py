@@ -892,6 +892,8 @@ def ev_append(ev, level, obj):
     if not ev.startswith("cpu"):
         # add first to overwrite more generic regexprs list r...
         valid_events.insert(0, ev)
+        global valid_events_str
+        valid_events_str = event_regexp()
     return 99
 
 def canon_event(e):
