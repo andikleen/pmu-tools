@@ -1038,7 +1038,7 @@ def not_package_node(obj):
     return not package_node(obj)
 
 def core_node(obj):
-    return has(obj, 'domain') and obj.domain in smt_domains and obj.domain != "Package"
+    return has(obj, 'domain') and obj.domain in smt_domains
 
 def thread_node(obj):
     if package_node(obj):
