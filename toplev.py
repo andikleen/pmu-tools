@@ -1041,9 +1041,11 @@ def core_node(obj):
     return has(obj, 'domain') and obj.domain in smt_domains and obj.domain != "Package"
 
 def thread_node(obj):
+    if package_node(obj):
+        return False
     if obj.metric and not (has(obj, 'domain') and obj.domain == "CoreMetric"):
         return True
-    return not core_node(obj) and not package_node(obj)
+    return not core_node(obj)
 
 def count(f, l):
     return len(filter(f, l))
