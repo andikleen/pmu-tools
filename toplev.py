@@ -106,9 +106,6 @@ outgroup_events = set(["dummy"])
 
 nonperf_events = set(["interval-ns", "mux"])
 
-valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles",
-		r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
-
 # workaround for broken event files for now
 event_fixes = {
     "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC",
@@ -549,16 +546,27 @@ def print_account(ad):
     if sum(total.values()) > 0 and not args.quiet:
         print >>sys.stderr, ", ".join(["%d events %s" % (num, e) for e, num in total.iteritems()])
 
-def event_regexp():
-    return "|".join(valid_events)
+class ValidEvents:
+    def update(self):
+        self.string = "|".join(self.valid_events)
 
-valid_events_str = event_regexp()
+    def __init__(self):
+        self.valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles",
+		             r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
+        self.update()
+
+    def add_event(self, ev):
+        # add first to overwrite more generic regexprs list r...
+        self.valid_events.insert(0, ev)
+        self.update()
+
+valid_events = ValidEvents()
 
 def is_event(l, n):
     if len(l) <= n:
         return False
     # use static string to make regexpr caching work
-    return re.match(valid_events_str, l[n])
+    return re.match(valid_events.string, l[n])
 
 def set_interval(env, d):
     env['interval-ns'] = d * 1e9
@@ -890,10 +898,7 @@ def ev_append(ev, level, obj):
     if has(obj, 'nogroup') and obj.nogroup:
         outgroup_events.add(ev.lower())
     if not ev.startswith("cpu"):
-        # add first to overwrite more generic regexprs list r...
-        valid_events.insert(0, ev)
-        global valid_events_str
-        valid_events_str = event_regexp()
+        valid_events.add_event(ev)
     return 99
 
 def canon_event(e):
