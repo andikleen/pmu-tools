@@ -761,7 +761,7 @@ def process_events(event, print_only, period):
     return str.join(',', nl), overflow
 
 def getarg(i, cmd):
-    if sys.argv[i][2:] == '':
+    if sys.argv[i][2:] == '' or sys.argv[i][:2] == '--':
         cmd.append(sys.argv[i])
         i += 1
         arg = ""
@@ -794,12 +794,12 @@ def process_args():
         elif sys.argv[i] == "record" and record == no:
             cmd.append(sys.argv[i])
             record = yes
-        elif sys.argv[i][0:2] == '-e':
+        elif sys.argv[i][0:2] == '-e' or sys.argv[i] == '--event':
             event, i, prefix = getarg(i, cmd)
             event, overflow = process_events(event, print_only,
                                              True if record == yes else False)
             cmd.append(prefix + event)
-        elif sys.argv[i][0:2] == '-c':
+        elif record and (sys.argv[i][0:2] == '-c' or sys.argv[i] == '--count'):
             oarg, i, prefix = getarg(i, cmd)
             if oarg == "default":
                 if overflow is None:
