@@ -405,6 +405,7 @@ class Emap(object):
 
     def add_event(self, e):
         self.events[e.name] = e
+        self.events[e.name.replace('.', '_')] = e # workaround for perf-style naming
         self.codes[e.val] = e
         self.desc[e.name] = e.desc
 
