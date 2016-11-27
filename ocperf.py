@@ -396,6 +396,7 @@ class Emap(object):
 
     def __init__(self):
         self.events = {}
+        self.perf_events = {}
         self.codes = {}
         self.desc = {}
         self.pevents = {}
@@ -405,6 +406,7 @@ class Emap(object):
 
     def add_event(self, e):
         self.events[e.name] = e
+        self.perf_events[e.name.replace('.', '_')] = e # workaround for perf-style naming
         self.codes[e.val] = e
         self.desc[e.name] = e.desc
 
@@ -524,6 +526,8 @@ class Emap(object):
             return update_ename(self.getevent(e + "_0" + edelim + extra), e)
         elif e in self.uncore_events:
             return check_uncore_event(self.uncore_events[e])
+        elif e in self.perf_events:
+            return self.perf_events[e]
         return None
 
     def update_event(self, e, ev):
