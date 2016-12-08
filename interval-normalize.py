@@ -15,6 +15,7 @@ import re
 import copy
 import argparse
 import csv_formats
+import collections
 
 ap = argparse.ArgumentParser(description=
 'Normalize CSV data from perf or toplev. All values are printed on a single line.')
@@ -27,7 +28,7 @@ args = ap.parse_args()
 printed_header = False
 timestamp = None
 
-events = dict()
+events = collections.OrderedDict()
 out = []
 times = []
 cpus = []
@@ -75,7 +76,7 @@ def resolve(row, ind):
         return args.na
     return v
 
-keys = sorted(events.keys())
+keys = events.keys()
 writer.writerow(["Timestamp"] + (["CPU"] if cpu is not None else []) + keys)
 for row, ts, cpunum in zip(out, times, cpus):
     writer.writerow([ts] +
