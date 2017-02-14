@@ -140,7 +140,8 @@ static bool check_cpu(void)
 	
 	switch (model) { 
 	case 58: /* IvyBridge */
-	case 69: /* Haswell */
+	case 63: /* Haswell_EP */
+	case 69: /* Haswell_ULT */
 		pebs_event = 0x1c2; /* UOPS_RETIRED.ALL */
 		break;
 
