@@ -23,10 +23,15 @@ def is_ts(n):
 def is_unit(n):
     return re.match(r'[a-zA-Z]*', n) is not None
 
-is_running = is_number
-is_enabled = is_number
+def is_running(n):
+    return is_number(n)
+
+def is_enabled(n):
+    return is_number(n)
 
 formats = (
+# 0.100997872;CPU0;4612809;;inst_retired_any_0;3491526;2.88     new perf
+	(is_ts, is_cpu, is_val, is_unit, is_event, is_enabled, is_running),
 # 1.354075473,0,cpu-migrations				  old perf w/o cpu
 	(is_ts, is_val, is_event),
 # 1.354075473,CPU0,0,cpu-migrations			     old perf w/ cpu
@@ -57,15 +62,17 @@ fmtmaps = {
     is_cpu: 1,
     is_event: 2,
     is_val: 3,
+    is_enabled : 4,
+    is_running : 5
 }
 
-Row = namedtuple('Row', ['ts', 'cpu', 'ev', 'val'])
+Row = namedtuple('Row', ['ts', 'cpu', 'ev', 'val', 'enabled', 'running'])
 
 def check_format(fmt, row):
     if len(row) < len(fmt):
        False
     if all([x(n) for (x, n) in zip(fmt, row)]):
-	vals = [None,None,None,None]
+	vals = [None] * 6
 	for i, j in enumerate(fmt):
 	    if j in fmtmaps:
 		vals[fmtmaps[j]] = row[i]
