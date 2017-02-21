@@ -111,6 +111,12 @@ struct pebs_v2 {
 	u64 tsx;
 };
 
+struct pebs_v3 {
+	struct pebs_v2 v2;
+	u64 tsc;
+};
+
+
 static int pebs_record_size = sizeof(struct pebs_v1);
 
 #define FEAT1_PDCM 	BIT(15)
@@ -142,6 +148,7 @@ static bool check_cpu(void)
 	case 58: /* IvyBridge */
 	case 63: /* Haswell_EP */
 	case 69: /* Haswell_ULT */
+	case 94: /* Skylake */
 		pebs_event = 0x1c2; /* UOPS_RETIRED.ALL */
 		break;
 
@@ -189,6 +196,9 @@ static bool check_cpu(void)
 			break;
 		case 2:
 			pebs_record_size = sizeof(struct pebs_v2);
+			break;
+		case 3:
+			pebs_record_size = sizeof(struct pebs_v3);
 			break;
 		default:
 			pr_err("Unsupported PEBS format\n");
