@@ -116,8 +116,18 @@ qual_map = (
     ("cp", "in_tx_cp=1", 0, ""))
 
 qualval_map = (
-    (r"c(mask=)?(0x[0-9a-f]+|[0-9]+)", "cmask=%d", 24),
-    (r"(sa|sample-after|period)=([0-9]+)", "period=%d", 0))
+    (r"u(0x[0-9a-f]+)", "umask=%#x", 0),
+    (r"c(?:mask=)?(0x[0-9a-f]+|[0-9]+)", "cmask=%d", 24),
+    (r"(?:sa|sample-after|period)=([0-9]+)", "period=%d", 0))
+
+uncore_map = (
+    (r'Match=(0x[0-9a-f])', "filter_occ="),
+    ("nc=(\d+)", "filter_nc="),
+    (r"u(0x[0-9a-f]+)", "umask="),
+    (r"opc=?(0x[0-9a-f]+)", "filter_opc="),
+    (r"tid=?(0x[0-9a-f]+)", "filter_tid="),
+    (r"state=?(0x[0-9a-f]+)", "filter_state="),
+    (r"c(?:mask=)?(0x[0-9a-f]+|[0-9]+)", "cmask="))
 
 # newe gets modified
 def convert_extra(extra, val, newe):
@@ -131,8 +141,8 @@ def convert_extra(extra, val, newe):
             m = re.match(j[0], extra)
             if m:
                 if j[2]:
-                    val |= int(m.group(2), 0) << j[2]
-                newe.append(j[1] % (int(m.group(2), 0)))
+                    val |= int(m.group(1), 0) << j[2]
+                newe.append(j[1] % (int(m.group(1), 0)))
                 extra = extra[len(m.group(0)):]
                 found = True
                 break
@@ -168,13 +178,15 @@ class Event:
         self.msrval = 0
         self.desc = desc
 
-    def output_newstyle(self, newextra="", noname=False, period=False, name=""):
+    # XXX return with pmu to be consistent with Uncore and fix callers
+    def output_newstyle(self, extra="", noname=False, period=False, name=""):
         """Format an perf event for output and return as perf event string.
            Always uses new style (cpu/.../)."""
         val = self.val
-        extra = self.newextra
-        if newextra:
-            extra += "," + newextra
+        if extra:
+            extra = self.newextra + "," + extra
+        else:
+            extra = self.newextra
         e = "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff, extra)
 	if version.has_name:
 	    if name:
@@ -201,7 +213,7 @@ class Event:
                 ename += ":" + extra
             # XXX should error for extras that don't fit into raw
         else:
-	    ename = "cpu/%s/" % (self.output_newstyle(newextra=",".join(newe), noname=noname, period=period, name=name)) + extra
+	    ename = "cpu/%s/" % (self.output_newstyle(extra=",".join(newe), noname=noname, period=period, name=name)) + extra
         return ename
 
 box_to_perf = {
@@ -270,9 +282,9 @@ class UncoreEvent:
     # "EdgeDetect": "0"
     # },
     # XXX cannot separate sockets
-    def output_newstyle(self, extra="", noname=False, period=False, name="", flags=""):
-        # xxx multiply boxes
-        # name ignored for now
+    # extra: perf flags
+    # flags: emon flags
+    def output_newstyle(self, newextra="", noname=False, period=False, name="", flags=""):
         e = self
         o = "/event=%#x" % e.code
         if e.umask:
@@ -283,16 +295,25 @@ class UncoreEvent:
             o += ",edge=1"
         if e.inv:
             o += ",inv=1"
+
         # xxx subctr, occ_sel, filters
         if flags:
-            m = re.match(r'Match=(0x[0-9a-f])', flags)
-            if m:
-                o += ",filter_occ=" + m.group(1)
-            else:
+            for match, repl in uncore_map:
+                m = re.match(match, flags)
+                if m:
+                    o += "," + repl + m.group(1)
+                    flags = flags[m.end():]
+                if flags == "":
+                    break
+            if flags != "":
                 print >>sys.stderr, "Uncore cannot parse %s", flags
         if version.has_name and not noname:
-            o += ",name=" + e.name.replace(".", "_") + "_NUM"
-        o += "/" + extra
+            if name == "":
+                name = e.name.replace(".", "_")
+            o += ",name=" + name + "_NUM"
+        if newextra:
+            o += "," + ",".join(newextra)
+        o += "/"
 
         # explode boxes if needed
         def box_name(n):
@@ -319,7 +340,7 @@ perf_qual = "kuhGHSD" # without pebs
 
 def extra_set(e):
     return set(map(lambda x: x[0],
-        re.findall(r"(p+|" + "|".join([x[0] for x in qual_map + qualval_map]) + "|[" + perf_qual + "])", e)))
+        re.findall(r"(p+|" + "|".join([x[0] for x in qual_map + qualval_map + uncore_map]) + "|[" + perf_qual + "])", e)))
 
 def merge_extra(a, b):
     m = a | b
