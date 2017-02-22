@@ -59,9 +59,9 @@
 #define MSR_IA32_EVNTSEL0    		0x00000186
 
 #define MSR_IA32_PERF_CABABILITIES  	0x00000345
-#define MSR_IA32_GLOBAL_STATUS 		0x0000038e
-#define MSR_IA32_GLOBAL_CTRL 		0x0000038f
-#define MSR_IA32_GLOBAL_OVF_CTRL 	0x00000390
+#define MSR_IA32_PERF_GLOBAL_STATUS 	0x0000038e
+#define MSR_IA32_PERF_GLOBAL_CTRL 	0x0000038f
+#define MSR_IA32_PERF_GLOBAL_OVF_CTRL 	0x00000390
 #define MSR_IA32_PEBS_ENABLE		0x000003f1
 #define MSR_IA32_DS_AREA     		0x00000600
 
@@ -111,6 +111,12 @@ struct pebs_v2 {
 	u64 tsx;
 };
 
+struct pebs_v3 {
+	struct pebs_v2 v2;
+	u64 tsc;
+};
+
+
 static int pebs_record_size = sizeof(struct pebs_v1);
 
 #define FEAT1_PDCM 	BIT(15)
@@ -142,6 +148,7 @@ static bool check_cpu(void)
 	case 58: /* IvyBridge */
 	case 63: /* Haswell_EP */
 	case 69: /* Haswell_ULT */
+	case 94: /* Skylake */
 		pebs_event = 0x1c2; /* UOPS_RETIRED.ALL */
 		break;
 
@@ -189,6 +196,9 @@ static bool check_cpu(void)
 			break;
 		case 2:
 			pebs_record_size = sizeof(struct pebs_v2);
+			break;
+		case 3:
+			pebs_record_size = sizeof(struct pebs_v3);
 			break;
 		default:
 			pr_err("Unsupported PEBS format\n");
@@ -242,23 +252,23 @@ static void status_dump(char *where)
 {
 #if 0
 	u64 val, val2;
-	rdmsrl(MSR_IA32_GLOBAL_STATUS, val);
-	rdmsrl(MSR_IA32_GLOBAL_CTRL, val2);
+	rdmsrl(MSR_IA32_PERF_GLOBAL_STATUS, val);
+	rdmsrl(MSR_IA32_PERF_GLOBAL_CTRL, val2);
 	pr_debug("%d: %s: status %llx ctrl %llx counter %llx\n", smp_processor_id(), where, val, val2, __builtin_ia32_rdpmc(0));
 #endif
 }
 
 static void start_stop_cpu(void *arg)
 {
-	wrmsrl(MSR_IA32_GLOBAL_CTRL, arg ? 1 : 0);
+	wrmsrl(MSR_IA32_PERF_GLOBAL_CTRL, arg ? 1 : 0);
 	status_dump("stop");
 }	
 
 static void reset_buffer_cpu(void *arg)
 {
-	wrmsrl(MSR_IA32_GLOBAL_CTRL, 0);
+	wrmsrl(MSR_IA32_PERF_GLOBAL_CTRL, 0);
 	__this_cpu_write(out_buffer, __this_cpu_read(out_buffer_base));
-	wrmsrl(MSR_IA32_GLOBAL_CTRL, 1);
+	wrmsrl(MSR_IA32_PERF_GLOBAL_CTRL, 1);
 }
 
 static DEFINE_MUTEX(reset_mutex);
@@ -437,10 +447,10 @@ void simple_pebs_pmi(void)
 	status_dump("pmi1");
 
 	/* disable PMU */
-	wrmsrl(MSR_IA32_GLOBAL_CTRL, 0);
+	wrmsrl(MSR_IA32_PERF_GLOBAL_CTRL, 0);
 
 	/* global status ack */
-	wrmsrl(MSR_IA32_GLOBAL_OVF_CTRL, 1ULL << 62);
+	wrmsrl(MSR_IA32_PERF_GLOBAL_OVF_CTRL, 1ULL << 62);
 
 	wrmsrl(MSR_IA32_PERFCTR0, -PERIOD); /* ? sign extension on width ? */
 
@@ -487,7 +497,7 @@ void simple_pebs_pmi(void)
 	if ((void *)outbu - (void *)outbu_start >= OUT_BUFFER_SIZE/2) {
 		wake_up(this_cpu_ptr(&simple_pebs_wait));
 	} else
-		wrmsrl(MSR_IA32_GLOBAL_CTRL, 1);
+		wrmsrl(MSR_IA32_PERF_GLOBAL_CTRL, 1);
 
 	status_dump("pmi3");
 }
@@ -569,7 +579,7 @@ static void simple_pebs_cpu_init(void *arg)
 	/* Initialize PMU */
 
 	/* First disable PMU to avoid races */
-	wrmsrl(MSR_IA32_GLOBAL_CTRL, 0);
+	wrmsrl(MSR_IA32_PERF_GLOBAL_CTRL, 0);
 
 	wrmsrl(MSR_IA32_PERFCTR0, -PERIOD); /* ? sign extension on width ? */
 	wrmsrl(MSR_IA32_EVNTSEL0,
@@ -578,14 +588,14 @@ static void simple_pebs_cpu_init(void *arg)
 	/* Enable PEBS for counter 0 */
 	wrmsrl(MSR_IA32_PEBS_ENABLE, 1);
 
-	wrmsrl(MSR_IA32_GLOBAL_CTRL, 1);
+	wrmsrl(MSR_IA32_PERF_GLOBAL_CTRL, 1);
 	__this_cpu_write(cpu_initialized, 1);
 }
 
 static void simple_pebs_cpu_reset(void *arg)
 {
 	if (__this_cpu_read(cpu_initialized)) {
-		wrmsrl(MSR_IA32_GLOBAL_CTRL, 0);
+		wrmsrl(MSR_IA32_PERF_GLOBAL_CTRL, 0);
 		wrmsrl(MSR_IA32_PEBS_ENABLE, 0);
 		wrmsrl(MSR_IA32_EVNTSEL0, 0);
 		wrmsrl(MSR_IA32_PERFCTR0, 0);
