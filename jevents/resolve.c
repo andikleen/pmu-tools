@@ -39,6 +39,10 @@
 #include <sys/fcntl.h>
 #include <glob.h>
 
+#ifndef PERF_ATTR_SIZE_VER1
+#define PERF_ATTR_SIZE_VER1	72
+#endif
+
 #define MAXFILE 4096
 
 static int read_file(char **val, const char *fmt, ...)
@@ -161,14 +165,16 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 		bool ok = try_parse(format, "config:%d-%d", val, &attr->config) ||
 			try_parse(format, "config:%d", val, &attr->config) ||
 			try_parse(format, "config1:%d-%d", val, &attr->config1) ||
-			try_parse(format, "config1:%d", val, &attr->config1) ||
-			try_parse(format, "config2:%d-%d", val, &attr->config2) ||
+			try_parse(format, "config1:%d", val, &attr->config1);
+		bool ok2 = try_parse(format, "config2:%d-%d", val, &attr->config2) ||
 			try_parse(format, "config2:%d", val, &attr->config2);
-		if (!ok) {
+		if (!ok && !ok2) {
 			fprintf(stderr, "Cannot parse kernel format %s: %s\n",
 					name, format);
 			break;
 		}
+		if (ok2)
+			attr->size = PERF_ATTR_SIZE_VER1;
 	}
 	free(format);
 	if (term)
@@ -201,7 +207,7 @@ int jevent_name_to_attr(char *str, struct perf_event_attr *attr)
 	int qual_off;
 
 	memset(attr, 0, sizeof(struct perf_event_attr));
-	attr->size = PERF_ATTR_SIZE_VER1;
+	attr->size = PERF_ATTR_SIZE_VER0;
 	attr->type = PERF_TYPE_RAW;
 
 	if (sscanf(str, "r%llx%n", &attr->config, &qual_off) == 1) {
