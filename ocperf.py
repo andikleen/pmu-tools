@@ -36,6 +36,10 @@
 # The eventmap is automatically downloaded there
 # eventmap can be also a CPU specified (GenuineIntel-FAMILY-MODEL, like GenuineIntel-06-37)
 #
+# TOPOLOGY=topologyfile
+# topologyfile is a dump of the sysfs of another system (find /sys > file)
+# Needed for uncore units. This is useful to generate perf command lines for other systems.
+#
 # Special arguments:
 # --no-period   Never add a period
 # --print       only print
@@ -58,8 +62,29 @@ import event_download
 force_download = False
 pebs_enable = "p"
 
+exists_cache = dict()
+
+topology = None
+file_exists = dict()
+
+def file_exists(s):
+    if s in exists_cache:
+	return exists_cache[s]
+    global topology
+    if topology is None:
+	top = os.getenv("TOPOLOGY")
+	if top:
+	    topology = set([x.strip() for x in open(top).readlines()])
+	else:
+	    topology = set()
+    if s in topology:
+	return True
+    found = os.path.exists(s)
+    exists_cache[s] = found
+    return found
+
 def has_format(s):
-    return os.path.isfile("/sys/devices/cpu/format/" + s)
+    return file_exists("/sys/devices/cpu/format/" + s)
 
 class PerfVersion:
     def __init__(self):
@@ -227,7 +252,7 @@ box_cache = dict()
 def box_exists(box):
     n = "/sys/devices/uncore_%s" % (box)
     if n not in box_cache:
-        box_cache[n] = os.path.exists(n)
+	box_cache[n] = file_exists(n)
     return box_cache[n]
 
 def int_or_zero(row, name):
@@ -358,29 +383,10 @@ def print_event(name, desc, f, human, wrap):
     else:
         print >>f, " [%s]" % (desc,)
 
-exists = set()
-does_not_exist = set()
-
-def cached_exists(fn):
-    if fn in exists:
-        return True
-    if fn in does_not_exist:
-        return False
-    e = os.path.exists(fn)
-    if e:
-        exists.add(fn)
-    else:
-        does_not_exist.add(fn)
-    return e
-
-force_uncore = os.getenv("FORCE_UNCORE")
-
 def uncore_exists(box, postfix=""):
-    if force_uncore:
+    if file_exists("/sys/devices/uncore_" + box + postfix):
         return True
-    if cached_exists("/sys/devices/uncore_" + box + postfix):
-        return True
-    if cached_exists("/sys/devices/uncore_" + box + "_0" + postfix):
+    if file_exists("/sys/devices/uncore_" + box + "_0" + postfix):
         return True
     return False
 

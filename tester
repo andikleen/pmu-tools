@@ -84,9 +84,15 @@ checkev snb-client IDQ.DSB_CYCLES r1000879
 checkev bnl snoop_stall_drv.self r407e
 checkev ivt uops_issued.core_stall_cycles r1a0010e
 
+cat >topology <<EOL
+/sys/devices/uncore_ha
+/sys/devices/uncore_ha/format/umask
+EOL
+
 checkuc()
 {
-	FORCE_UNCORE=1 EVENTMAP=${cpus[$1]} UNCORE=$2 $WRAP ./ocperf.py stat --print -e $3 /bin/true | egrep -- "$4"
+	TOPOLOGY=topology \
+	EVENTMAP=${cpus[$1]} UNCORE=$2 $WRAP ./ocperf.py stat --print -e $3 /bin/true | egrep -- "$4"
 }
 
 checkuc hsw test-uncore.json unc_h_directory_lookup.no_snp 'uncore_ha(_[0-9]+)?/event=0xc,umask=0x2,name=unc_h_directory_lookup_no_snp(_[0-9]+)?/'
