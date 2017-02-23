@@ -29,6 +29,7 @@
 # env variables:
 # PERF=... perf binary to use (default "perf")
 # EVENTMAP=eventmap
+# EVENTMAP2=eventmap
 # OFFCORE=eventmap
 # UNCORE=eventmap
 # eventmap is a path name to a json file
@@ -418,10 +419,10 @@ def update_ename(ev, name):
         ev.name = name
     return ev
 
-class Emap(object):
+class EmapNativeJSON(object):
     """Read an event table."""
 
-    def __init__(self):
+    def __init__(self, name):
         self.events = {}
         self.perf_events = {}
         self.codes = {}
@@ -430,6 +431,7 @@ class Emap(object):
         self.latego = False
         self.uncore_events = {}
         self.error = False
+        self.read_events(name)
 
     def add_event(self, e):
         self.events[e.name] = e
@@ -588,8 +590,8 @@ class Emap(object):
         for k in sorted(self.uncore_events.keys()):
             print_event(k, self.uncore_events[k].desc, f, human, wrap)
 
-class EmapNativeJSON(Emap):
-    def __init__(self, name):
+    def read_events(self, name):
+        """Read JSON normal events table."""
         mapping = {
             'name': u'EventName',
             'code': u'EventCode',
@@ -608,8 +610,7 @@ class EmapNativeJSON(Emap):
             'sav': u'SampleAfterValue',
             'other': u'Other',
         }
-        super(EmapNativeJSON, self).__init__()
-        if name.find("JKT") >= 0:
+        if name.find("JKT") >= 0 or name.find("Jaketown") >= 0:
             self.latego = True
         try:
             data = json.load(open(name, 'rb'))
@@ -622,6 +623,7 @@ class EmapNativeJSON(Emap):
         self.read_table(data, mapping)
 
     def add_offcore(self, name):
+        """Read offcore table."""
         data = json.load(open(name, 'rb'))
         #   {
         #    "MATRIX_REQUEST": "DEMAND_DATA_RD",
@@ -690,6 +692,10 @@ def add_extra_env(emap, el):
         uc = event_download.eventlist_name(el, "uncore")
         if os.path.exists(uc):
             emap.add_uncore(uc)
+    e2 = os.getenv("EVENTMAP2")
+    if e2:
+        emap.read_events(e2)
+        # don't try to download for now
     return emap
 
 def find_emap():
