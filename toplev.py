@@ -319,6 +319,8 @@ p.add_argument('--ignore-errata', help='Do not disable events with errata', acti
 args, rest = p.parse_known_args()
 
 rest = [x for x in rest if x != "--"]
+if not sys.stdin.isatty():
+    oldpos = sys.stdin.tell()
 
 if args.version:
     print "toplev"
@@ -404,6 +406,8 @@ class PerfRun:
         n = r.index("--log-fd")
         r[n + 1] = "%d" % (inp)
         print_perf(r)
+        if not sys.stdin.isatty():
+            sys.stdin.seek(oldpos)
         self.perf = subprocess.Popen(r)
         os.close(inp)
         return os.fdopen(outp, 'r')
