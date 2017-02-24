@@ -332,7 +332,7 @@ class UncoreEvent:
                 if flags == "":
                     break
             if flags != "":
-                print >>sys.stderr, "Uncore cannot parse %s", flags
+                print >>sys.stderr, "Uncore cannot parse", flags
         if version.has_name and not noname:
             if name == "":
                 name = e.name.replace(".", "_")
