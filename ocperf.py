@@ -268,6 +268,12 @@ def int_or_zero(row, name):
         return int(row[name])
     return 0
 
+uncore_units = {
+    "imph-u": "arb",
+    "kti ll": "upi",
+    "m3kti": "m3upi"
+}
+
 class UncoreEvent:
     def __init__(self, name, row):
         self.name = name
@@ -286,8 +292,8 @@ class UncoreEvent:
         e.inv = int_or_zero(row, 'Invert')
         e.edge = int_or_zero(row, 'EdgeDetect')
         e.unit = row['Unit'].lower()
-        if e.unit == "imph-u":
-            e.unit = "arb"
+	if e.unit in uncore_units:
+	    e.unit = uncore_units[e.unit]
         # xxx subctr
         if e.unit in box_to_perf:
             e.unit = box_to_perf[e.unit]
