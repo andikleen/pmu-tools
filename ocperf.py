@@ -32,10 +32,12 @@
 # EVENTMAP2=eventmap
 # OFFCORE=eventmap
 # UNCORE=eventmap
+# UNCORE2=eventmap
 # eventmap is a path name to a json file
-# When eventmap is not specified, look in ~/.events
+# When eventmap is not specified, look in ~/.cache/pmu-events/
 # The eventmap is automatically downloaded there
-# eventmap can be also a CPU specified (GenuineIntel-FAMILY-MODEL, like GenuineIntel-06-37)
+# eventmap can be also a CPU identifer (GenuineIntel-FAMILY-MODEL, like GenuineIntel-06-37)
+# (Note that the numbers are in upper case hex)
 #
 # TOPOLOGY=topologyfile
 # topologyfile is a dump of the sysfs of another system (find /sys > file)
@@ -659,8 +661,8 @@ class EmapNativeJSON(object):
         for a, b in itertools.product(requests, responses):
             create_event(*(a + b))
 
-    def add_uncore(self, name):
-        if len(self.uncore_events) > 0:
+    def add_uncore(self, name, force=False):
+        if len(self.uncore_events) > 0 and not force:
             return
         data = json.load(open(name, "rb"))
         for row in data:
@@ -696,6 +698,9 @@ def add_extra_env(emap, el):
     if e2:
         emap.read_events(e2)
         # don't try to download for now
+    u2 = os.getenv("UNCORE2")
+    if u2:
+        emap.add_uncore(u2, True)
     return emap
 
 def find_emap():
