@@ -151,11 +151,12 @@ qualval_map = (
 uncore_map = (
     (r'Match=(0x[0-9a-f])', "filter_occ="),
     ("nc=(\d+)", "filter_nc="),
-    (r"u(0x[0-9a-f]+)", "umask="),
-    (r"opc=?(0x[0-9a-f]+)", "filter_opc="),
-    (r"tid=?(0x[0-9a-f]+)", "filter_tid="),
-    (r"state=?(0x[0-9a-f]+)", "filter_state="),
-    (r"c(?:mask=)?(0x[0-9a-f]+|[0-9]+)", "cmask="))
+    (r'filter1=(0x[0-9a-fA-F]+)', "config1="),
+    (r"u(0x[0-9a-fA-F]+)", "umask="),
+    (r"opc=?(0x[0-9a-fA-F]+)", "filter_opc="),
+    (r"tid=?(0x[0-9a-fA-F]+)", "filter_tid="),
+    (r"state=?(0x[0-9a-fA-F]+)", "filter_state="),
+    (r"c(?:mask=)?(0x[0-9a-fA-F]+|[0-9]+)", "cmask="))
 
 # newe gets modified
 def convert_extra(extra, val, newe):
@@ -334,7 +335,7 @@ class UncoreEvent:
                 if flags == "":
                     break
             if flags != "":
-                print >>sys.stderr, "Uncore cannot parse %s", flags
+                print >>sys.stderr, "Uncore cannot parse", flags
         if version.has_name and not noname:
             if name == "":
                 name = e.name.replace(".", "_")
