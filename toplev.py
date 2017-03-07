@@ -1407,7 +1407,8 @@ class Runner:
 		elif check_ratio(val):
 		    out.ratio(obj.area if has(obj, 'area') else None,
                             full_name(obj), val, timestamp,
-                            "below" if not obj.thresh else "",
+                            ((" " + obj.domain) if has(obj, 'domain') else "") +
+                            (" below" if not obj.thresh else ""),
 			    desc,
                             title,
                             sample_desc(obj.sample) if has(obj, 'sample') else None,
