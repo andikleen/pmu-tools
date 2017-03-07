@@ -1395,7 +1395,7 @@ class Runner:
                     val = 0.0
                 if not match(obj):
                     continue
-		desc = obj_desc(obj, self.olist[1 + 1:])
+		desc = obj_desc(obj, olist[i + 1:])
                 if obj.metric:
                     if print_all or obj.val != 0:
 		        out.metric(obj.area if has(obj, 'area') else None,
