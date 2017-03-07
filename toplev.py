@@ -1147,6 +1147,22 @@ def query_errata(obj, errata_events, errata_nodes, errata_names):
         errata_nodes.add(obj)
         errata_names |= set(errata)
 
+def olist_by_metricgroup(l, mg):
+    valid = set(l)
+    visited = set()
+    ml = []
+    for obj in l:
+        if obj in visited:
+            continue
+        if has(obj, 'metricgroup'):
+            for g in obj.metricgroup:
+                ml += [x for x in mg[g] if x in valid]
+                for j in mg[g]:
+                    visited.add(j)
+        else:
+            ml.append(obj)
+    return ml
+
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
@@ -1159,6 +1175,8 @@ class Runner:
         self.missed = 0
 	self.sample_obj = set()
         self.stat = ComputeStat(args.quiet)
+        # always needs to be filtered by olist:
+        self.metricgroups = defaultdict(list)
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv)
 	    self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value",
@@ -1168,6 +1186,9 @@ class Runner:
         obj.res = None
         obj.res_map = dict()
         self.olist.append(obj)
+        if has(obj, 'metricgroup'):
+            for j in obj.metricgroup:
+                self.metricgroups[j].append(obj)
 
     # remove unwanted nodes after their parent relation ship has been set up
     def filter_nodes(self):
@@ -1387,8 +1408,9 @@ class Runner:
                 out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
 
         # step 3: print
-	for i in range(0, len(self.olist)):
-	    obj = self.olist[i]
+        olist = olist_by_metricgroup(self.olist, self.metricgroups)
+	for i in range(0, len(olist)):
+	    obj = olist[i]
             if obj.thresh or print_all:
                 val = obj.val
                 if not obj.thresh and not dont_hide:
