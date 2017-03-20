@@ -102,7 +102,8 @@ checkmsr2()
 	EVENTMAP=${cpus[$1]} DIRECT_MSR=1 $WRAP ./ocperf.py --print stat -e $2 /bin/true | grep "$3"
 }
 
-checkmsr2 wsm-sp offcore_response.pf_rfo.remote_cache_hitm_1 "msr 1a7 = 820"
+# FIXME: need to adapt to new event file format
+#checkmsr2 wsm-sp offcore_response.pf_rfo.remote_cache_hitm_1 "msr 1a7 = 820"
 checkmsr2 nhm-ex offcore_response_0.data_ifetch.any_location "msr 1a6 = ff77"
 # xxx add hsw
 checkmsr2 ivt offcore_response.all_data_rd.llc_hit.hit_other_core_no_fwd "msr 1a6 = 4003c0091"
