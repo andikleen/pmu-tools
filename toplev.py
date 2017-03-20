@@ -1397,7 +1397,11 @@ class Runner:
 	# step 2: propagate siblings
 	for obj in self.olist:
 	    if obj.thresh and obj.sibling:
-		obj.sibling.thresh = True
+                if isinstance(obj.sibling, list):
+                    for k in obj.sibling:
+                        k.thresh = True
+                else:
+		    obj.sibling.thresh = True
 
     def print_res(self, out, timestamp, title, match):
         out.logf.flush()
