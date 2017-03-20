@@ -304,7 +304,6 @@ g.add_argument('--graph', help='Automatically graph interval output with tl-barp
                action='store_true')
 g.add_argument("--graph-cpu", help="CPU to graph using --graph")
 g.add_argument('--title', help='Set title of graph')
-g.add_argument('--xkcd', help='Use xkcd plotting mode for graph', action='store_true')
 g.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
 g.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
                 action='store_true')
@@ -357,8 +356,6 @@ if args.graph:
     else:
 	title = "cpu %s" % (args.graph_cpu if args.graph_cpu else 0)
     extra += '--title "' + title + '" '
-    if args.xkcd:
-        extra += '--xkcd '
     if args.output != sys.stderr:
         extra += '--output "' + args.output.name + '" '
     if args.graph_cpu:
