@@ -260,62 +260,74 @@ Other CPUs can be forced with FORCECPU=name
 This usually requires setting the correct event map with EVENTMAP=...
 Valid CPU names: ''' + " ".join([x[0] for x in known_cpus]),
 formatter_class=argparse.RawDescriptionHelpFormatter)
-p.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
-               action='store_true')
-p.add_argument('--kernel', help='Only measure kernel code', action='store_true')
-p.add_argument('--user', help='Only measure user code', action='store_true')
-p.add_argument('--print-group', '-g', help='Print event group assignments',
-               action='store_true')
-p.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
-p.add_argument('--desc', help='Force event descriptions', action='store_true')
-p.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
-p.add_argument('--interval', '-I', help='Enable interval mode with ms interval',
+g = p.add_argument_group('General operation')
+g.add_argument('--interval', '-I', help='Measure every ms instead of only once',
                type=int)
-p.add_argument('--output', '-o', help='Set output file', default=sys.stderr,
-               type=argparse.FileType('w'))
-p.add_argument('--graph', help='Automatically graph interval output with tl-barplot.py',
-               action='store_true')
-p.add_argument("--graph-cpu", help="CPU to graph using --graph")
-p.add_argument('--title', help='Set title of graph')
-p.add_argument('--xkcd', help='Use xkcd plotting mode for graph', action='store_true')
-p.add_argument('--level', '-l', help='Measure upto level N (max 5)',
-               type=int, default=1)
-p.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
-p.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
-p.add_argument('--raw', help="Print raw values", action='store_true')
-p.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
-p.add_argument('--no-util', help="Do not measure CPU utilization", action='store_true')
-p.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
-p.add_argument('--pid', '-p', help=argparse.SUPPRESS)
-p.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
-p.add_argument('--all', help="Measure everything available", action='store_true')
-p.add_argument('--frequency', help="Measure frequency", action='store_true')
-p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
-p.add_argument('--no-group', help='Dont use groups', action='store_true')
-p.add_argument('--no-multiplex',
+g.add_argument('--no-multiplex',
                help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
                action='store_true')
-p.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
-p.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
-p.add_argument('--sample-args', help='Extra rguments to pass to perf record for sampling. Use + to specify -', default='-g')
-p.add_argument('--sample-repeat', help='Repeat measurement and sampling N times. This interleaves counting and sampling', type=int)
-p.add_argument('--sample-basename', help='Base name of sample perf.data files', default="perf.data")
-p.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file', type=argparse.FileType('w'))
-p.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
-p.add_argument('--power', help='Display power metrics', action='store_true')
+g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
+g.add_argument('--no-group', help='Dont use groups', action='store_true')
+
+g = p.add_argument_group('Measurement filtering')
+g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
+g.add_argument('--user', help='Only measure user code', action='store_true')
+g.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
+g.add_argument('--pid', '-p', help=argparse.SUPPRESS)
+g.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
+
+g = p.add_argument_group('Select events')
+g.add_argument('--level', '-l', help='Measure upto level N (max 5)',
+               type=int, default=1)
+g.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
+g.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
+g.add_argument('--no-util', help="Do not measure CPU utilization", action='store_true')
+g.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
+g.add_argument('--all', help="Measure everything available", action='store_true')
+g.add_argument('--frequency', help="Measure frequency", action='store_true')
+g.add_argument('--power', help='Display power metrics', action='store_true')
+g.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
+g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
+g.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.', action='store_true')
+g.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true')
+
+g = p.add_argument_group('Output')
+g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
+g.add_argument('--desc', help='Force event descriptions', action='store_true')
+g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
+               action='store_true')
+g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
+g.add_argument('--bottleneck', help='Show critical bottleneck', action='store_true')
+g.add_argument('--output', '-o', help='Set output file', default=sys.stderr,
+               type=argparse.FileType('w'))
+g.add_argument('--graph', help='Automatically graph interval output with tl-barplot.py',
+               action='store_true')
+g.add_argument("--graph-cpu", help="CPU to graph using --graph")
+g.add_argument('--title', help='Set title of graph')
+g.add_argument('--xkcd', help='Use xkcd plotting mode for graph', action='store_true')
+g.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
+g.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
+                action='store_true')
+g.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
+
+g = p.add_argument_group('Additional information')
+g.add_argument('--print-group', '-g', help='Print event group assignments',
+               action='store_true')
+g.add_argument('--raw', help="Print raw values", action='store_true')
+g.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file', type=argparse.FileType('w'))
+g.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
+g.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
+
+g = p.add_argument_group('Sampling')
+g.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
+g.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
+g.add_argument('--sample-args', help='Extra rguments to pass to perf record for sampling. Use + to specify -', default='-g')
+g.add_argument('--sample-repeat', help='Repeat measurement and sampling N times. This interleaves counting and sampling', type=int)
+g.add_argument('--sample-basename', help='Base name of sample perf.data files', default="perf.data")
+
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
-p.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
-p.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
-p.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
-                action='store_true')
-p.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.', action='store_true')
-p.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
-p.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
-p.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
-p.add_argument('--bottleneck', help='Show critical bottleneck', action='store_true')
-p.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
-p.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true')
+p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
 args, rest = p.parse_known_args()
 
 rest = [x for x in rest if x != "--"]
