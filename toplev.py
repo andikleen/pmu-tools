@@ -1375,6 +1375,15 @@ class Runner:
                 len(self.olist),
                 self.missed)
 
+    def propagate_siblings(self):
+	for obj in self.olist:
+	    if obj.thresh and obj.sibling:
+                if isinstance(obj.sibling, list):
+                    for k in obj.sibling:
+                        k.thresh = True
+                else:
+		    obj.sibling.thresh = True
+
     def compute(self, res, rev, valstats, env, match, stat):
         if len(res) == 0:
             print "Nothing measured?"
@@ -1404,13 +1413,7 @@ class Runner:
                 stat.errors.add(obj.name)
 
 	# step 2: propagate siblings
-	for obj in self.olist:
-	    if obj.thresh and obj.sibling:
-                if isinstance(obj.sibling, list):
-                    for k in obj.sibling:
-                        k.thresh = True
-                else:
-		    obj.sibling.thresh = True
+        self.propagate_siblings()
 
     def print_res(self, out, timestamp, title, match):
         out.logf.flush()
