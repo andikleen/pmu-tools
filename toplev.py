@@ -144,16 +144,16 @@ def kv_to_key(v):
 
 def unsup_event(e, table, min_kernel=None):
     if ":" in e:
-	e = e[:e.find(":")]
+        e = e[:e.find(":")]
     for j in table:
-	if fnmatch.fnmatch(e, j[0]) and cpu.realcpu in j[1][0]:
+        if fnmatch.fnmatch(e, j[0]) and cpu.realcpu in j[1][0]:
             break
     else:
         return False
     v = j[1]
     if v[1] and kv_to_key(kernel_version) < kv_to_key(v[1]):
         if min_kernel:
-	    min_kernel.append(v[1])
+            min_kernel.append(v[1])
         return True
     if v[2] and kv_to_key(kernel_version) >= kv_to_key(v[2]) :
         return True
@@ -352,9 +352,9 @@ if args.graph:
         args.interval = 100
     extra = ""
     if args.title:
-	title = args.title
+        title = args.title
     else:
-	title = "cpu %s" % (args.graph_cpu if args.graph_cpu else 0)
+        title = "cpu %s" % (args.graph_cpu if args.graph_cpu else 0)
     extra += '--title "' + title + '" '
     if args.output != sys.stderr:
         extra += '--output "' + args.output.name + '" '
@@ -469,14 +469,14 @@ def raw_event(i, name="", period=False):
             if i not in notfound_cache:
                 notfound_cache.add(i)
                 print >>sys.stderr, "%s not found" % (i,)
-	    return "dummy"
+            return "dummy"
         oi = i
-	i = e.output(noname=True, name=name, period=period)
+        i = e.output(noname=True, name=name, period=period)
         if len(re.findall(r'[a-z0-9_]+/.*?/[a-z]*', i)) > 1:
             print "Event", oi, "maps to multiple units. Ignored."
             return "dummy" # FIXME
         emap.update_event(e.output(noname=True), e)
-	# next three things should be moved somewhere else
+        # next three things should be moved somewhere else
         if i.startswith("uncore"):
             outgroup_events.add(i)
         if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
@@ -487,7 +487,7 @@ def raw_event(i, name="", period=False):
             limited_set.add(i)
         if e.errata:
             if e.errata in errata_whitelist:
-	        errata_events[orig_i] = e.errata
+                errata_events[orig_i] = e.errata
             else:
                 errata_warn_events[orig_i] = e.errata
     return i
@@ -507,7 +507,7 @@ def pwrap(s, linelen=70, indent=""):
 
 def pwrap_not_quiet(s, linelen=70, indent=""):
     if not args.quiet:
-	pwrap(s, linelen, indent)
+        pwrap(s, linelen, indent)
 
 def has(obj, name):
     return name in obj.__class__.__dict__
@@ -561,7 +561,7 @@ class ValidEvents:
 
     def __init__(self):
         self.valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles",
-		             r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
+                             r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
         self.update()
 
     def add_event(self, ev):
@@ -606,7 +606,7 @@ def display_core(cpunum, ignore_thread=False):
             continue
         if m.group('core') and cpu.cputocore[cpunum][1] != int(m.group('core')[1:]):
             continue
-	if not ignore_thread and m.group('thread') and not matching('thread', cpu.cputothread):
+        if not ignore_thread and m.group('thread') and not matching('thread', cpu.cputothread):
             continue
         return True
     return False
@@ -626,12 +626,12 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
     stat = runner.stat
     out.set_cpus(display_keys(runner, res.keys()))
     if smt_mode:
-	printed_cores = set()
+        printed_cores = set()
         for j in sorted(res.keys()):
-	    if j != "" and int(j) not in runner.allowed_threads:
-		continue
+            if j != "" and int(j) not in runner.allowed_threads:
+                continue
 
-	    runner.reset_thresh()
+            runner.reset_thresh()
 
             # collect counts from all threads of cores as lists
             # this way the model can access all threads individually
@@ -649,15 +649,15 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
                 runner.compute(combined_res, rev[cpus[0]], st, env, core_node, used_stat)
                 used_stat = None
 
-	    # print the SMT aware nodes
-	    if core not in printed_cores:
-		runner.print_res(out, interval, core_fmt(core), core_node)
-		printed_cores.add(core)
+            # print the SMT aware nodes
+            if core not in printed_cores:
+                runner.print_res(out, interval, core_fmt(core), core_node)
+                printed_cores.add(core)
 
-	    # print the non SMT nodes
-	    # recompute the nodes so we get up-to-date values
+            # print the non SMT nodes
+            # recompute the nodes so we get up-to-date values
             runner.print_res(out, interval, thread_fmt(j), thread_node)
-	    if args.bottleneck:
+            if args.bottleneck:
                 runner.print_bottleneck(out, thread_fmt(j), not_package_node)
     else:
         for j in sorted(res.keys()):
@@ -665,8 +665,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             runner.print_res(out, interval, j, not_package_node)
-	    if args.bottleneck:
-		runner.print_bottleneck(out, j, not_package_node)
+            if args.bottleneck:
+                runner.print_bottleneck(out, j, not_package_node)
     packages = set()
     for j in sorted(res.keys()):
         if j == "":
@@ -763,7 +763,7 @@ def dump_raw(interval, title, event, val, index, events, stddev, multiplex):
     if args.raw:
         print "raw", title, "event", event, "val", val, "ename", ename, "index", index, "group", gnum
     if args.valcsv:
-	runner.valcsv.writerow((interval, title, gnum, ename, val, event, index, stddev, multiplex))
+        runner.valcsv.writerow((interval, title, gnum, ename, val, event, index, stddev, multiplex))
 
 perf_fields = [
     r"[0-9.]+",
@@ -812,7 +812,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                         valstats = defaultdict(list)
                     prev_interval = interval
 
-	n = l.split(";")
+        n = l.split(";")
 
         # filter out the empty unit field added by 3.14
         n = filter(lambda x: x != "" and x != "Joules", n)
@@ -823,61 +823,61 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
         # -a -A cpu,count,event,...
         # count,event,...
         if is_event(n, 1):
-	    title, count, event, off = "", n[0], n[1], 2
+            title, count, event, off = "", n[0], n[1], 2
         elif is_event(n, 3):
-	    title, count, event, off = n[0], n[2], n[3], 4
+            title, count, event, off = n[0], n[2], n[3], 4
         elif is_event(n, 2):
-	    title, count, event, off = n[0], n[1], n[2], 3
+            title, count, event, off = n[0], n[1], n[2], 3
         else:
             print "unparseable perf output"
             sys.stdout.write(l)
             continue
-	title = title.replace("CPU", "")
-	# code later relies on stripping ku flags
-	event = event.replace("/k", "/").replace("/u", "/")
+        title = title.replace("CPU", "")
+        # code later relies on stripping ku flags
+        event = event.replace("/k", "/").replace("/u", "/")
 
-	multiplex = float('nan')
+        multiplex = float('nan')
         event = event.rstrip()
         if re.match(r"[0-9.]+", count):
             val = float(count)
         elif count.startswith("<"):
             account[event].errors[count.replace("<","").replace(">","")] += 1
-	    multiplex = 0.
+            multiplex = 0.
             val = 0
         else:
             print "unparseable perf count"
             sys.stdout.write(l)
             continue
 
-	# post fixes:
-	# ,xxx%    -> -rXXX stddev
-	stddev = 0.
-	if len(n) > off and n[off].endswith("%"):
-	    stddev = (float(n[off].replace("%", "").replace(",", ".")) / 100.) * val
-	    off += 1
+        # post fixes:
+        # ,xxx%    -> -rXXX stddev
+        stddev = 0.
+        if len(n) > off and n[off].endswith("%"):
+            stddev = (float(n[off].replace("%", "").replace(",", ".")) / 100.) * val
+            off += 1
 
-	# ,xxx,yyy -> multiplexing in newer perf
-	if len(n) > off + 1:
-	    multiplex = float(n[off + 1].replace(",", "."))
-	    off += 2
+        # ,xxx,yyy -> multiplexing in newer perf
+        if len(n) > off + 1:
+            multiplex = float(n[off + 1].replace(",", "."))
+            off += 2
 
         st = ValStat(stddev=stddev, multiplex=multiplex)
 
         account[event].total += 1
 
-	# power/uncore events are only output once for every socket. duplicate them
+        # power/uncore events are only output once for every socket. duplicate them
         # to all cpus in the socket to make the result lists match
-	# unless we use -A ??
+        # unless we use -A ??
         # also -C xxx causes them to be duplicated too, unless single thread
-	if ((event.startswith("power") or event.startswith("uncore")) and
-		title != "" and (not (args.core and not args.single_thread))):
+        if ((event.startswith("power") or event.startswith("uncore")) and
+                title != "" and (not (args.core and not args.single_thread))):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
             for j in cpu.sockettocpus[socket]:
-		if not args.core or display_core(j, True):
-		    res["%d" % (j)].append(val)
-		    rev["%d" % (j)].append(event)
-		    valstats["%d" % (j)].append(st)
+                if not args.core or display_core(j, True):
+                    res["%d" % (j)].append(val)
+                    rev["%d" % (j)].append(event)
+                    valstats["%d" % (j)].append(st)
         else:
             res[title].append(val)
             rev[title].append(event)
@@ -889,7 +889,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                      event,
                      val,
                      len(res[title]) - len(init_res[title]) - 1,
-		     events, stddev, multiplex)
+                     events, stddev, multiplex)
     inf.close()
     if 'interval-ns' not in env:
             set_interval(env, time.time() - start)
@@ -1079,16 +1079,16 @@ def children_over(l, obj):
 def obj_desc(obj, rest):
     # hide description if children are also printed
     if not args.long_desc and children_over(rest, obj):
-	desc = ""
+        desc = ""
     else:
-	desc = obj.desc[1:].replace("\n", "\n\t")
+        desc = obj.desc[1:].replace("\n", "\n\t")
 
     # by default limit to first sentence
     if not args.long_desc and "." in desc:
-	desc = desc[:desc.find(".") + 1] + ".."
+        desc = desc[:desc.find(".") + 1] + ".."
 
     if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht and not args.single_thread:
-	desc += """
+        desc += """
 Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
     return desc
@@ -1182,13 +1182,13 @@ class Runner:
         self.olist = []
         self.max_level = max_level
         self.missed = 0
-	self.sample_obj = set()
+        self.sample_obj = set()
         self.stat = ComputeStat(args.quiet)
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv)
-	    self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value",
+            self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value",
                                   "Perf-event", "Index", "STDEV", "MULTI"))
 
     def do_run(self, obj):
@@ -1212,9 +1212,9 @@ class Runner:
         self.olist = filter(want_node, self.olist)
 
     def reset_thresh(self):
-	for obj in self.olist:
+        for obj in self.olist:
             if not obj.metric:
-	        obj.thresh = False
+                obj.thresh = False
 
     def run(self, obj):
         obj.thresh = False
@@ -1282,11 +1282,11 @@ class Runner:
         bad_nodes = set()
         bad_events = set()
         unsup_nodes = set()
-	errata_nodes = set()
-	errata_warn_nodes = set()
-	errata_names = set()
-	errata_warn_names = set()
-	min_kernel = []
+        errata_nodes = set()
+        errata_warn_nodes = set()
+        errata_names = set()
+        errata_warn_names = set()
+        min_kernel = []
         for obj in self.olist:
             obj.evlevels = []
             obj.compute(lambda ev, level: ev_append(ev, level, obj))
@@ -1294,8 +1294,8 @@ class Runner:
             obj.evnum = raw_events(obj.evlist)
             obj.nc = needed_counters(obj.evnum)
 
-	    # work arounds for lots of different problems
-	    unsup = [x for x in obj.evlist if unsup_event(x, unsup_events, min_kernel)]
+            # work arounds for lots of different problems
+            unsup = [x for x in obj.evlist if unsup_event(x, unsup_events, min_kernel)]
             if any(unsup):
                 bad_nodes.add(obj)
                 bad_events |= set(unsup)
@@ -1304,31 +1304,31 @@ class Runner:
                 unsup_nodes.add(obj)
             query_errata(obj, errata_events, errata_nodes, errata_names)
             query_errata(obj, errata_warn_events, errata_warn_nodes, errata_warn_names)
-	if bad_nodes:
+        if bad_nodes:
             if args.force_events:
-		pwrap_not_quiet("warning: Using --force-events. Nodes: " +
-			" ".join([x.name for x in bad_nodes]) + " may be unreliable")
+                pwrap_not_quiet("warning: Using --force-events. Nodes: " +
+                        " ".join([x.name for x in bad_nodes]) + " may be unreliable")
             else:
-		if not args.quiet:
-		    pwrap("warning: removing " +
-		       " ".join([x.name for x in bad_nodes]) +
-		       " due to unsupported events in kernel: " +
-		       " ".join(sorted(bad_events)), 80, "")
-		    if min_kernel:
-			print "Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0])
-		    print "Use --force-events to override (may result in wrong measurements)"
+                if not args.quiet:
+                    pwrap("warning: removing " +
+                       " ".join([x.name for x in bad_nodes]) +
+                       " due to unsupported events in kernel: " +
+                       " ".join(sorted(bad_events)), 80, "")
+                    if min_kernel:
+                        print "Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0])
+                    print "Use --force-events to override (may result in wrong measurements)"
                 self.olist = [x for x in self.olist if x not in bad_nodes]
-	if unsup_nodes:
-	    pwrap_not_quiet("Nodes " + " ".join(x.name for x in unsup_nodes) + " has unsupported PMUs")
+        if unsup_nodes:
+            pwrap_not_quiet("Nodes " + " ".join(x.name for x in unsup_nodes) + " has unsupported PMUs")
             self.olist = [x for x in self.olist if x not in unsup_nodes]
-	if errata_nodes and not args.ignore_errata:
-	    pwrap_not_quiet("Nodes " + " ".join(x.name for x in errata_nodes) + " have errata " +
-			" ".join(errata_names) + " and were disabled. " +
-			"Override with --ignore-errata")
-	    self.olist = [x for x in self.olist if x in errata_nodes]
-	if errata_warn_nodes and not args.ignore_errata:
-	    pwrap_not_quiet("Nodes " + " ".join(x.name for x in errata_warn_nodes) + " have errata " +
-			" ".join(errata_warn_names))
+        if errata_nodes and not args.ignore_errata:
+            pwrap_not_quiet("Nodes " + " ".join(x.name for x in errata_nodes) + " have errata " +
+                        " ".join(errata_names) + " and were disabled. " +
+                        "Override with --ignore-errata")
+            self.olist = [x for x in self.olist if x in errata_nodes]
+        if errata_warn_nodes and not args.ignore_errata:
+            pwrap_not_quiet("Nodes " + " ".join(x.name for x in errata_warn_nodes) + " have errata " +
+                        " ".join(errata_warn_names))
 
     # fit events into available counters
     # simple first fit algorithm
@@ -1376,13 +1376,13 @@ class Runner:
                 self.missed)
 
     def propagate_siblings(self):
-	for obj in self.olist:
-	    if obj.thresh and obj.sibling:
+        for obj in self.olist:
+            if obj.thresh and obj.sibling:
                 if isinstance(obj.sibling, list):
                     for k in obj.sibling:
                         k.thresh = True
                 else:
-		    obj.sibling.thresh = True
+                    obj.sibling.thresh = True
 
     def compute(self, res, rev, valstats, env, match, stat):
         if len(res) == 0:
@@ -1403,85 +1403,85 @@ class Runner:
             obj.valstat = combine_valstat([valstats[i] for i in ref])
             if not obj.res_map and not all([x in env for x in obj.evnum]):
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
-	    if not obj.metric and not check_ratio(obj.val):
-		obj.thresh = False
+            if not obj.metric and not check_ratio(obj.val):
+                obj.thresh = False
                 if stat:
-		    stat.mismeasured.add(obj.name)
+                    stat.mismeasured.add(obj.name)
             if stat and has(obj, 'errcount') and obj.errcount > 0:
                 if obj.name not in stat.errors:
                     stat.errcount += obj.errcount
                 stat.errors.add(obj.name)
 
-	# step 2: propagate siblings
+        # step 2: propagate siblings
         self.propagate_siblings()
 
     def print_res(self, out, timestamp, title, match):
         out.logf.flush()
 
-	# first compute column lengths
+        # first compute column lengths
         for obj in self.olist:
             if obj.thresh or print_all:
                 out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
 
         # step 3: print
         olist = olist_by_metricgroup(self.olist, self.metricgroups)
-	for i in range(0, len(olist)):
-	    obj = olist[i]
+        for i in range(0, len(olist)):
+            obj = olist[i]
             if obj.thresh or print_all:
                 val = obj.val
                 if not obj.thresh and not dont_hide:
                     val = 0.0
                 if not match(obj):
                     continue
-		desc = obj_desc(obj, olist[i + 1:])
+                desc = obj_desc(obj, olist[i + 1:])
                 if obj.metric:
                     if print_all or obj.val != 0:
-		        out.metric(obj.area if has(obj, 'area') else None,
+                        out.metric(obj.area if has(obj, 'area') else None,
                             obj.name, val, timestamp,
-			    desc,
+                            desc,
                             title,
                             metric_unit(obj),
                             obj.valstat)
-		elif check_ratio(val):
-		    out.ratio(obj.area if has(obj, 'area') else None,
+                elif check_ratio(val):
+                    out.ratio(obj.area if has(obj, 'area') else None,
                             full_name(obj), val, timestamp,
                             ((" " + obj.domain) if has(obj, 'domain') else "") +
                             (" below" if not obj.thresh else ""),
-			    desc,
+                            desc,
                             title,
                             sample_desc(obj.sample) if has(obj, 'sample') else None,
                             obj.valstat)
-		    if obj.thresh or args.verbose:
-			self.sample_obj.add(obj)
+                    if obj.thresh or args.verbose:
+                        self.sample_obj.add(obj)
 
     def print_bottleneck(self, out, key, match):
-	bn = [(full_name(o), o.val) for o in self.olist if match(o) and o.thresh and not o.metric]
-	if len(bn) == 0:
-	    return
+        bn = [(full_name(o), o.val) for o in self.olist if match(o) and o.thresh and not o.metric]
+        if len(bn) == 0:
+            return
         bn = find_bn(bn)
-	final = find_final(bn)
+        final = find_final(bn)
         if final:
             out.bottleneck(key, final[0], final[1])
 
 def remove_pp(s):
     if s.endswith(":pp"):
-	return s[:-3]
+        return s[:-3]
     return s
 
 def do_sample(sample_obj, rest, count):
     # XXX use :ppp if available
     samples = [("cycles:pp", "Precise cycles", )]
     for obj in sample_obj:
-	for s in obj.sample:
-	    samples.append((s, obj.name))
+        for s in obj.sample:
+            samples.append((s, obj.name))
     nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
     nsamp = [(remove_pp(x[0]), x[1]) if unsup_event(x[0], unsup_pebs) else x
-		for x in nsamp]
+                for x in nsamp]
     if cmp(nsamp, samples):
-	missing = [x[0] for x in set(samples) - set(nsamp)]
+        missing = [x[0] for x in set(samples) - set(nsamp)]
         if not args.quiet:
-	    print >>sys.stderr, "warning: update kernel to handle sample events:"
-	    print >>sys.stderr, "\n".join(missing)
+            print >>sys.stderr, "warning: update kernel to handle sample events:"
+            print >>sys.stderr, "\n".join(missing)
     sl = [raw_event(s[0], s[1] + "_" + remove_pp(s[0]).replace(".", "_"), period=True) for s in nsamp]
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
@@ -1493,13 +1493,13 @@ def do_sample(sample_obj, rest, count):
     sperf = [perf, "record" ] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
     print " ".join(sperf)
     if args.run_sample:
-	ret = os.system(" ".join(sperf))
+        ret = os.system(" ".join(sperf))
         if ret:
             sys.exit(ret)
-	if not args.quiet:
+        if not args.quiet:
             print "Run `" + perf + " report %s%s' to show the sampling results" % (
-		("-i %s" % perf_data) if perf_data != "perf_data" else "",
-		" --no-branch-history"  if "-b" in extra_args else "")
+                ("-i %s" % perf_data) if perf_data != "perf_data" else "",
+                " --no-branch-history"  if "-b" in extra_args else "")
 
 def sysctl(name):
     try:
@@ -1703,7 +1703,7 @@ def measure_and_sample(count):
 if args.sample_repeat:
     for j in range(args.sample_repeat):
         ret = measure_and_sample(j + 1)
-	if ret:
+        if ret:
             break
 else:
     ret = measure_and_sample(None)
