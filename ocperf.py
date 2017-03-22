@@ -72,16 +72,16 @@ file_exists = dict()
 
 def file_exists(s):
     if s in exists_cache:
-	return exists_cache[s]
+        return exists_cache[s]
     global topology
     if topology is None:
-	top = os.getenv("TOPOLOGY")
-	if top:
-	    topology = set([x.strip() for x in open(top).readlines()])
-	else:
-	    topology = set()
+        top = os.getenv("TOPOLOGY")
+        if top:
+            topology = set([x.strip() for x in open(top).readlines()])
+        else:
+            topology = set()
     if s in topology:
-	return True
+        return True
     found = os.path.exists(s)
     exists_cache[s] = found
     return found
@@ -217,10 +217,10 @@ class Event:
         else:
             extra = self.newextra
         e = "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff, extra)
-	if version.has_name:
-	    if name:
-		e += ",name=" + name
-	    elif not noname:
+        if version.has_name:
+            if name:
+                e += ",name=" + name
+            elif not noname:
                 e += ",name=%s" % (self.name.replace(".", "_").replace(":", "_").replace("=", "_"))
         if period and self.period and not ",period=" in e:
             e += ",period=%d" % self.period
@@ -242,7 +242,7 @@ class Event:
                 ename += ":" + extra
             # XXX should error for extras that don't fit into raw
         else:
-	    ename = "cpu/%s/" % (self.output_newstyle(extra=",".join(newe), noname=noname, period=period, name=name)) + extra
+            ename = "cpu/%s/" % (self.output_newstyle(extra=",".join(newe), noname=noname, period=period, name=name)) + extra
         return ename
 
 box_to_perf = {
@@ -256,7 +256,7 @@ box_cache = dict()
 def box_exists(box):
     n = "/sys/devices/uncore_%s" % (box)
     if n not in box_cache:
-	box_cache[n] = file_exists(n)
+        box_cache[n] = file_exists(n)
     return box_cache[n]
 
 def int_or_zero(row, name):
@@ -292,18 +292,18 @@ class UncoreEvent:
         e.inv = int_or_zero(row, 'Invert')
         e.edge = int_or_zero(row, 'EdgeDetect')
         e.unit = row['Unit'].lower()
-	if e.unit in uncore_units:
-	    e.unit = uncore_units[e.unit]
+        if e.unit in uncore_units:
+            e.unit = uncore_units[e.unit]
         # xxx subctr
         if e.unit in box_to_perf:
             e.unit = box_to_perf[e.unit]
         e.msr = None
         e.overflow = 0
         e.counter = "1" # dummy for toplev
-	if 'Errata' in row:
-	    e.errata = row['Errata']
-	else:
-	    e.errata = None
+        if 'Errata' in row:
+            e.errata = row['Errata']
+        else:
+            e.errata = None
 
     #  {
     # "Unit": "CBO",
@@ -515,11 +515,11 @@ class EmapNativeJSON(object):
                     d += " (Uses PEBS)"
                 else:
                     d = d.replace("(Precise Event)","") + " (Supports PEBS)"
-	    e.errata = None
+            e.errata = None
             try:
                 if get('errata') != "null":
                     d += " Errata: " + get('errata')
-		    e.errata = get('errata')
+                    e.errata = get('errata')
             except KeyError:
                 pass
             e.desc = d
@@ -764,27 +764,27 @@ def process_events(event, print_only, period):
     nl = []
     group_index = 0
     for i in el:
-	group_start = ""
-	group_end = ""
+        group_start = ""
+        group_end = ""
         start = ""
         end = ""
         if i.startswith('{'):
-	    group_start = "{"
+            group_start = "{"
             i = i[1:]
             group_index = len(nl)
-	m = re.match(r'(.*)(\}(:.*)?)', i)
-	if m:
-	    group_end = m.group(2)
-	    i = m.group(1)
-        i = i.strip()
-	m = re.match(r'(cpu|uncore_.*?)/([^#]+)(#?.*?)/(.*)', i)
+        m = re.match(r'(.*)(\}(:.*)?)', i)
         if m:
-	    start = m.group(1) + "/"
+            group_end = m.group(2)
+            i = m.group(1)
+        i = i.strip()
+        m = re.match(r'(cpu|uncore_.*?)/([^#]+)(#?.*?)/(.*)', i)
+        if m:
+            start = m.group(1) + "/"
             ev = emap.getevent(m.group(2))
-	    end = m.group(3) + "/"
+            end = m.group(3) + "/"
             if ev:
-		qual = "".join(merge_extra(extra_set(ev.extra), extra_set(m.group(4))))
-		end += qual
+                qual = "".join(merge_extra(extra_set(ev.extra), extra_set(m.group(4))))
+                end += qual
                 i = ev.output_newstyle(period=period)
             else:
                 start = ""
@@ -799,7 +799,7 @@ def process_events(event, print_only, period):
             if emap.latego and (ev.val & 0xffff) in latego.latego_events:
                 latego.setup_event(ev.val & 0xffff, 1)
             overflow = ev.overflow
-	event = (group_start + start + i + end + group_end).replace("#", ",")
+        event = (group_start + start + i + end + group_end).replace("#", ",")
         nl.append(event)
         if ev:
             emap.update_event(event, ev)
