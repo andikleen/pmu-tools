@@ -44,7 +44,7 @@ try:
 except ImportError:
     print "Install brewer2mpl for better colors (pip install brewer2mpl)"
     all_colors = ('green','orange','red','blue',
-    	      'black','olive','purple','#6960EC', '#F0FFFF',
+              'black','olive','purple','#6960EC', '#F0FFFF',
               '#728C00', '#827B60', '#F87217', '#E55451', # 16
               '#F88017', '#C11B17', '#17BFC2', '#C48793') # 20
 

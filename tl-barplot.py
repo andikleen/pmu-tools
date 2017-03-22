@@ -53,7 +53,7 @@ if cpu:
     base = None
     m = re.match(r'C\d+', cpu)
     if m:
-	base = m.group(0)
+        base = m.group(0)
     aliases = [x for x in data.cpus if cpumatch(x, cpu, base)]
     print "plotting cpus:", " ".join(sorted(aliases))
 else:
@@ -63,10 +63,10 @@ if len(aliases) == 0:
 
 for h in data.headers:
     def findval(d):
-	for c in aliases:
-	    if (h, c) in d:
-		return d[(h, c)]
-	return float('nan')
+        for c in aliases:
+            if (h, c) in d:
+                return d[(h, c)]
+        return float('nan')
 
     ratios[h] = map(findval, data.vals)
 
@@ -128,7 +128,7 @@ for l in tldata.level_order(data):
         if not math.isnan(low) and not math.isnan(high):
             ax.yaxis.set_ticks([low, math.trunc(((high - low)/2.0)/100.)*100., high])
     else:
-	stack = ax.stackplot(timestamps, *r, colors=all_colors)
+        stack = ax.stackplot(timestamps, *r, colors=all_colors)
         ax.set_ylim(0, 100)
         ax.yaxis.set_ticks([0., 50., 100.])
         p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
