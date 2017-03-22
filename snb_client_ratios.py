@@ -1079,11 +1079,11 @@ Instructions Per Cycle (per logical thread)"""
 
     def compute(self, EV):
         try:
-	    self.val = IPC(self, EV, 0)
+            self.val = IPC(self, EV, 0)
         except ZeroDivisionError:
             print_error("IPC zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_UPI:
     name = "UPI"
@@ -1096,11 +1096,11 @@ Uops Per Instruction"""
 
     def compute(self, EV):
         try:
-	    self.val = UPI(self, EV, 0)
+            self.val = UPI(self, EV, 0)
         except ZeroDivisionError:
             print_error("UPI zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_IFetch_Line_Utilization:
     name = "IFetch_Line_Utilization"
@@ -1114,11 +1114,11 @@ were likely consumed by program instructions"""
 
     def compute(self, EV):
         try:
-	    self.val = IFetch_Line_Utilization(self, EV, 0)
+            self.val = IFetch_Line_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("IFetch_Line_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_DSB_Coverage:
     name = "DSB_Coverage"
@@ -1132,11 +1132,11 @@ cache)"""
 
     def compute(self, EV):
         try:
-	    self.val = DSB_Coverage(self, EV, 0)
+            self.val = DSB_Coverage(self, EV, 0)
         except ZeroDivisionError:
             print_error("DSB_Coverage zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_CPI:
     name = "CPI"
@@ -1149,11 +1149,11 @@ Cycles Per Instruction (threaded)"""
 
     def compute(self, EV):
         try:
-	    self.val = CPI(self, EV, 0)
+            self.val = CPI(self, EV, 0)
         except ZeroDivisionError:
             print_error("CPI zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_CLKS:
     name = "CLKS"
@@ -1166,11 +1166,11 @@ Per-thread actual clocks when the thread is active"""
 
     def compute(self, EV):
         try:
-	    self.val = CLKS(self, EV, 0)
+            self.val = CLKS(self, EV, 0)
         except ZeroDivisionError:
             print_error("CLKS zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_SLOTS:
     name = "SLOTS"
@@ -1183,11 +1183,11 @@ Total issue-pipeline slots"""
 
     def compute(self, EV):
         try:
-	    self.val = SLOTS(self, EV, 0)
+            self.val = SLOTS(self, EV, 0)
         except ZeroDivisionError:
             print_error("SLOTS zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_CoreIPC:
     name = "CoreIPC"
@@ -1200,11 +1200,11 @@ Instructions Per Cycle (per physical core)"""
 
     def compute(self, EV):
         try:
-	    self.val = CoreIPC(self, EV, 0)
+            self.val = CoreIPC(self, EV, 0)
         except ZeroDivisionError:
             print_error("CoreIPC zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_FLOPc:
     name = "FLOPc"
@@ -1217,11 +1217,11 @@ Floating Point Operations Per Cycle"""
 
     def compute(self, EV):
         try:
-	    self.val = FLOPc(self, EV, 0)
+            self.val = FLOPc(self, EV, 0)
         except ZeroDivisionError:
             print_error("FLOPc zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_ILP:
     name = "ILP"
@@ -1235,11 +1235,11 @@ executed when there is at least 1 uop executed)"""
 
     def compute(self, EV):
         try:
-	    self.val = ILP(self, EV, 0)
+            self.val = ILP(self, EV, 0)
         except ZeroDivisionError:
             print_error("ILP zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_CORE_CLKS:
     name = "CORE_CLKS"
@@ -1253,11 +1253,11 @@ core"""
 
     def compute(self, EV):
         try:
-	    self.val = CORE_CLKS(self, EV, 0)
+            self.val = CORE_CLKS(self, EV, 0)
         except ZeroDivisionError:
             print_error("CORE_CLKS zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_CPU_Utilization:
     name = "CPU_Utilization"
@@ -1270,11 +1270,11 @@ Average CPU Utilization"""
 
     def compute(self, EV):
         try:
-	    self.val = CPU_Utilization(self, EV, 0)
+            self.val = CPU_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("CPU_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_GFLOPs:
     name = "GFLOPs"
@@ -1287,11 +1287,11 @@ Giga Floating Point Operations Per Second"""
 
     def compute(self, EV):
         try:
-	    self.val = GFLOPs(self, EV, 0)
+            self.val = GFLOPs(self, EV, 0)
         except ZeroDivisionError:
             print_error("GFLOPs zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_Turbo_Utilization:
     name = "Turbo_Utilization"
@@ -1304,11 +1304,11 @@ Average Frequency Utilization relative nominal frequency"""
 
     def compute(self, EV):
         try:
-	    self.val = Turbo_Utilization(self, EV, 0)
+            self.val = Turbo_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("Turbo_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_SMT_2T_Utilization:
     name = "SMT_2T_Utilization"
@@ -1321,11 +1321,11 @@ Fraction of cycles where both hardware threads were active"""
 
     def compute(self, EV):
         try:
-	    self.val = SMT_2T_Utilization(self, EV, 0)
+            self.val = SMT_2T_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("SMT_2T_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_Kernel_Utilization:
     name = "Kernel_Utilization"
@@ -1338,11 +1338,11 @@ Fraction of cycles spent in Kernel mode"""
 
     def compute(self, EV):
         try:
-	    self.val = Kernel_Utilization(self, EV, 0)
+            self.val = Kernel_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("Kernel_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_MEM_BW_GBs:
     name = "MEM_BW_GBs"
@@ -1356,11 +1356,11 @@ Average external Memory Bandwidth Use for reads and writes
 
     def compute(self, EV):
         try:
-	    self.val = MEM_BW_GBs(self, EV, 0)
+            self.val = MEM_BW_GBs(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_BW_GBs zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_MEM_Request_Latency:
     name = "MEM_Request_Latency"
@@ -1374,11 +1374,11 @@ Uncore cycles)"""
 
     def compute(self, EV):
         try:
-	    self.val = MEM_Request_Latency(self, EV, 0)
+            self.val = MEM_Request_Latency(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_Request_Latency zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_MEM_Parallel_Requests:
     name = "MEM_Parallel_Requests"
@@ -1392,11 +1392,11 @@ Uncore cycles). Accounts for all requests"""
 
     def compute(self, EV):
         try:
-	    self.val = MEM_Parallel_Requests(self, EV, 0)
+            self.val = MEM_Parallel_Requests(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_Parallel_Requests zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_Time:
     name = "Time"
@@ -1409,11 +1409,11 @@ Run duration time in seconds"""
 
     def compute(self, EV):
         try:
-	    self.val = Time(self, EV, 0)
+            self.val = Time(self, EV, 0)
         except ZeroDivisionError:
             print_error("Time zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_Socket_CLKS:
     name = "Socket_CLKS"
@@ -1426,11 +1426,11 @@ class Metric_Socket_CLKS:
 
     def compute(self, EV):
         try:
-	    self.val = Socket_CLKS(self, EV, 0)
+            self.val = Socket_CLKS(self, EV, 0)
         except ZeroDivisionError:
             print_error("Socket_CLKS zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 # Schedule
 
@@ -1438,7 +1438,7 @@ class Metric_Socket_CLKS:
 
 class Setup:
     def __init__(self, r):
-	o = dict()
+        o = dict()
         n = Frontend_Bound() ; r.run(n) ; o["Frontend_Bound"] = n
         n = Frontend_Latency() ; r.run(n) ; o["Frontend_Latency"] = n
         n = ITLB_Misses() ; r.run(n) ; o["ITLB_Misses"] = n
@@ -1525,10 +1525,10 @@ class Setup:
 
         # siblings cross-tree
 
-	o["Branch_Resteers"].sibling = o["Bad_Speculation"]
-	o["MS_Switches"].sibling = o["Microcode_Sequencer"]
-	o["Bad_Speculation"].sibling = o["Branch_Resteers"]
-	o["Microcode_Sequencer"].sibling = o["MS_Switches"]
+        o["Branch_Resteers"].sibling = o["Bad_Speculation"]
+        o["MS_Switches"].sibling = o["Microcode_Sequencer"]
+        o["Bad_Speculation"].sibling = o["Branch_Resteers"]
+        o["Microcode_Sequencer"].sibling = o["MS_Switches"]
 
         # user visible metrics
 

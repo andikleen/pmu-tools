@@ -2005,11 +2005,11 @@ Instructions Per Cycle (per logical thread)"""
 
     def compute(self, EV):
         try:
-	    self.val = IPC(self, EV, 0)
+            self.val = IPC(self, EV, 0)
         except ZeroDivisionError:
             print_error("IPC zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_UPI:
     name = "UPI"
@@ -2022,11 +2022,11 @@ Uops Per Instruction"""
 
     def compute(self, EV):
         try:
-	    self.val = UPI(self, EV, 0)
+            self.val = UPI(self, EV, 0)
         except ZeroDivisionError:
             print_error("UPI zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_IPTB:
     name = "IPTB"
@@ -2039,11 +2039,11 @@ Instruction per taken branch"""
 
     def compute(self, EV):
         try:
-	    self.val = IPTB(self, EV, 0)
+            self.val = IPTB(self, EV, 0)
         except ZeroDivisionError:
             print_error("IPTB zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_BPTB:
     name = "BPTB"
@@ -2057,11 +2057,11 @@ approximate PGO-likelihood for non-loopy codes."""
 
     def compute(self, EV):
         try:
-	    self.val = BPTB(self, EV, 0)
+            self.val = BPTB(self, EV, 0)
         except ZeroDivisionError:
             print_error("BPTB zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_IFetch_Line_Utilization:
     name = "IFetch_Line_Utilization"
@@ -2075,11 +2075,11 @@ were likely consumed by program instructions"""
 
     def compute(self, EV):
         try:
-	    self.val = IFetch_Line_Utilization(self, EV, 0)
+            self.val = IFetch_Line_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("IFetch_Line_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_DSB_Coverage:
     name = "DSB_Coverage"
@@ -2093,11 +2093,11 @@ cache)"""
 
     def compute(self, EV):
         try:
-	    self.val = DSB_Coverage(self, EV, 0)
+            self.val = DSB_Coverage(self, EV, 0)
         except ZeroDivisionError:
             print_error("DSB_Coverage zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_CPI:
     name = "CPI"
@@ -2110,11 +2110,11 @@ Cycles Per Instruction (threaded)"""
 
     def compute(self, EV):
         try:
-	    self.val = CPI(self, EV, 0)
+            self.val = CPI(self, EV, 0)
         except ZeroDivisionError:
             print_error("CPI zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_CLKS:
     name = "CLKS"
@@ -2127,11 +2127,11 @@ Per-thread actual clocks when the thread is active"""
 
     def compute(self, EV):
         try:
-	    self.val = CLKS(self, EV, 0)
+            self.val = CLKS(self, EV, 0)
         except ZeroDivisionError:
             print_error("CLKS zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_SLOTS:
     name = "SLOTS"
@@ -2144,11 +2144,11 @@ Total issue-pipeline slots"""
 
     def compute(self, EV):
         try:
-	    self.val = SLOTS(self, EV, 0)
+            self.val = SLOTS(self, EV, 0)
         except ZeroDivisionError:
             print_error("SLOTS zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_CoreIPC:
     name = "CoreIPC"
@@ -2161,11 +2161,11 @@ Instructions Per Cycle (per physical core)"""
 
     def compute(self, EV):
         try:
-	    self.val = CoreIPC(self, EV, 0)
+            self.val = CoreIPC(self, EV, 0)
         except ZeroDivisionError:
             print_error("CoreIPC zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_FLOPc:
     name = "FLOPc"
@@ -2178,11 +2178,11 @@ Floating Point Operations Per Cycle"""
 
     def compute(self, EV):
         try:
-	    self.val = FLOPc(self, EV, 0)
+            self.val = FLOPc(self, EV, 0)
         except ZeroDivisionError:
             print_error("FLOPc zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_ILP:
     name = "ILP"
@@ -2196,11 +2196,11 @@ executed when there is at least 1 uop executed)"""
 
     def compute(self, EV):
         try:
-	    self.val = ILP(self, EV, 0)
+            self.val = ILP(self, EV, 0)
         except ZeroDivisionError:
             print_error("ILP zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_MLP:
     name = "MLP"
@@ -2214,11 +2214,11 @@ load when there is at least 1 such miss)"""
 
     def compute(self, EV):
         try:
-	    self.val = MLP(self, EV, 0)
+            self.val = MLP(self, EV, 0)
         except ZeroDivisionError:
             print_error("MLP zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_Page_Walks_Utilization:
     name = "Page_Walks_Utilization"
@@ -2232,11 +2232,11 @@ triggered by instruction/Load/Store accesses"""
 
     def compute(self, EV):
         try:
-	    self.val = Page_Walks_Utilization(self, EV, 0)
+            self.val = Page_Walks_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("Page_Walks_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_CORE_CLKS:
     name = "CORE_CLKS"
@@ -2250,11 +2250,11 @@ core"""
 
     def compute(self, EV):
         try:
-	    self.val = CORE_CLKS(self, EV, 0)
+            self.val = CORE_CLKS(self, EV, 0)
         except ZeroDivisionError:
             print_error("CORE_CLKS zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_Load_Miss_Real_Latency:
     name = "Load_Miss_Real_Latency"
@@ -2267,11 +2267,11 @@ Actual Average Latency for L1 data-cache miss demand loads"""
 
     def compute(self, EV):
         try:
-	    self.val = Load_Miss_Real_Latency(self, EV, 0)
+            self.val = Load_Miss_Real_Latency(self, EV, 0)
         except ZeroDivisionError:
             print_error("Load_Miss_Real_Latency zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_TSX_Transactional_Cycles:
     name = "TSX_Transactional_Cycles"
@@ -2285,11 +2285,11 @@ Memory mode (HLE or RTM)"""
 
     def compute(self, EV):
         try:
-	    self.val = TSX_Transactional_Cycles(self, EV, 0)
+            self.val = TSX_Transactional_Cycles(self, EV, 0)
         except ZeroDivisionError:
             print_error("TSX_Transactional_Cycles zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_TSX_Aborted_Cycles:
     name = "TSX_Aborted_Cycles"
@@ -2303,11 +2303,11 @@ Memory mode (HLE or RTM)"""
 
     def compute(self, EV):
         try:
-	    self.val = TSX_Aborted_Cycles(self, EV, 0)
+            self.val = TSX_Aborted_Cycles(self, EV, 0)
         except ZeroDivisionError:
             print_error("TSX_Aborted_Cycles zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_CPU_Utilization:
     name = "CPU_Utilization"
@@ -2320,11 +2320,11 @@ Average CPU Utilization"""
 
     def compute(self, EV):
         try:
-	    self.val = CPU_Utilization(self, EV, 0)
+            self.val = CPU_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("CPU_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_GFLOPs:
     name = "GFLOPs"
@@ -2337,11 +2337,11 @@ Giga Floating Point Operations Per Second"""
 
     def compute(self, EV):
         try:
-	    self.val = GFLOPs(self, EV, 0)
+            self.val = GFLOPs(self, EV, 0)
         except ZeroDivisionError:
             print_error("GFLOPs zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_Turbo_Utilization:
     name = "Turbo_Utilization"
@@ -2354,11 +2354,11 @@ Average Frequency Utilization relative nominal frequency"""
 
     def compute(self, EV):
         try:
-	    self.val = Turbo_Utilization(self, EV, 0)
+            self.val = Turbo_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("Turbo_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_SMT_2T_Utilization:
     name = "SMT_2T_Utilization"
@@ -2371,11 +2371,11 @@ Fraction of cycles where both hardware threads were active"""
 
     def compute(self, EV):
         try:
-	    self.val = SMT_2T_Utilization(self, EV, 0)
+            self.val = SMT_2T_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("SMT_2T_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_Kernel_Utilization:
     name = "Kernel_Utilization"
@@ -2388,11 +2388,11 @@ Fraction of cycles spent in Kernel mode"""
 
     def compute(self, EV):
         try:
-	    self.val = Kernel_Utilization(self, EV, 0)
+            self.val = Kernel_Utilization(self, EV, 0)
         except ZeroDivisionError:
             print_error("Kernel_Utilization zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_MEM_BW_GBs:
     name = "MEM_BW_GBs"
@@ -2406,11 +2406,11 @@ Average external Memory Bandwidth Use for reads and writes
 
     def compute(self, EV):
         try:
-	    self.val = MEM_BW_GBs(self, EV, 0)
+            self.val = MEM_BW_GBs(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_BW_GBs zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_MEM_Request_Latency:
     name = "MEM_Request_Latency"
@@ -2424,11 +2424,11 @@ Uncore cycles)"""
 
     def compute(self, EV):
         try:
-	    self.val = MEM_Request_Latency(self, EV, 0)
+            self.val = MEM_Request_Latency(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_Request_Latency zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_MEM_Parallel_Requests:
     name = "MEM_Parallel_Requests"
@@ -2442,11 +2442,11 @@ Uncore cycles). Accounts for all requests"""
 
     def compute(self, EV):
         try:
-	    self.val = MEM_Parallel_Requests(self, EV, 0)
+            self.val = MEM_Parallel_Requests(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_Parallel_Requests zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_MEM_Read_Latency:
     name = "MEM_Read_Latency"
@@ -2461,11 +2461,11 @@ prefetches"""
 
     def compute(self, EV):
         try:
-	    self.val = MEM_Read_Latency(self, EV, 0)
+            self.val = MEM_Read_Latency(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_Read_Latency zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_MEM_Parallel_Reads:
     name = "MEM_Parallel_Reads"
@@ -2480,11 +2480,11 @@ L1/L2 prefetches"""
 
     def compute(self, EV):
         try:
-	    self.val = MEM_Parallel_Reads(self, EV, 0)
+            self.val = MEM_Parallel_Reads(self, EV, 0)
         except ZeroDivisionError:
             print_error("MEM_Parallel_Reads zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_Time:
     name = "Time"
@@ -2497,11 +2497,11 @@ Run duration time in seconds"""
 
     def compute(self, EV):
         try:
-	    self.val = Time(self, EV, 0)
+            self.val = Time(self, EV, 0)
         except ZeroDivisionError:
             print_error("Time zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 class Metric_Socket_CLKS:
     name = "Socket_CLKS"
@@ -2514,11 +2514,11 @@ class Metric_Socket_CLKS:
 
     def compute(self, EV):
         try:
-	    self.val = Socket_CLKS(self, EV, 0)
+            self.val = Socket_CLKS(self, EV, 0)
         except ZeroDivisionError:
             print_error("Socket_CLKS zero division")
             self.errcount += 1
-	    self.val = 0
+            self.val = 0
 
 # Schedule
 
@@ -2526,7 +2526,7 @@ class Metric_Socket_CLKS:
 
 class Setup:
     def __init__(self, r):
-	o = dict()
+        o = dict()
         n = Frontend_Bound() ; r.run(n) ; o["Frontend_Bound"] = n
         n = Frontend_Latency() ; r.run(n) ; o["Frontend_Latency"] = n
         n = ICache_Misses() ; r.run(n) ; o["ICache_Misses"] = n
@@ -2676,19 +2676,19 @@ class Setup:
 
         # siblings cross-tree
 
-	o["Branch_Resteers"].sibling = o["Bad_Speculation"]
-	o["MS_Switches"].sibling = o["Microcode_Sequencer"]
-	o["Bad_Speculation"].sibling = o["Branch_Resteers"]
-	o["L1_Bound"].sibling = o["G1_Port_Utilized"]
-	o["Lock_Latency"].sibling = o["Store_Latency"]
-	o["FB_Full"].sibling = o["SQ_Full"]
-	o["SQ_Full"].sibling = o["FB_Full"]
-	o["MEM_Bandwidth"].sibling = o["FB_Full"]
-	o["Store_Latency"].sibling = o["Lock_Latency"]
-	o["Split_Stores"].sibling = o["Port_4"]
-	o["G1_Port_Utilized"].sibling = o["L1_Bound"]
-	o["Port_4"].sibling = o["Split_Stores"]
-	o["Microcode_Sequencer"].sibling = o["MS_Switches"]
+        o["Branch_Resteers"].sibling = o["Bad_Speculation"]
+        o["MS_Switches"].sibling = o["Microcode_Sequencer"]
+        o["Bad_Speculation"].sibling = o["Branch_Resteers"]
+        o["L1_Bound"].sibling = o["G1_Port_Utilized"]
+        o["Lock_Latency"].sibling = o["Store_Latency"]
+        o["FB_Full"].sibling = o["SQ_Full"]
+        o["SQ_Full"].sibling = o["FB_Full"]
+        o["MEM_Bandwidth"].sibling = o["FB_Full"]
+        o["Store_Latency"].sibling = o["Lock_Latency"]
+        o["Split_Stores"].sibling = o["Port_4"]
+        o["G1_Port_Utilized"].sibling = o["L1_Bound"]
+        o["Port_4"].sibling = o["Split_Stores"]
+        o["Microcode_Sequencer"].sibling = o["MS_Switches"]
 
         # user visible metrics
 

@@ -56,7 +56,7 @@ of required resources for accepting more uops in the Backend of the pipeline.  "
     level = 1
     def compute(self, EV):
          try:
-	     EV("cycles", 1) # hack to force evaluation
+             EV("cycles", 1) # hack to force evaluation
              self.val = 1. - self.FrontendBound.val - self.Retiring.val
              self.thresh = self.val > 0.0
          except ZeroDivisionError:

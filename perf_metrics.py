@@ -27,7 +27,7 @@ PerfMon Event Multiplexing accuracy indicator"""
     errcount = 0
 
     def compute(self, EV):
-	self.val = EV("mux", 0)
+        self.val = EV("mux", 0)
         self.thresh = 0 < self.val < 100.0
 
 class Setup:
