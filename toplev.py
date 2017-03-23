@@ -267,7 +267,6 @@ g.add_argument('--no-multiplex',
                help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
                action='store_true')
 g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
-g.add_argument('--no-group', help='Dont use groups', action='store_true')
 
 g = p.add_argument_group('Measurement filtering')
 g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
@@ -288,6 +287,9 @@ g.add_argument('--frequency', help="Measure frequency", action='store_true')
 g.add_argument('--power', help='Display power metrics', action='store_true')
 g.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
+
+g = p.add_argument_group('Workarounds')
+g.add_argument('--no-group', help='Dont use groups', action='store_true')
 g.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.', action='store_true')
 g.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true')
 
