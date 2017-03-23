@@ -1607,6 +1607,10 @@ def setup_with_metrics(p, runner):
     p.Setup(runner)
     args.metrics = old_metrics
 
+def check_root():
+    if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1) and not args.quiet:
+        print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
+
 runner.filter_nodes()
 
 if not args.no_util:
@@ -1618,6 +1622,7 @@ if args.power and feat.supports_power:
     setup_with_metrics(power_metrics, runner)
     if not args.quiet:
         print "Running with --power. Will measure complete system."
+    check_root()
     if "-a" not in rest:
         rest = ["-a"] + rest
 
@@ -1649,9 +1654,7 @@ if not args.single_thread and cpu.ht:
             print >>sys.stderr, "Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!"
         if args.pid:
             sys.exit("-p/--pid mode not compatible with SMT. Use sleep in global mode.")
-    if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1):
-        print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
-
+    check_root()
     if "-a" not in rest:
         rest = ["-a"] + rest
     if "-A" not in rest:
