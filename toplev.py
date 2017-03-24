@@ -640,7 +640,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             # this way the model can access all threads individually
             core = key_to_coreid(j)
             cpus = [x for x in res.keys() if key_to_coreid(x) == core]
-            combined_res = list(itertools.izip(*[res[x] for x in cpus]))
+            combined_res = zip(*[res[x] for x in cpus])
             st = [combine_valstat(z) for z in itertools.izip(*[valstats[x] for x in cpus])]
 
             # repeat a few times to get stable threshold values
