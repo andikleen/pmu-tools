@@ -661,7 +661,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             # recompute the nodes so we get up-to-date values
             runner.print_res(out, interval, thread_fmt(j), thread_node)
             if args.bottleneck:
-                runner.print_bottleneck(out, thread_fmt(j), not_package_node)
+                runner.print_bottleneck(out, thread_fmt(j), not_package_node, interval)
     else:
         for j in sorted(res.keys()):
             if j != "" and int(j) not in runner.allowed_threads:
@@ -669,7 +669,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             runner.print_res(out, interval, j, not_package_node)
             if args.bottleneck:
-                runner.print_bottleneck(out, j, not_package_node)
+                runner.print_bottleneck(out, j, not_package_node, interval)
     packages = set()
     for j in sorted(res.keys()):
         if j == "":
@@ -1495,14 +1495,14 @@ class Runner:
                     if obj.thresh or args.verbose:
                         self.sample_obj.add(obj)
 
-    def print_bottleneck(self, out, key, match):
+    def print_bottleneck(self, out, key, match, interval):
         bn = [(full_name(o), o.val) for o in self.olist if match(o) and o.thresh and not o.metric]
         if len(bn) == 0:
             return
         bn = find_bn(bn)
         final = find_final(bn)
         if final:
-            out.bottleneck(key, final[0], final[1])
+            out.bottleneck(key, final[0], final[1], interval, "") # XXX area
 
 def remove_pp(s):
     if s.endswith(":pp"):

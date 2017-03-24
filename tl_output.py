@@ -54,7 +54,7 @@ class Output:
     def flush(self):
         pass
 
-    def bottleneck(self, key, name, val):
+    def bottleneck(self, key, name, val, timestamp, area):
         pass
 
 class OutputHuman(Output):
@@ -118,7 +118,7 @@ class OutputHuman(Output):
         self.item(area, name, val, timestamp, unit, desc, title,
                   None, valstat)
 
-    def bottleneck(self, key, name, val):
+    def bottleneck(self, key, name, val, timestamp, area):
         if key:
             key += " "
         self.print_timestamp(timestamp)
@@ -269,5 +269,5 @@ class OutputCSV(Output):
         multiplex = valstat.multiplex if (valstat and valstat.multiplex == valstat.multiplex) else ""
         self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample, stddev, multiplex])
 
-    def bottleneck(self, key, name, val):
-        self.writer.writerow((key, "BOTTLENECK", name, val * 100.))
+    def bottleneck(self, key, name, val, timestamp, area):
+        self.writer.writerow(([timestamp] if timestamp else []) + (key, "BOTTLENECK", name, val * 100.))
