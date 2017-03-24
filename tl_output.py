@@ -76,7 +76,10 @@ class OutputHuman(Output):
 
     def print_timestamp(self, timestamp):
         if timestamp:
-            self.logf.write("%6.9f%s" % (timestamp, " "))
+            if isnan(timestamp):
+                self.logf.write("%-11s " % "SUMMARY")
+            else:
+                self.logf.write("%6.9f " % timestamp)
 
     def print_header(self, area, hdr):
         hdr = "%-7s %s" % (area, hdr)
@@ -118,7 +121,13 @@ class OutputHuman(Output):
     def bottleneck(self, key, name, val):
         if key:
             key += " "
-        print >>self.logf, "%sBOTTLENECK %s %.2f%%" % (key, name, val * 100.)
+        self.print_timestamp(timestamp)
+        print >>self.logf, "%s %6s %10s %19s %.2f%%" % (key, area, "BOTTLENECK", name, val * 100.)
+
+def convert_ts(ts):
+    if isnan(ts):
+        return "SUMMARY"
+    return ts
 
 class OutputColumns(OutputHuman):
     """Human-readable output data in per-cpu columns."""
@@ -211,7 +220,7 @@ class OutputColumnsCSV(OutputColumns):
             self.printed_header = True
         for key in sorted(sorted(self.nodes.keys(), key=lambda x: x[1]), key=lambda x: x[0] == ""):
             node = self.nodes[key]
-            ts = [self.timestamp] if self.timestamp else []
+            ts = [convert_ts(self.timestamp)] if self.timestamp else []
             l = ts + [key[0], key[1]]
             vlist = []
             ol = dict()
@@ -253,7 +262,7 @@ class OutputCSV(Output):
         desc = re.sub(r"\s+", " ", desc)
         l = []
         if timestamp:
-            l.append(timestamp)
+            l.append(convert_ts(timestamp))
         if title:
             l.append(title)
         stddev = valstat.stddev if (valstat and valstat.stddev) else ""

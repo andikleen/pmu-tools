@@ -310,6 +310,7 @@ g.add_argument('--quiet', help='Avoid unnecessary status output', action='store_
 g.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
                 action='store_true')
 g.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
+g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
 
 g = p.add_argument_group('Additional information')
 g.add_argument('--print-group', '-g', help='Print event group assignments',
@@ -686,6 +687,18 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
     stat.referenced_check(res)
     stat.compute_errors()
 
+def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
+    if runner.summary:
+	runner.summary.add(res, rev, valstats, env);
+    print_keys(runner, res, rev, valstats, out, interval, env)
+
+def print_summary(runner, out):
+    if not args.summary:
+	return
+    print_keys(runner, runner.summary.res, runner.summary.rev,
+	       runner.summary.valstats, out,
+	       float('nan'), runner.summary.env)
+
 def is_outgroup(x):
     return set(x) - outgroup_events == set()
 
@@ -727,7 +740,7 @@ def execute_no_multiplex(runner, out, rest):
         ctx.restore()
         outg = []
     assert num_runs == n
-    print_keys(runner, res, rev, valstats, out, interval, env)
+    print_and_sum_keys(runner, res, rev, valstats, out, interval, env)
     return ret
 
 def execute(runner, out, rest):
@@ -741,7 +754,7 @@ def execute(runner, out, rest):
                                          defaultdict(list),
                                          env)
     ctx.restore()
-    print_keys(runner, res, rev, valstats, out, interval, env)
+    print_and_sum_keys(runner, res, rev, valstats, out, interval, env)
     return ret
 
 def group_number(num, events):
@@ -808,7 +821,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                 if interval != prev_interval:
                     if res:
                         set_interval(env, interval - prev_interval)
-                        print_keys(runner, res, rev, valstats, out, prev_interval, env)
+			print_and_sum_keys(runner, res, rev, valstats, out, prev_interval, env)
                         res = defaultdict(list)
                         rev = defaultdict(list)
                         valstats = defaultdict(list)
@@ -1174,6 +1187,29 @@ def olist_by_metricgroup(l, mg):
             ml.append(obj)
     return ml
 
+class Summary:
+    """Accumulate counts for summary."""
+    def __init__(self):
+	self.res = defaultdict(list)
+	self.rev = defaultdict(list)
+	self.env = Counter()
+	self.valstats = defaultdict(list)
+
+    def add(self, res, rev, valstats, env):
+	# assume perf always outputs the same
+	if self.rev:
+	    assert rev == self.rev
+	for j in res.keys():
+            if len(self.res[j]) == 0:
+                self.res[j] = res[j]
+            else:
+	        self.res[j] = [a+b for a, b in zip(self.res[j], res[j])]
+	self.rev = rev
+	for j in valstats.keys():
+	    self.valstats[j] = self.valstats[j] + valstats[j]
+	for j in env.keys():
+	    self.env[j] += env[j]
+
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
@@ -1192,6 +1228,9 @@ class Runner:
             self.valcsv = csv.writer(args.valcsv)
             self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value",
                                   "Perf-event", "Index", "STDEV", "MULTI"))
+	self.summary = None
+	if args.summary:
+	    self.summary = Summary()
 
     def do_run(self, obj):
         obj.res = None
@@ -1699,7 +1738,9 @@ def measure_and_sample(count):
         else:
             ret = execute(runner, out, rest)
     except KeyboardInterrupt:
+	print_summary(runner, out)
         sys.exit(1)
+    print_summary(runner, out)
     runner.stat.compute_errors()
     if args.show_sample or args.run_sample:
         do_sample(runner.sample_obj, rest, count)

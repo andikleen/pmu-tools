@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev has a new --summary option to print the summary of the complete measurement session
 * ucevent now supports Broadwell EP (Xeon E5/E7 v4)
 * toplev updated to Ahmad Yasin's TMAM 3.1:
 	- This release is aimed at Skylake and Broadwell
