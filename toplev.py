@@ -1466,8 +1466,7 @@ class Runner:
 
         # step 3: print
         olist = olist_by_metricgroup(self.olist, self.metricgroups)
-        for i in range(0, len(olist)):
-            obj = olist[i]
+        for i, obj in enumerate(olist):
             if obj.thresh or print_all:
                 val = obj.val
                 if not obj.thresh and not dont_hide:
