@@ -338,6 +338,11 @@ if args.version:
     print "toplev"
     sys.exit(0)
 
+if args.cpu:
+    rest = ["--cpu", args.cpu] + rest
+if args.pid:
+    rest = ["--pid", args.pid] + rest
+
 if len(rest) == 0:
     p.print_help()
     sys.exit(0)
@@ -385,10 +390,6 @@ if args.user:
 if args.user and args.kernel:
     ring_filter = None
 print_group = args.print_group
-if args.cpu:
-    rest = ["--cpu", args.cpu] + rest
-if args.pid:
-    rest = ["--pid", args.pid] + rest
 
 MAX_ERROR = 0.05
 
