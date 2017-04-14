@@ -28,7 +28,7 @@ class Output:
     # pass all possible hdrs in advance to compute suitable padding
     def set_hdr(self, hdr, area):
         if area:
-            hdr = "%-7s %s" % (area, hdr)
+            hdr = "%-14s %s" % (area, hdr)
         self.hdrlen = max(len(hdr) + 1, self.hdrlen)
 
     def set_cpus(self, cpus):
@@ -82,7 +82,7 @@ class OutputHuman(Output):
                 self.logf.write("%6.9f " % timestamp)
 
     def print_header(self, area, hdr):
-        hdr = "%-7s %s" % (area, hdr)
+        hdr = "%-14s %s" % (area, hdr)
         self.logf.write("%-*s " % (self.hdrlen, hdr + ":"))
 
     # timestamp Timestamp in interval mode
@@ -161,7 +161,7 @@ class OutputColumns(OutputHuman):
         if not self.printed_header:
             if self.timestamp:
                 write("%9s" % "")
-            write("%*s" % (self.hdrlen, ""))
+            self.print_header("", "")
             for j in cpunames:
                 write("%*s " % (VALCOL_LEN, j))
             write("\n")
