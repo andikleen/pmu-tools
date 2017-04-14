@@ -1181,9 +1181,10 @@ def olist_by_metricgroup(l, mg):
             continue
         if has(obj, 'metricgroup'):
             for g in obj.metricgroup:
-                ml += [x for x in mg[g] if x in valid]
                 for j in mg[g]:
-                    visited.add(j)
+                    if j not in visited and j in valid:
+                        ml.append(j)
+                        visited.add(j)
         else:
             ml.append(obj)
     return ml
