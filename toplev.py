@@ -1420,7 +1420,7 @@ class Runner:
     def propagate_siblings(self):
         for obj in self.olist:
             if obj.thresh and obj.sibling:
-                if isinstance(obj.sibling, list):
+                if isinstance(obj.sibling, (list, tuple)):
                     for k in obj.sibling:
                         k.thresh = True
                 else:
