@@ -1189,6 +1189,10 @@ def olist_by_metricgroup(l, mg):
             ml.append(obj)
     return ml
 
+def node_unit(obj):
+    return (((" " + obj.domain) if has(obj, 'domain') else "") +
+             (" below" if not obj.thresh else ""))
+
 class Summary:
     """Accumulate counts for summary."""
     def __init__(self):
@@ -1461,40 +1465,50 @@ class Runner:
     def print_res(self, out, timestamp, title, match):
         out.logf.flush()
 
-        # first compute column lengths
+        # determine all objects to print
+        olist = []
         for obj in self.olist:
             if obj.thresh or print_all:
-                out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
+                if not match(obj):
+                    pass
+                elif obj.metric:
+                    if print_all or obj.val != 0:
+                        olist.append(obj)
+                elif check_ratio(obj.val):
+                    olist.append(obj)
+
+        # sort by metric group
+        olist = olist_by_metricgroup(olist, self.metricgroups)
+
+        # pre compute column lengths
+        for obj in olist:
+            out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
+            if obj.metric:
+                out.set_unit(metric_unit(obj))
+            else:
+                out.set_unit(node_unit(obj))
 
         # step 3: print
-        olist = olist_by_metricgroup(self.olist, self.metricgroups)
         for i, obj in enumerate(olist):
-            if obj.thresh or print_all:
-                val = obj.val
-                if not obj.thresh and not dont_hide:
-                    val = 0.0
-                if not match(obj):
-                    continue
-                desc = obj_desc(obj, olist[i + 1:])
-                if obj.metric:
-                    if print_all or obj.val != 0:
-                        out.metric(obj.area if has(obj, 'area') else None,
-                            obj.name, val, timestamp,
-                            desc,
-                            title,
-                            metric_unit(obj),
-                            obj.valstat)
-                elif check_ratio(val):
-                    out.ratio(obj.area if has(obj, 'area') else None,
-                            full_name(obj), val, timestamp,
-                            ((" " + obj.domain) if has(obj, 'domain') else "") +
-                            (" below" if not obj.thresh else ""),
-                            desc,
-                            title,
-                            sample_desc(obj.sample) if has(obj, 'sample') else None,
-                            obj.valstat)
-                    if obj.thresh or args.verbose:
-                        self.sample_obj.add(obj)
+            val = obj.val
+            desc = obj_desc(obj, olist[i + 1:])
+            if obj.metric:
+                out.metric(obj.area if has(obj, 'area') else None,
+                        obj.name, val, timestamp,
+                        desc,
+                        title,
+                        metric_unit(obj),
+                        obj.valstat)
+            elif check_ratio(val):
+                out.ratio(obj.area if has(obj, 'area') else None,
+                        full_name(obj), val, timestamp,
+                        node_unit(obj),
+                        desc,
+                        title,
+                        sample_desc(obj.sample) if has(obj, 'sample') else None,
+                        obj.valstat)
+                if obj.thresh or args.verbose:
+                    self.sample_obj.add(obj)
 
     def print_bottleneck(self, out, key, match, interval):
         bn = [(full_name(o), o.val) for o in self.olist if match(o) and o.thresh and not o.metric]

@@ -24,12 +24,16 @@ class Output:
         self.printed_descs = set()
         self.hdrlen = 30
         self.version = version
+        self.unitlen = 5
 
     # pass all possible hdrs in advance to compute suitable padding
     def set_hdr(self, hdr, area):
         if area:
             hdr = "%-14s %s" % (area, hdr)
         self.hdrlen = max(len(hdr) + 1, self.hdrlen)
+
+    def set_unit(self, unit):
+        self.unitlen = max(len(unit), self.unitlen)
 
     def set_cpus(self, cpus):
         pass
@@ -103,10 +107,9 @@ class OutputHuman(Output):
             write("%-*s" % (self.titlelen, title))
         vs = format_valstat(valstat)
         self.print_header(area, hdr)
+        val = "%s %-*s" % (s, self.unitlen, remark)
         if vs:
-            val = "%-25s %s" % (s + " " + remark, vs)
-        else:
-            val = "%s %s" % (s, remark)
+            val += " " + vs
         write(val + "\n")
         self.print_desc(desc, sample)
 
@@ -190,7 +193,7 @@ class OutputColumns(OutputHuman):
                     write("%*s " % (VALCOL_LEN, ""))
             if remark:
                 vs = format_valstat(combine_valstat(vlist))
-                write(" %-5s %s" % (remark, vs))
+                write(" %-*s %s" % (self.unitlen, remark, vs))
             write("\n")
             self.print_desc(desc, sample)
         self.nodes = dict()
