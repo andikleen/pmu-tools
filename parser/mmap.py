@@ -44,10 +44,10 @@ class MmapTracker:
             for l in range(n, self.lookahead):
                 j = ev[l]
                 # no time stamp: assume it's synthesized and kernel
-                if j.type == 'MMAP' and j.pid == -1 and j.tid == 0:
+                if j.type in ('MMAP','MMAP2') and j.pid == -1 and j.tid == 0:
                     bisect.insort(self.maps[j.pid], 
                                   (j.addr, j.len, j.filename))
-                elif j.type in ('COMM','MMAP'):
+                elif j.type in ('COMM','MMAP','MMAP2'):
                     bisect.insort(self.updates, (j.time2, j))
 
     # process pending updates for a sample

@@ -5,6 +5,17 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev updated to Ahmad Yasin's TMAM 3.2:
+	- Support for grouping output by related metrics
+	- New metrics for instruction mixes
+	- Breakdown of Branch_Resteers into different kinds
+	- New Branch_MispredictionCost metric
+	- Support L1/L2 cache fill bandwidth
+	- Revert ITLB_Misses change in 3.14
+	- Improved Branch_Resteers, Assists, ITLB_Misses, DTLB_Load/Store metrics
+	- Report Instructions
+	- Improve tuning hints
+	- toplev now prints full area for Metrics
 * toplev has a new --summary option to print the summary of the complete measurement session
 * ucevent now supports Broadwell EP (Xeon E5/E7 v4)
 * toplev updated to Ahmad Yasin's TMAM 3.1:
