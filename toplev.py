@@ -299,7 +299,6 @@ g.add_argument('--desc', help='Force event descriptions', action='store_true')
 g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
                action='store_true')
 g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
-g.add_argument('--bottleneck', help='Show critical bottleneck', action='store_true')
 g.add_argument('--output', '-o', help='Set output file', default=sys.stderr,
                type=argparse.FileType('w'))
 g.add_argument('--graph', help='Automatically graph interval output with tl-barplot.py',
@@ -646,31 +645,31 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
 
             # repeat a few times to get stable threshold values
             # in case of mutual dependencies between SMT and non SMT
-            # XXX should use topological sort
+            # XXX use better algorithm
             used_stat = stat
             for _ in range(3):
                 runner.compute(res[j], rev[j], valstats[j], env, thread_node, used_stat)
                 runner.compute(combined_res, rev[cpus[0]], st, env, core_node, used_stat)
                 used_stat = None
 
+            # find bottleneck
+            bn = find_bn(runner.olist, not_package_node)
+
             # print the SMT aware nodes
             if core not in printed_cores:
-                runner.print_res(out, interval, core_fmt(core), core_node)
+                runner.print_res(out, interval, core_fmt(core), core_node, bn)
                 printed_cores.add(core)
 
             # print the non SMT nodes
             # recompute the nodes so we get up-to-date values
-            runner.print_res(out, interval, thread_fmt(j), thread_node)
-            if args.bottleneck:
-                runner.print_bottleneck(out, thread_fmt(j), not_package_node, interval)
+            runner.print_res(out, interval, thread_fmt(j), thread_node, bn)
     else:
         for j in sorted(res.keys()):
             if j != "" and int(j) not in runner.allowed_threads:
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
-            runner.print_res(out, interval, j, not_package_node)
-            if args.bottleneck:
-                runner.print_bottleneck(out, j, not_package_node, interval)
+            bn = find_bn(runner.olist, not_package_node)
+            runner.print_res(out, interval, j, not_package_node, bn)
     packages = set()
     for j in sorted(res.keys()):
         if j == "":
@@ -682,7 +681,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             continue
         packages.add(p_id)
         runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
-        runner.print_res(out, interval, "S%d" % p_id, package_node)
+        runner.print_res(out, interval, "S%d" % p_id, package_node, None)
         # no bottlenecks from package nodes for now
     out.flush()
     stat.referenced_check(res)
@@ -1129,29 +1128,25 @@ def node_filter(obj, test):
                 return True
     return test()
 
-def find_bn(bn):
-    b = sorted(bn, key=lambda x: x)
-    return b
-
 SIB_THRESH = 0.05
 
-def _find_final(bn, level):
-    get_level = lambda x: x.count(".")
-    pct = lambda x: float(x[1])
-
-    siblings = sorted([x for x in bn if get_level(x[0]) == level], key=pct, reverse=True)
+def _find_bn(bn, level):
+    siblings = sorted([x for x in bn if x.level - 1 == level], key=lambda x: x.val, reverse=True)
     if len(siblings) == 0:
         return None
     # ambigious
-    if level > 0 and len(siblings) > 1 and pct(siblings[0]) - pct(siblings[1]) <= SIB_THRESH:
+    if level > 0 and len(siblings) > 1 and siblings[0].val - siblings[1].val <= SIB_THRESH:
         return None
-    n = _find_final([x for x in bn if x[0].startswith(siblings[0][0])], level + 1)
+    n = _find_bn([x for x in bn if full_name(x).startswith(full_name(siblings[0]))], level + 1)
     if n is None:
         return siblings[0]
     return n
 
-def find_final(bn):
-    return _find_final(bn, 0)
+def find_bn(olist, match):
+    bn = [o for o in olist if match(o) and o.thresh and not o.metric]
+    if len(bn) == 0:
+        return None
+    return _find_bn(bn, 0)
 
 pmu_does_not_exist = set()
 
@@ -1462,7 +1457,7 @@ class Runner:
         # step 2: propagate siblings
         self.propagate_siblings()
 
-    def print_res(self, out, timestamp, title, match):
+    def print_res(self, out, timestamp, title, match, bn):
         out.logf.flush()
 
         # determine all objects to print
@@ -1506,18 +1501,10 @@ class Runner:
                         desc,
                         title,
                         sample_desc(obj.sample) if has(obj, 'sample') else None,
-                        obj.valstat)
+                        obj.valstat,
+                        "BN" if obj == bn else "")
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
-
-    def print_bottleneck(self, out, key, match, interval):
-        bn = [(full_name(o), o.val) for o in self.olist if match(o) and o.thresh and not o.metric]
-        if len(bn) == 0:
-            return
-        bn = find_bn(bn)
-        final = find_final(bn)
-        if final:
-            out.bottleneck(key, final[0], final[1], interval, "") # XXX area
 
 def remove_pp(s):
     if s.endswith(":pp"):

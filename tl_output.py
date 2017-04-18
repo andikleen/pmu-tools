@@ -38,27 +38,24 @@ class Output:
     def set_cpus(self, cpus):
         pass
 
-    def item(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
+    def item(self, area, name, val, timestamp, remark, desc, title, sample, valstat, bn):
         if desc in self.printed_descs:
             desc = ""
         else:
             self.printed_descs.add(desc)
         if not area:
             area = ""
-        self.show(timestamp, title, area, name, l, remark, desc, sample, valstat)
+        self.show(timestamp, title, area, name, val, remark, desc, sample, valstat, bn)
 
-    def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat):
+    def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat, bn):
         self.item(area, name, "%13.2f" % (100.0 * l), timestamp, "%" + remark, desc, title,
-                  sample, valstat)
+                  sample, valstat, bn)
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
         self.item(area, name, "%13.2f" % l, timestamp, unit, desc, title,
-                  None, valstat)
+                  None, valstat, "")
 
     def flush(self):
-        pass
-
-    def bottleneck(self, key, name, val, timestamp, area):
         pass
 
 class OutputHuman(Output):
@@ -70,7 +67,8 @@ class OutputHuman(Output):
         self.titlelen = 7
 
     def set_cpus(self, cpus):
-        self.titlelen = max(map(len, cpus)) + 1
+        if len(cpus) > 0:
+            self.titlelen = max(map(len, cpus)) + 1
 
     def print_desc(self, desc, sample):
         if desc and not self.args.no_desc:
@@ -93,23 +91,26 @@ class OutputHuman(Output):
     # title     CPU
     # area      FE/BE ...
     # hdr       Node Name
-    # s         Formatted measured value
+    # val       Formatted measured value
     # remark    above/below/""
     # desc      Object description
     # sample    Sample Objects (string)
     # vs        Statistics object
+    # bn	marker for bottleneck
     # Example:
     # C0    BE      Backend_Bound:                                62.00 %
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
+    def show(self, timestamp, title, area, hdr, val, remark, desc, sample, valstat, bn):
         self.print_timestamp(timestamp)
         write = self.logf.write
         if title:
             write("%-*s" % (self.titlelen, title))
         vs = format_valstat(valstat)
         self.print_header(area, hdr)
-        val = "%s %-*s" % (s, self.unitlen, remark)
+        val = "%s %-*s" % (val, self.unitlen, remark)
         if vs:
             val += " " + vs
+        if bn:
+            val += " " + bn
         write(val + "\n")
         self.print_desc(desc, sample)
 
@@ -119,13 +120,7 @@ class OutputHuman(Output):
         else:
             val = "%13.2f" % (l)
         self.item(area, name, val, timestamp, unit, desc, title,
-                  None, valstat)
-
-    def bottleneck(self, key, name, val, timestamp, area):
-        if key:
-            key += " "
-        self.print_timestamp(timestamp)
-        print >>self.logf, "%s %6s %10s %19s %.2f%%" % (key, area, "BOTTLENECK", name, val * 100.)
+                  None, valstat, "")
 
 def convert_ts(ts):
     if isnan(ts):
@@ -144,9 +139,10 @@ class OutputColumns(OutputHuman):
     def set_cpus(self, cpus):
         self.cpunames = cpus
 
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
+    # XXX implement bn
+    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, bn):
         if self.args.single_thread:
-            OutputHuman.show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat)
+            OutputHuman.show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, "")
             return
         self.timestamp = timestamp
         key = (area, hdr)
@@ -207,7 +203,8 @@ class OutputColumnsCSV(OutputColumns):
         self.printed_header = False
         self.writer.writerow(["# " + version + " on " + cpu.name])
 
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
+    # XXX implement bn
+    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, bn):
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
@@ -259,7 +256,7 @@ class OutputCSV(Output):
         self.args = args
         self.writer.writerow(["# " + version + " on " + cpu.name])
 
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat):
+    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, bn):
         if self.args.no_desc:
             desc = ""
         desc = re.sub(r"\s+", " ", desc)
@@ -270,7 +267,4 @@ class OutputCSV(Output):
             l.append(title)
         stddev = valstat.stddev if (valstat and valstat.stddev) else ""
         multiplex = valstat.multiplex if (valstat and valstat.multiplex == valstat.multiplex) else ""
-        self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample, stddev, multiplex])
-
-    def bottleneck(self, key, name, val, timestamp, area):
-        self.writer.writerow(([timestamp] if timestamp else []) + (key, "BOTTLENECK", name, val * 100.))
+        self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample, stddev, multiplex, bn])

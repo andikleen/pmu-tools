@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now always marks critical bottlenecks in default output. Removed the --bottleneck argument
 * toplev updated to Ahmad Yasin's TMAM 3.2:
 	- Support for grouping output by related metrics
 	- New metrics for instruction mixes
