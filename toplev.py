@@ -1511,6 +1511,9 @@ def remove_pp(s):
         return s[:-3]
     return s
 
+def clean_event(e):
+    return remove_pp(e).replace(".", "_").replace(":", "_").replace('=','')
+
 def do_sample(sample_obj, rest, count):
     # XXX use :ppp if available
     samples = [("cycles:pp", "Precise cycles", )]
@@ -1525,7 +1528,7 @@ def do_sample(sample_obj, rest, count):
         if not args.quiet:
             print >>sys.stderr, "warning: update kernel to handle sample events:"
             print >>sys.stderr, "\n".join(missing)
-    sl = [raw_event(s[0], s[1] + "_" + remove_pp(s[0]).replace(".", "_"), period=True) for s in nsamp]
+    sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True) for s in nsamp]
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
     print "Sampling:"
@@ -1538,7 +1541,8 @@ def do_sample(sample_obj, rest, count):
     if args.run_sample:
         ret = os.system(" ".join(sperf))
         if ret:
-            sys.exit(ret)
+            print "Sampling failed"
+            sys.exit(1)
         if not args.quiet:
             print "Run `" + perf + " report %s%s' to show the sampling results" % (
                 ("-i %s" % perf_data) if perf_data != "perf_data" else "",
