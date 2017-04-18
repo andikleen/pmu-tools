@@ -139,17 +139,16 @@ class OutputColumns(OutputHuman):
     def set_cpus(self, cpus):
         self.cpunames = cpus
 
-    # XXX implement bn
     def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, bn):
         if self.args.single_thread:
-            OutputHuman.show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, "")
+            OutputHuman.show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, bn)
             return
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
             self.nodes[key] = dict()
         assert title not in self.nodes[key]
-        self.nodes[key][title] = (s, remark, desc, sample, valstat)
+        self.nodes[key][title] = (s, remark, desc, sample, valstat, bn)
 
     def flush(self):
         VALCOL_LEN = 14
@@ -179,12 +178,14 @@ class OutputColumns(OutputHuman):
             for cpuname in cpunames:
                 if cpuname in node:
                     cpu = node[cpuname]
-                    desc, sample, remark, valstat = cpu[2], cpu[3], cpu[1], cpu[4]
+                    val, desc, sample, remark, valstat, bn = cpu
+                    if bn:
+                        val += "*"
                     if remark in ("above", "below", "Metric", "CoreMetric", "CoreClocks"): # XXX
                         remark = ""
                     if valstat:
                         vlist.append(valstat)
-                    write("%*s " % (VALCOL_LEN, cpu[0]))
+                    write("%*s " % (VALCOL_LEN, val))
                 else:
                     write("%*s " % (VALCOL_LEN, ""))
             if remark:
