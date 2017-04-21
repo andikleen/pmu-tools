@@ -56,7 +56,7 @@ class MmapTracker:
         while len(updates) > 0 and j.time >= updates[0][0]:
             u = updates[0][1]
             del updates[0]
-            if u.type == 'MMAP':
+            if u.type in ('MMAP', 'MMAP2'):
                 pid = u.pid
                 bisect.insort(self.maps[pid], (u.addr, u.len, u.filename))
             elif u.type == 'COMM':
