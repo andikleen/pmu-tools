@@ -56,7 +56,7 @@ class CPU:
     def __init__(self, known_cpus):
         self.model = 0
         self.cpu = None
-        self.realcpu = None
+        self.realcpu = "simple"
         self.ht = False
         self.counters = 0
         self.has_tsx = False
