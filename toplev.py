@@ -267,6 +267,7 @@ g.add_argument('--no-multiplex',
                help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
                action='store_true')
 g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
+g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumption', action='store_true')
 
 g = p.add_argument_group('Measurement filtering')
 g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
@@ -979,8 +980,9 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     index = obj.res_map[(ev, level, obj.name)]
     referenced.add(index)
     #print (ev, level, obj.name), "->", index
-    rmap_ev = event_rmap(rev[index]).lower()
-    assert (rmap_ev == canon_event(ev).replace("/k", "/") or
+    if not args.fast:
+        rmap_ev = event_rmap(rev[index]).lower()
+        assert (rmap_ev == canon_event(ev).replace("/k", "/") or
                 (ev in event_fixes and canon_event(event_fixes[ev]) == rmap_ev) or
                 rmap_ev == "dummy")
 
