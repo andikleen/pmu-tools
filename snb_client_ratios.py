@@ -1637,7 +1637,7 @@ class Setup:
         n = Metric_UPI() ; r.metric(n) ; o["UPI"] = n
         n = Metric_IFetch_Line_Utilization() ; r.metric(n) ; o["IFetch_Line_Utilization"] = n
         n = Metric_DSB_Coverage() ; r.metric(n) ; o["DSB_Coverage"] = n
-        n = Metric_LSD_Coverage() ; r.metric(n) ; o["LSD_Coverage"] = n
+        #n = Metric_LSD_Coverage() ; r.metric(n) ; o["LSD_Coverage"] = n
         n = Metric_Instructions() ; r.metric(n) ; o["Instructions"] = n
         n = Metric_CPI() ; r.metric(n) ; o["CPI"] = n
         n = Metric_CLKS() ; r.metric(n) ; o["CLKS"] = n

@@ -3191,7 +3191,7 @@ class Setup:
         n = Metric_BPTB() ; r.metric(n) ; o["BPTB"] = n
         n = Metric_IFetch_Line_Utilization() ; r.metric(n) ; o["IFetch_Line_Utilization"] = n
         n = Metric_DSB_Coverage() ; r.metric(n) ; o["DSB_Coverage"] = n
-        n = Metric_LSD_Coverage() ; r.metric(n) ; o["LSD_Coverage"] = n
+        #n = Metric_LSD_Coverage() ; r.metric(n) ; o["LSD_Coverage"] = n
         n = Metric_IPL() ; r.metric(n) ; o["IPL"] = n
         n = Metric_IPS() ; r.metric(n) ; o["IPS"] = n
         n = Metric_IPB() ; r.metric(n) ; o["IPB"] = n
