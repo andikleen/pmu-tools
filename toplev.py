@@ -417,7 +417,7 @@ class PerfRun:
         n = r.index("--log-fd")
         r[n + 1] = "%d" % (inp)
         print_perf(r)
-        self.perf = subprocess.Popen(r)
+        self.perf = subprocess.Popen(r, close_fds=False)
         os.close(inp)
         return os.fdopen(outp, 'r')
 
