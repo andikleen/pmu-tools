@@ -146,6 +146,7 @@ qual_map = (
 qualval_map = (
     (r"u(0x[0-9a-f]+)", "umask=%#x", 0),
     (r"c(?:mask=)?(0x[0-9a-f]+|[0-9]+)", "cmask=%d", 24),
+    (r"e(?:dge=)?(0x[0-9a-f]+|[0-9]+)", "edge=%d", 18),
     (r"(?:sa|sample-after|period)=([0-9]+)", "period=%d", 0))
 
 uncore_map = (

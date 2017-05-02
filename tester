@@ -129,6 +129,7 @@ DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL:ppp  'r1c4:ppp$'
 
 unset DIRECT_MSR
 checkp CPU_CLK_UNHALTED.THREAD:cmask=3 'cmask=3'
+checkp CPU_CLK_UNHALTED.THREAD:c3:e1 'edge=1'
 checkp CPU_CLK_UNHALTED.THREAD:amt1 'any=1'
 checkp CPU_CLK_UNHALTED.THREAD:amt1:tx 'in_tx=1'
 checkp CPU_CLK_UNHALTED.THREAD:amt1:cp 'any=1'
