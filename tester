@@ -153,7 +153,7 @@ unset DIRECT_MSR
 export EVENTMAP=${cpus[hsx]}
 # check :request :response syntax
 checkp OFFCORE_RESPONSE:request=DEMAND_RFO:response=LLC_MISS.REMOTE_HITM  \
-	cpu/event=0xb7,umask=0x1,offcore_rsp=0x107fc00002,name=offcore_response_request_demand_rfo_response_llc_miss_remote_hitm/
+	cpu/event=0xb7,umask=0x1,offcore_rsp=0x10[37]fc00002,name=offcore_response_request_demand_rfo_response_llc_miss_remote_hitm/
 
 checks()
 {
