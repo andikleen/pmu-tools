@@ -1,4 +1,4 @@
-![pmu-tools] (https://halobates.de/pmu-tools.png)
+![pmu-tools](https://halobates.de/pmu-tools.png)
 
 pmu tools is a collection of tools for profile collection and performance
 analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index.php/Main_Page). This uses performance counters in the CPU.
