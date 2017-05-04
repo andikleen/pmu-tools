@@ -502,7 +502,7 @@ class PerfRun:
             self.mock(logfile, evl)
             self.perf = None
         else:
-            self.perf = subprocess.Popen(s)
+            self.perf = subprocess.Popen(s, close_fds=False)
 
 def perf_box(x):
     m = re.match(r"uncore_([^/]+)(_\d+)?/", x)
