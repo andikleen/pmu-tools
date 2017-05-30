@@ -39,6 +39,7 @@ known_cpus = (
     ("bdx", (79, 86, )),
     ("simple", ()),
     ("skl", (94, 78, 142, 158, )),
+    ("knl", (87, )),
 )
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl")
@@ -695,7 +696,7 @@ def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
 
 def print_summary(runner, out):
     if not args.summary:
-	return
+        return
     print_keys(runner, runner.summary.res, runner.summary.rev,
 	       runner.summary.valstats, out,
 	       float('nan'), runner.summary.env)
@@ -1413,7 +1414,7 @@ class Runner:
             num_groups = len([x for x in self.evgroups if needed_counters(x) <= cpu.counters])
             print "%d groups, %d non-groups with %d events total (%d unique) for %d objects, missed %d merges" % (
                 num_groups,
-                len(self.evgroups) - num_groups, 
+                len(self.evgroups) - num_groups,
                 len(self.evnum),
                 len(set(self.evnum)),
                 len(self.olist),
@@ -1639,6 +1640,10 @@ elif cpu.cpu == "skl":
 elif cpu.cpu == "slm":
     import slm_ratios
     model = slm_ratios
+elif cpu.cpu == "knl":
+    import knl_ratios
+    knl_ratios.smt_enabled = smt_mode = cpu.ht
+    model = knl_ratios
 else:
     ht_warning()
     if detailed_model and not args.quiet:

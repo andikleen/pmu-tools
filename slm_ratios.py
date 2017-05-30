@@ -226,6 +226,8 @@ class Setup:
                  if issubclass(obj.__class__, metrics.MetricBase) and
                  obj.level > 0]
 
+        nodes = sorted(nodes, key=lambda n: n.level)
+
         # Pass to runner
         map(lambda n : runner.run(n), nodes)
         map(lambda m : runner.metric(m), user_metrics)

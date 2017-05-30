@@ -5,13 +5,15 @@ print_error = lambda msg: False
 class MetricBase(object):
     # Derived classes can override these
     level = 0
+    name = ""
+    domain = ""
+    area = ""
     server = False
     htoff = False
     sample = []
     sibling = None
     metricgroup = []
     desc = "Missing description"
-    domain = ""
 
     def __init__(self, **kwargs):
         self.errcount = 0
@@ -35,7 +37,8 @@ class MetricBase(object):
 class FrontendBound(MetricBase):
     level = 1
     name = "Frontend_Bound"
-    domain = ""
+    domain = "Slots"
+    area = "FE"
     desc = ("\n"
             "This category reflects slots where the Frontend of the\n"
             "processor undersupplies its Backend.")
@@ -151,7 +154,7 @@ class BranchResteers(MetricBase):
     name = "Branch_Resteers"
     domain = "Clocks"
     area = "FE"
-    desc = ("This metric represents cycles fraction the CPU was stalled\n"
+    desc = ("\nThis metric represents cycles fraction the CPU was stalled\n"
             "due to Branch Resteers. Branch Resteers estimates the\n"
             "Frontend delay in fetching operations from corrected path;\n"
             "following all sorts of miss-predicted branches. For example;\n"
