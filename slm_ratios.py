@@ -4,8 +4,19 @@
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 
+import metrics
+import node
+
 print_error = lambda msg: False
 version = "1.0"
+
+# Override using set_clks_event_name()
+CLKS_EVENT_NAME = "CPU_CLK_UNHALTED.THREAD"
+
+# Module-level function used to work around event name differences,
+# e.g. Knights Landing
+def set_clks_event_name(ev_name):
+    CLKS_EVENT_NAME = ev_name
 
 # Instructions Per Cycle
 def IPC(EV, level):
@@ -24,61 +35,84 @@ def Time(EV, level):
 
 # Per-thread actual clocks
 def CLKS(EV, level):
-    return EV("CPU_CLK_UNHALTED.THREAD", level)
+    return EV(CLKS_EVENT_NAME, level)
 
 # Cycles Per Instruction (threaded)
 def CPI(EV, level):
     return 1 / IPC(EV, level)
 
-class FrontendBound:
-    name = "Frontend Bound"
-    domain = ""
-    desc = """
-This category reflects slots where the Frontend of the processor undersupplies
-its Backend."""
-    level = 1
-    def compute(self, EV):
-         try:
-             self.val = EV("NO_ALLOC_CYCLES.NOT_DELIVERED", 1) / EV("cycles", 1)
-             self.thresh = self.val > 0
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
+def slots(ev, level):
+    return PIPELINE_WIDTH * core_clks(ev, level)
 
-class BackendOrBadSpeculation:
-    name = "Backend or Bad Speculation"
-    domain = "Slots"
-    desc = """
-This category reflects slots wasted due to incorrect speculations, or
-slots where no uops are being delivered due to a lack
-of required resources for accepting more uops in the Backend of the pipeline.  """
-    level = 1
-    def compute(self, EV):
-         try:
-             EV("cycles", 1) # hack to force evaluation
-             self.val = 1. - self.FrontendBound.val - self.Retiring.val
-             self.thresh = self.val > 0.0
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
+def icache_line_fetch_cost(ev, level):
+    return ev("FETCH_STALL.ICACHE_FILL_PENDING_CYCLES", level) / \
+           CLKS(ev, level)
 
-class Retiring:
-    name = "Retiring"
-    domain = ""
-    desc = """
-This category reflects slots utilized by good uops i.e. allocated uops that
-eventually get retired."""
-    level = 1
-    def compute(self, EV):
-         try:
-             self.val = (EV("UOPS_RETIRED.ALL", 1) * 0.5)/ EV("cycles", 1)
-             self.thresh = self.val > 0
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
+def predecode_wrong_cost(ev, level):
+    return (ev("DECODE_RESTRICTION.PDCACHE_WRONG", level) * 3 /
+            CLKS(ev, level))
+
+def ba_clears_cost(ev, level):
+    return ev("BACLEARS.ALL", level) * 5 / CLKS(ev, level)
+
+def ms_entry_cost(ev, level):
+    return ev("MS_DECODED.MS_ENTRY", level) * 5 / CLKS(ev, level)
+
+def itlb_misses_cost(ev, level):
+    return ev("PAGE_WALKS.I_SIDE_CYCLES", level) / CLKS(ev, level)
+
+# LEVEL 0, user-visible metrics"
+class CyclesPerUop(metrics.MetricBase):
+    name = "CyclesPerUop"
+    domain = "Metric"
+    desc = "\nCycles per uop."
+    def _compute(self, ev):
+        return ev("CPU_CLK_UNHALTED.THREAD", self.level) / \
+               ev("UOPS_RETIRED.ALL", self.level)
+
+# LEVEL 1
+class FrontendBound(metrics.FrontendBound):
+    def _compute(self, ev):
+        return ev("NO_ALLOC_CYCLES.NOT_DELIVERED", 1) / CLKS(ev, self.level)
+
+@node.requires("retiring", "bad_speculation", "frontend")
+class BackendBound(metrics.BackendBound):
+    @node.check_refs
+    def _compute(self, ev):
+        return 1 - (self.retiring.compute(ev) +
+                    self.bad_speculation.compute(ev) +
+                    self.frontend.compute(ev))
+
+class BadSpeculation(metrics.BadSpeculation):
+    def _compute(self, ev):
+        return ev("NO_ALLOC_CYCLES.MISPREDICTS", 1) / CLKS(ev, self.level)
+
+class Retiring(metrics.Retiring):
+    def _compute(self, ev):
+        return ev("UOPS_RETIRED.ALL", 1) / (2 * CLKS(ev, self.level))
+
+# LEVEL 2
+@node.requires("icache_misses", "itlb", "ms_cost", "frontend")
+class FrontendLatency(metrics.FrontendLatency):
+    @node.check_refs
+    def _compute(self, ev):
+        return (self.icache_misses.compute(ev) + self.itlb.compute(ev) +
+                self.ms_cost.compute(ev) + ba_clears_cost(ev, self.level)
+               ) / CLKS(ev, self.level)
+
+# LEVEL 3
+class ICacheMisses(metrics.ICacheMisses):
+    def _compute(self, ev):
+        return (icache_line_fetch_cost(ev, self.level) +
+                predecode_wrong_cost(ev, self.level))
+
+class ITLBMisses(metrics.ITLBMisses):
+    def _compute(self, ev):
+        return itlb_misses_cost(ev, self.level)
+
+class MSSwitches(metrics.MSSwitches):
+    def _compute(self, ev):
+        return ms_entry_cost(ev, self.level)
 
 class Metric_IPC:
     name = "IPC"
@@ -153,31 +187,47 @@ Cycles Per Instruction (threaded)"""
             self.val = 0
 
 class Setup:
-    def __init__(self, r):
-        prev = None
-        o = dict()
-        n = FrontendBound() ; r.run(n) ; n.parent = prev ; prev = n
-        o["FrontendBound"] = n
-        n = Retiring() ; r.run(n) ; n.parent = prev ; prev = n
-        o["Retiring"] = n
-        n = BackendOrBadSpeculation() ; r.run(n) ; n.parent = prev ; prev = n
-        o["BackendOrBadSpeculation"] = n
+    def __init__(self, runner):
+        # Instantiate nodes as required to be able to specify their
+        # references
 
-        o["BackendOrBadSpeculation"].FrontendBound = o["FrontendBound"]
-        o["BackendOrBadSpeculation"].Retiring = o["Retiring"]
+        # L3 objects
+        icache_misses = ICacheMisses()
+        itlb_misses = ITLBMisses()
+        ms_cost = MSSwitches()
 
-        o["FrontendBound"].sibling = None
-        o["BackendOrBadSpeculation"].sibling = None
-        o["Retiring"].sibling = None
+        #L1 objects
+        frontend = FrontendBound()
+        bad_speculation = BadSpeculation()
+        retiring = Retiring()
+        backend = BackendBound(retiring=retiring,
+                               bad_speculation=bad_speculation,
+                               frontend=frontend)
 
-        o["FrontendBound"].sample = []
-        o["BackendOrBadSpeculation"].sample = []
-        o["Retiring"].sample = []
 
-        # user visible metrics
+        # L2 objects
+        frontend_latency = FrontendLatency(icache_misses=icache_misses,
+                                           itlb=itlb_misses,
+                                           ms_cost=ms_cost,
+                                           frontend=frontend
+                                           )
 
-        n = Metric_IPC() ; r.metric(n)
-        n = Metric_CPI() ; r.metric(n)
-        n = Metric_TurboUtilization() ; r.metric(n)
-        n = Metric_CLKS() ; r.metric(n)
-        n = Metric_Time() ; r.metric(n)
+        # Set parents
+        node.set_parent(None, [frontend, bad_speculation, retiring, backend])
+        node.set_parent(frontend, [frontend_latency])
+        node.set_parent(frontend_latency,
+                        [icache_misses, itlb_misses, ms_cost])
+
+        # User visible metrics
+        user_metrics = [Metric_IPC(), Metric_CPI(), Metric_TurboUtilization(),
+                        Metric_CLKS(), Metric_Time(), CyclesPerUop()]
+
+        nodes = [obj for obj in locals().values()
+                 if issubclass(obj.__class__, metrics.MetricBase) and
+                 obj.level > 0]
+
+        nodes = sorted(nodes, key=lambda n: n.level)
+
+        # Pass to runner
+        map(lambda n : runner.run(n), nodes)
+        map(lambda m : runner.metric(m), user_metrics)
