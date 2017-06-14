@@ -702,31 +702,43 @@ def json_with_extra(el):
     return emap
 
 def add_extra_env(emap, el):
-    oc = os.getenv("OFFCORE")
-    if oc:
-        oc = canon_emapvar(oc, "matrix")
-        emap.add_offcore(oc)
-    else:
-        oc = event_download.eventlist_name(el, "offcore")
-        if os.path.exists(oc):
+    try:
+        oc = os.getenv("OFFCORE")
+        if oc:
+            oc = canon_emapvar(oc, "matrix")
             emap.add_offcore(oc)
-    uc = os.getenv("UNCORE")
-    if uc:
-        uc = canon_emapvar(uc, "uncore")
-        emap.add_uncore(uc)
-    else:
-        uc = event_download.eventlist_name(el, "uncore")
-        if os.path.exists(uc):
+        else:
+            oc = event_download.eventlist_name(el, "offcore")
+            if os.path.exists(oc):
+                emap.add_offcore(oc)
+    except IOError:
+        print "Cannot open", oc
+    try:
+        uc = os.getenv("UNCORE")
+        if uc:
+            uc = canon_emapvar(uc, "uncore")
             emap.add_uncore(uc)
-    e2 = os.getenv("EVENTMAP2")
-    if e2:
-        e2 = canon_emapvar(e2, "core")
-        emap.read_events(e2)
-        # don't try to download for now
-    u2 = os.getenv("UNCORE2")
-    if u2:
-        u2 = canon_emapvar(u2, "uncore")
-        emap.add_uncore(u2, True)
+        else:
+            uc = event_download.eventlist_name(el, "uncore")
+            if os.path.exists(uc):
+                emap.add_uncore(uc)
+    except IOError:
+        print "Cannot open", uc
+    try:
+        e2 = os.getenv("EVENTMAP2")
+        if e2:
+            e2 = canon_emapvar(e2, "core")
+            emap.read_events(e2)
+            # don't try to download for now
+    except IOError:
+        print "Cannot open", e2
+    try:
+        u2 = os.getenv("UNCORE2")
+        if u2:
+            u2 = canon_emapvar(u2, "uncore")
+            emap.add_uncore(u2, True)
+    except IOError:
+        print "Cannot open", u2
     return emap
 
 def canon_emapvar(el, typ):
