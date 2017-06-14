@@ -742,7 +742,7 @@ def add_extra_env(emap, el):
     return emap
 
 def canon_emapvar(el, typ):
-    if ("*" in el or "." in el or "_" in el) and not "/" in el:
+    if ("*" in el or "." in el or "_" in el) and not "/" in el and not file_exists(el):
         el = "%s/%s" % (event_download.getdir(), el)
     if '*' in el:
         import glob
