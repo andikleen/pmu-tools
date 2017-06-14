@@ -697,6 +697,7 @@ class EmapNativeJSON(object):
 def json_with_extra(el):
     emap = EmapNativeJSON(event_download.eventlist_name(el, "core"))
     if not emap or emap.error:
+        print "parsing", name, "failed"
         return None
     add_extra_env(emap, el)
     return emap
