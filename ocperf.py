@@ -301,6 +301,7 @@ class UncoreEvent:
         e.msr = None
         e.overflow = 0
         e.counter = "1" # dummy for toplev
+        e.newextra = ""
         if 'Errata' in row:
             e.errata = row['Errata']
         else:
@@ -332,6 +333,11 @@ class UncoreEvent:
         if e.inv:
             o += ",inv=1"
 
+        if e.newextra:
+            if flags:
+                flags += ","
+            flags += e.newextra
+
         # xxx subctr, occ_sel, filters
         if flags:
             for match, repl in uncore_map:
@@ -341,6 +347,8 @@ class UncoreEvent:
                     flags = flags[m.end():]
                 if flags == "":
                     break
+                if flags[0:1] == ":":
+                    flags = flags[1:]
             if flags != "":
                 print >>sys.stderr, "Uncore cannot parse", flags
         if version.has_name and not noname:
@@ -564,7 +572,11 @@ class EmapNativeJSON(object):
         elif e.startswith("offcore") and (e + "_0") in self.events:
             return update_ename(self.getevent(e + "_0" + edelim + extra), e)
         elif e in self.uncore_events:
-            return check_uncore_event(self.uncore_events[e])
+            ev = check_uncore_event(self.uncore_events[e])
+            if ev and extra:
+                ev = copy.deepcopy(ev)
+                ev.newextra = extra
+            return ev
         elif e in self.perf_events:
             return self.perf_events[e]
         return None

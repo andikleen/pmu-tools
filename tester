@@ -175,6 +175,12 @@ checkr '{node-stores,instructions}:S'
 checkr '{cpu/cpu-cycles/,instructions}:S'
 checkr '{cpu/instructions,period=1000000/u,cpu_clk_unhalted.thread}:S'
 checkp 'cpu_clk_unhalted:period=123' 'period=123'
+cat >top2 <<EOL
+/sys/devices/uncore_r2pcie
+/sys/devices/uncore_r2pcie/format/umask
+/sys/devices/uncore_r2pcie/format/cmask
+EOL
+TOPOLOGY=top2 UNCORE=Jaketown* checkp 'unc_r2_iio_credits_acquired.ncb:state=0x123' 'filter_state=0x123'
 
 checkp_record '{cpu/cpu_clk_unhalted.thread/,cpu/br_inst_retired.all_branches/}:S'  \
 	'{cpu/event=0x3c,umask=0x0,name=cpu_clk_unhalted_thread,period=2000003/,cpu/event=0xc4,umask=0x0,name=br_inst_retired_all_branches/}:S'
