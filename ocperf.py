@@ -33,7 +33,7 @@
 # OFFCORE=eventmap
 # UNCORE=eventmap
 # UNCORE2=eventmap
-# eventmap is a path name to a json file
+# eventmap is a path name to a json file. can contain wildcards.
 # When eventmap is not specified, look in ~/.cache/pmu-events/
 # The eventmap is automatically downloaded there
 # eventmap can be also a CPU identifer (GenuineIntel-FAMILY-MODEL, like GenuineIntel-06-37)
@@ -690,6 +690,7 @@ def json_with_extra(el):
 def add_extra_env(emap, el):
     oc = os.getenv("OFFCORE")
     if oc:
+        oc = canon_emapvar(oc, "matrix")
         emap.add_offcore(oc)
     else:
         oc = event_download.eventlist_name(el, "offcore")
@@ -697,6 +698,7 @@ def add_extra_env(emap, el):
             emap.add_offcore(oc)
     uc = os.getenv("UNCORE")
     if uc:
+        uc = canon_emapvar(uc, "uncore")
         emap.add_uncore(uc)
     else:
         uc = event_download.eventlist_name(el, "uncore")
@@ -704,12 +706,26 @@ def add_extra_env(emap, el):
             emap.add_uncore(uc)
     e2 = os.getenv("EVENTMAP2")
     if e2:
+        e2 = canon_emapvar(e2, "core")
         emap.read_events(e2)
         # don't try to download for now
     u2 = os.getenv("UNCORE2")
     if u2:
+        u2 = canon_emapvar(u2, "uncore")
         emap.add_uncore(u2, True)
     return emap
+
+def canon_emapvar(el, typ):
+    if ("*" in el or "." in el or "_" in el) and not "/" in el:
+        el = "%s/%s" % (event_download.getdir(), el)
+    if '*' in el:
+        import glob
+        l = glob.glob(el)
+        if l:
+            if len(l) > 1:
+                l = [x for x in l if x.find(typ) >= 0]
+            el = l[0]
+    return el
 
 def find_emap():
     """Search and read a perfmon event map.
@@ -723,7 +739,8 @@ def find_emap():
     el = os.getenv("EVENTMAP")
     if not el:
         el = event_download.get_cpustr()
-    if el.find("/") >= 0:
+    el = canon_emapvar(el, "core")
+    if "/" in el:
         try:
             emap = EmapNativeJSON(el)
             if not emap or emap.error:
