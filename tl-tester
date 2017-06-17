@@ -30,7 +30,7 @@ LOAD0="-- taskset -c 0 gcc -o /dev/null hello.c"
 
 set -o pipefail
 
-SMTCPUS="snb jkt ivb ivt hsw hsx bdw skl bdx"
+SMTCPUS="snb jkt ivb ivt hsw hsx bdw skl bdx knl"
 NOSMTCPUS="slm simple"
 ALLCPUS="$SMTCPUS $NOSMTCPUS"
 
@@ -96,7 +96,8 @@ done
 
 for j in $NOSMTCPUS ; do
 EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD 2>&1 | tee log.$j
-onegroup log.$j
+# SLM now needs two groups
+#onegroup log.$j
 checklog log.$j
 EVENTMAP=${cpus[$j]} FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD 2>&1 | tee log.$j
 checklog log.$j
@@ -137,7 +138,7 @@ for cpu in $SMTCPUS ; do
 EVENTMAP=${cpus[$cpu]} FORCECPU=$cpu $WRAP ./toplev.py -o /dev/null --no-desc -v --all --show-sample $LOAD >&log
 cat log
 grep -v UNC log | grep "not found" && exit 1
-grep /p log
+[ "$cpu" != knl ] && grep /p log
 [ "$cpu" = hsw ] && grep /pp log
 done
 for cpu in $NOSMTCPUS ; do

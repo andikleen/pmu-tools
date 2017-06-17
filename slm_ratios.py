@@ -49,7 +49,7 @@ def icache_line_fetch_cost(ev, level):
            CLKS(ev, level)
 
 def predecode_wrong_cost(ev, level):
-    return (ev("DECODE_RESTRICTION.PDCACHE_WRONG", level) * 3 /
+    return (ev("DECODE_RESTRICTION.PREDECODE_WRONG", level) * 3 /
             CLKS(ev, level))
 
 def ba_clears_cost(ev, level):
