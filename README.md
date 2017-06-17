@@ -5,6 +5,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev has a new Silvermont and Knights Landing model. The Silvermont model now requires
+multiplexing for L1, but can distinguish BadSpeculation and Backend Bound. There are additional metrics.
 * ocperf now supports wildcards for the EVENTMAP/EVENTMAP2/UNCORE/OFFCORE variables.
 * toplev now always marks critical bottlenecks in default output. Removed the --bottleneck argument
 * toplev updated to Ahmad Yasin's TMAM 3.2:
