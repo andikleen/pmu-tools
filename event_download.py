@@ -70,11 +70,24 @@ def getdir():
     except OSError:
         raise Exception('Cannot access ' + d)
 
+NUM_TRIES = 3
+
 def getfile(url, dir, fn):
+    tries = 0
     print "Downloading", url, "to", fn
-    f = urlopen(url)
+    while True:
+        try:
+            f = urlopen(url)
+            data = f.read()
+        except IOError:
+            tries += 1
+            if tries >= NUM_TRIES:
+                raise
+            print "retrying download"
+            continue
+        break
     o = open(os.path.join(dir, fn), "w")
-    o.write(f.read())
+    o.write(data)
     o.close()
     f.close()
 
