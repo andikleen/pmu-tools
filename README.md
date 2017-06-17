@@ -5,6 +5,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now supports metric groups (--metric-groups) and (--list-metric-groups) to configure
+the metrics to measure in a fine grained way.
 * toplev has a new Silvermont and Knights Landing model. The Silvermont model now requires
 multiplexing for L1, but can distinguish BadSpeculation and Backend Bound. There are additional metrics.
 * ocperf now supports wildcards for the EVENTMAP/EVENTMAP2/UNCORE/OFFCORE variables.

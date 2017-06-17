@@ -287,8 +287,10 @@ g.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
 g.add_argument('--all', help="Measure everything available", action='store_true')
 g.add_argument('--frequency', help="Measure frequency", action='store_true')
 g.add_argument('--power', help='Display power metrics', action='store_true')
-g.add_argument('--nodes', help='Include or exclude nodes (with + to add, ^ to remove, comma separated list, wildcards allowed)')
+g.add_argument('--nodes', help='Include or exclude nodes (with + to add, - to remove, comma separated list, wildcards allowed)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
+g.add_argument('--metric-group', help='Add (+) or remove (-) metric groups of metrics, comma separated list.', default=None)
+g.add_argument('--list-metric-groups', help='List metric groups', action='store_true')
 
 g = p.add_argument_group('Workarounds')
 g.add_argument('--no-group', help='Dont use groups', action='store_true')
@@ -1121,7 +1123,7 @@ def node_filter(obj, test):
 
         for j in args.nodes.split(","):
             i = 0
-            if j[0] == '^':
+	    if j[0] == '^' or j[0] == '-':
                 if match(j[1:]):
                     return False
                 continue
@@ -1214,6 +1216,25 @@ class Summary:
 	for j in env.keys():
 	    self.env[j] += env[j]
 
+def parse_metric_group(l, mg):
+    if l is None:
+	return [], []
+    add, rem = [], []
+    for n in l.split(","):
+	if n[0:1] == '-':
+	    if n[1:] not in mg:
+		print "metric group", n[1:], "not found"
+		continue
+	    rem += mg[n[1:]]
+	    continue
+	if n[0:1] == '+':
+	    n = n[1:]
+	if n not in mg:
+	    print "metric group", n, "not found"
+	    continue
+	add += [x.name for x in mg[n]]
+    return add, rem
+
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
@@ -1246,13 +1267,17 @@ class Runner:
 
     # remove unwanted nodes after their parent relation ship has been set up
     def filter_nodes(self):
+	add_met, remove_met = parse_metric_group(args.metric_group, self.metricgroups)
+
         def want_node(obj):
             if args.reduced and has(obj, 'server') and not obj.server:
                 return False
             if not obj.metric:
                 return node_filter(obj, lambda: obj.level <= self.max_level)
             else:
-                return node_filter(obj, lambda: args.metrics)
+		return node_filter(obj,
+			lambda: (args.metrics or obj.name in add_met)
+				 and not obj.name in remove_met)
 
         self.olist = filter(want_node, self.olist)
 
@@ -1509,6 +1534,12 @@ class Runner:
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
 
+    def list_metric_groups(self):
+	print "MetricGroups: ",
+	for j in self.metricgroups.keys():
+	    print j,
+	print
+
 def remove_pp(s):
     if s.endswith(":pp"):
         return s[:-3]
@@ -1694,6 +1725,9 @@ if args.frequency:
     args.metrics = True
     frequency.SetupCPU(runner, cpu)
     args.metrics = old_metrics
+
+if args.list_metric_groups:
+    runner.list_metric_groups()
 
 if "--per-socket" in rest:
     sys.exit("toplev not compatible with --per-socket")
