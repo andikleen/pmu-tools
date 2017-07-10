@@ -16,6 +16,7 @@
 from elftools.common.py3compat import maxint, bytes2str
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+import elftools.common.exceptions
 import util
 import kernel
 
@@ -58,17 +59,30 @@ def build_symtab(elffile):
     syms.sort()
     return syms
 
+reported = set()
+
 def find_elf_file(fn):
+    if fn.startswith("//"):
+        return None
     if fn in open_files:
         elffile = open_files[fn]
     else:
-        f = open(fn, 'rb')
-        elffile = ELFFile(f)
-        open_files[fn] = elffile
+        try:
+            f = open(fn, 'rb')
+            elffile = ELFFile(f)
+            open_files[fn] = elffile
+        except (IOError, elftools.common.exceptions.ELFError):
+            if fn not in reported:
+                print "Cannot open", fn
+            reported.add(fn)
+            return None
+
     return elffile
 
 def resolve_line(fn, ip):
     elffile = find_elf_file(fn)
+    if elffile is None:
+        return "?"
     if fn not in lines and elffile.has_dwarf_info():
         lines[fn] = build_line_table(elffile.get_dwarf_info())
 
@@ -86,20 +100,25 @@ last_sym = None
 
 def resolve_sym(fn, ip):
     elffile = find_elf_file(fn)
+    if elffile is None:
+        return "?", 0
     global last_sym
-        
-    if fn not in symtables:
-        symtables[fn] = build_symtab(elffile)
 
-    if last_sym and last_sym[0] <= ip <= last_sym[1]:
-        return last_sym[2], ip - last_sym[0]
+    try:
+        if fn not in symtables:
+            symtables[fn] = build_symtab(elffile)
 
-    loc = None
-    offset = None
-    if fn in symtables:
-        sym = util.find_le(symtables[fn], ip)
-        if sym:
-            loc, offset = sym[2], ip - sym[0]
+        if last_sym and last_sym[0] <= ip <= last_sym[1]:
+            return last_sym[2], ip - last_sym[0]
+
+        loc = None
+        offset = None
+        if fn in symtables:
+            sym = util.find_le(symtables[fn], ip)
+            if sym:
+                loc, offset = sym[2], ip - sym[0]
+    except elftools.common.exceptions.ELFError:
+        return  "?", 0
 
     return loc, offset
         
