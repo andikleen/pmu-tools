@@ -40,9 +40,10 @@ known_cpus = (
     ("simple", ()),
     ("skl", (94, 78, 142, 158, )),
     ("knl", (87, )),
+    ("skx", (85, )),
 )
 
-tsx_cpus = ("hsw", "hsx", "bdw", "skl")
+tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx")
 
 fixed_to_num = {
     "instructions" : 0,
@@ -1668,6 +1669,11 @@ elif cpu.cpu == "skl":
     skl_client_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
     model = skl_client_ratios
+elif cpu.cpu == "skx":
+    import skx_server_ratios
+    skx_server_ratios.smt_enabled = cpu.ht
+    smt_mode = cpu.ht
+    model = skx_server_ratios
 elif cpu.cpu == "slm":
     import slm_ratios
     model = slm_ratios
