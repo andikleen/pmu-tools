@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # tester for other programs in pmu-tools
 
 . ./cpumap.sh

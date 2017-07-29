@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # one stop shop to test all pmu-tools test suites
 
 set -e

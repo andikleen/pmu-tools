@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # simple regression tester for toplev
 # this just tests if all events resolve etc, as it would
 # need the individual CPUs.

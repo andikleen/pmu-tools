@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # convert all events for testing
 # needs GNU parallel
 set -e
