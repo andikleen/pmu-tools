@@ -62,7 +62,10 @@ class OutputHuman(Output):
     """Generate human readable single-column output."""
     def __init__(self, logfile, args, version):
         Output.__init__(self, logfile, version)
-        locale.setlocale(locale.LC_ALL, '')
+        try:
+            locale.setlocale(locale.LC_ALL, '')
+        except locale.Error:
+            pass
         self.args = args
         self.titlelen = 7
 
