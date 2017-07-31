@@ -101,7 +101,7 @@ cpumodes = {
 
 def samples_to_df(h, need_line):
     """Convert a parsed perf event list to a pandas table.
-       The pandas table contains all events in a easily to process format.
+       The pandas table contains all events in a easy to process format.
        The pandas table has callchain_aux and branch_aux fields pointing
        to Aux object defining the callchains/branches."""
     ev = perfdata.get_events(h)
