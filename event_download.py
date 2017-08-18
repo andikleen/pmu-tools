@@ -92,7 +92,7 @@ def getfile(url, dir, fn):
     f.close()
 
 allowed_chars = string.ascii_letters + '_-.' + string.digits
-def download(match, key=["core"], link=True):
+def download(match, key=None, link=True):
     found = 0
     dir = getdir()
     try:
@@ -109,7 +109,7 @@ def download(match, key=["core"], link=True):
                 continue
             cpu = sanitize(cpu, allowed_chars)
             url = urlpath + name
-            fn = "%s-%s.json" % (cpu, type)
+	    fn = "%s-%s.json" % (cpu, sanitize(type, allowed_chars))
             try:
                 os.remove(os.path.join(dir, fn))
             except OSError:
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     p.add_argument('--all', '-a', help='Download all available event files', action='store_true')
     p.add_argument('--verbose', '-v', help='Be verbose', action='store_true')
     p.add_argument('--mine', help='Print name of current CPU', action='store_true')
-    p.add_argument('--link', help='Create links with the original event file name', action='store_true')
+    p.add_argument('--link', help='Create links with the original event file name', action='store_true', default=True)
     p.add_argument('cpus', help='CPU identifiers to download', nargs='*')
     args = p.parse_args()
 
@@ -172,7 +172,7 @@ if __name__ == '__main__':
         sys.exit(0)
     d = getdir()
     if args.all:
-        found = download('*', key=None, link=args.link)
+	found = download('*', link=args.link)
     elif len(args.cpus) == 0:
         found = download_current(link=args.link)
     else:
