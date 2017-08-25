@@ -5,6 +5,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* ocperf now supports experimental event lists. They can be enabled using a new
+  --experimental flag.
 * toplev now supports Xeon Scalable Server (Skylake Server)
 	- So far no support for uncore events
 * toplev now supports metric groups (--metric-groups) and (--list-metric-groups) to configure

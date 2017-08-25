@@ -47,6 +47,7 @@
 # --no-period   Never add a period
 # --print       only print
 # --force-download Force event list download
+# --experimental Support experimental events
 import sys
 import os
 import subprocess
@@ -64,6 +65,7 @@ import event_download
 
 force_download = False
 pebs_enable = "p"
+experimental = False
 
 exists_cache = dict()
 
@@ -396,6 +398,7 @@ def merge_extra(a, b):
     return m
 
 def print_event(name, desc, f, human, wrap):
+    desc = "".join([y for y in desc if y < chr(127)])
     print >>f,"  %-42s" % (name,),
     if human:
         print >>f, "\n%s" % (wrap.fill(desc),)
@@ -684,8 +687,6 @@ class EmapNativeJSON(object):
             create_event(*(a + b))
 
     def add_uncore(self, name, force=False):
-        if len(self.uncore_events) > 0 and not force:
-            return
         data = json.load(open(name, "rb"))
         for row in data:
             name = row['EventName'].lower()
@@ -699,6 +700,14 @@ def json_with_extra(el):
     if not emap or emap.error:
         print "parsing", name, "failed"
         return None
+    if not emap or emap.error:
+	print "parsing", name, "failed"
+	return None
+    if experimental:
+	try:
+	    emap.read_events(event_download.eventlist_name(el, "core experimental"))
+	except IOError:
+	    pass
     add_extra_env(emap, el)
     return emap
 
@@ -712,6 +721,10 @@ def add_extra_env(emap, el):
             oc = event_download.eventlist_name(el, "offcore")
             if os.path.exists(oc):
                 emap.add_offcore(oc)
+	    if experimental:
+		oc = event_download.eventlist_name(el, "offcore experimental")
+		if os.path.exists(oc):
+		    emap.add_offcore(oc)
     except IOError:
         print "Cannot open", oc
     try:
@@ -723,6 +736,10 @@ def add_extra_env(emap, el):
             uc = event_download.eventlist_name(el, "uncore")
             if os.path.exists(uc):
                 emap.add_uncore(uc)
+	    if experimental:
+		uc = event_download.eventlist_name(el, "uncore experimental")
+		if os.path.exists(uc):
+		    emap.add_uncore(uc)
     except IOError:
         print "Cannot open", uc
     try:
@@ -791,6 +808,8 @@ def find_emap():
             toget.append("uncore")
         if not os.getenv("UNCORE"):
             toget.append("uncore")
+	if experimental:
+	    toget += [x + " experimental" for x in toget]
         event_download.download(el, toget)
         return json_with_extra(el)
     except IOError:
@@ -883,6 +902,8 @@ def process_args():
             print_only = True
         elif sys.argv[i] == "--force-download":
            pass
+	elif sys.argv[i] == "--experimental":
+	    pass
         elif sys.argv[i] == "--no-period":
             record = never
         elif sys.argv[i] == "record" and record == no:
@@ -968,6 +989,8 @@ if __name__ == '__main__':
     for j in sys.argv:
         if j == "--force-download":
             force_download = True
+	if j == "--experimental":
+	    experimental = True
     emap = find_emap()
     if not emap:
         print >>sys.stderr, "Do not recognize CPU or cannot find CPU map file."
