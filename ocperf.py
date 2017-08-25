@@ -297,6 +297,10 @@ class UncoreEvent:
         e.unit = row['Unit'].lower()
         if e.unit in uncore_units:
             e.unit = uncore_units[e.unit]
+        if e.unit == "ncu":
+            e.unit = "cbox_0"
+            e.umask = 0
+            e.code = 0xff
         # xxx subctr
         if e.unit in box_to_perf:
             e.unit = box_to_perf[e.unit]
