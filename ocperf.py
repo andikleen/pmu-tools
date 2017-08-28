@@ -78,10 +78,12 @@ def file_exists(s):
     global topology
     if topology is None:
         top = os.getenv("TOPOLOGY")
+        topology = set()
         if top:
-            topology = set([x.strip() for x in open(top).readlines()])
-        else:
-            topology = set()
+            try:
+                topology = set([x.strip() for x in open(top).readlines()])
+            except OSError:
+                print >>sys.stderr, "Cannot open", top
     if s in topology:
         return True
     found = os.path.exists(s)
