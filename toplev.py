@@ -114,7 +114,7 @@ event_fixes = {
     "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC"
 }
 
-smt_domains = ("Slots", "CoreClocks", "CoreMetric")
+core_domains = set(["Slots", "CoreClocks", "CoreMetric"])
 
 limited_counters = {
     "cpu/cycles-ct/": 2,
@@ -1073,14 +1073,14 @@ def not_package_node(obj):
     return not package_node(obj)
 
 def core_node(obj):
-    return has(obj, 'domain') and obj.domain in smt_domains
+    return has(obj, 'domain') and obj.domain in core_domains
 
 def thread_node(obj):
     if package_node(obj):
         return False
-    if obj.metric and not (has(obj, 'domain') and obj.domain == "CoreMetric"):
-        return True
-    return not core_node(obj)
+    if core_node(obj):
+        return False
+    return True
 
 def count(f, l):
     return len(filter(f, l))
