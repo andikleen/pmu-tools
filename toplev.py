@@ -1186,6 +1186,8 @@ def olist_by_metricgroup(l, mg):
                     if j not in visited and j in valid:
                         ml.append(j)
                         visited.add(j)
+            else:
+                ml.append(obj)
         else:
             ml.append(obj)
     return ml
