@@ -426,7 +426,7 @@ def check_uncore_event(e):
             print >>sys.stderr, "Uncore unit", e.unit, "missing cmask for", e.name
             return None
         if e.umask and not uncore_exists(e.unit, "/format/umask"):
-            print "Uncore unit", e.unit, "missing umask for", e.name
+            print >>sys.stderr, "Uncore unit", e.unit, "missing umask for", e.name
             return None
         return e
     if e.unit not in missing_boxes:
@@ -704,10 +704,10 @@ class EmapNativeJSON(object):
 def json_with_extra(el):
     emap = EmapNativeJSON(event_download.eventlist_name(el, "core"))
     if not emap or emap.error:
-        print "parsing", name, "failed"
+        print >>sys.stderr, "parsing", name, "failed"
         return None
     if not emap or emap.error:
-	print "parsing", name, "failed"
+	print >>sys.stderr, "parsing", name, "failed"
 	return None
     if experimental:
 	try:
@@ -732,7 +732,7 @@ def add_extra_env(emap, el):
 		if os.path.exists(oc):
 		    emap.add_offcore(oc)
     except IOError:
-        print "Cannot open", oc
+        print >>sys.stderr, "Cannot open", oc
     try:
         uc = os.getenv("UNCORE")
         if uc:
@@ -747,7 +747,7 @@ def add_extra_env(emap, el):
 		if os.path.exists(uc):
 		    emap.add_uncore(uc)
     except IOError:
-        print "Cannot open", uc
+        print >>sys.stderr, "Cannot open", uc
     try:
         e2 = os.getenv("EVENTMAP2")
         if e2:
@@ -755,14 +755,14 @@ def add_extra_env(emap, el):
             emap.read_events(e2)
             # don't try to download for now
     except IOError:
-        print "Cannot open", e2
+        print >>sys.stderr, "Cannot open", e2
     try:
         u2 = os.getenv("UNCORE2")
         if u2:
             u2 = canon_emapvar(u2, "uncore")
             emap.add_uncore(u2, True)
     except IOError:
-        print "Cannot open", u2
+        print >>sys.stderr, "Cannot open", u2
     return emap
 
 def canon_emapvar(el, typ):
