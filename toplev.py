@@ -526,7 +526,7 @@ def flatten(x):
 def print_header(work, evlist):
     evnames0 = [obj.evlist for obj in work]
     evnames = set(flatten(evnames0))
-    names = ["%s[%d]" % (obj.__class__.__name__, obj.__class__.level if has(obj, 'level') else 0) for obj in work]
+    names = ["%s%s" % (obj.__class__.__name__, ("[%d]" % obj.__class__.level) if has(obj, 'level') else "") for obj in work]
     pwrap(" ".join(names) + ":", 78)
     pwrap(" ".join(map(mark_fixed, evnames)).lower() +
           " [%d counters]" % (needed_counters(raw_events(evnames))), 75, "  ")
