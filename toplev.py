@@ -1067,7 +1067,7 @@ def full_name(obj):
     return name
 
 def package_node(obj):
-    return has(obj, 'domain') and obj.domain == "Package"
+    return has(obj, 'domain') and obj.domain in ("Package", "SystemMetric")
 
 def not_package_node(obj):
     return not package_node(obj)
