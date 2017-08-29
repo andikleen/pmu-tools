@@ -1180,16 +1180,18 @@ def olist_by_metricgroup(l, mg):
     for obj in l:
         if obj in visited:
             continue
+
+        def add(obj):
+            if obj not in visited:
+                ml.append(obj)
+                visited.add(obj)
+
         if has(obj, 'metricgroup'):
             for g in obj.metricgroup:
                 for j in mg[g]:
-                    if j not in visited and j in valid:
-                        ml.append(j)
-                        visited.add(j)
-            else:
-                ml.append(obj)
-        else:
-            ml.append(obj)
+                    if j in valid:
+                        add(j)
+        add(obj)
     return ml
 
 def node_unit(obj):
