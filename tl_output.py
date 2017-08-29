@@ -109,7 +109,7 @@ class OutputHuman(Output):
             write("%-*s" % (self.titlelen, title))
         vs = format_valstat(valstat)
         self.print_header(area, hdr)
-        val = "%s %-*s" % (val, self.unitlen, remark)
+        val = "%s %-*s" % (val, self.unitlen + 1, remark)
         if vs:
             val += " " + vs
         if bn:
