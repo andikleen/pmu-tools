@@ -484,7 +484,7 @@ class EmapNativeJSON(object):
                 other = 0
             if 'edge' in m:
                 other |= gethex('edge') << 18
-            if 'any' in m:
+            if 'any' in m and m['any'] in row:
                 other |= (gethex('any') | anyf) << 21
             if 'cmask' in m:
                 other |= getdec('cmask') << 24
