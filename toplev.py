@@ -1404,6 +1404,8 @@ class Runner:
         if errata_warn_nodes and not args.ignore_errata:
             pwrap_not_quiet("Nodes " + " ".join(x.name for x in errata_warn_nodes) + " have errata " +
                         " ".join(errata_warn_names))
+        if len(self.olist) == 0:
+            sys.exit("No usable events found")
 
     # fit events into available counters
     # simple first fit algorithm
