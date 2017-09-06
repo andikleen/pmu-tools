@@ -276,7 +276,8 @@ def int_or_zero(row, name):
 uncore_units = {
     "imph-u": "arb",
     "kti ll": "upi",
-    "m3kti": "m3upi"
+    "m3kti": "m3upi",
+    "upi ll": "upi",
 }
 
 class UncoreEvent:
