@@ -13,6 +13,7 @@ EVENTSEL_ENABLE = 1<<22
 
 MSR_EVNTSEL = 0x186 
 MSR_IA32_FIXED_CTR_CTRL = 0x38d
+MSR_PEBS_ENABLE = 0x3f1
 
 extra_flags = (
         (EVENTSEL_EDGE, "edge"),

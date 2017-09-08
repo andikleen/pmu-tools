@@ -21,6 +21,10 @@ emap = ocperf.find_emap()
 if not emap:
     sys.exit("Unknown CPU or cannot find CPU event table")
 found = 0
+try:
+    pebs_enable = msr.readmsr(MSR_PEBS_ENABLE, cpu)
+except:
+    pebs_enable = 0
 for i in range(0, 8):
     try:
         evsel = msr.readmsr(MSR_EVNTSEL + i, cpu)
@@ -65,6 +69,8 @@ for i in range(0, 8):
             print "inv=1",
         if evsel & EVENTSEL_PC:
             print "pc=1",
+        if pebs_enable & (1 << i):
+            print "precise=1",
         print
 if found == 0:
     print "Cannot read any MSRs"
