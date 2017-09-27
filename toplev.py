@@ -260,6 +260,8 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
 
 Other CPUs can be forced with FORCECPU=name
 This usually requires setting the correct event map with EVENTMAP=...
+The topology can be overriden with TOPOLOGY=file (sysfs filenames) and CPUINFO=file
+(/proc/cpuinfo replacement)
 Valid CPU names: ''' + " ".join([x[0] for x in known_cpus]),
 formatter_class=argparse.RawDescriptionHelpFormatter)
 g = p.add_argument_group('General operation')
@@ -270,6 +272,7 @@ g.add_argument('--no-multiplex',
                action='store_true')
 g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
 g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumption', action='store_true')
+g.add_argument('--import', help='Import specified perf stat output file instead of running perf')
 
 g = p.add_argument_group('Measurement filtering')
 g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
@@ -315,6 +318,7 @@ g.add_argument('--long-desc', help='Print long descriptions instead of abbreviat
                 action='store_true')
 g.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
 g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
+g.add_argument('--perf-output', help='Save perf stat output in specified file', type=argparse.FileType('w'))
 
 g = p.add_argument_group('Additional information')
 g.add_argument('--print-group', '-g', help='Print event group assignments',
@@ -347,7 +351,7 @@ if args.cpu:
 if args.pid:
     rest = ["--pid", args.pid] + rest
 
-if len(rest) == 0:
+if len(rest) == 0 and not args.__dict__['import']:
     p.print_help()
     sys.exit(0)
 
@@ -417,6 +421,10 @@ def print_perf(r):
 class PerfRun:
     """Control a perf subprocess."""
     def execute(self, r):
+        if args.__dict__['import']:
+            self.perf = None
+            return open(args.__dict__['import'], 'r')
+
         outp, inp = pty.openpty()
         n = r.index("--log-fd")
         r[n + 1] = "%d" % (inp)
@@ -807,12 +815,16 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
             l = inf.readline()
             if not l:
                 break
+            if args.perf_output:
+                args.perf_output.write(l)
             l = l.strip()
 
             # some perf versions break CSV output lines incorrectly for power events
             if l.endswith("Joules"):
                 l2 = inf.readline()
                 l = l + l2.strip()
+            if l.startswith("#") or len(l) == 0:
+                continue
         except exceptions.IOError:
              # handle pty EIO
              break

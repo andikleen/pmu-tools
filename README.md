@@ -5,6 +5,9 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev can now import pre-recorded perf stat output with --import, and also output perf stat output
+  with --perf-output
+* toplev and ocperf can override /proc/cpuinfo with the CPUINFO variable
 * ocperf now supports experimental event lists. They can be enabled using a new
   --experimental flag.
 * toplev now supports Xeon Scalable Server (Skylake Server)
