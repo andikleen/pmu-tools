@@ -1561,7 +1561,7 @@ class Runner:
                         title,
                         sample_desc(obj.sample) if has(obj, 'sample') else None,
                         obj.valstat,
-                        "BN" if obj == bn else "")
+                        "<==" if obj == bn else "")
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
 
