@@ -1298,6 +1298,18 @@ class Runner:
 
         self.olist = filter(want_node, self.olist)
 
+    # check nodes argument for typos
+    def check_nodes(self, nodesarg):
+        onames = set([obj.name for obj in self.olist])
+        def remove_prefix(s):
+            if s[0] in ('+', '^', '-'):
+                return s[1:]
+            return s
+        options = set([remove_prefix(s) for s in nodesarg.split(",")])
+        d = options - onames
+        if d:
+            sys.exit("Unknown node(s) in --nodes: " + " ".join(d))
+
     def reset_thresh(self):
         for obj in self.olist:
             if not obj.metric:
@@ -1720,6 +1732,8 @@ def check_root():
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1) and not args.quiet:
         print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
 
+if args.nodes:
+    runner.check_nodes(args.nodes)
 runner.filter_nodes()
 
 if not args.no_util:
