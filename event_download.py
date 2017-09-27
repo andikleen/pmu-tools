@@ -16,6 +16,9 @@
 # event_download.py         download for current cpu
 # event_download.py -a      download all
 # event_download.py cpustr...  Download for specific CPU
+#
+# env:
+# CPUINFO=... override /proc/cpuinfo file
 import sys
 import re
 from urllib2 import urlopen, URLError
@@ -28,7 +31,10 @@ mapfile = 'mapfile.csv'
 modelpath = urlpath + "/" + mapfile
 
 def get_cpustr():
-    f = open('/proc/cpuinfo', 'r')
+    cpuinfo = os.getenv("CPUINFO")
+    if cpuinfo is None:
+	cpuinfo = '/proc/cpuinfo'
+    f = open(cpuinfo, 'r')
     cpu = [None, None, None]
     for j in f:
         n = j.split()
