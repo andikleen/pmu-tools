@@ -5,6 +5,15 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev update to Ahmad Yasin's TMAM 3.31:
+	- Full support for Skylake Server
+	- Add L1/L2/L3 MKPI (Miss Per Kilo Instruction) metrics
+	- Full floating point FLOPS support on Broadwell+, and support for AVX512 on Skylake
+	- Mark estimated and measured domains
+	- Improve BAClear_Cost metric
+	- Tuned Core_Bound and Memory_Bound thresholds
+	- Remove some metrics to reduce multiplexing
+	- Report AVX frequency limitations
 * toplev can now import pre-recorded perf stat output with --import, and also output perf stat output
   with --perf-output
 * toplev and ocperf can override /proc/cpuinfo with the CPUINFO variable
