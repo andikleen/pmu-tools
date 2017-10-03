@@ -501,7 +501,10 @@ def raw_event(i, name="", period=False):
             # for now use the first counter only to simplify
             # the assignment. This is sufficient for current
             # CPUs
-            limited_counters[i] = int(e.counter.split(",")[0])
+
+            # workaround for json files with extra quotes.
+            counter = e.counter.replace('"', '')
+            limited_counters[i] = int(counter.split(",")[0])
             limited_set.add(i)
         if e.errata:
             if e.errata in errata_whitelist:
