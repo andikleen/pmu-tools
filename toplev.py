@@ -160,7 +160,7 @@ def unsup_event(e, table, min_kernel=None):
             min_kernel.append(v[1])
         return True
     if v[2] and kv_to_key(kernel_version) >= kv_to_key(v[2]) :
-        return True
+        return False
     return False
 
 def needed_limited_counter(evlist, limit_table, limit_set):
