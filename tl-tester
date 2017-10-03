@@ -86,14 +86,14 @@ checklog() {
 }
 
 for j in $SMTCPUS ; do
-TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD 2>&1 | tee log.$j
+TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py --force-events -d -l1 $LOAD 2>&1 | tee log.$j
 onegroup log.$j
 checklog log.$j
-TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py -d -l1 $LOAD 2>&1 | tee log.$j
+TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py --force-events -d -l1 $LOAD 2>&1 | tee log.$j
 onegroup log.$j
-TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD 2>&1 | tee log.$j
+TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py --force-events -d $ALL $LOAD 2>&1 | tee log.$j
 checklog log.$j
-TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py -d $ALL $LOAD 2>&1 | tee log.$j
+TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py --force-events -d $ALL $LOAD 2>&1 | tee log.$j
 #checklog log.$j
 done
 
@@ -107,7 +107,7 @@ checklog log.$j
 done
 
 # misc features
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -o log -d --stats --metrics --no-multiplex -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -o log -d --stats --metrics --force-events --no-multiplex -l4 $LOAD
 grep Turbo_Utilization log
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all --fast $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --perf-output x.csv -d --all $LOAD
@@ -144,15 +144,15 @@ EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py  -l4 true
 
 $WRAP ./toplev.py -o /dev/null --no-desc -v -l5 --run-sample $LOAD
 for cpu in $SMTCPUS ; do
-TOPOLOGY=topology EVENTMAP=${cpus[$cpu]} FORCECPU=$cpu $WRAP ./toplev.py -o /dev/null --no-desc -v --all --show-sample $LOAD >&log
+TOPOLOGY=topology EVENTMAP=${cpus[$cpu]} FORCECPU=$cpu $WRAP ./toplev.py -o /dev/null --force-events --no-desc -v --all --show-sample $LOAD >&log
 cat log
 # need to ignore errors for now to allow testing on laptop for uncore events
 grep "not found" log >> nflog || true
 [ "$cpu" != knl ] && grep /p log
-[ "$cpu" = hsw ] && grep /pp log
+[ "$cpu" = hsw -o "$cpu" = bdw -o "$cpu" = skl ] && grep /pp log
 done
 for cpu in $NOSMTCPUS ; do
-EVENTMAP=${cpus[$cpu]} FORCECPU=$cpu $WRAP ./toplev.py -o /dev/null --no-desc -v --all --show-sample $LOAD >&log
+EVENTMAP=${cpus[$cpu]} FORCECPU=$cpu $WRAP ./toplev.py -o /dev/null --force-events --no-desc -v --all --show-sample $LOAD >&log
 cat log
 grep "not found" log >> nflog || true
 done
