@@ -1046,7 +1046,7 @@ class BadEvent:
 
 # XXX check for errata
 def sample_event(e):
-    ev = emap.getevent(e.replace("_PS", ""))
+    ev = emap.getevent(e)
     if not ev:
         raise BadEvent(e)
     postfix = ring_filter
