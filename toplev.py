@@ -1035,6 +1035,8 @@ def update_res_map(evnum, objl, base):
     for obj in objl:
         for lev in obj.evlevels:
             r = raw_event(lev[0])
+	    # can happen during splitting
+	    # the update of the other level will fix it
             if r in evnum:
                 obj.res_map[lev] = base + evnum.index(r)
 
@@ -1332,7 +1334,8 @@ class Runner:
         self.do_run(obj)
 
     def split_groups(self, objl, evlev):
-        if len(set(get_levels(evlev))) == 1:
+        levels = set(get_levels(evlev))
+        if len(levels) == 1:
             # when there is only a single left just fill groups
             while evlev:
                 n = grab_group(map(raw_event, get_names(evlev)))
@@ -1340,11 +1343,10 @@ class Runner:
                 self.add(objl, raw_events(get_names(l)), l, True)
                 evlev = evlev[n:]
         else:
-            # resubmit groups for each level
-            max_level = max(get_levels(evlev))
-            for l in range(1, max_level + 1):
-                # FIXME: filter objl by level too
+            for l in levels:
                 evl = filter(lambda x: x[1] == l, evlev)
+                # don't filter objects, the lower level functions
+                # have to handle missing entries
                 if evl:
                     self.add(objl, raw_events(get_names(evl)), evl)
 
