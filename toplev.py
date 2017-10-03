@@ -140,6 +140,8 @@ class PerfFeatures:
         if not self.logfd_supported:
             sys.exit("perf binary is too old. please upgrade")
         self.supports_power = works(perf + " list  | grep -q power/")
+        # problem in 4.12. fixed in v4.14, suppresses duplicate events
+        self.supports_nomerge = works(perf + " stat --no-merge true")
 
 def kv_to_key(v):
     return v[0] * 100 + v[1]
@@ -543,7 +545,9 @@ def perf_args(evstr, rest):
     add = []
     if interval_mode:
         add += ['-I', str(interval_mode)]
-    return [perf, "stat", "-x;", "--log-fd", "X", "-e", evstr]  + add + rest
+    if feat.supports_nomerge:
+        add.append('--no-merge')
+    return [perf, "stat", "-x;", "--log-fd", "X"] + add + ["-e", evstr]  + rest
 
 def setup_perf(evstr, rest):
     prun = PerfRun()
