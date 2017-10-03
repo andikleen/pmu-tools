@@ -1,0 +1,6 @@
+/sys/devices/uncore_ha
+/sys/devices/uncore_ha/format/umask
+/sys/devices/uncore_imc
+#/sys/devices/uncore_imc/format/umask
+/sys/devices/uncore_cbox_0
+/sys/devices/uncore_cbox_0/format/umask
