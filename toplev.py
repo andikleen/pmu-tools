@@ -476,7 +476,7 @@ notfound_cache = set()
 
 def raw_event(i, name="", period=False):
     orig_i = i
-    if i.count(".") > 0:
+    if "." in i or "_" in i:
         if i in fixed_counters:
             return fixed_counters[i]
         e = emap.getevent(i)
