@@ -982,6 +982,24 @@ def event_rmap(e):
     rmap_cache[e] = n
     return n
 
+def map_fields(obj, fields):
+    def map_field(name):
+        if has(obj, name):
+            return obj.name
+        return None
+    return map(map_field, fields)
+
+# compare events to handle name aliases
+def compare_event(aname, bname):
+    a = emap.getevent(aname)
+    if a is None:
+        return False
+    b = emap.getevent(bname)
+    if b is None:
+        return False
+    fields = ('val','event','cmask','edge','inv')
+    return map_fields(a, fields) == map_fields(b, fields)
+
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     if ev in env:
         return env[ev]
@@ -1005,7 +1023,9 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     #print (ev, level, obj.name), "->", index
     if not args.fast:
         rmap_ev = event_rmap(rev[index]).lower()
+        ev = ev.lower()
         assert (rmap_ev == canon_event(ev).replace("/k", "/") or
+                compare_event(rmap_ev, ev) or
                 (ev in event_fixes and canon_event(event_fixes[ev]) == rmap_ev) or
                 rmap_ev == "dummy")
 
