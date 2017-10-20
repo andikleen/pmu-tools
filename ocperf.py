@@ -498,7 +498,10 @@ class EmapNativeJSON(object):
                 other |= gethex('invert') << 23
             val = code | (umask << 8) | other
             val &= EVMASK
-            d = get('desc').strip()
+            d = get('desc')
+            if d is None:
+                d = ''
+            d = d.strip()
             try:
                 d = d.encode('utf-8')
             except UnicodeDecodeError:
