@@ -10,7 +10,7 @@ WRAP=${WRAP:-}
 
 failed() {
 	echo FAILED
-	cat nflog
+	[ -f nflog ] && cat nflog && rm nflog
 }
 trap failed ERR 0
 
@@ -108,7 +108,7 @@ done
 
 # misc features
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -o log -d --stats --metrics --force-events --no-multiplex -l4 $LOAD
-grep Turbo_Utilization log
+#grep Turbo_Utilization log
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all --fast $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --perf-output x.csv -d --all $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --import x.csv -d --all
@@ -162,4 +162,4 @@ trap "" ERR 0
 echo
 echo "$badschedules bad schedules: $badschedlist"
 echo "SUCCEEDED"
-cat nflog
+[ -f nflog] && cat nflog && rm nflog

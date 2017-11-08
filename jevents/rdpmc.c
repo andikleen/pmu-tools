@@ -116,6 +116,8 @@ void rdpmc_close(struct rdpmc_ctx *ctx)
  * @ctx: Pointer to initialized &rdpmc_ctx structure.
  *
  * Read the current value of a running performance counter.
+ * This should only be called from the same thread/process as opened
+ * the context. For new threads please create a new context.
  */
 unsigned long long rdpmc_read(struct rdpmc_ctx *ctx)
 {
