@@ -20,7 +20,7 @@ rtest: rtest.o
 
 rtest2: rtest2.o
 
-rtest3: rtest2.o
+rtest3: rtest3.o
 
 clean:
 	rm -f addr ${ADDR_OBJ} jestat jestat.o
