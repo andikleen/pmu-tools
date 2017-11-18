@@ -60,7 +60,7 @@ class Output:
 
 class OutputHuman(Output):
     """Generate human readable single-column output."""
-    def __init__(self, logfile, args, version):
+    def __init__(self, logfile, args, version, cpu):
         Output.__init__(self, logfile, version)
         try:
             locale.setlocale(locale.LC_ALL, '')
@@ -68,6 +68,7 @@ class OutputHuman(Output):
             pass
         self.args = args
         self.titlelen = 7
+        self.logf.write("# " + version + " on " + cpu.name + "\n")
 
     def set_cpus(self, cpus):
         if len(cpus) > 0:
@@ -132,8 +133,8 @@ def convert_ts(ts):
 
 class OutputColumns(OutputHuman):
     """Human-readable output data in per-cpu columns."""
-    def __init__(self, logfile, args, version):
-        OutputHuman.__init__(self, logfile, args, version)
+    def __init__(self, logfile, args, version, cpu):
+        OutputHuman.__init__(self, logfile, args, version, cpu)
         self.nodes = dict()
         self.timestamp = None
         self.cpunames = set()
@@ -202,7 +203,7 @@ class OutputColumnsCSV(OutputColumns):
     """Columns output in CSV mode."""
 
     def __init__(self, logfile, sep, args, version, cpu):
-        OutputColumns.__init__(self, logfile, args, version)
+        OutputColumns.__init__(self, logfile, args, version, cpu)
         self.writer = csv.writer(self.logf, delimiter=sep)
         self.printed_header = False
         self.writer.writerow(["# " + version + " on " + cpu.name])

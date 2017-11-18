@@ -1840,9 +1840,9 @@ if csv_mode:
     else:
         out = tl_output.OutputCSV(args.output, csv_mode, args, version, cpu)
 elif args.columns:
-    out = tl_output.OutputColumns(args.output, args, version)
+    out = tl_output.OutputColumns(args.output, args, version, cpu)
 else:
-    out = tl_output.OutputHuman(args.output, args, version)
+    out = tl_output.OutputHuman(args.output, args, version, cpu)
 runner.schedule()
 
 def measure_and_sample(count):
