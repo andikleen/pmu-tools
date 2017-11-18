@@ -4,7 +4,7 @@ CXXFLAGS := -g -Wall  -O2
 LDFLAGS := -L ..
 LDLIBS = -ljevents
 
-all: addr rtest rtest2 jestat
+all: addr rtest rtest2 rtest3 jestat
 
 # no deps on the includes
 
@@ -19,6 +19,8 @@ rtest2: LDLIBS += -lm
 rtest: rtest.o
 
 rtest2: rtest2.o
+
+rtest3: rtest3.o
 
 clean:
 	rm -f addr ${ADDR_OBJ} jestat jestat.o

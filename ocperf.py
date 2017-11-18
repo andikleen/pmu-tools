@@ -155,8 +155,9 @@ qualval_map = (
 
 uncore_map = (
     (r'Match=(0x[0-9a-f])', "filter_occ="),
+    (r'filter1=(0x[0-9a-fA-F]+)', "config1=", 32),
     ("nc=(\d+)", "filter_nc="),
-    (r'filter1=(0x[0-9a-fA-F]+)', "config1="),
+    (r'filter=(0x[0-9a-fA-F]+)', "config1="),
     (r"u(0x[0-9a-fA-F]+)", "umask="),
     (r"opc=?(0x[0-9a-fA-F]+)", "filter_opc="),
     (r"tid=?(0x[0-9a-fA-F]+)", "filter_tid="),
@@ -349,10 +350,14 @@ class UncoreEvent:
 
         # xxx subctr, occ_sel, filters
         if flags:
-            for match, repl in uncore_map:
+            for j in uncore_map:
+                match, repl = j[0], j[1]
                 m = re.match(match, flags)
                 if m:
-                    o += "," + repl + m.group(1)
+                    if len(j) > 2:
+                        o += "," + repl + ("%#x" % (int(m.group(1), 0) << j[2]))
+                    else:
+                        o += "," + repl + m.group(1)
                     flags = flags[m.end():]
                 if flags == "":
                     break
@@ -493,7 +498,10 @@ class EmapNativeJSON(object):
                 other |= gethex('invert') << 23
             val = code | (umask << 8) | other
             val &= EVMASK
-            d = get('desc').strip()
+            d = get('desc')
+            if d is None:
+                d = ''
+            d = d.strip()
             try:
                 d = d.encode('utf-8')
             except UnicodeDecodeError:
