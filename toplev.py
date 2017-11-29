@@ -353,10 +353,6 @@ if args.cpu:
 if args.pid:
     rest = ["--pid", args.pid] + rest
 
-if len(rest) == 0 and not args.__dict__['import']:
-    p.print_help()
-    sys.exit(0)
-
 if args.all:
     args.tsx = True
     args.power = True
@@ -1751,6 +1747,16 @@ version = model.version
 model.print_error = pe
 model.Setup(runner)
 
+if args.list_metric_groups:
+    runner.list_metric_groups()
+    if len(rest) > 0:
+        print >>sys.stderr, "Other arguments ignored"
+    sys.exit(0)
+
+if len(rest) == 0 and not args.__dict__['import']:
+    p.print_help()
+    sys.exit(0)
+
 def setup_with_metrics(p, runner):
     old_metrics = args.metrics
     args.metrics = True
@@ -1792,9 +1798,6 @@ if args.frequency:
     args.metrics = True
     frequency.SetupCPU(runner, cpu)
     args.metrics = old_metrics
-
-if args.list_metric_groups:
-    runner.list_metric_groups()
 
 if "--per-socket" in rest:
     sys.exit("toplev not compatible with --per-socket")
