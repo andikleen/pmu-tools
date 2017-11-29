@@ -162,4 +162,4 @@ trap "" ERR 0
 echo
 echo "$badschedules bad schedules: $badschedlist"
 echo "SUCCEEDED"
-[ -f nflog] && cat nflog && rm nflog
+[ -f nflog ] && cat nflog && rm nflog
