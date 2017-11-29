@@ -106,7 +106,7 @@ ingroup_events = frozenset(fixed_to_num.keys())
 
 outgroup_events = set(["dummy"])
 
-nonperf_events = set(["interval-ns", "mux"])
+nonperf_events = set(["interval-ns", "interval-s", "interval-ms", "mux"])
 
 # workaround for broken event files for now
 event_fixes = {
@@ -602,8 +602,8 @@ def is_event(l, n):
 
 def set_interval(env, d):
     env['interval-ns'] = d * 1e9
-    if args.raw:
-        print "interval-ns val", env['interval-ns']
+    env['interval-ms'] = d * 1e3
+    env['interval-s'] = d
 
 def key_to_coreid(k):
     x = cpu.cputocore[int(k)]
@@ -930,7 +930,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                      len(res[title]) - len(init_res[title]) - 1,
                      events, stddev, multiplex)
     inf.close()
-    if 'interval-ns' not in env:
+    if 'interval-s' not in env:
             set_interval(env, time.time() - start)
     ret = prun.wait()
     print_account(account)

@@ -150,7 +150,7 @@ def Retire_Uop_Fraction(self, EV, level):
     return EV("UOPS_RETIRED.RETIRE_SLOTS", level) / EV("UOPS_ISSUED.ANY", level)
 
 def DurationTimeInSeconds(self, EV, level):
-    return 0 if 0 > 0 else(EV("interval-ns", 0) / 1e+06 / 1000 )
+    return 0 if 0 > 0 else(EV("interval-ms", 0) / 1000 )
 
 def r2r_delta(self, EV, level):
     return max_delta_clk
@@ -194,7 +194,7 @@ def CPI(self, EV, level):
 def CLKS(self, EV, level):
     return EV("CPU_CLK_UNHALTED.THREAD", level)
 
-# Total issue-pipeline slots (per-core till ICL; per-thread ICL onward)
+# Total issue-pipeline slots
 def SLOTS(self, EV, level):
     return Pipeline_Width * CORE_CLKS(self, EV, level)
 
@@ -296,11 +296,11 @@ def Kernel_Utilization(self, EV, level):
 
 # Average external Memory Bandwidth Use for reads and writes [GB / sec]
 def MEM_BW_Use(self, EV, level):
-    return 64 *(EV("UNC_M_CAS_COUNT.RD", level) + EV("UNC_M_CAS_COUNT.WR", level)) / OneMillion / EV("interval-ns", 0) / 1e+09 / 1000
+    return 64 *(EV("UNC_M_CAS_COUNT.RD", level) + EV("UNC_M_CAS_COUNT.WR", level)) / OneMillion / EV("interval-s", 0) / 1000
 
 # Run duration time in seconds
 def Time(self, EV, level):
-    return EV("interval-ns", 0) / 1e+09
+    return EV("interval-s", 0)
 
 def Socket_CLKS(self, EV, level):
     return EV("UNC_C_CLOCKTICKS", level)
@@ -2306,8 +2306,7 @@ active. This is called 'Clockticks' in VTune."""
 class Metric_SLOTS:
     name = "SLOTS"
     desc = """
-Total issue-pipeline slots (per-core till ICL; per-thread
-ICL onward)"""
+Total issue-pipeline slots"""
     domain = "Count"
     maxval = 0
     server = True
