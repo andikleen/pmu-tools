@@ -68,7 +68,7 @@ static struct event *eventlist[HASHSZ];
 static bool eventlist_init;
 
 /* Weinberg's identifier hash */
-static unsigned hashfn(char *s)
+static unsigned hashfn(const char *s)
 {
 	unsigned h = 0;
 	while (*s) {
@@ -165,7 +165,7 @@ static char *real_event(char *name, char *event)
  * Return: -1 on failure, otherwise 0.
  */
 
-int resolve_event(char *name, struct perf_event_attr *attr)
+int resolve_event(const char *name, struct perf_event_attr *attr)
 {
 	struct event *e;
 	char *buf;

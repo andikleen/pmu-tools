@@ -87,7 +87,7 @@ static bool try_parse(char *format, char *fmt, __u64 val, __u64 *config)
 	return true;
 }
 
-static int read_qual(char *qual, struct perf_event_attr *attr)
+static int read_qual(const char *qual, struct perf_event_attr *attr)
 {
 	while (*qual) {
 		switch (*qual) { 
@@ -201,7 +201,7 @@ static int try_pmu_type(char **type, char *fmt, char *pmu)
  * attr->sample_type and attr->read_format as needed after this call,
  * and possibly other fields. Returns 0 when succeeded.
  */
-int jevent_name_to_attr(char *str, struct perf_event_attr *attr)
+int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 {
 	char pmu[30], config[200];
 	int qual_off;
