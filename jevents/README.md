@@ -32,6 +32,13 @@ event_download.py script for this.
 * addr: Profile a loadable test kernel with address profiling
 * jstat: Simple perf stat like tool with JSON event resolution.
 
+## Initialization/Multithreading
+
+Functions accessing the JSON event data load the JSON file lazily when first
+used. This might result in data races when multiple threads call jevent
+functions. In such cases the event list can be loaded from the main thread by
+`read_events(NULL);`.
+
 ## self profiling 
 
 Reading performance counters directly in the program without entering
