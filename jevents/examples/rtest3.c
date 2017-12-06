@@ -1,4 +1,4 @@
-// measure deltas of the cycle counter
+
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
