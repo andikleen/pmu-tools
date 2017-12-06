@@ -121,6 +121,11 @@ static void free_events(void)
  * automatically read the default event list for the current CPU,
  * but calling this explicitly is useful to chose a specific one.
  *
+ * This function is not thread safe and should not be called
+ * from multiple threads in parallel. However once it is called
+ * once all other functions are thread-safe. So for multi-threaded
+ * use the main thread should call it once before other threads.
+ *
  * Return: -1 on failure, otherwise 0.
  */
 int read_events(char *fn)
@@ -162,6 +167,8 @@ static char *real_event(char *name, char *event)
  * The attr structure is cleared initially.
  * The user typically has to set up attr->sample_type/read_format
  * _after_ this call.
+ * Note this function is only thread-safe when read_events() has
+ * been called first single-threaded.
  * Return: -1 on failure, otherwise 0.
  */
 
