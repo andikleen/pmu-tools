@@ -130,7 +130,22 @@ static unsigned perf_mmap_size(int buf_size_shift)
  */
 int perf_fd_open(struct perf_fd *p, struct perf_event_attr *attr, int buf_size_shift)
 {
-	p->pfd = perf_event_open(attr, 0, -1, -1, 0);
+	return perf_fd_open_other(p, attr, buf_size_shift, 0, -1);
+}
+
+/**
+ * perf_fd_open_other - Open a perf event with ring buffer for other thread or cpu
+ * @p: perf_fd to initialize
+ * @attr: perf event attribute to use
+ * @buf_size_shift: log2 of buffer size.
+ * @pid: pid/tid to trace, or 0 for current, or -1 for any
+ * @cpu: cpu to trace, or -1 for any.
+ * Return: -1 on error, otherwise 0.
+ */
+int perf_fd_open_other(struct perf_fd *p, struct perf_event_attr *attr, int buf_size_shift,
+		       int pid, int cpu)
+{
+	p->pfd = perf_event_open(attr, pid, cpu, -1, 0);
 	if (p->pfd < 0)
 		return -1;
 

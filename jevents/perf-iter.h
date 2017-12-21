@@ -24,6 +24,8 @@ struct perf_fd {
 };
 
 int perf_fd_open(struct perf_fd *p, struct perf_event_attr *attr, int buf_size_shift);
+int perf_fd_open_other(struct perf_fd *p, struct perf_event_attr *attr, int buf_size_shift,
+		       int pid, int cpu);
 void perf_fd_close(struct perf_fd *p);
 void perf_iter_continue(struct perf_iter *iter);
 struct perf_event_header *perf_buffer_read(struct perf_iter *iter, void *buffer, int bufsize);
