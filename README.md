@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* ucevent now supports the Skylake Server uncore.
 * toplev update to Ahmad Yasin's TMA 3.31:
 	- Full support for Skylake Server
 	- Add L1/L2/L3 MKPI (Miss Per Kilo Instruction) metrics

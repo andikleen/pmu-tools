@@ -46,6 +46,7 @@ cpu_mapping = {
     63: "hsx",
     86: "bdxde",
     79: "bdx",
+    85: "skx",
 }
 
 args = None
@@ -309,6 +310,7 @@ def format_attrs(ev, box):
 box_to_perf = {
     "cbo": "cbox",
     "qpi_ll": "qpi",
+    "upi_ll": "upi",
     "sbo": "sbox",
 }
 

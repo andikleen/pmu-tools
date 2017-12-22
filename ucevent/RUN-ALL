@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CPULIST="${CPULIST:-jkt ivt hsx bdxde bdx}"
+CPULIST="${CPULIST:-jkt ivt hsx bdxde bdx skx}"
 
 for cpu in $CPULIST ; do
 
