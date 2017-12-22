@@ -41,7 +41,7 @@ sub addquote($) {
 
 print "# aliases\n";
 print "aliases = {\n";
-foreach $i (keys($aliases)) {
+foreach $i (keys(%{ $aliases } )) {
 	print $indent,$quote,$i,$quote,": ",addquote($aliases->{$i}),",\n";
 }
 print "}\n\n";
@@ -72,7 +72,7 @@ sub print_event($$) {
 	push(@catlist, $ev->{"Category"});
 
 	print $indent,$quote,$name,$quote,": {\n";
-	foreach $w (sort(keys($ev))) {
+	foreach $w (sort(keys(%{$ev}))) {
 		next if $w =~ /Sub[cC]at/;
 		next if $w eq "Subevents";
 		next if $ev->{$w} eq "" && $w ne "Category";
@@ -102,7 +102,7 @@ sub print_sub($$$) {
 		$subev = $sub->{$k};
 		# put all the fields from the parent 
 		# into the sub event to normalize
-		foreach $o (keys($ev)) {
+		foreach $o (keys(%{$ev})) {
 			next if defined($sub->{$o});
 			$subev->{$o} = $ev->{$o};
 		}
@@ -113,13 +113,13 @@ sub print_sub($$$) {
 sub print_list($$) {
 	my($name, $evl) = (@_);
 	print "$name = {\n";
-	foreach $box (keys($evl)) {
+	foreach $box (keys(%{$evl})) {
 		$evlist = $evl->{$box};
 		$box =~ s/ Box Events//;
 		$box =~ s/ /_/g;
 		print $indent,"\n# $box:\n";
 
-		foreach $j (sort(keys($evlist))) {
+		foreach $j (sort(keys(%{$evlist}))) {
 			$ev = $evlist->{$j};
 			$ev->{"Box"} = $box;
 			$ev->{"Category"} = $box . " " . $ev->{"Category"};
