@@ -1,5 +1,3 @@
-# sandy Bridge EP specific tables to convert to perf format
-
 class Aux:
     limited_counters = { "r3qpi": 3, "ubox": 2 }
     filters = ("filter_nid", "mask", "match", "filter_opc", "filter_state")
