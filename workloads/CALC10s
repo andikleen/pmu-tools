@@ -1,0 +1,2 @@
+#!/bin/sh
+exec calc '3^2421212' > /dev/null

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+guile -c '(expt 3 55131231)'
