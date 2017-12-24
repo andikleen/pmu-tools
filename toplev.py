@@ -176,6 +176,11 @@ def fixed_overflow(evlist):
 def limit_overflow(evlist):
     return needed_limited_counter(evlist, limited_counters, limited_set)
 
+# limited to first four counters
+def limit4_set_overflow(evlist):
+    limit4 = [x for x in evlist if fnmatch.fnmatch(x, "cpu/event=0xd[0123],*")]
+    return len(limit4)
+
 def needed_counters(evlist):
     evset = set(evlist)
     num_generic = len(evset - ingroup_events - limited_set)
@@ -195,6 +200,11 @@ def needed_counters(evlist):
     # a split
     if num_limit > 0:
         num = max(num, cpu.counters) + num_limit
+
+    # force split if we ran out of lower 4 counters
+    if limit4_set_overflow(evlist) > 4:
+        num = 100
+
     return num
 
 def event_group(evlist):
