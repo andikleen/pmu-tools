@@ -77,7 +77,7 @@ struct perf_event_header *perf_buffer_read(struct perf_iter *iter, void *buffer,
 	struct perf_event_header *hdr = (struct perf_event_header *)(iter->data + iter->cur);
 	u64 left = iter->bufsize - iter->cur;
 
-	if (left >= sizeof(hdr->size) && hdr->size <= left) { 
+	if (left >= sizeof(hdr->size) && hdr->size <= left) {
 		iter->cur += hdr->size;
 		iter->avail -= hdr->size;
 		/* Copy less fast path */
@@ -87,11 +87,11 @@ struct perf_event_header *perf_buffer_read(struct perf_iter *iter, void *buffer,
 		 * Buffer wraps. This case is untested in this example.
 		 * Assumes hdr->size is always continuous by itself.
 		 */
-		if (left == 0) { 
+		if (left) {
 			if (hdr->size > bufsize)
 				return NULL;
 			memcpy(buffer, hdr, left);
-		} else { 
+		} else {
 			hdr = (struct perf_event_header *)iter->data;
 			if (hdr->size > bufsize)
 				return NULL;
