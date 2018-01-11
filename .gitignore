@@ -1,0 +1,13 @@
+*.pyc
+*.o
+jevents/event-rmap
+jevents/examples/addr
+jevents/examples/jestat
+jevents/examples/rtest
+jevents/examples/rtest2
+jevents/examples/rtest3
+jevents/libjevents.a
+jevents/listevents
+jevents/showevent
+perf.data
+perf.data.old
