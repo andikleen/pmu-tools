@@ -26,7 +26,7 @@ jevents library from pmu-tools.
 /usr/bin/event-rmap
 /usr/bin/listevents
 /usr/bin/showevent
-/usr/include/
+/usr/include/*
 /usr/lib64/libjevents.a
 
 %changelog
