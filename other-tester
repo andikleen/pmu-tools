@@ -22,7 +22,9 @@ interval-normalize.py < x.csv
 interval-normalize.py < x.csv > y.csv
 
 grep -vq PARSE-ERROR y.csv
-grep -q branch-misses,branches,context-switches,cpu-migrations,cycles,instructions,page-faults,stalled-cycles-backend,stalled-cycles-frontend,task-clock y.csv
+for i in branch-misses branches context-switches cycles instructions page-faults ; do
+	grep -q $i y.csv
+done
 
 # plot-normalized.py
 plot-normalized.py -o x2.png y.csv

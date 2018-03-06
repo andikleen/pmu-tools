@@ -176,6 +176,11 @@ def fixed_overflow(evlist):
 def limit_overflow(evlist):
     return needed_limited_counter(evlist, limited_counters, limited_set)
 
+# limited to first four counters
+def limit4_set_overflow(evlist):
+    limit4 = [x for x in evlist if fnmatch.fnmatch(x, "cpu/event=0xd[0123],*")]
+    return len(limit4)
+
 def needed_counters(evlist):
     evset = set(evlist)
     num_generic = len(evset - ingroup_events - limited_set)
@@ -195,6 +200,11 @@ def needed_counters(evlist):
     # a split
     if num_limit > 0:
         num = max(num, cpu.counters) + num_limit
+
+    # force split if we ran out of lower 4 counters
+    if limit4_set_overflow(evlist) > 4:
+        num = 100
+
     return num
 
 def event_group(evlist):
@@ -596,6 +606,9 @@ def is_event(l, n):
     # use static string to make regexpr caching work
     return re.match(valid_events.string, l[n])
 
+def is_number(n):
+    return re.match(r'\d+', n) is not None
+
 def set_interval(env, d):
     env['interval-ns'] = d * 1e9
     env['interval-ms'] = d * 1e3
@@ -681,7 +694,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             runner.print_res(out, interval, thread_fmt(j), thread_node, bn)
     else:
         for j in sorted(res.keys()):
-            if j != "" and int(j) not in runner.allowed_threads:
+            if j != "" and is_number(j) and int(j) not in runner.allowed_threads:
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
@@ -690,14 +703,18 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
     for j in sorted(res.keys()):
         if j == "":
             continue
-        if int(j) not in runner.allowed_threads:
-            continue
-        p_id = cpu.cputosocket[int(j)]
-        if p_id in packages:
-            continue
-        packages.add(p_id)
+        if is_number(j):
+            if int(j) not in runner.allowed_threads:
+                continue
+            p_id = cpu.cputosocket[int(j)]
+            if p_id in packages:
+                continue
+            packages.add(p_id)
+            jname = "S%d" % p_id
+        else:
+            jname = j
         runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
-        runner.print_res(out, interval, "S%d" % p_id, package_node, None)
+        runner.print_res(out, interval, jname, package_node, None)
         # no bottlenecks from package nodes for now
     out.flush()
     stat.referenced_check(res)
@@ -1799,9 +1816,9 @@ if args.frequency:
     frequency.SetupCPU(runner, cpu)
     args.metrics = old_metrics
 
-if "--per-socket" in rest:
+if smt_mode and "--per-socket" in rest:
     sys.exit("toplev not compatible with --per-socket")
-if "--per-core" in rest:
+if smt_mode and "--per-core" in rest:
     sys.exit("toplev not compatible with --per-core")
 
 if not args.single_thread and cpu.ht:

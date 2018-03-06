@@ -46,6 +46,7 @@ cpu_mapping = {
     63: "hsx",
     86: "bdxde",
     79: "bdx",
+    85: "skx",
 }
 
 args = None
@@ -104,8 +105,6 @@ events = CPU_uc.events
 aliases = CPU_uc.aliases
 derived = CPU_uc.derived
 categories = CPU_uc.categories
-import CPU_aux
-cpu_aux = CPU_aux.Aux()
 import CPU_extra
 extra_derived = CPU_extra.extra_derived
 """.replace("CPU", cputype)
@@ -115,6 +114,8 @@ try:
 except ImportError:
     print >>sys.stderr, "Unknown CPU", cputype
     sys.exit(1)
+import aux
+cpu_aux = aux.Aux()
 
 def lookup_event(name):
     if name in events:
@@ -309,6 +310,7 @@ def format_attrs(ev, box):
 box_to_perf = {
     "cbo": "cbox",
     "qpi_ll": "qpi",
+    "upi_ll": "upi",
     "sbo": "sbox",
 }
 

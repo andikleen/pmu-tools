@@ -1,5 +1,3 @@
-# sandy Bridge EP specific tables to convert to perf format
-
 class Aux:
     limited_counters = { "r3qpi": 3, "ubox": 2 }
     filters = ("filter_nid", "mask", "match", "filter_opc", "filter_state")
@@ -21,6 +19,14 @@ class Aux:
     qual_alias = {
         "nid": "filter_nid",
         "opc": "filter_opc",
+        "all_opc": "filter_all_op",
+        "nm": "filter_nm",
+        "not_nm": "filter_not_nm",
+        "opc0": "filter_opc0",
+        "opc1": "filter_opc1",
+        "loc": "filter_loc",
+        "rem": "filter_rem",
+        "nc": "filter_nc",
         "Q_Py_PCI_PMON_PKT_MATCH0[12:00]": "match0",
         "Q_Py_PCI_PMON_PKT_MATCH1[19:16]": "match_rds",
         "Q_Py_PCI_PMON_PKT_MASK0[12:0]": "mask0",
@@ -38,6 +44,18 @@ class Aux:
         "Cn_MSR_PMON_BOX_FILTER0.state": "filter_state",
         "Cn_MSR_PMON_BOX_FILTER0.tid": "filter_tid",
         "Cn_MSR_PMON_BOX_FILTER0.nc": "filter_nc",
+        "Cn_MSR_PMON_BOX_FILTER0.nm": "filter_nm",
+        "Cn_MSR_PMON_BOX_FILTER0.all_opc": "filter_all_op", # XXX
+        "Cn_MSR_PMON_BOX_FILTER0.opc1": "filter_opc1",
+        "Cn_MSR_PMON_BOX_FILTER0.opc0": "filter_opc0",
+        "Cn_MSR_PMON_BOX_FILTER0.loc": "filter_loc",
+        "Cn_MSR_PMON_BOX_FILTER0.not_nm": "filter_not_nm",
+        "Cn_MSR_PMON_BOX_FILTER1.nm": "filter_nm",
+        "Cn_MSR_PMON_BOX_FILTER1.all_opc": "filter_all_op", # XXX
+        "Cn_MSR_PMON_BOX_FILTER1.opc1": "filter_opc1",
+        "Cn_MSR_PMON_BOX_FILTER1.opc0": "filter_opc0",
+        "Cn_MSR_PMON_BOX_FILTER1.loc": "filter_loc",
+        "Cn_MSR_PMON_BOX_FILTER1.not_nm": "filter_not_nm",
         "Q_Py_PCI_PMON_PKT_MATCH0.dnid": "match_dnid",
         "Q_Py_PCI_PMON_PKT_z_MATCH0.dnid": "match_dnid", # XXX
         "Q_Py_PCI_PMON_PKT_z_MATCH1": "match1",
