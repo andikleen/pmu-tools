@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* Add a link to Ahmad Yasin's [toplev/TopDown tutorial](http://www.cs.technion.ac.il/~erangi/TMA_using_Linux_perf__Ahmad_Yasin.pdf)
 * ucevent now supports the Skylake Server uncore.
 * toplev update to Ahmad Yasin's TMA 3.31:
 	- Full support for Skylake Server
@@ -229,6 +230,8 @@ common Intel CPUs. This allows to use all the Intel defined events,
 not just the builtin events of perf. 
 
 A more detailed introduction is in [Andi's blog](http://halobates.de/blog/p/245)
+
+Ahmad Yasin's [toplev/TopDown tutorial](http://www.cs.technion.ac.il/~erangi/TMA_using_Linux_perf__Ahmad_Yasin.pdf)
 
 ocperf.py list
 List all the events perf and ocperf supports on the current CPU
