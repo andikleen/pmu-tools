@@ -468,7 +468,10 @@ def separator(x):
 def add_filter_event(e):
     if "/" in e and not e.startswith("cpu"):
         return e
-    s = separator(e)
+    if ":" in e:
+	s = ""
+    else:
+        s = separator(e)
     if not e.endswith(s + ring_filter):
         return e + s + ring_filter
     return e
