@@ -545,8 +545,11 @@ class EmapNativeJSON(object):
             e.errata = None
             try:
                 if get('errata') != "null":
-                    d += " Errata: " + get('errata')
-                    e.errata = get('errata')
+                    try:
+                        d += " Errata: " + get('errata')
+                        e.errata = get('errata')
+                    except UnicodeDecodeError:
+                        pass
             except KeyError:
                 pass
             e.desc = d
