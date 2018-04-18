@@ -26,7 +26,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/unistd.h>
 #include <sys/ioctl.h>
 #include "jevents.h"
 
