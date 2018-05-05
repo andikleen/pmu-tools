@@ -5,6 +5,12 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev update to Ahmad Yasin's TMA 3.4
+	- Add Serializing_Operations on most parts and Average_Frequency
+	- More Erratas whitelisted
+	- Improved Branch_Misprediction metrics
+	- Better Port utilization analysis on Skylake
+	- Add Clear_Frontend_Cost metric
 * Add a link to Ahmad Yasin's [toplev/TopDown tutorial](http://www.cs.technion.ac.il/~erangi/TMA_using_Linux_perf__Ahmad_Yasin.pdf)
 * ucevent now supports the Skylake Server uncore.
 * toplev update to Ahmad Yasin's TMA 3.31:

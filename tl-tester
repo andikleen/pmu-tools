@@ -107,7 +107,7 @@ checklog log.$j
 done
 
 # misc features
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -o log -d --stats --metrics --force-events --no-multiplex -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -o log -d --ignore-errata --stats --metrics --force-events --no-multiplex -l4 $LOAD
 grep Turbo_Utilization log
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all --fast $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --perf-output x.csv -d --all $LOAD

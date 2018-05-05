@@ -98,9 +98,7 @@ unsup_events = (
     # commit 3a632cb229b
     ("CYCLE_ACTIVITY.*", (("hsw", "hsx"), (3, 11), None)))
 
-errata_whitelist = {
-    "BDE69", "BDE70",
-}
+errata_whitelist = []
 
 ingroup_events = frozenset(fixed_to_num.keys())
 
@@ -516,7 +514,7 @@ def raw_event(i, name="", period=False):
             limited_counters[i] = int(counter.split(",")[0])
             limited_set.add(i)
         if e.errata:
-            if e.errata in errata_whitelist:
+            if e.errata not in errata_whitelist:
                 errata_events[orig_i] = e.errata
             else:
                 errata_warn_events[orig_i] = e.errata
@@ -1766,6 +1764,15 @@ else:
 version = model.version
 model.print_error = pe
 model.Setup(runner)
+
+if "Errata_Whitelist" in model.__dict__:
+    errata_whitelist += model.Errata_Whitelist.split(";")
+
+if "base_frequency" in model.__dict__:
+    model.base_frequency = cpu.freq * 1000
+
+if "model" in model.__dict__:
+    model.model = cpu.modelid
 
 if args.list_metric_groups:
     runner.list_metric_groups()

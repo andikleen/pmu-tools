@@ -16,6 +16,11 @@ import os
 import re
 import glob
 
+modelid_map = {
+    (0x8e, ): "KBLR",
+    (0x9e, ): "CFL",
+}
+
 def num_offline_cpus():
     cpus = glob.glob("/sys/devices/system/cpu/cpu[0-9]*/online")
     offline = 0
@@ -146,3 +151,8 @@ class CPU:
             if counters:
                 self.counters = int(counters)
         self.sockets = len(sockets.keys())
+        self.modelid = None
+        mid = (self.model,)
+        if mid in modelid_map:
+            self.modelid = modelid_map[mid]
+        # XXX match steppings here too
