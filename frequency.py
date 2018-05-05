@@ -2,7 +2,7 @@ nominal_freq = 1.0
 
 class Frequency:
     name = "Frequency"
-    desc = " Frequency in Ghz"
+    desc = " Frequency ratio"
     subplot = "Frequency"
     domain = "CoreMetric"
     def compute(self, EV):

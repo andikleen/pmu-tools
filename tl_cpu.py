@@ -105,7 +105,7 @@ class CPU:
                     self.model = int(n[2])
                 elif (n[0], n[1]) == ("model", "name"):
                     ok += 1
-                    m = re.search(r"@ (\d+\.\d+)Ghz", l)
+                    m = re.search(r"@ (\d+\.\d+)GHz", l)
                     if m:
                         self.freq = float(m.group(1))
                     self.name = " ".join(n[3:])
