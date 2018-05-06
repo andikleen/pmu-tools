@@ -15,7 +15,7 @@ print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
 version = "3.4-full"
-base_frequency = 1.0*1e9
+base_frequency = -1.0
 model = ""
 Memory = 0
 
@@ -224,7 +224,7 @@ def CPI(self, EV, level):
 def CLKS(self, EV, level):
     return EV("CPU_CLK_UNHALTED.THREAD", level)
 
-# Total issue-pipeline slots (per-core till ICL; per-thread ICL onward)
+# Total issue-pipeline slots (per-core)
 def SLOTS(self, EV, level):
     return Pipeline_Width * CORE_CLKS(self, EV, level)
 
@@ -1695,6 +1695,30 @@ technology/64-ia-32-architectures-optimization-manual.html"""
             handle_error(self, "G0_Ports_Utilized zero division")
         return self.val
 
+class Serializing_Operation:
+    name = "Serializing_Operation"
+    domain = "Clocks"
+    area = "BE/Core"
+    desc = """
+This metric represents fraction of cycles the CPU issue-
+pipeline was stalled due to serializing operations.
+Instructions like CPUID; WRMSR or LFENCE serialize the out-
+of-order execution which may limit performance."""
+    level = 5
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    server = True
+    metricgroup = []
+    def compute(self, EV):
+        try:
+            self.val = EV("PARTIAL_RAT_STALLS.SCOREBOARD", 5) / CLKS(self, EV, 5 )
+            self.thresh = (self.val > 0.1) & self.parent.thresh
+        except ZeroDivisionError:
+            handle_error(self, "Serializing_Operation zero division")
+        return self.val
+
 class G1_Port_Utilized:
     name = "1_Port_Utilized"
     domain = "CoreClocks"
@@ -2376,8 +2400,7 @@ active."""
 class Metric_SLOTS:
     name = "SLOTS"
     desc = """
-Total issue-pipeline slots (per-core till ICL; per-thread
-ICL onward)"""
+Total issue-pipeline slots (per-core)"""
     domain = "Count"
     maxval = 0
     server = True
@@ -3191,6 +3214,7 @@ class Setup:
         n = Divider() ; r.run(n) ; o["Divider"] = n
         n = Ports_Utilization() ; r.run(n) ; o["Ports_Utilization"] = n
         n = G0_Ports_Utilized() ; r.run(n) ; o["G0_Ports_Utilized"] = n
+        n = Serializing_Operation() ; r.run(n) ; o["Serializing_Operation"] = n
         n = G1_Port_Utilized() ; r.run(n) ; o["G1_Port_Utilized"] = n
         n = G2_Ports_Utilized() ; r.run(n) ; o["G2_Ports_Utilized"] = n
         n = G3m_Ports_Utilized() ; r.run(n) ; o["G3m_Ports_Utilized"] = n
@@ -3259,6 +3283,7 @@ class Setup:
         o["Divider"].parent = o["Core_Bound"]
         o["Ports_Utilization"].parent = o["Core_Bound"]
         o["G0_Ports_Utilized"].parent = o["Ports_Utilization"]
+        o["Serializing_Operation"].parent = o["G0_Ports_Utilized"]
         o["G1_Port_Utilized"].parent = o["Ports_Utilization"]
         o["G2_Ports_Utilized"].parent = o["Ports_Utilization"]
         o["G3m_Ports_Utilized"].parent = o["Ports_Utilization"]
@@ -3377,7 +3402,7 @@ class Setup:
 
         o["Mispredicts_Resteers"].sibling = (o["Clears_Resteers"], o["Branch_Mispredicts"],)
         o["Clears_Resteers"].sibling = (o["Mispredicts_Resteers"], o["Branch_Mispredicts"],)
-        o["MS_Switches"].sibling = (o["Microcode_Sequencer"],)
+        o["MS_Switches"].sibling = (o["Serializing_Operation"], o["Microcode_Sequencer"],)
         o["Branch_Mispredicts"].sibling = (o["Mispredicts_Resteers"], o["Clears_Resteers"],)
         o["L1_Bound"].sibling = (o["G1_Port_Utilized"],)
         o["Lock_Latency"].sibling = (o["Store_Latency"],)
@@ -3392,6 +3417,7 @@ class Setup:
         o["Store_Latency"].overlap = True
         o["False_Sharing"].sibling = (o["Contested_Accesses"],)
         o["Split_Stores"].sibling = (o["Port_4"],)
+        o["Serializing_Operation"].sibling = (o["MS_Switches"],)
         o["G1_Port_Utilized"].sibling = (o["L1_Bound"],)
         o["Port_4"].sibling = (o["Split_Stores"],)
         o["Microcode_Sequencer"].sibling = (o["MS_Switches"],)

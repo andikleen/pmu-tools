@@ -15,7 +15,7 @@ print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
 version = "3.4-full"
-base_frequency = 1.0*1e9
+base_frequency = -1.0
 model = ""
 Memory = 0
 
@@ -208,7 +208,7 @@ def CPI(self, EV, level):
 def CLKS(self, EV, level):
     return EV("CPU_CLK_UNHALTED.THREAD", level)
 
-# Total issue-pipeline slots (per-core till ICL; per-thread ICL onward)
+# Total issue-pipeline slots (per-core)
 def SLOTS(self, EV, level):
     return Pipeline_Width * CORE_CLKS(self, EV, level)
 
@@ -243,10 +243,6 @@ def IpArith_AVX128(self, EV, level):
 # Instructions per FP Arithmetic AVX* 256-bit instruction.
 def IpArith_AVX256(self, EV, level):
     return EV("INST_RETIRED.ANY", level) /(EV("FP_ARITH_INST_RETIRED.256B_PACKED_DOUBLE", level) + EV("FP_ARITH_INST_RETIRED.256B_PACKED_SINGLE", level))
-
-# Instructions per FP Arithmetic AVX 512-bit instruction.
-def IpArith_AVX512(self, EV, level):
-    return 0
 
 # Total number of retired Instructions
 def Instructions(self, EV, level):
@@ -327,18 +323,6 @@ def GFLOPs(self, EV, level):
 # Average Frequency Utilization relative nominal frequency
 def Turbo_Utilization(self, EV, level):
     return CLKS(self, EV, level) / EV("CPU_CLK_UNHALTED.REF_TSC", level)
-
-# Fraction of Core cycles where the core was running with power-delivery for baseline license level 0.  This includes non-AVX codes, SSE, AVX 128-bit, and low-current AVX 256-bit codes.
-def Power_License0_Utilization(self, EV, level):
-    return 0
-
-# Fraction of Core cycles where the core was running with power-delivery for license level 1.  This includes high current AVX 256-bit instructions as well as low current AVX 512-bit instructions.
-def Power_License1_Utilization(self, EV, level):
-    return 0
-
-# Fraction of Core cycles where the core was running with power-delivery for license level 2 (introduced in SKX).  This includes high current AVX 512-bit instructions.
-def Power_License2_Utilization(self, EV, level):
-    return 0
 
 # Fraction of cycles where both hardware threads were active
 def SMT_2T_Utilization(self, EV, level):
@@ -2323,8 +2307,7 @@ active."""
 class Metric_SLOTS:
     name = "SLOTS"
     desc = """
-Total issue-pipeline slots (per-core till ICL; per-thread
-ICL onward)"""
+Total issue-pipeline slots (per-core)"""
     domain = "Count"
     maxval = 0
     server = True
@@ -2484,24 +2467,6 @@ Instructions per FP Arithmetic AVX* 256-bit instruction."""
             self.val = IpArith_AVX256(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "IpArith_AVX256 zero division")
-
-
-class Metric_IpArith_AVX512:
-    name = "IpArith_AVX512"
-    desc = """
-Instructions per FP Arithmetic AVX 512-bit instruction."""
-    domain = "Metric"
-    maxval = 0
-    server = False
-    errcount = 0
-    area = "Info.Inst_Mix"
-    metricgroup = ['FLOPS', 'FP_Vector', 'Instruction_Type']
-
-    def compute(self, EV):
-        try:
-            self.val = IpArith_AVX512(self, EV, 0)
-        except ZeroDivisionError:
-            handle_error_metric(self, "IpArith_AVX512 zero division")
 
 
 class Metric_Instructions:
@@ -2872,68 +2837,6 @@ Average Frequency Utilization relative nominal frequency"""
             handle_error_metric(self, "Turbo_Utilization zero division")
 
 
-class Metric_Power_License0_Utilization:
-    name = "Power_License0_Utilization"
-    desc = """
-Fraction of Core cycles where the core was running with
-power-delivery for baseline license level 0.  This includes
-non-AVX codes, SSE, AVX 128-bit, and low-current AVX 256-bit
-codes."""
-    domain = "CoreMetric"
-    maxval = 0
-    server = True
-    errcount = 0
-    area = "Info.System"
-    metricgroup = ['Power']
-
-    def compute(self, EV):
-        try:
-            self.val = Power_License0_Utilization(self, EV, 0)
-        except ZeroDivisionError:
-            handle_error_metric(self, "Power_License0_Utilization zero division")
-
-
-class Metric_Power_License1_Utilization:
-    name = "Power_License1_Utilization"
-    desc = """
-Fraction of Core cycles where the core was running with
-power-delivery for license level 1.  This includes high
-current AVX 256-bit instructions as well as low current AVX
-512-bit instructions."""
-    domain = "CoreMetric"
-    maxval = 0
-    server = True
-    errcount = 0
-    area = "Info.System"
-    metricgroup = ['Power']
-
-    def compute(self, EV):
-        try:
-            self.val = Power_License1_Utilization(self, EV, 0)
-        except ZeroDivisionError:
-            handle_error_metric(self, "Power_License1_Utilization zero division")
-
-
-class Metric_Power_License2_Utilization:
-    name = "Power_License2_Utilization"
-    desc = """
-Fraction of Core cycles where the core was running with
-power-delivery for license level 2 (introduced in SKX).
-This includes high current AVX 512-bit instructions."""
-    domain = "CoreMetric"
-    maxval = 0
-    server = True
-    errcount = 0
-    area = "Info.System"
-    metricgroup = ['Power']
-
-    def compute(self, EV):
-        try:
-            self.val = Power_License2_Utilization(self, EV, 0)
-        except ZeroDivisionError:
-            handle_error_metric(self, "Power_License2_Utilization zero division")
-
-
 class Metric_SMT_2T_Utilization:
     name = "SMT_2T_Utilization"
     desc = """
@@ -3280,7 +3183,6 @@ class Setup:
         n = Metric_IpArith_Scalar_DP() ; r.metric(n) ; o["IpArith_Scalar_DP"] = n
         n = Metric_IpArith_AVX128() ; r.metric(n) ; o["IpArith_AVX128"] = n
         n = Metric_IpArith_AVX256() ; r.metric(n) ; o["IpArith_AVX256"] = n
-        n = Metric_IpArith_AVX512() ; r.metric(n) ; o["IpArith_AVX512"] = n
         n = Metric_Instructions() ; r.metric(n) ; o["Instructions"] = n
         n = Metric_CoreIPC() ; r.metric(n) ; o["CoreIPC"] = n
         n = Metric_FLOPc() ; r.metric(n) ; o["FLOPc"] = n
@@ -3301,9 +3203,6 @@ class Setup:
         n = Metric_Average_Frequency() ; r.metric(n) ; o["Average_Frequency"] = n
         n = Metric_GFLOPs() ; r.metric(n) ; o["GFLOPs"] = n
         n = Metric_Turbo_Utilization() ; r.metric(n) ; o["Turbo_Utilization"] = n
-        n = Metric_Power_License0_Utilization() ; r.metric(n) ; o["Power_License0_Utilization"] = n
-        n = Metric_Power_License1_Utilization() ; r.metric(n) ; o["Power_License1_Utilization"] = n
-        n = Metric_Power_License2_Utilization() ; r.metric(n) ; o["Power_License2_Utilization"] = n
         n = Metric_SMT_2T_Utilization() ; r.metric(n) ; o["SMT_2T_Utilization"] = n
         n = Metric_Kernel_Utilization() ; r.metric(n) ; o["Kernel_Utilization"] = n
         n = Metric_DRAM_BW_Use() ; r.metric(n) ; o["DRAM_BW_Use"] = n

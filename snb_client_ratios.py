@@ -15,7 +15,7 @@ print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
 version = "3.4-full"
-base_frequency = 1.0*1e9
+base_frequency = -1.0
 model = ""
 Memory = 0
 
@@ -152,7 +152,7 @@ def CPI(self, EV, level):
 def CLKS(self, EV, level):
     return EV("CPU_CLK_UNHALTED.THREAD", level)
 
-# Total issue-pipeline slots (per-core till ICL; per-thread ICL onward)
+# Total issue-pipeline slots (per-core)
 def SLOTS(self, EV, level):
     return Pipeline_Width * CORE_CLKS(self, EV, level)
 
@@ -1635,8 +1635,7 @@ active."""
 class Metric_SLOTS:
     name = "SLOTS"
     desc = """
-Total issue-pipeline slots (per-core till ICL; per-thread
-ICL onward)"""
+Total issue-pipeline slots (per-core)"""
     domain = "Count"
     maxval = 0
     server = True
