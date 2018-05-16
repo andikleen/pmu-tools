@@ -13,7 +13,7 @@
 #
 # wrapper for perf for using named events and events with additional MSRs.
 # syntax is like perf, except Intel events are listed and can be specified
-# 
+#
 # or library for other python program to convert intel event names to
 # perf/raw format
 #
@@ -22,8 +22,8 @@
 # - enable disable workarounds for specific events
 # - resolve uncore events
 # - handle offcore event on older kernels
-# For the later must run as root and only as a single instance per machine 
-# Normal events (mainly not OFFCORE) can be handled unprivileged 
+# For the later must run as root and only as a single instance per machine
+# Normal events (mainly not OFFCORE) can be handled unprivileged
 # For events you can specify additional intel names from the list
 #
 # env variables:
@@ -235,7 +235,7 @@ class Event:
     def output(self, use_raw=False, flags="", noname=False, period=False, name=""):
         """Format an event for output and return as perf event string.
            use_raw when true return old style perf string (rXXX).
-           Otherwise chose between old and new style based on the 
+           Otherwise chose between old and new style based on the
            capabilities of the installed perf executable.
            flags when set add perf flags (e.g. u for user, p for pebs)."""
         val = self.val
@@ -243,7 +243,7 @@ class Event:
         extra = "".join(merge_extra(extra_set(self.extra), extra_set(flags)))
         extra, val = convert_extra(":" + extra, val, newe)
         if version.direct or use_raw:
-            ename = "r%x" % (val,) 
+            ename = "r%x" % (val,)
             if extra:
                 ename += ":" + extra
             # XXX should error for extras that don't fit into raw
@@ -605,7 +605,7 @@ class EmapNativeJSON(object):
     def update_event(self, e, ev):
         if e not in self.pevents:
             self.pevents[e] = ev
-        
+
     def getraw(self, r):
         e = "r%x" % (r)
         if e in self.pevents:
@@ -627,7 +627,7 @@ class EmapNativeJSON(object):
         wrap = None
         if human:
             wrap = textwrap.TextWrapper(initial_indent="     ",
-                                        subsequent_indent="     ")            
+                                        subsequent_indent="     ")
         for k in sorted(self.events.keys()):
             print_event(k, self.desc[k], f, human, wrap)
         for k in sorted(self.uncore_events.keys()):
@@ -720,13 +720,13 @@ def json_with_extra(el):
         print >>sys.stderr, "parsing", name, "failed"
         return None
     if not emap or emap.error:
-	print >>sys.stderr, "parsing", name, "failed"
-	return None
+        print >>sys.stderr, "parsing", name, "failed"
+        return None
     if experimental:
-	try:
-	    emap.read_events(event_download.eventlist_name(el, "core experimental"))
-	except IOError:
-	    pass
+        try:
+            emap.read_events(event_download.eventlist_name(el, "core experimental"))
+        except IOError:
+            pass
     add_extra_env(emap, el)
     return emap
 
@@ -740,10 +740,10 @@ def add_extra_env(emap, el):
             oc = event_download.eventlist_name(el, "offcore")
             if os.path.exists(oc):
                 emap.add_offcore(oc)
-	    if experimental:
-		oc = event_download.eventlist_name(el, "offcore experimental")
-		if os.path.exists(oc):
-		    emap.add_offcore(oc)
+            if experimental:
+                oc = event_download.eventlist_name(el, "offcore experimental")
+                if os.path.exists(oc):
+                    emap.add_offcore(oc)
     except IOError:
         print >>sys.stderr, "Cannot open", oc
     try:
@@ -755,10 +755,10 @@ def add_extra_env(emap, el):
             uc = event_download.eventlist_name(el, "uncore")
             if os.path.exists(uc):
                 emap.add_uncore(uc)
-	    if experimental:
-		uc = event_download.eventlist_name(el, "uncore experimental")
-		if os.path.exists(uc):
-		    emap.add_uncore(uc)
+            if experimental:
+                uc = event_download.eventlist_name(el, "uncore experimental")
+                if os.path.exists(uc):
+                    emap.add_uncore(uc)
     except IOError:
         print >>sys.stderr, "Cannot open", uc
     try:
@@ -793,7 +793,7 @@ def canon_emapvar(el, typ):
 def find_emap():
     """Search and read a perfmon event map.
        When the EVENTMAP environment variable is set read that, otherwise
-       read the map for the current CPU. EVENTMAP can be a CPU specifier 
+       read the map for the current CPU. EVENTMAP can be a CPU specifier
        in the map file or a path name.
        Dito for the OFFCORE and UNCORE environment variables.
 
@@ -827,8 +827,8 @@ def find_emap():
             toget.append("uncore")
         if not os.getenv("UNCORE"):
             toget.append("uncore")
-	if experimental:
-	    toget += [x + " experimental" for x in toget]
+        if experimental:
+            toget += [x + " experimental" for x in toget]
         event_download.download(el, toget)
         return json_with_extra(el)
     except IOError:
@@ -921,8 +921,8 @@ def process_args():
             print_only = True
         elif sys.argv[i] == "--force-download":
            pass
-	elif sys.argv[i] == "--experimental":
-	    pass
+        elif sys.argv[i] == "--experimental":
+            pass
         elif sys.argv[i] == "--no-period":
             record = never
         elif sys.argv[i] == "record" and record == no:
@@ -943,7 +943,7 @@ Specify the -e events before -c default or event has no overflow field."""
                 cmd.append(prefix + overflow)
             else:
                 cmd.append(prefix + oarg)
-        else:        
+        else:
             cmd.append(sys.argv[i])
         i += 1
     print " ".join(map(pipes.quote, cmd))
@@ -1008,8 +1008,8 @@ if __name__ == '__main__':
     for j in sys.argv:
         if j == "--force-download":
             force_download = True
-	if j == "--experimental":
-	    experimental = True
+        if j == "--experimental":
+            experimental = True
     emap = find_emap()
     if not emap:
         print >>sys.stderr, "Do not recognize CPU or cannot find CPU map file."
