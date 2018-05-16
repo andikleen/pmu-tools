@@ -719,9 +719,6 @@ def json_with_extra(el):
     if not emap or emap.error:
         print >>sys.stderr, "parsing", name, "failed"
         return None
-    if not emap or emap.error:
-        print >>sys.stderr, "parsing", name, "failed"
-        return None
     if experimental:
         try:
             emap.read_events(event_download.eventlist_name(el, "core experimental"))
