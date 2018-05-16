@@ -100,7 +100,7 @@ class OutputHuman(Output):
     # desc      Object description
     # sample    Sample Objects (string)
     # vs        Statistics object
-    # bn	marker for bottleneck
+    # bn        marker for bottleneck
     # Example:
     # C0    BE      Backend_Bound:                                62.00 %
     def show(self, timestamp, title, area, hdr, val, remark, desc, sample, valstat, bn):

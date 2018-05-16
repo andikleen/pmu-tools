@@ -33,7 +33,7 @@ modelpath = urlpath + "/" + mapfile
 def get_cpustr():
     cpuinfo = os.getenv("CPUINFO")
     if cpuinfo is None:
-	cpuinfo = '/proc/cpuinfo'
+        cpuinfo = '/proc/cpuinfo'
     f = open(cpuinfo, 'r')
     cpu = [None, None, None]
     for j in f:
@@ -115,7 +115,7 @@ def download(match, key=None, link=True):
                 continue
             cpu = sanitize(cpu, allowed_chars)
             url = urlpath + name
-	    fn = "%s-%s.json" % (cpu, sanitize(type, allowed_chars))
+            fn = "%s-%s.json" % (cpu, sanitize(type, allowed_chars))
             try:
                 os.remove(os.path.join(dir, fn))
             except OSError:
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         sys.exit(0)
     d = getdir()
     if args.all:
-	found = download('*', link=args.link)
+        found = download('*', link=args.link)
     elif len(args.cpus) == 0:
         found = download_current(link=args.link)
     else:

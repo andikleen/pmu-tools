@@ -20,7 +20,7 @@
 # check size in all cases (or use optional+tunnel)
 # tracing support
 # processor trace (aux) data and extra info headers
-# 
+#
 
 from construct import *
 
@@ -51,8 +51,8 @@ def sample_id():
                                                  UNInt32("res")))),
                               If(lambda ctx: sample_type(ctx).identifier,
                                  UNInt64("identifier2")))))
-                              
-def fork_exit(name): 
+
+def fork_exit(name):
     return Struct(name,
                   SNInt32("pid"),
                   SNInt32("ppid"),
@@ -131,7 +131,7 @@ def event():
                           Array(lambda ctx: hweight64(ctx),
                                 UNInt64("reg")))),
                 If(lambda ctx: sample_type(ctx).stack_user,
-                   Struct("stack_user", 
+                   Struct("stack_user",
                           UNInt64("size"),
                           Bytes("data", lambda ctx: ctx.size),
                           UNInt64("dyn_size"))),
@@ -163,7 +163,7 @@ def has_sample_id_all(ctx):
         return attr.sample_id_all
     return False
 
-# when sample_id_all is not supported, we may 
+# when sample_id_all is not supported, we may
 # not look up the right one (perf.data limitation)
 def lookup_event_attr(ctx):
     if "end_id" in ctx and ctx.end_id:
@@ -179,22 +179,22 @@ def lookup_event_attr(ctx):
 def perf_event_header():
     return Embedded(Struct(None,
                            Enum(UNInt32("type"),
-                                MMAP			= 1,
-                                LOST			= 2,
-                                COMM			= 3,
-                                EXIT			= 4,
-                                THROTTLE		= 5,
-                                UNTHROTTLE		= 6,
-                                FORK			= 7,
-                                READ			= 8,
-                                SAMPLE			= 9,
-                                MMAP2			= 10,
-                                TRACING_DATA            = 66,
-                                FINISHED_ROUND          = 68,
-                                ID_INDEX                = 69,
-                                AUXTRACE_INFO           = 70,
-                                AUXTRACE                = 71,
-                                AUXTRACE_ERROR          = 72),
+                                MMAP            = 1,
+                                LOST            = 2,
+                                COMM            = 3,
+                                EXIT            = 4,
+                                THROTTLE        = 5,
+                                UNTHROTTLE      = 6,
+                                FORK            = 7,
+                                READ            = 8,
+                                SAMPLE          = 9,
+                                MMAP2           = 10,
+                                TRACING_DATA    = 66,
+                                FINISHED_ROUND  = 68,
+                                ID_INDEX        = 69,
+                                AUXTRACE_INFO   = 70,
+                                AUXTRACE        = 71,
+                                AUXTRACE_ERROR  = 72),
                            Embedded(BitStruct(None,
                                               Padding(1),
                                               Enum(BitField("cpumode", 7),
@@ -204,7 +204,7 @@ def perf_event_header():
                                                    HYPERVISOR = 3,
                                                    GUEST_KERNEL = 4,
                                                    GUEST_USER = 5),
-                                              
+
                                               Flag("ext_reserved"),
                                               Flag("exact_ip"),
                                               Flag("mmap_data"),
@@ -227,8 +227,8 @@ def mmap():
                   Anchor("end_of_filename"),
                   # hack for now. this shouldn't be needed.
                   If(lambda ctx: True, # XXX
-                     Embedded(Pointer(lambda ctx: 
-                                      ctx.size + ctx.start - 
+                     Embedded(Pointer(lambda ctx:
+                                      ctx.size + ctx.start -
                                       sample_id_size(ctx),
                                       sample_id()))))
 def mmap2():
@@ -266,7 +266,7 @@ def read_format():
                             Array(lambda ctx: ctx.nr,
                                   Struct("val",
                                          UNInt64("value"),
-                                         If(lambda ctx: 
+                                         If(lambda ctx:
                                             read_flags(ctx).id,
                                             UNInt64("id2")))))),
                   If(lambda ctx: not read_flags(ctx).group,
@@ -307,8 +307,8 @@ def perf_event():
                                                       sample_id())),
                               "SAMPLE": event()
                            }),
-			Anchor("end"),
-			Padding(lambda ctx:
+                        Anchor("end"),
+                        Padding(lambda ctx:
                                     ctx.size - (ctx.end - ctx.start)))
 
 def perf_event_seq(attr):
@@ -317,7 +317,7 @@ def perf_event_seq(attr):
 perf_event_attr_sizes = (64, 72, 80, 96, 104)
 
 perf_event_attr = Struct("perf_event_attr",
-                         Anchor("start"),                         
+                         Anchor("start"),
                          Enum(UNInt32("type"),
                               HARDWARE = 0,
                               SOFTWARE = 1,
@@ -365,9 +365,9 @@ perf_event_attr = Struct("perf_event_attr",
                          Embedded(BitStruct(None,
                                             Flag("disabled"),
                                             Flag("inherit"),
-                                            Flag("pinned"),	       
-                                            Flag("exclusive"),      
-                                            Flag("exclude_user"),   
+                                            Flag("pinned"),
+                                            Flag("exclusive"),
+                                            Flag("exclude_user"),
                                             Flag("exclude_kernel"),
                                             Flag("exclude_hv"),
                                             Flag("exclude_idle"),
@@ -468,7 +468,7 @@ def pmu_mappings():
     return PrefixedArray(Struct("pmu",
                                 UNInt32("type"),
                                 str_with_len("name")),
-                         UNInt32("nr"))     
+                         UNInt32("nr"))
 
 def event_desc():
     return Struct("event_desc",
@@ -489,7 +489,7 @@ def perf_features():
                      perf_file_section("tracing_data",
                                        Pass)),
                   If(lambda ctx: ctx._.build_id,
-                     section_adapter("build_id", 
+                     section_adapter("build_id",
                                      GreedyRange(build_id()))),
                   feature_string("hostname"),
                   feature_string("osrelease"),
@@ -516,7 +516,7 @@ def perf_features():
                                        Struct("cpu_topology",
                                               string_list("cores"),
                                               string_list("threads")))),
-                  If(lambda ctx: ctx._.numa_topology,                     
+                  If(lambda ctx: ctx._.numa_topology,
                      perf_file_section("numa_topology",
                                        numa_topology())),
                   # not implemented in perf
@@ -609,4 +609,3 @@ if __name__ == '__main__':
         h = perf_file.parse_stream(f)
         print h
         #print get_events(h)
-

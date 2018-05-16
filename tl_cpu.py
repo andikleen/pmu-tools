@@ -81,10 +81,10 @@ class CPU:
         self.cputosocket = {}
         self.allcpus = []
         self.name = ""
-	cpuinfo = os.getenv("CPUINFO")
-	if cpuinfo is None:
-	    cpuinfo = "/proc/cpuinfo"
-	with open(cpuinfo, "r") as f:
+        cpuinfo = os.getenv("CPUINFO")
+        if cpuinfo is None:
+            cpuinfo = "/proc/cpuinfo"
+        with open(cpuinfo, "r") as f:
             ok = 0
             for l in f:
                 n = l.split()

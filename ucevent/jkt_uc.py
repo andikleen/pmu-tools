@@ -13,7 +13,7 @@ aliases = {
 }
 
 events = {
-     
+
 # R3QPI:
      "R3QPI.CLOCKTICKS": {
           "Box": "R3QPI",
@@ -736,7 +736,7 @@ events = {
           "Desc": "Cycles with 1 or more VNA credits in use",
           "EvSel": 50,
      },
-     
+
 # CBO:
      "CBO.CLOCKTICKS": {
           "Box": "CBO",
@@ -1695,7 +1695,7 @@ events = {
           "EvSel": 2,
           "Umask": "bxxxxxxx1",
      },
-     
+
 # HA:
      "HA.ADDR_OPC_MATCH": {
           "Box": "HA",
@@ -2405,7 +2405,7 @@ events = {
           "MaxIncCyc": 4,
           "Umask": "bxxxxxxx1",
      },
-     
+
 # iMC:
      "iMC.ACT_COUNT": {
           "Box": "iMC",
@@ -2912,7 +2912,7 @@ events = {
           "Desc": "Write Pending Queue CAM Match",
           "EvSel": 36,
      },
-     
+
 # R2PCIe:
      "R2PCIe.CLOCKTICKS": {
           "Box": "R2PCIe",
@@ -3192,7 +3192,7 @@ events = {
           "Desc": "Egress Allocations",
           "EvSel": 36,
      },
-     
+
 # PCU:
      "PCU.CLOCKTICKS": {
           "Box": "PCU",
@@ -3556,7 +3556,7 @@ events = {
           "Desc": "VR Hot",
           "EvSel": 50,
      },
-     
+
 # QPI_LL:
      "QPI_LL.CLOCKTICKS": {
           "Box": "QPI_LL",
@@ -4350,7 +4350,7 @@ events = {
           "SubCtr": 1,
           "ExtSel": 1,
      },
-     
+
 # UBOX:
      "UBOX.EVENT_MSG": {
           "Box": "UBOX",
@@ -4459,7 +4459,7 @@ events = {
      },
 }
 derived = {
-     
+
 # HA:
      "HA.PCT_CYCLES_BL_FULL": {
           "Box": "HA",
@@ -4499,7 +4499,7 @@ derived = {
           "Desc": "Percent Write Requests",
           "Equation": "REQUESTS.WRITES / (REQUESTS.READS + REQUESTS.WRITES)",
      },
-     
+
 # iMC:
      "iMC.MEM_BW_READS": {
           "Box": "iMC",
@@ -4599,7 +4599,7 @@ derived = {
           "Desc": "Percent Write Requests",
           "Equation": "WPQ_INSERTS / (RPQ_INSERTS + WPQ_INSERTS)",
      },
-     
+
 # R2PCIe:
      "R2PCIe.CYC_USED_DNEVEN": {
           "Box": "R2PCIe",
@@ -4665,7 +4665,7 @@ derived = {
           "Equation": "RING_BL_USED.CW_ODD * 32",
           "Obscure": 1,
      },
-     
+
 # QPI_LL:
      "QPI_LL.DATA_FROM_QPI": {
           "Box": "QPI_LL",
@@ -4703,7 +4703,7 @@ derived = {
           "Defn": "DRS Data Messages From QPI in bytes",
           "Desc": "DRS Data Messages From QPI",
           "Equation": "(RxL_FLITS_G1.DRS_DATA * 8)",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.DRS_DataC_FROM_QPI_TO_NODEx": {
           "Box": "QPI_LL",
@@ -4712,7 +4712,7 @@ derived = {
           "Desc": "DRS DataC From QPI To Node x",
           "Equation": "(CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0{[12:0],dnid}={0x1C00,x},Q_Py_PCI_PMON_PKT_MASK0[17:0]=0x3FF80}) * 64",
           "Filter": "QPIMask0[17:0],QPIMatch0[17:0]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.DRS_FULL_CACHELINE_MSGS_FROM_QPI": {
           "Box": "QPI_LL",
@@ -4721,7 +4721,7 @@ derived = {
           "Desc": "DRS Full Cacheline Data Messages From QPI",
           "Equation": "(CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1C00,Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1F00}) * 64",
           "Filter": "QPIMask0[12:0],QPIMatch0[12:0]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.DRS_F_OR_E_FROM_QPI": {
           "Box": "QPI_LL",
@@ -4730,7 +4730,7 @@ derived = {
           "Desc": "DRS Data in F or E From QPI",
           "Equation": "((CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1C00, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1FE0, Q_Py_PCI_PMON_PKT_MATCH1[19:16]=0x4, Q_Py_PCI_PMON_PKT_MASK1[19:16]=0xF }) + (CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1C00, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1FE0, Q_Py_PCI_PMON_PKT_MATCH1[19:16]=0x1, Q_Py_PCI_PMON_PKT_MASK1[19:16]=0xF }) + (CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1C40, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1FE0, Q_Py_PCI_PMON_PKT_MATCH1[19:16]=0x4, Q_Py_PCI_PMON_PKT_MASK1[19:16]=0xF }) + (CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1C40, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1FE0, Q_Py_PCI_PMON_PKT_MATCH1[19:16]=0x1, Q_Py_PCI_PMON_PKT_MASK1[19:16]=0xF })  + (CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1C20, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1FE0, Q_Py_PCI_PMON_PKT_MATCH1[19:16]=0x4, Q_Py_PCI_PMON_PKT_MASK1[19:16]=0xF }) + (CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1C20, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1FE0, Q_Py_PCI_PMON_PKT_MATCH1[19:16]=0x1, Q_Py_PCI_PMON_PKT_MASK1[19:16]=0xF })) * 64",
           "Filter": "QPIMask0[12:0],QPIMatch0[12:0],QPIMask1[19:16],QPIMatch1[19:16]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.DRS_M_FROM_QPI": {
           "Box": "QPI_LL",
@@ -4739,7 +4739,7 @@ derived = {
           "Desc": "DRS Data in M From QPI",
           "Equation": "(CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1C00, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1FE0, Q_Py_PCI_PMON_PKT_MATCH1[19:16]=0x8, Q_Py_PCI_PMON_PKT_MASK1[19:16]=0xF }) * 64",
           "Filter": "QPIMask0[12:0],QPIMatch0[12:0],QPIMask1[19:16],QPIMatch1[19:16]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.DRS_PTL_CACHELINE_MSGS_FROM_QPI": {
           "Box": "QPI_LL",
@@ -4748,7 +4748,7 @@ derived = {
           "Desc": "DRS Partial Cacheline Data Messages From QPI",
           "Equation": "(CTO_COUNT with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1D00, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1F00}) * 64",
           "Filter": "QPIMask0[12:0],QPIMatch0[12:0]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.DRS_WB_FROM_QPI": {
           "Box": "QPI_LL",
@@ -4756,7 +4756,7 @@ derived = {
           "Defn": "DRS writeback packets received from QPI in bytes.  This is the sum of Wb{I,S,E} DRS packets",
           "Desc": "DRS Writeback From QPI",
           "Equation": "DRS_WbI_FROM_QPI + DRS_WbS_FROM_QPI + DRS_WbE_FROM_QPI",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.DRS_WRITE_FROM_QPI_TO_NODEx": {
           "Box": "QPI_LL",
@@ -4765,7 +4765,7 @@ derived = {
           "Desc": "DRS Data From QPI To Node x",
           "Equation": "(CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0{[12:0],dnid}={0x1C00,x},Q_Py_PCI_PMON_PKT_MASK0[17:0]=0x3FE00} - CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0{[12:0],dnid}={0x1C00,x},Q_Py_PCI_PMON_PKT_MASK0[17:0]=0x3FF80}) * 64",
           "Filter": "QPIMask0[17:0],QPIMatch0[17:0]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.DRS_WbE_FROM_QPI": {
           "Box": "QPI_LL",
@@ -4774,7 +4774,7 @@ derived = {
           "Desc": "DRS WbE From QPI",
           "Equation": "(CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1CC0, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1FE0}) * 64",
           "Filter": "QPIMask0[12:0],QPIMatch0[12:0]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.DRS_WbI_FROM_QPI": {
           "Box": "QPI_LL",
@@ -4783,7 +4783,7 @@ derived = {
           "Desc": "DRS WbI From QPI",
           "Equation": "(CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1C80, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1FE0}) * 64",
           "Filter": "QPIMask0[12:0],QPIMatch0[12:0]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.DRS_WbS_FROM_QPI": {
           "Box": "QPI_LL",
@@ -4792,7 +4792,7 @@ derived = {
           "Desc": "DRS WbSFrom QPI",
           "Equation": "(CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0[12:0]=0x1CA0, Q_Py_PCI_PMON_PKT_MASK0[12:0]=0x1FE0}) * 64",
           "Filter": "QPIMask0[12:0],QPIMatch0[12:0]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.NCB_DATA_FROM_QPI_TO_NODEx": {
           "Box": "QPI_LL",
@@ -4801,7 +4801,7 @@ derived = {
           "Desc": "NCB Data From QPI To Node x",
           "Equation": "((CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0{[12:0],dnid}={0x1800,x},Q_Py_PCI_PMON_PKT_MASK0[17:0]=0x3FE00}) - (CTO_COUNT  with:{Q_Py_PCI_PMON_PKT_MATCH0{[12:0],dnid}={0x1900,x},Q_Py_PCI_PMON_PKT_MASK0[17:0]=0x3FF80})) * 64",
           "Filter": "QPIMask0[17:0],QPIMatch0[17:0]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.NCB_DATA_MSGS_FROM_QPI": {
           "Box": "QPI_LL",
@@ -4809,7 +4809,7 @@ derived = {
           "Defn": "NCB Data Messages From QPI in bytes",
           "Desc": "NCB Data Messages From QPI",
           "Equation": "(RxL_FLITS_G2.NCB_DATA * 8)",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.PCT_LINK_FULL_POWER_CYCLES": {
           "Box": "QPI_LL",
@@ -4842,7 +4842,7 @@ derived = {
           "Desc": "QPI Link Utilization",
           "Equation": "(RxL_FLITS_G0.DATA + RxL_FLITS_G0.NON_DATA) / (2 * CLOCKTICKS)",
      },
-     
+
 # PCU:
      "PCU.PCT_FREQ_BAND0": {
           "Box": "PCU",
@@ -4904,7 +4904,7 @@ derived = {
           "Desc": "Percent of Cycles Frequency Thermal Limited",
           "Equation": "FREQ_MAX_CURRENT_CYCLES / CLOCKTICKS",
      },
-     
+
 # CBO:
      "CBO.AVG_INGRESS_DEPTH": {
           "Box": "CBO",
@@ -4937,7 +4937,7 @@ derived = {
           "Desc": "Average Data Read Misses in Non-Empty TOR",
           "Equation": "(TOR_OCCUPANCY.MISS_OPCODE / COUNTER0_OCCUPANCY with:{edge_det=1,thresh=0x1}) with:Cn_MSR_PMON_BOX_FILTER.opc=0x182",
           "Filter": "CBoFilter[31:23]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.AVG_TOR_DRDS_WHEN_NE": {
           "Box": "CBO",
@@ -4946,7 +4946,7 @@ derived = {
           "Desc": "Average Data Reads in Non-Empty TOR",
           "Equation": "(TOR_OCCUPANCY.OPCODE / COUNTER0_OCCUPANCY with:{edge_det=1,thresh=0x1}) with:Cn_MSR_PMON_BOX_FILTER.opc=0x182",
           "Filter": "CBoFilter[31:23]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.AVG_TOR_DRD_HIT_LATENCY": {
           "Box": "CBO",
@@ -4955,7 +4955,7 @@ derived = {
           "Desc": "Data Read Hit Latency through TOR",
           "Equation": "((TOR_OCCUPANCY.OPCODE  - TOR_OCCUPANCY.MISS_OPCODE) / (TOR_INSERTS.OPCODE - TOR_INSERTS.MISS_OPCODE)) with:Cn_MSR_PMON_BOX_FILTER.opc=0x182",
           "Filter": "CBoFilter[31:23]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.AVG_TOR_DRD_LATENCY": {
           "Box": "CBO",
@@ -4964,7 +4964,7 @@ derived = {
           "Desc": "Data Read Latency through TOR",
           "Equation": "(TOR_OCCUPANCY.OPCODE / TOR_INSERTS.OPCODE) with:Cn_MSR_PMON_BOX_FILTER.opc=0x182",
           "Filter": "CBoFilter[31:23]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.AVG_TOR_DRD_MISS_LATENCY": {
           "Box": "CBO",
@@ -4973,7 +4973,7 @@ derived = {
           "Desc": "Data Read Miss Latency through TOR",
           "Equation": "(TOR_OCCUPANCY.MISS_OPCODE / TOR_INSERTS.MISS_OPCODE) with:Cn_MSR_PMON_BOX_FILTER.opc=0x182",
           "Filter": "CBoFilter[31:23]",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.CYC_INGRESS_BLOCKED": {
           "Box": "CBO",
@@ -5030,7 +5030,7 @@ derived = {
           "Desc": "LLC DRD Miss Ratio",
           "Equation": "LLC_LOOKUP.DATA_READ with:Cn_MSR_PMON_BOX_FILTER.state=0x1 / LLC_LOOKUP.DATA_READ with:Cn_MSR_PMON_BOX_FILTER.state=0x1F",
           "Filter": "CBoFilter[22:18]",
-	  "Obscure": 1, # too much multiplexing error
+          "Obscure": 1, # too much multiplexing error
      },
      "CBO.LLC_PCIE_DATA_BYTES": {
           "Box": "CBO",
@@ -5039,7 +5039,7 @@ derived = {
           "Desc": "LLC Miss Data from PCIe",
           "Equation": "TOR_INSERTS.OPCODE with:Cn_MSR_PMON_BOX_FILTER.opc=0x19C * 64",
           "Filter": "CBoFilter[31:23]",
-	  "Broken": 1,
+          "Broken": 1,
      },
      "CBO.LLC_RFO_MISS_PCT": {
           "Box": "CBO",
@@ -5063,7 +5063,7 @@ derived = {
           "Desc": "PCIe Data Traffic",
           "Equation": "(TOR_INSERTS.OPCODE with:Cn_MSR_PMON_BOX_FILTER.opc=0x194 + TOR_INSERTS.OPCODE with:Cn_MSR_PMON_BOX_FILTER.opc=0x19c) * 64",
           "Filter": "CBoFilter[31:23]",
-	  "Broken": 1,
+          "Broken": 1,
      },
      "CBO.RING_THRU_DNEVEN_BYTES": {
           "Box": "CBO",
