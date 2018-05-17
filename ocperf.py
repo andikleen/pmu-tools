@@ -158,6 +158,7 @@ uncore_map = (
     (r'filter1=(0x[0-9a-fA-F]+)', "config1=", 32),
     ("nc=(\d+)", "filter_nc="),
     (r'filter=(0x[0-9a-fA-F]+)', "config1="),
+    (r'one_unit', '', ),
     (r"u(0x[0-9a-fA-F]+)", "umask="),
     (r"opc=?(0x[0-9a-fA-F]+)", "filter_opc="),
     (r"tid=?(0x[0-9a-fA-F]+)", "filter_tid="),
@@ -348,13 +349,18 @@ class UncoreEvent:
                 flags += ","
             flags += e.newextra
 
+	one_unit = False
+
         # xxx subctr, occ_sel, filters
         if flags:
             for j in uncore_map:
                 match, repl = j[0], j[1]
                 m = re.match(match, flags)
                 if m:
-                    if len(j) > 2:
+		    if repl == "":
+			if match.startswith("one_unit"):
+			    one_unit = True
+		    elif len(j) > 2:
                         o += "," + repl + ("%#x" % (int(m.group(1), 0) << j[2]))
                     else:
                         o += "," + repl + m.group(1)
@@ -377,6 +383,8 @@ class UncoreEvent:
         def box_name(n):
             return "%s_%d" % (e.unit, n)
         def box_n_exists(n):
+	    if one_unit and n > 0:
+		return False
             return box_exists(box_name(n))
         if not box_exists(e.unit) and box_n_exists(0):
             return ",".join(["uncore_" + box_name(x) + o.replace("_NUM", "_%d" % (x)) for x in
