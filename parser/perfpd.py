@@ -88,7 +88,7 @@ class Aux:
         return self.ids[id]
 
     def __getitem__(self, id):
-	return self.ids[id]
+        return self.ids[id]
 
 cpumodes = {
     'UNKNOWN': (0, 0, 0),
@@ -121,9 +121,9 @@ def samples_to_df(h, need_line):
             continue
 
         mm.update_sample(j)
-	def add(k, i):
-	    data[k].append(i)
-	    used[k] += 1
+        def add(k, i):
+            data[k].append(i)
+            used[k] += 1
 
         filename, mmap_base, foffset = mm.resolve(j.pid, j.ip)
         if filename == "[kernel.kallsyms]_text":
@@ -173,12 +173,12 @@ if __name__ == '__main__':
     import sys
 
     args = argparse.ArgumentParser()
-    args.add_argument('file', nargs='?', help='perf.data file to read', 
+    args.add_argument('file', nargs='?', help='perf.data file to read',
                           default='perf.data')
     args.add_argument('--repl', action='store_true',
                              help='start python shell with data')
     args.add_argument('--ipython', action='store_true',
-			     help='start ipython shell with data')
+                             help='start ipython shell with data')
     p = args.parse_args()
     df, _, _ = read_samples(p.file)
     if p.repl:

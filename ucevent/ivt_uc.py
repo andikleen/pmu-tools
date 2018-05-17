@@ -1,4 +1,4 @@
-# IVT ivtuc_events.v0.85p ivtuc_derived.v0.85p 
+# IVT ivtuc_events.v0.85p ivtuc_derived.v0.85p
 
 # aliases
 aliases = {
@@ -17,7 +17,7 @@ aliases = {
 }
 
 events = {
-     
+
 # R3QPI:
      "R3QPI.CLOCKTICKS": {
           "Box": "R3QPI",
@@ -1516,7 +1516,7 @@ events = {
           "EvSel": 50,
           "ExtSel": "",
      },
-     
+
 # IRP:
      "IRP.ADDRESS_MATCH": {
           "Box": "IRP",
@@ -1973,7 +1973,7 @@ events = {
           "ExtSel": "",
           "Notes": "How are we handling this?  What are we doing it we have outstanding ACKs but are using the Switch->IRP path for something else (like new requests?)",
      },
-     
+
 # CBO:
      "CBO.CLOCKTICKS": {
           "Box": "CBO",
@@ -3590,7 +3590,7 @@ events = {
           "ExtSel": "",
           "Umask": "bxxxxxxx1",
      },
-     
+
 # HA:
      "HA.ADDR_OPC_MATCH": {
           "Box": "HA",
@@ -5319,7 +5319,7 @@ events = {
           "MaxIncCyc": 4,
           "Umask": "b00000001",
      },
-     
+
 # iMC:
      "iMC.ACT_COUNT": {
           "Box": "iMC",
@@ -7376,7 +7376,7 @@ events = {
           "ExtSel": "",
           "Umask": "bx1xxxxxx",
      },
-     
+
 # R2PCIe:
      "R2PCIe.CLOCKTICKS": {
           "Box": "R2PCIe",
@@ -8044,7 +8044,7 @@ events = {
           "ExtSel": "",
           "Umask": "bxxxxxxx1",
      },
-     
+
 # PCU:
      "PCU.CLOCKTICKS": {
           "Box": "PCU",
@@ -8715,7 +8715,7 @@ events = {
           "EvSel": 50,
           "ExtSel": "",
      },
-     
+
 # QPI_LL:
      "QPI_LL.CLOCKTICKS": {
           "Box": "QPI_LL",
@@ -10342,7 +10342,7 @@ events = {
           "MaxIncCyc": 128,
           "SubCtr": 1,
      },
-     
+
 # UBOX:
      "UBOX.EVENT_MSG": {
           "Box": "UBOX",
@@ -10442,9 +10442,9 @@ events = {
      },
 }
 derived = {
-     
+
 # R3QPI:
-     
+
 # HA:
      "HA.PCT_CYCLES_BL_FULL": {
           "Box": "HA",
@@ -10452,7 +10452,7 @@ derived = {
           "Defn": "Percentage of time the BL Egress Queue is full",
           "Desc": "Percent BL Egress Full",
           "Equation": "TxR_BL_CYCLES_FULL.ALL / SAMPLE_INTERVAL",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "HA.PCT_CYCLES_D2C_DISABLED": {
           "Box": "HA",
@@ -10460,7 +10460,7 @@ derived = {
           "Defn": "Percentage of time that Direct2Core was disabled.",
           "Desc": "Percent D2C Disabled",
           "Equation": "DIRECT2CORE_CYCLES_DISABLED / SAMPLE_INTERVAL",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "HA.PCT_RD_REQUESTS": {
           "Box": "HA",
@@ -10476,7 +10476,7 @@ derived = {
           "Desc": "Percent Write Requests",
           "Equation": "REQUESTS.WRITES / (REQUESTS.READS + REQUESTS.WRITES)",
      },
-     
+
 # iMC:
      "iMC.MEM_BW_READS": {
           "Box": "iMC",
@@ -10576,7 +10576,7 @@ derived = {
           "Desc": "Percent Write Requests",
           "Equation": "WPQ_INSERTS / (RPQ_INSERTS + WPQ_INSERTS)",
      },
-     
+
 # R2PCIe:
      "R2PCIe.CYC_USED_DN": {
           "Box": "R2PCIe",
@@ -10584,7 +10584,7 @@ derived = {
           "Defn": "Cycles Used in the Down direction, Even polarity",
           "Desc": "Cycles Used Down and Even",
           "Equation": "RING_BL_USED.CCW / SAMPLE_INTERVAL",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "R2PCIe.CYC_USED_UP": {
           "Box": "R2PCIe",
@@ -10592,7 +10592,7 @@ derived = {
           "Defn": "Cycles Used in the Up direction, Even polarity",
           "Desc": "Cycles Used Up and Even",
           "Equation": "RING_BL_USED.CW / SAMPLE_INTERVAL",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "R2PCIe.RING_THRU_DN_BYTES": {
           "Box": "R2PCIe",
@@ -10600,7 +10600,7 @@ derived = {
           "Defn": "Ring throughput in the Down direction, Even polarity in Bytes",
           "Desc": "Ring Throughput Down and Even",
           "Equation": "RING_BL_USED.CCW* 32",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "R2PCIe.RING_THRU_UP_BYTES": {
           "Box": "R2PCIe",
@@ -10608,9 +10608,9 @@ derived = {
           "Defn": "Ring throughput in the Up direction, Even polarity in Bytes",
           "Desc": "Ring Throughput Up and Even",
           "Equation": "RING_BL_USED.CW * 32",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
-     
+
 # QPI_LL:
      "QPI_LL.DATA_FROM_QPI": {
           "Box": "QPI_LL",
@@ -10755,7 +10755,7 @@ derived = {
           "Defn": "Percent of Cycles the QPI link is at Full Power",
           "Desc": "Percent Link Full Power Cycles",
           "Equation": "RxL0_POWER_CYCLES / CLOCKTICKS",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.PCT_LINK_HALF_DISABLED_CYCLES": {
           "Box": "QPI_LL",
@@ -10763,7 +10763,7 @@ derived = {
           "Defn": "Percent of Cycles the QPI link in power mode where half of the lanes are disabled.",
           "Desc": "Percent Link Half Disabled Cycles",
           "Equation": "RxL0P_POWER_CYCLES / CLOCKTICKS",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.PCT_LINK_SHUTDOWN_CYCLES": {
           "Box": "QPI_LL",
@@ -10771,7 +10771,7 @@ derived = {
           "Defn": "Percent of Cycles the QPI link is Shutdown",
           "Desc": "Percent Link Shutdown Cycles",
           "Equation": "L1_POWER_CYCLES / CLOCKTICKS",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "QPI_LL.QPI_DATA_BW": {
           "Box": "QPI_LL",
@@ -10801,7 +10801,7 @@ derived = {
           "Desc": "QPI Speed",
           "Equation": "ROUND (( CLOCKTICKS / TSC ) * TSC_SPEED, 0 ) * ( 8 / 1000)",
      },
-     
+
 # PCU:
      "PCU.PCT_CYC_FREQ_CURRENT_LTD": {
           "Box": "PCU",
@@ -10831,7 +10831,7 @@ derived = {
           "Desc": "Percent Frequency Thermal Limited",
           "Equation": "FREQ_MAX_CURRENT_CYCLES / CLOCKTICKS",
      },
-     
+
 # CBO:
      "CBO.AVG_INGRESS_DEPTH": {
           "Box": "CBO",
@@ -10839,7 +10839,7 @@ derived = {
           "Defn": "Average Depth of the Ingress Queue through the sample interval",
           "Desc": "Average Ingress Depth",
           "Equation": "RxR_OCCUPANCY.IRQ  / SAMPLE_INTERVAL",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.AVG_INGRESS_LATENCY": {
           "Box": "CBO",
@@ -10847,7 +10847,7 @@ derived = {
           "Defn": "Average Latency of Requests through the Ingress Queue in Uncore Clocks",
           "Desc": "Average Ingress Latency",
           "Equation": "RxR_OCCUPANCY.IRQ / RxR_INSERTS.IRQ",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.AVG_INGRESS_LATENCY_WHEN_NE": {
           "Box": "CBO",
@@ -10855,7 +10855,7 @@ derived = {
           "Defn": "Average Latency of Requests through the Ingress Queue in Uncore Clocks when Ingress Queue has at least one entry",
           "Desc": "Average Latency in Non-Empty Ingress",
           "Equation": "RxR_OCCUPANCY.IRQ / COUNTER0_OCCUPANCY{edge_det,thresh=0x1}",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.AVG_TOR_DRDS_MISS_WHEN_NE": {
           "Box": "CBO",
@@ -10919,7 +10919,7 @@ derived = {
           "Defn": "Cycles the Ingress Request Queue arbiter was Blocked",
           "Desc": "Cycles Ingress Blocked",
           "Equation": "RxR_EXT_STARVED.IRQ  / SAMPLE_INTERVAL",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.CYC_USED_DN": {
           "Box": "CBO",
@@ -10927,7 +10927,7 @@ derived = {
           "Defn": "Cycles Used in the Down direction, Even polarity",
           "Desc": "Cycles Used Down and Even",
           "Equation": "RING_BL_USED.CCW / SAMPLE_INTERVAL",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.CYC_USED_UP": {
           "Box": "CBO",
@@ -10935,7 +10935,7 @@ derived = {
           "Defn": "Cycles Used in the Up direction, Even polarity",
           "Desc": "Cycles Used Up and Even",
           "Equation": "RING_BL_USED.CW / SAMPLE_INTERVAL",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.FAST_STR_LLC_MISS": {
           "Box": "CBO",
@@ -10959,7 +10959,7 @@ derived = {
           "Defn": "Ratio of Ingress Request Entries that were rejected vs. inserted",
           "Desc": "Ingress Rejects vs. Inserts",
           "Equation": "RxR_INSERTS.IRQ_REJ  / RxR_INSERTS.IRQ",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.IO_READ_BW": {
           "Box": "CBO",
@@ -11054,7 +11054,7 @@ derived = {
           "Defn": "Ring throughput in the Down direction, Even polarity in Bytes",
           "Desc": "Ring Throughput Down and Even",
           "Equation": "RING_BL_USED.CCW* 32",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.RING_THRU_UP_BYTES": {
           "Box": "CBO",
@@ -11062,7 +11062,7 @@ derived = {
           "Defn": "Ring throughput in the Up direction, Even polarity in Bytes",
           "Desc": "Ring Throughput Up and Even",
           "Equation": "RING_BL_USED.CW * 32",
-	  "Obscure": 1,
+          "Obscure": 1,
      },
      "CBO.STREAMED_FULL_STORES": {
           "Box": "CBO",

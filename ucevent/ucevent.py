@@ -16,7 +16,7 @@
 #
 # requires a perf driver for the uncore (recent Intel server CPUs) and may
 # need some kernel patches (see documentation)
-# 
+#
 # ucevent event .. -- perf arguments
 # e.g. ucevent event
 # no event => list
@@ -91,7 +91,7 @@ class CPU:
         if s in self.socket:
             return self.socket[s]
         sys.exit("Invalid socket %d" % s)
-        
+
 cpu = CPU()
 cputype = os.getenv("FORCECPU")
 if not cputype:
@@ -133,7 +133,7 @@ def print_list(f, ls, c, description, equation, ehdr):
         ev = ls[i]
         if ev["Category"] == c:
             count += 1
-            
+
             desc = "?"
             if "Desc" in ev:
                 desc = ev["Desc"]
@@ -160,7 +160,7 @@ def print_list(f, ls, c, description, equation, ehdr):
                     defn += " Notes: " + ev["Notes"]
                 if "MaxIncCyc" in ev and ev["MaxIncCyc"] > 1:
                     defn += (" May increase upto %d units per cycle." %
-                                (ev["MaxIncCyc"]))                    
+                                (ev["MaxIncCyc"]))
                 print >>f, wrap.fill(defn)
                 if "Equation" in ev:
                     eql, equations = convert_equation(ev, dict(), True, True)
@@ -232,7 +232,7 @@ def cmp_cat(a, b):
 
 def get_pager():
     if args.no_pager:
-	return sys.stdout, None
+        return sys.stdout, None
     f = sys.stdout
     if f.isatty():
         try:
@@ -385,8 +385,8 @@ class Output:
             if is_str(self.vals[-1]) or is_str(r):
                 self.vals[-1] = str(self.vals[-1]) + str(r)
             else:
-                self.vals[-1] += r    
-            self.headers[-1] = self.headers[-1].replace("0.", ".", 1) 
+                self.vals[-1] += r
+            self.headers[-1] = self.headers[-1].replace("0.", ".", 1)
         else:
             self.headers.append(name)
             self.vals.append(r)
@@ -441,7 +441,7 @@ class Output:
     def flush(self):
         if (self.num_output % HEADER_INTERVAL) == 0:
             self.print_header()
-            self.over = 0 
+            self.over = 0
         out = ""
         for j, h in zip(self.vals, self.headers):
             fieldlen = self.fieldlen(h)
@@ -535,7 +535,7 @@ def supports_group(evl, nl):
         boxes[box].append(j)
         bnames[box].append(n)
     for box in boxes:
-        # some events have too complicated counter constraints for 
+        # some events have too complicated counter constraints for
         # this pear brain scheduler to decide if groups work or not. Just do
         # not do groups for them.
         for n in bnames[box]:
@@ -735,7 +735,7 @@ def measure(evl, argl, equations, evnames):
                     r = "#NA"
             res[socket].append(r)
             p = m.group(3)
-	    if p.find("/,") >= 0:
+            if p.find("/,") >= 0:
                 p = re.sub(r"/,.*", "", p) + "/"
             if p.startswith(","):
                 p = p[1:]
@@ -925,7 +925,7 @@ def expand_events():
         maybe_expand_ev(events, j, max_node)
     for j in extra_derived:
         derived[j] = extra_derived[j]
-    
+
 def get_counter(c):
     m = re.match(r"(\d+)-(\d+)", c)
     if m:
@@ -1007,7 +1007,7 @@ expand_events()
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='''
-Intel Xeon uncore performance counter events frontend for perf. The uncore is the 
+Intel Xeon uncore performance counter events frontend for perf. The uncore is the
 part of the CPU that is not core. This tool allows to monitor a variety of
 metrics in the uncore, including memory, QPI, PCI-E bandwidth, cache hit
 rates, power management statistics and various others.''')
@@ -1046,7 +1046,7 @@ global to the specified socket(s) unlike normal perf stat.""")
                    type=int)
     p.add_argument('--cpu', '-C',
                    help='''
-Measure socket associated with CPU, 
+Measure socket associated with CPU,
 or use that CPU for the (very few) events that use core events''', type=int)
     p.add_argument('--fieldlen', default=6, help='Set output field length',
                    type=int)
@@ -1060,7 +1060,7 @@ or use that CPU for the (very few) events that use core events''', type=int)
     p.add_argument('--resolve', action='store_true',
                    help='Only print resolved event names. Do not run perf.')
     p.add_argument("--no-pager", action='store_true',
-		   help='Do not use a pager')
+                   help='Do not use a pager')
     p.add_argument('--debug', help=argparse.SUPPRESS)
     args = p.parse_args()
 
@@ -1108,7 +1108,7 @@ or use that CPU for the (very few) events that use core events''', type=int)
                 print evname,"\t",ev
             sys.exit(0)
         try:
-            measure(evl, argl + rest, equations, evnames)       
+            measure(evl, argl + rest, equations, evnames)
         except OSError as e:
             print "perf failed to run:", e
             sys.exit(1)

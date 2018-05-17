@@ -467,7 +467,7 @@ def add_filter_event(e):
     if "/" in e and not e.startswith("cpu"):
         return e
     if ":" in e:
-	s = ""
+        s = ""
     else:
         s = separator(e)
     if not e.endswith(s + ring_filter):
@@ -723,15 +723,15 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
 
 def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
     if runner.summary:
-	runner.summary.add(res, rev, valstats, env);
+        runner.summary.add(res, rev, valstats, env);
     print_keys(runner, res, rev, valstats, out, interval, env)
 
 def print_summary(runner, out):
     if not args.summary:
         return
     print_keys(runner, runner.summary.res, runner.summary.rev,
-	       runner.summary.valstats, out,
-	       float('nan'), runner.summary.env)
+               runner.summary.valstats, out,
+               float('nan'), runner.summary.env)
 
 def is_outgroup(x):
     return set(x) - outgroup_events == set()
@@ -859,7 +859,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                 if interval != prev_interval:
                     if res:
                         set_interval(env, interval - prev_interval)
-			print_and_sum_keys(runner, res, rev, valstats, out, prev_interval, env)
+                        print_and_sum_keys(runner, res, rev, valstats, out, prev_interval, env)
                         res = defaultdict(list)
                         rev = defaultdict(list)
                         valstats = defaultdict(list)
@@ -1072,8 +1072,8 @@ def update_res_map(evnum, objl, base):
     for obj in objl:
         for lev in obj.evlevels:
             r = raw_event(lev[0])
-	    # can happen during splitting
-	    # the update of the other level will fix it
+            # can happen during splitting
+            # the update of the other level will fix it
             if r in evnum:
                 obj.res_map[lev] = base + evnum.index(r)
 
@@ -1179,7 +1179,7 @@ def node_filter(obj, test):
 
         for j in args.nodes.split(","):
             i = 0
-	    if j[0] == '^' or j[0] == '-':
+            if j[0] == '^' or j[0] == '-':
                 if match(j[1:]):
                     return False
                 continue
@@ -1256,43 +1256,43 @@ def node_unit(obj):
 class Summary:
     """Accumulate counts for summary."""
     def __init__(self):
-	self.res = defaultdict(list)
-	self.rev = defaultdict(list)
-	self.env = Counter()
-	self.valstats = defaultdict(list)
+        self.res = defaultdict(list)
+        self.rev = defaultdict(list)
+        self.env = Counter()
+        self.valstats = defaultdict(list)
 
     def add(self, res, rev, valstats, env):
-	# assume perf always outputs the same
-	if self.rev:
-	    assert rev == self.rev
-	for j in res.keys():
+        # assume perf always outputs the same
+        if self.rev:
+            assert rev == self.rev
+        for j in res.keys():
             if len(self.res[j]) == 0:
                 self.res[j] = res[j]
             else:
-	        self.res[j] = [a+b for a, b in zip(self.res[j], res[j])]
-	self.rev = rev
-	for j in valstats.keys():
-	    self.valstats[j] = self.valstats[j] + valstats[j]
-	for j in env.keys():
-	    self.env[j] += env[j]
+                self.res[j] = [a+b for a, b in zip(self.res[j], res[j])]
+        self.rev = rev
+        for j in valstats.keys():
+            self.valstats[j] = self.valstats[j] + valstats[j]
+        for j in env.keys():
+            self.env[j] += env[j]
 
 def parse_metric_group(l, mg):
     if l is None:
-	return [], []
+        return [], []
     add, rem = [], []
     for n in l.split(","):
-	if n[0:1] == '-':
-	    if n[1:] not in mg:
-		print "metric group", n[1:], "not found"
-		continue
-	    rem += mg[n[1:]]
-	    continue
-	if n[0:1] == '+':
-	    n = n[1:]
-	if n not in mg:
-	    print "metric group", n, "not found"
-	    continue
-	add += [x.name for x in mg[n]]
+        if n[0:1] == '-':
+            if n[1:] not in mg:
+                print "metric group", n[1:], "not found"
+                continue
+            rem += mg[n[1:]]
+            continue
+        if n[0:1] == '+':
+            n = n[1:]
+        if n not in mg:
+            print "metric group", n, "not found"
+            continue
+        add += [x.name for x in mg[n]]
     return add, rem
 
 class Runner:
@@ -1313,9 +1313,9 @@ class Runner:
             self.valcsv = csv.writer(args.valcsv)
             self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value",
                                   "Perf-event", "Index", "STDEV", "MULTI"))
-	self.summary = None
-	if args.summary:
-	    self.summary = Summary()
+        self.summary = None
+        if args.summary:
+            self.summary = Summary()
 
     def do_run(self, obj):
         obj.res = None
@@ -1327,7 +1327,7 @@ class Runner:
 
     # remove unwanted nodes after their parent relation ship has been set up
     def filter_nodes(self):
-	add_met, remove_met = parse_metric_group(args.metric_group, self.metricgroups)
+        add_met, remove_met = parse_metric_group(args.metric_group, self.metricgroups)
 
         def want_node(obj):
             if args.reduced and has(obj, 'server') and not obj.server:
@@ -1335,9 +1335,9 @@ class Runner:
             if not obj.metric:
                 return node_filter(obj, lambda: obj.level <= self.max_level)
             else:
-		return node_filter(obj,
-			lambda: (args.metrics or obj.name in add_met)
-				 and not obj.name in remove_met)
+                return node_filter(obj,
+                        lambda: (args.metrics or obj.name in add_met)
+                                 and not obj.name in remove_met)
 
         self.olist = filter(want_node, self.olist)
 
@@ -1609,10 +1609,10 @@ class Runner:
                     self.sample_obj.add(obj)
 
     def list_metric_groups(self):
-	print "MetricGroups: ",
-	for j in self.metricgroups.keys():
-	    print j,
-	print
+        print "MetricGroups: ",
+        for j in self.metricgroups.keys():
+            print j,
+        print
 
 def remove_pp(s):
     if s.endswith(":pp"):
@@ -1882,7 +1882,7 @@ def measure_and_sample(count):
         else:
             ret = execute(runner, out, rest)
     except KeyboardInterrupt:
-	print_summary(runner, out)
+        print_summary(runner, out)
         sys.exit(1)
     print_summary(runner, out)
     runner.stat.compute_errors()
