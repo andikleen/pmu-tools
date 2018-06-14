@@ -309,7 +309,8 @@ g.add_argument('--list-metric-groups', help='List metric groups', action='store_
 g = p.add_argument_group('Workarounds')
 g.add_argument('--no-group', help='Dont use groups', action='store_true')
 g.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.', action='store_true')
-g.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true')
+g.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true', default=True)
+g.add_argument('--handle-errata', help='Disable events with errata', action='store_true')
 
 g = p.add_argument_group('Output')
 g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
@@ -390,6 +391,9 @@ if args.graph:
 
 if args.sample_repeat:
     args.run_sample = True
+
+if args.handle_errata:
+    args.ignore_errata = False
 
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
