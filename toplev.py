@@ -361,6 +361,8 @@ if args.cpu:
     rest = ["--cpu", args.cpu] + rest
 if args.pid:
     rest = ["--pid", args.pid] + rest
+if args.csv and len(args.csv) != 1:
+    sys.exit("--csv/-x argument can be only a single character")
 
 if args.all:
     args.tsx = True
