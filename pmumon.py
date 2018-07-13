@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # standalone simple pmu configuration tool
 # allows to count an even without using perf
 # will conflict with any parallel perf (and other profiler)
