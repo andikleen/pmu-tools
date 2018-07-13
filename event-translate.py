@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # translate raw events to names
 # event-translate rXXX ...
 import re

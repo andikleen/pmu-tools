@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # plot already normalized data
 # first column is time stamp
 import csv

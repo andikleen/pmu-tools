@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # library and tool to access Intel MSRs (model specific registers)
 # Author: Andi Kleen
 import glob

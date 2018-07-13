@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # sanity check an event
 # percent between 0 and 100% 
 # nothing negative
