@@ -136,7 +136,7 @@ class PerfFeatures:
     def __init__(self):
         self.logfd_supported = works(perf + " stat --log-fd 3 3>/dev/null true")
         if not self.logfd_supported:
-            sys.exit("perf binary is too old. please upgrade")
+            sys.exit("perf binary is too old or perf is disabled in /proc/sys/kernel/perf_event_paranoid")
         self.supports_power = works(perf + " list  | grep -q power/")
         # problem in 4.12. fixed in v4.14, suppresses duplicate events
         self.supports_nomerge = works(perf + " stat --no-merge true")
