@@ -24,6 +24,10 @@
 #include <stdlib.h>
 #include "jevents.h"
 
+#if defined(__ICC) || defined(__INTEL_COMPILER)
+#include "immintrin.h"
+#endif
+
 /**
  * DOC: Ring 3 counting for CPU performance counters
  *
@@ -128,7 +132,11 @@ unsigned long long rdpmc_read(struct rdpmc_ctx *ctx)
 		offset = buf->offset;
 		if (index == 0) /* rdpmc not allowed */
 			return offset;
+#if defined(__ICC) || defined(__INTEL_COMPILER)
+		val = _rdpmc(index - 1);
+#else
 		val = __builtin_ia32_rdpmc(index - 1);
+#endif
 		rmb();
 	} while (buf->lock != seq);
 	return val + offset;
