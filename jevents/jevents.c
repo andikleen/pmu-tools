@@ -273,7 +273,7 @@ int json_events(const char *fn,
 			EXPECT(val->type == JSMN_STRING, tok + j + 1,
 			       "Expected string value");
 
-			nz = !json_streq(map, val, "0");
+			nz = !json_streq(map, val, "0") && !json_streq(map, val, "0x00");
 			if (match_field(map, field, nz, &event, val)) {
 				/* ok */
 			} else if (json_streq(map, field, "EventCode")) {
