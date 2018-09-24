@@ -29,6 +29,7 @@
 */
 
 #define _GNU_SOURCE 1
+#include "jevents.h"
 #include <linux/perf_event.h>
 #include <stdio.h>
 #include <string.h>
@@ -240,7 +241,7 @@ int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
  * @func: Callback function to call for each event.
  * @data: data pointer to pass to func.
  */
-int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc, char *pmu),
+int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc),
 		     void *data)
 {
 	int ret = 0;
@@ -276,7 +277,7 @@ int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc
 
 		char *buf;
 		asprintf(&buf, "%s/%s/", pmu, event);
-		ret = func(data, buf, val2, "", pmu);
+		ret = func(data, buf, val2, "");
 		free(val2);
 		free(buf);
 		if (ret)
