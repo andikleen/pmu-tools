@@ -1313,6 +1313,7 @@ class Runner:
         self.missed = 0
         self.sample_obj = set()
         self.stat = ComputeStat(args.quiet)
+        self.cycles = None
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         if args.valcsv:
@@ -1534,10 +1535,23 @@ class Runner:
                 else:
                     obj.sibling.thresh = True
 
+    def _update_cycles(self, cyc):
+        self.cycles = cyc  # FIXME: combine if already exists
+
     def compute(self, res, rev, valstats, env, match, stat):
+        """
+        res = raw values
+        rev = counter details
+        valstats: stddev + multiplex ratio FIXME: why valstats (stddev) empty?
+        """
         if len(res) == 0:
             print "Nothing measured?"
             return
+
+        try:
+            self._update_cycles(res[rev.index('cycles')])  # FIXME: bad hack. use metric 'CLKS'?
+        except ValueError:
+            pass
 
         # step 1: compute
         for obj in self.olist:
@@ -1594,6 +1608,13 @@ class Runner:
         # step 3: print
         for i, obj in enumerate(olist):
             val = obj.val
+            # compute absolute value (hack to avoid rewrite of *ratios.py)
+            absval = ""
+            if has(obj, 'domain') and self.cycles is not None:
+                if obj.domain in ("Clocks", "Clocks_Estimated"):
+                    absval = int(obj.val * self.cycles)
+                elif obj.domain in ("Stalls", "Slots"):
+                    absval = int(obj.val * self.cycles)  # FIXME: is this a good idea?
             desc = obj_desc(obj, olist[i + 1:])
             if obj.metric:
                 out.metric(obj.area if has(obj, 'area') else None,
@@ -1604,7 +1625,10 @@ class Runner:
                         obj.valstat)
             elif check_ratio(val):
                 out.ratio(obj.area if has(obj, 'area') else None,
-                        full_name(obj), val, timestamp,
+                        full_name(obj),
+                        val,
+                        absval,
+                        timestamp,
                         node_unit(obj),
                         desc,
                         title,

@@ -38,21 +38,21 @@ class Output:
     def set_cpus(self, cpus):
         pass
 
-    def item(self, area, name, val, timestamp, remark, desc, title, sample, valstat, bn):
+    def item(self, area, name, rval, absval, timestamp, remark, desc, title, sample, valstat, bn):
         if desc in self.printed_descs:
             desc = ""
         else:
             self.printed_descs.add(desc)
         if not area:
             area = ""
-        self.show(timestamp, title, area, name, val, remark, desc, sample, valstat, bn)
+        self.show(timestamp, title, area, name, rval, absval, remark, desc, sample, valstat, bn)
 
-    def ratio(self, area, name, l, timestamp, remark, desc, title, sample, valstat, bn):
-        self.item(area, name, "%13.2f" % (100.0 * l), timestamp, "%" + remark, desc, title,
+    def ratio(self, area, name, l, absval, timestamp, unit, desc, title, sample, valstat, bn):
+        self.item(area, name, "%13.2f" % (100.0 * l), absval, timestamp, "%" + unit, desc, title,
                   sample, valstat, bn)
 
     def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
-        self.item(area, name, "%13.2f" % l, timestamp, unit, desc, title,
+        self.item(area, name, "%13.2f" % l, None, timestamp, unit, desc, title,
                   None, valstat, "")
 
     def flush(self):
@@ -103,7 +103,7 @@ class OutputHuman(Output):
     # bn        marker for bottleneck
     # Example:
     # C0    BE      Backend_Bound:                                62.00 %
-    def show(self, timestamp, title, area, hdr, val, remark, desc, sample, valstat, bn):
+    def show(self, timestamp, title, area, hdr, val, absval, remark, desc, sample, valstat, bn):
         self.print_timestamp(timestamp)
         write = self.logf.write
         if title:
@@ -113,8 +113,11 @@ class OutputHuman(Output):
         val = "%s %-*s" % (val, self.unitlen + 1, remark)
         if vs:
             val += " " + vs
+        if absval:
+            val += " cnt: {:,}".format(absval)
         if bn:
             val += " " + bn
+
         write(val + "\n")
         self.print_desc(desc, sample)
 
@@ -123,7 +126,7 @@ class OutputHuman(Output):
             val = locale.format("%13u", round(l), grouping=True)
         else:
             val = "%13.2f" % (l)
-        self.item(area, name, val, timestamp, unit, desc, title,
+        self.item(area, name, val, None, timestamp, unit, desc, title,
                   None, valstat, "")
 
 def convert_ts(ts):
@@ -143,7 +146,7 @@ class OutputColumns(OutputHuman):
     def set_cpus(self, cpus):
         self.cpunames = cpus
 
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, bn):
+    def show(self, timestamp, title, area, hdr, s, absval, remark, desc, sample, valstat, bn):
         if self.args.single_thread:
             OutputHuman.show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, bn)
             return
@@ -209,7 +212,7 @@ class OutputColumnsCSV(OutputColumns):
         self.writer.writerow(["# " + version + " on " + cpu.name])
 
     # XXX implement bn
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, bn):
+    def show(self, timestamp, title, area, hdr, s, absval, remark, desc, sample, valstat, bn):
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
@@ -261,7 +264,7 @@ class OutputCSV(Output):
         self.args = args
         self.writer.writerow(["# " + version + " on " + cpu.name])
 
-    def show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, bn):
+    def show(self, timestamp, title, area, hdr, s, absval, remark, desc, sample, valstat, bn):
         if self.args.no_desc:
             desc = ""
         desc = re.sub(r"\s+", " ", desc)
