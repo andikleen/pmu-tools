@@ -12,10 +12,21 @@
 #
 # Output toplev results in various formats
 
+# FIXME: improve val/stdval/abs/stdabs interface and offer to suppress it
+
 import locale
 import csv
 import re
 from tl_stat import format_valstat, combine_valstat, isnan
+from tl_uval import UVal
+
+
+def unpack_uval(x):
+    if isinstance(x, UVal):
+        return x.value, x.stddev
+    else:
+        return x, None
+
 
 class Output:
     """Abstract base class for Output classes."""
@@ -38,21 +49,24 @@ class Output:
     def set_cpus(self, cpus):
         pass
 
-    def item(self, area, name, rval, absval, timestamp, remark, desc, title, sample, valstat, bn):
+    def item(self, area, name, rval, rstd, absval, absstd, timestamp, remark, desc, title, sample, valstat, bn):
         if desc in self.printed_descs:
             desc = ""
         else:
             self.printed_descs.add(desc)
         if not area:
             area = ""
-        self.show(timestamp, title, area, name, rval, absval, remark, desc, sample, valstat, bn)
+        self.show(timestamp, title, area, name, rval, rstd, absval, absstd, remark, desc, sample, valstat, bn)
 
-    def ratio(self, area, name, l, absval, timestamp, unit, desc, title, sample, valstat, bn):
-        self.item(area, name, "%13.2f" % (100.0 * l), absval, timestamp, "%" + unit, desc, title,
+    def ratio(self, area, name, ratval, absval, timestamp, unit, desc, title, sample, valstat, bn):
+        l, ld = unpack_uval(ratval)
+        u, ud = unpack_uval(absval)
+        self.item(area, name, "%13.2f" % (100.0 * l), ld, u, ud, timestamp, "%" + unit, desc, title,
                   sample, valstat, bn)
 
-    def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
-        self.item(area, name, "%13.2f" % l, None, timestamp, unit, desc, title,
+    def metric(self, area, name, m, timestamp, desc, title, unit, valstat):
+        l, ld = unpack_uval(m)
+        self.item(area, name, "%13.2f" % l, ld, None, None, timestamp, unit, desc, title,
                   None, valstat, "")
 
     def flush(self):
@@ -103,30 +117,34 @@ class OutputHuman(Output):
     # bn        marker for bottleneck
     # Example:
     # C0    BE      Backend_Bound:                                62.00 %
-    def show(self, timestamp, title, area, hdr, val, absval, remark, desc, sample, valstat, bn):
+    def show(self, timestamp, title, area, hdr, val, stdval, absval, stdabs, remark, desc, sample, valstat, bn):
         self.print_timestamp(timestamp)
         write = self.logf.write
         if title:
             write("%-*s" % (self.titlelen, title))
         vs = format_valstat(valstat)
         self.print_header(area, hdr)
-        val = "%s %-*s" % (val, self.unitlen + 1, remark)
+        strstdval = " +- {:.2f}".format(stdval) if stdval is not None else ""
+        val = "%s %s %-*s" % (val, strstdval, self.unitlen + 1, remark)
         if vs:
             val += " " + vs
-        if absval:
+        if absval is not None:
             val += " cnt: {:,}".format(absval)
+        if stdabs is not None:
+            val += " +- {:,.2f}".format(stdabs)
         if bn:
             val += " " + bn
 
         write(val + "\n")
         self.print_desc(desc, sample)
 
-    def metric(self, area, name, l, timestamp, desc, title, unit, valstat):
+    def metric(self, area, name, m, timestamp, desc, title, unit, valstat):
+        l, ld = unpack_uval(m)
         if l > 1000:
             val = locale.format("%13u", round(l), grouping=True)
         else:
             val = "%13.2f" % (l)
-        self.item(area, name, val, None, timestamp, unit, desc, title,
+        self.item(area, name, val, ld, None, None, timestamp, unit, desc, title,
                   None, valstat, "")
 
 def convert_ts(ts):
@@ -146,16 +164,16 @@ class OutputColumns(OutputHuman):
     def set_cpus(self, cpus):
         self.cpunames = cpus
 
-    def show(self, timestamp, title, area, hdr, s, absval, remark, desc, sample, valstat, bn):
+    def show(self, timestamp, title, area, hdr, val, stdval, absval, stdabs, remark, desc, sample, valstat, bn):
         if self.args.single_thread:
-            OutputHuman.show(self, timestamp, title, area, hdr, s, remark, desc, sample, valstat, bn)
+            OutputHuman.show(self, timestamp, title, area, hdr, val, stdval, absval, stdabs, remark, desc, sample, valstat, bn)
             return
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
             self.nodes[key] = dict()
         assert title not in self.nodes[key]
-        self.nodes[key][title] = (s, remark, desc, sample, valstat, bn)
+        self.nodes[key][title] = (val, remark, desc, sample, valstat, bn)
 
     def flush(self):
         VALCOL_LEN = 14
@@ -212,13 +230,13 @@ class OutputColumnsCSV(OutputColumns):
         self.writer.writerow(["# " + version + " on " + cpu.name])
 
     # XXX implement bn
-    def show(self, timestamp, title, area, hdr, s, absval, remark, desc, sample, valstat, bn):
+    def show(self, timestamp, title, area, hdr, val, stdval, absval, stdabs, remark, desc, sample, valstat, bn):
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
             self.nodes[key] = dict()
         assert title not in self.nodes[key]
-        self.nodes[key][title] = (s, remark, desc, sample, valstat)
+        self.nodes[key][title] = (val, remark, desc, sample, valstat)  # FIXME: use stddev and absval
 
     def flush(self):
         cpunames = sorted(self.cpunames)
@@ -264,7 +282,7 @@ class OutputCSV(Output):
         self.args = args
         self.writer.writerow(["# " + version + " on " + cpu.name])
 
-    def show(self, timestamp, title, area, hdr, s, absval, remark, desc, sample, valstat, bn):
+    def show(self, timestamp, title, area, hdr, val, stdval, absval, stdabs, remark, desc, sample, valstat, bn):
         if self.args.no_desc:
             desc = ""
         desc = re.sub(r"\s+", " ", desc)
@@ -275,4 +293,4 @@ class OutputCSV(Output):
             l.append(title)
         stddev = valstat.stddev if (valstat and valstat.stddev) else ""
         multiplex = valstat.multiplex if (valstat and valstat.multiplex == valstat.multiplex) else ""
-        self.writer.writerow(l + [hdr, s.strip(), remark, desc, sample, stddev, multiplex, bn])
+        self.writer.writerow(l + [hdr, val.strip(), remark, desc, sample, stddev, multiplex, bn])

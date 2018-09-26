@@ -26,6 +26,7 @@ from tl_stat import combine_valstat, ComputeStat, ValStat
 from tl_cpu import CPU
 import tl_output
 import ocperf
+from tl_uval import UVal
 
 known_cpus = (
     ("snb", (42, )),
@@ -959,9 +960,12 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
 def ev_append(ev, level, obj):
     if isinstance(ev, types.LambdaType):
         return ev(lambda ev, level: ev_append(ev, level, obj), level)
+    # --
+    assert isinstance(ev, str)
+    # --
     if ev in nonperf_events:
         return 99
-    if not (ev, level, obj.name) in obj.evlevels:
+    if not (ev, level, obj.name) in obj.evlevels:  # evlevels is created in collect()
         obj.evlevels.append((ev, level, obj.name))
     if has(obj, 'nogroup') and obj.nogroup:
         outgroup_events.add(ev.lower())
@@ -1021,10 +1025,16 @@ def compare_event(aname, bname):
     return map_fields(a, fields) == map_fields(b, fields)
 
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
+    """get measurement result"""
+
+    def make_uval(v):
+        s = 0.05*v  # FIXME: read stddev from st
+        return UVal(name=ev, value=v, stddev=s)
+
     if ev in env:
-        return env[ev]
+        return UVal(name=ev, val=env[ev], stddev=0)
     if ev == "mux":
-        return combine_valstat(st).multiplex
+        return combine_valstat(st).multiplex  # TODO: UVal
     #
     # when the model passed in a lambda run the function for each logical cpu
     # (by resolving its EVs to only that CPU)
@@ -1034,9 +1044,10 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     # otherwise we always sum up.
     #
     if isinstance(ev, types.LambdaType):
-        return sum([ev(lambda ev, level:
-                       lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
-                       for off in range(cpu.threads)])
+        return UVal("null", 0)
+        #return sum([ev(lambda ev, level:
+        #               lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
+        #               for off in range(cpu.threads)])  # TODO: UVal
 
     index = obj.res_map[(ev, level, obj.name)]
     referenced.add(index)
@@ -1051,14 +1062,14 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
 
     if isinstance(res[index], types.TupleType):
         if cpuoff == -1:
-            return sum(res[index])
+            return make_uval(sum(res[index]))  # FIXME: UVal sum
         else:
             try:
-                return res[index][cpuoff]
+                return make_uval(res[index][cpuoff])
             except IndexError:
                 print >>sys.stderr, "warning: Partial CPU thread data from perf"
-                return 0
-    return res[index]
+                return UVal("null", 0)
+    return make_uval(res[index])
 
 def add_key(k, x, y):
     k[x] = y
@@ -1536,7 +1547,11 @@ class Runner:
                     obj.sibling.thresh = True
 
     def _update_cycles(self, cyc):
-        self.cycles = cyc  # FIXME: combine if already exists
+        assert isinstance(cyc, UVal)
+        if self.cycles is not None:
+            self.cycles.update(cyc)
+        else:
+            self.cycles = cyc
 
     def compute(self, res, rev, valstats, env, match, stat):
         """
@@ -1549,7 +1564,7 @@ class Runner:
             return
 
         try:
-            self._update_cycles(res[rev.index('cycles')])  # FIXME: bad hack. use metric 'CLKS'?
+            self._update_cycles(UVal('cycles', res[rev.index('cycles')], stddev=0.02))  # FIXME: stddev of clks
         except ValueError:
             pass
 
@@ -1609,12 +1624,12 @@ class Runner:
         for i, obj in enumerate(olist):
             val = obj.val
             # compute absolute value (hack to avoid rewrite of *ratios.py)
-            absval = ""
+            absval = None
             if has(obj, 'domain') and self.cycles is not None:
                 if obj.domain in ("Clocks", "Clocks_Estimated"):
-                    absval = int(obj.val * self.cycles)
+                    absval = obj.val * self.cycles
                 elif obj.domain in ("Stalls", "Slots"):
-                    absval = int(obj.val * self.cycles)  # FIXME: is this a good idea?
+                    absval = obj.val * self.cycles  # FIXME: is stalls==slots==clocks?
             desc = obj_desc(obj, olist[i + 1:])
             if obj.metric:
                 out.metric(obj.area if has(obj, 'area') else None,
