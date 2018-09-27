@@ -73,7 +73,7 @@ static int read_file(char **val, const char *fmt, ...)
 	return ret;
 }
 
-#define BITS(x) ((1U << (x)) - 1)
+#define BITS(x) ((x) == 64 ? -1UL : (1UL << (x)) - 1)
 
 static bool try_parse(char *format, char *fmt, __u64 val, __u64 *config)
 {
