@@ -94,7 +94,9 @@ int main(int ac, char **av)
 	while ((opt = getopt_long(ac, av, "ae:p:", opts, NULL)) != -1) {
 		switch (opt) {
 		case 'e':
-			events = optarg;
+			if (parse_events(el, optarg) < 0)
+				exit(1);
+			events = NULL;
 			break;
 		case 'a':
 			measure_all = true;
@@ -103,7 +105,7 @@ int main(int ac, char **av)
 			usage();
 		}
 	}
-	if (parse_events(el, events) < 0)
+	if (events && parse_events(el, events) < 0)
 		exit(1);
 	pipe(child_pipe);
 	signal(SIGCHLD, SIG_IGN);
