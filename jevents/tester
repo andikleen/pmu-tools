@@ -28,6 +28,8 @@ $V jestat true
 $V jestat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
 $V jestat -a sleep 1
 
+# test all events
+$V jestat $(listevents  | awk ' { print "-e " $1 } ' ) -a sleep 5
 
 $V showevent $E
 
