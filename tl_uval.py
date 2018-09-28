@@ -31,10 +31,36 @@ class UVal:
         self.stddev = stddev
         self.samples = samples
         self.computed = computed
-        self.used = False
+        self.is_ratio = False
+        self.multiplex = None  # TODO: make use of it to weigh merges?
 
     def __repr__(self):
         return "{} [{} +- {}]*{}".format(self.name, self.value, self.stddev, self.samples)
+
+    def format_value(self):
+        if self.value is None: return ""
+        if self.is_ratio:
+            return "{:>13.2f}".format(self.value * 100.)
+        else:
+            v = int(self.value) if self.value > 10000 else self.value
+            return "{:,}".format(v)
+
+    def format_uncertainty(self):
+        """string representation of measurement uncertainty"""
+        def isnan(x):
+            return x != x
+
+        vs = ""
+        if self.stddev is not None:
+            if self.is_ratio:
+                vs += "{:.2f}".format(self.stddev * 100.)
+            else:
+                vs += "%6.2f" % self.stddev
+        if self.multiplex and not isnan(self.multiplex):
+            vs += "[%6.2f%%]" % self.multiplex
+        if vs:
+            vs = "%8s" % vs
+        return vs
 
     def set_desc(self, name, comment):
         """set name and description in one go"""
@@ -119,7 +145,6 @@ class UVal:
 
     def _calc(ev, op, lhs, rhs, cov=0.):
         """Compute the result of 'lhs [op] rhs' and propagate standard deviations"""
-        lhs.used = rhs.used = True
         A = lhs.value
         B = rhs.value
         a = lhs.stddev

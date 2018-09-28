@@ -18,6 +18,8 @@
 # Handles a variety of perf and kernel versions, but older ones have various
 # limitations.
 
+# TODO: remove combine_valstat
+
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
 import exceptions, argparse, time, types, fnmatch, csv, copy
 from collections import defaultdict, Counter
@@ -1027,14 +1029,14 @@ def compare_event(aname, bname):
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     """get measurement result"""
 
-    def make_uval(v):
-        s = 0.05*v  # FIXME: read stddev from st
-        return UVal(name=ev, value=v, stddev=s)
+    def make_uval(v, sd=0.0):
+        # print "{}: {} +/- {}".format(ev, v, sd)
+        return UVal(name=ev, value=v, stddev=sd)
 
     if ev in env:
         return UVal(name=ev, val=env[ev], stddev=0)
     if ev == "mux":
-        return combine_valstat(st).multiplex  # TODO: UVal
+        return combine_valstat(st).multiplex  # FIXME: refactor, avoid deprecated valstat.
     #
     # when the model passed in a lambda run the function for each logical cpu
     # (by resolving its EVs to only that CPU)
@@ -1065,11 +1067,11 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
             return make_uval(sum(res[index]))  # FIXME: UVal sum
         else:
             try:
-                return make_uval(res[index][cpuoff])
+                return make_uval(res[index][cpuoff])  # TODO: stddev
             except IndexError:
                 print >>sys.stderr, "warning: Partial CPU thread data from perf"
                 return UVal("null", 0)
-    return make_uval(res[index])
+    return make_uval(res[index], sd=st[index].stddev)
 
 def add_key(k, x, y):
     k[x] = y
@@ -1564,7 +1566,8 @@ class Runner:
             return
 
         try:
-            self._update_cycles(UVal('cycles', res[rev.index('cycles')], stddev=0.02))  # FIXME: stddev of clks
+            idx = rev.index('cycles')
+            self._update_cycles(UVal('cycles', res[idx], valstats[idx].stddev))
         except ValueError:
             pass
 
@@ -1579,6 +1582,7 @@ class Runner:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
             if stat:
                 stat.referenced |= ref
+            # FIXME: remove deprecated valstat
             obj.valstat = combine_valstat([valstats[i] for i in ref])
             if not obj.res_map and not all([x in env for x in obj.evnum]):
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
@@ -1620,24 +1624,28 @@ class Runner:
             else:
                 out.set_unit(node_unit(obj))
 
+        def get_uval(ob):
+            u = ob.val if isinstance(ob.val, UVal) else UVal(ob.name, ob.val)
+            u.name = ob.name
+            return u
+
         # step 3: print
         for i, obj in enumerate(olist):
-            val = obj.val
+            val = get_uval(obj)
             # compute absolute value (hack to avoid rewrite of *ratios.py)
             absval = None
             if has(obj, 'domain') and self.cycles is not None:
                 if obj.domain in ("Clocks", "Clocks_Estimated"):
-                    absval = obj.val * self.cycles
+                    absval = val * self.cycles
                 elif obj.domain in ("Stalls", "Slots"):
-                    absval = obj.val * self.cycles  # FIXME: is stalls==slots==clocks?
+                    absval = val * self.cycles  # FIXME: is stalls==slots==clocks?
             desc = obj_desc(obj, olist[i + 1:])
             if obj.metric:
                 out.metric(obj.area if has(obj, 'area') else None,
                         obj.name, val, timestamp,
                         desc,
                         title,
-                        metric_unit(obj),
-                        obj.valstat)
+                        metric_unit(obj))
             elif check_ratio(val):
                 out.ratio(obj.area if has(obj, 'area') else None,
                         full_name(obj),
@@ -1648,7 +1656,6 @@ class Runner:
                         desc,
                         title,
                         sample_desc(obj.sample) if has(obj, 'sample') else None,
-                        obj.valstat,
                         "<==" if obj == bn else "")
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
