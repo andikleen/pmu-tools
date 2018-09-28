@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <sys/fcntl.h>
 #include <glob.h>
+#include <assert.h>
 
 #ifndef PERF_ATTR_SIZE_VER1
 #define PERF_ATTR_SIZE_VER1	72
@@ -205,13 +206,14 @@ static int try_pmu_type(char **type, char *fmt, char *pmu)
 int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 {
 	char pmu[30], config[200];
-	int qual_off;
+	int qual_off = -1;
 
 	memset(attr, 0, sizeof(struct perf_event_attr));
 	attr->size = PERF_ATTR_SIZE_VER0;
 	attr->type = PERF_TYPE_RAW;
 
 	if (sscanf(str, "r%llx%n", &attr->config, &qual_off) == 1) {
+	    assert(qual_off != -1);
 		if (str[qual_off] == 0)
 			return 0;
 		if (str[qual_off] == ':' && read_qual(str + qual_off, attr) == 0)
@@ -231,7 +233,7 @@ int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 	free(type);
 	if (parse_terms(pmu, config, attr, 0) < 0)
 		return -1;
-	if (read_qual(str + qual_off, attr) < 0)
+	if (qual_off != -1 && read_qual(str + qual_off, attr) < 0)
 		return -1;
 	return 0;
 }
