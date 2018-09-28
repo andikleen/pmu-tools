@@ -131,8 +131,8 @@ static void free_events(void)
 int read_events(char *fn)
 {
 	if (eventlist_init) {
-	    // treat subsequent read_events calls after the first as replacing the
-	    // event list
+		// treat subsequent read_events calls after the first as replacing the
+		// event list
 		free_events();
 	}
 	eventlist_init = true;
