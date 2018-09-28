@@ -215,7 +215,7 @@ int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 	attr->type = PERF_TYPE_RAW;
 
 	if (sscanf(str, "r%llx%n", &attr->config, &qual_off) == 1) {
-	    assert(qual_off != -1);
+		assert(qual_off != -1);
 		if (str[qual_off] == 0)
 			return 0;
 		if (str[qual_off] == ':' && read_qual(str + qual_off, attr, str) == 0)
