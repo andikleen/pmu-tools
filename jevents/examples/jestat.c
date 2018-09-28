@@ -105,6 +105,10 @@ int main(int ac, char **av)
 			usage();
 		}
 	}
+	if (av[optind] == NULL && !measure_all) {
+		fprintf(stderr, "Specify command or -a\n");
+		exit(1);
+	}
 	if (events && parse_events(el, events) < 0)
 		exit(1);
 	pipe(child_pipe);
@@ -116,6 +120,10 @@ int main(int ac, char **av)
 		char buf;
 		/* Wait for events to be set up */
 		read(child_pipe[0], &buf, 1);
+		if (av[optind] == NULL) {
+			pause();
+			_exit(0);
+		}
 		execvp(av[optind], av + optind);
 		write(2, PAIR("Cannot execute program\n"));
 		_exit(1);
