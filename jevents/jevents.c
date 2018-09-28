@@ -125,6 +125,8 @@ static struct map {
 	{ "QPI LL", "qpi" },
 	{ "SBO", "sbox" },
 	{ "IMPH-U", "cbox" },
+	/* FIXME: need to convert event/umask like ocperf for ncu */
+	{ "NCU", "cbox" },
 	{}
 };
 
