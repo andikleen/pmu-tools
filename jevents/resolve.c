@@ -89,7 +89,8 @@ static bool try_parse(char *format, char *fmt, __u64 val, __u64 *config)
 	return true;
 }
 
-static int read_qual(const char *qual, struct perf_event_attr *attr)
+static int read_qual(const char *qual, struct perf_event_attr *attr,
+		const char *str)
 {
 	while (*qual) {
 		switch (*qual) { 
@@ -107,7 +108,7 @@ static int read_qual(const char *qual, struct perf_event_attr *attr)
 			break;
 		/* XXX more */
 		default:
-			fprintf(stderr, "Unknown modifier %c at end\n", *qual);
+			fprintf(stderr, "Unknown modifier %c at end for %s\n", *qual, str);
 			return -1;
 		}
 		qual++;
@@ -155,13 +156,14 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 			    read_file(&alias, "/sys/devices/%s/events/%s", pmu, name) == 0) {
 				if (parse_terms(pmu, alias, attr, 1) < 0) {
 					free(alias);
-					fprintf(stderr, "Cannot parse kernel event alias %s\n", name);
+					fprintf(stderr, "Cannot parse kernel event alias %s for %s\n", name,
+							term);
 					break;
 				}
 				free(alias);
 				continue;
 			}
-			fprintf(stderr, "Cannot parse qualifier %s\n", name);
+			fprintf(stderr, "Cannot parse qualifier %s for %s\n", name, term);
 			break;
 		}
 		bool ok = try_parse(format, "config:%d-%d", val, &attr->config) ||
@@ -171,8 +173,8 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 		bool ok2 = try_parse(format, "config2:%d-%d", val, &attr->config2) ||
 			try_parse(format, "config2:%d", val, &attr->config2);
 		if (!ok && !ok2) {
-			fprintf(stderr, "Cannot parse kernel format %s: %s\n",
-					name, format);
+			fprintf(stderr, "Cannot parse kernel format %s: %s for %s\n",
+					name, format, term);
 			break;
 		}
 		if (ok2)
@@ -216,7 +218,7 @@ int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 	    assert(qual_off != -1);
 		if (str[qual_off] == 0)
 			return 0;
-		if (str[qual_off] == ':' && read_qual(str + qual_off, attr) == 0)
+		if (str[qual_off] == ':' && read_qual(str + qual_off, attr, str) == 0)
 			return 0;
 		return -1;
 	}
@@ -233,7 +235,7 @@ int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 	free(type);
 	if (parse_terms(pmu, config, attr, 0) < 0)
 		return -1;
-	if (qual_off != -1 && read_qual(str + qual_off, attr) < 0)
+	if (qual_off != -1 && read_qual(str + qual_off, attr, str) < 0)
 		return -1;
 	return 0;
 }
