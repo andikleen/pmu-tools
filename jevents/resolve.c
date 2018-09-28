@@ -127,6 +127,18 @@ static bool special_attr(char *name, int val, struct perf_event_attr *attr)
 		attr->freq = 1;
 		return true;
 	}
+	if (!strcmp(name, "config")) {
+		attr->config = val;
+		return true;
+	}
+	if (!strcmp(name, "config1")) {
+		attr->config2 = val;
+		return true;
+	}
+	if (!strcmp(name, "config2")) {
+		attr->config2 = val;
+		return true;
+	}
 	return false;
 }
 
