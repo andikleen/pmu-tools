@@ -10,17 +10,19 @@ all: addr rtest rtest2 rtest3 jestat
 
 ADDR_OBJ := addr.o hist.o cpu.o
 
-addr: ${ADDR_OBJ}
+addr: ${ADDR_OBJ} ../libjevents.a
 
 addr: LDLIBS += -lstdc++ -ldl
 
 rtest2: LDLIBS += -lm
 
-rtest: rtest.o
+rtest: rtest.o ../libjevents.a
 
-rtest2: rtest2.o
+rtest2: rtest2.o ../libjevents.a
 
-rtest3: rtest3.o
+rtest3: rtest3.o ../libjevents.a
+
+jestat: jestat.o ../libjevents.a
 
 clean:
 	rm -f addr ${ADDR_OBJ} jestat jestat.o
