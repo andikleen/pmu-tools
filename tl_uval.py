@@ -19,12 +19,25 @@ log = logging.getLogger(__name__)
 TEMPVAL = 'anon'
 
 
+def combine_uval(ulist):
+    """
+    Combine multiple measurements of the same event into one measurement.
+    Uses weighted average.
+    """
+    combined = None
+    if ulist is not None:
+        combined = ulist[0]
+        for oth in ulist[1:]:
+            combined.update(oth)
+    return combined
+
+
 class UVal:
     """
     Measurement value annotated with uncertainty. Supports binary operators for error propagation.
     """
 
-    def __init__(self, name, value, stddev=0., samples=1, comment="", computed=False):
+    def __init__(self, name, value, stddev=0., samples=1, mux=None, comment="", computed=False):
         self.name = name
         self.comment = comment
         self.value = value
@@ -32,7 +45,7 @@ class UVal:
         self.samples = samples
         self.computed = computed
         self.is_ratio = False
-        self.multiplex = None  # TODO: make use of it to weigh merges?
+        self.multiplex = mux
 
     def __repr__(self):
         return "{} [{} +- {}]*{}".format(self.name, self.value, self.stddev, self.samples)
@@ -53,13 +66,19 @@ class UVal:
         vs = ""
         if self.stddev is not None:
             if self.is_ratio:
-                vs += "{:.2f}".format(self.stddev * 100.)
+                if self.value != 0.:
+                    v = self.stddev / self.value * 100.
+                else:
+                    v = 0.
+                vs += "{:.2f}".format(v)
             else:
-                vs += "%6.2f" % self.stddev
-        if self.multiplex and not isnan(self.multiplex):
-            vs += "[%6.2f%%]" % self.multiplex
-        if vs:
-            vs = "%8s" % vs
+                vs += "{:6,.2f}".format(self.stddev)
+        return vs
+
+    def format_mux(self):
+        vs = ""
+        if self.multiplex and self.multiplex == self.multiplex:
+            vs = "[{:6.2f}%]".format(self.multiplex)
         return vs
 
     def set_desc(self, name, comment):
@@ -79,65 +98,73 @@ class UVal:
         self.samples = n
         self.value = res.value
         self.stddev = res.stddev
+        self.multiplex = min(self.multiplex, other.multiplex)  # FIXME: is min right? use sample weights?
         log.warning("updated {} with {} => {}".format(strbefore, other, self))
 
     ######################
-    # same-type operators
+    # operators
     ######################
 
+    def ensure_uval(binop):
+        """decorator to ensure binary operators are both UVals"""
+        def wrapper(self, v):
+            if isinstance(v, UVal):
+                return binop(self, v)
+            elif isinstance(v, (float, int)):
+                return binop(self, UVal(TEMPVAL, value=v, stddev=0))
+            else:
+                return NotImplemented
+        return wrapper
+
+    @ensure_uval
     def __sub__(self, other):
-        """self - other"""
-        if isinstance(other, UVal):
-            o = other
-        elif isinstance(other, (float, int)):
-            o = UVal(TEMPVAL, value=other, stddev=0)
-        else:
-            return NotImplemented
-        return self._calc(operator.sub, self, o)
+        return self._calc(operator.sub, self, other)
 
+    @ensure_uval
     def __add__(self, other):
-        """self + other"""
-        if isinstance(other, UVal):
-            o = other
-        elif isinstance(other, (float, int)):
-            o = UVal(TEMPVAL, value=other, stddev=0)
-        else:
-            return NotImplemented
-        return self._calc(operator.add, self, o)
+        return self._calc(operator.add, self, other)
 
+    @ensure_uval
     def __mul__(self, other):
-        """self * other"""
-        if isinstance(other, UVal):
-            o = other
-        elif isinstance(other, (float, int)):
-            o = UVal(TEMPVAL, value=other, stddev=0)
-        else:
-            return NotImplemented
-        return self._calc(operator.mul, self, o)
+        return self._calc(operator.mul, self, other)
 
+    @ensure_uval
     def __div__(self, other):
-        """self / other"""
-        if isinstance(other, UVal):
-            o = other
-        elif isinstance(other, (float, int)):
-            o = UVal(TEMPVAL, value=other, stddev=0)
-        else:
-            return NotImplemented
-        return self._calc(operator.div, self, o)
+        return self._calc(operator.div, self, other)
 
-    #######################
-    # mixed-type operators
-    #######################
+    @ensure_uval
+    def __lt__(self, other):
+        return self.value < other.value
 
+    @ensure_uval
+    def __le__(self, other):
+        return self.value <= other.value
+
+    @ensure_uval
+    def __eq__(self, other):
+        return self.value == other.value
+
+    @ensure_uval
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    @ensure_uval
+    def __ge__(self, other):
+        return self.value >= other.value
+
+    @ensure_uval
+    def __gt__(self, other):
+        return self.value > other.value
+
+    @ensure_uval
     def __rsub__(self, other):
         """other - self"""
-        tmp = UVal(TEMPVAL, value=other, stddev=0)
-        return self._calc(operator.sub, tmp, self)
+        return self._calc(operator.sub, other, self)
 
+    @ensure_uval
     def __rmul__(self, other):
         """other * self"""
-        tmp = UVal(TEMPVAL, value=other, stddev=0)
-        return self._calc(operator.mul, tmp, self)
+        return self._calc(operator.mul, other, self)
 
     #########################
     # uncertainty propagator

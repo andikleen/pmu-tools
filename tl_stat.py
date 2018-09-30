@@ -17,23 +17,19 @@ from collections import namedtuple
 
 ValStat = namedtuple('ValStat', ['stddev', 'multiplex'])
 
-
-def isnan(x):
-    return x != x
-
-
 def geoadd(l):
     return math.sqrt(sum([x**2 for x in l]))
 
-
+# DEPRECATED
 # use geomean of stddevs and minimum of multiplex ratios for combining
 # XXX better way to combine multiplex ratios?
-# TODO: this is in general wrong. geoadd only is true for mult?? need error propagation
-def combine_valstat(l):
+def deprecated_combine_valstat(l):
     if not l:
         return []
     return ValStat(geoadd([x.stddev for x in l]), min([x.multiplex for x in l]))
 
+def isnan(x):
+    return x != x
 
 class ComputeStat:
     """Maintain statistics on measurement data."""

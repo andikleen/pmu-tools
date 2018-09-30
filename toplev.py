@@ -18,17 +18,15 @@
 # Handles a variety of perf and kernel versions, but older ones have various
 # limitations.
 
-# TODO: remove combine_valstat
-
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
 import exceptions, argparse, time, types, fnmatch, csv, copy
 from collections import defaultdict, Counter
 
-from tl_stat import combine_valstat, ComputeStat, ValStat
+from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
 from tl_cpu import CPU
 import tl_output
 import ocperf
-from tl_uval import UVal
+from tl_uval import UVal, combine_uval
 
 known_cpus = (
     ("snb", (42, )),
@@ -340,6 +338,7 @@ g.add_argument('--print-group', '-g', help='Print event group assignments',
 g.add_argument('--raw', help="Print raw values", action='store_true')
 g.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file', type=argparse.FileType('w'))
 g.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
+g.add_argument('--absval', help='Show absolute counter values of events', action='store_true')
 g.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
 
 g = p.add_argument_group('Sampling')
@@ -680,7 +679,9 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             core = key_to_coreid(j)
             cpus = [x for x in res.keys() if key_to_coreid(x) == core]
             combined_res = zip(*[res[x] for x in cpus])
-            st = [combine_valstat(z) for z in itertools.izip(*[valstats[x] for x in cpus])]
+            st = [deprecated_combine_valstat(z)
+                  for z in itertools.izip(*[valstats[x] for x in cpus])]
+            # TODO: combine_valstat is deprecated
 
             # repeat a few times to get stable threshold values
             # in case of mutual dependencies between SMT and non SMT
@@ -1027,16 +1028,15 @@ def compare_event(aname, bname):
     return map_fields(a, fields) == map_fields(b, fields)
 
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
-    """get measurement result"""
+    """get measurement result and wrap in UVal"""
 
-    def make_uval(v, sd=0.0):
-        # print "{}: {} +/- {}".format(ev, v, sd)
-        return UVal(name=ev, value=v, stddev=sd)
+    def make_uval(v, sd=0.0, mux=None):
+        return UVal(name=ev, value=v, stddev=sd, mux=mux)
 
     if ev in env:
         return UVal(name=ev, val=env[ev], stddev=0)
     if ev == "mux":
-        return combine_valstat(st).multiplex  # FIXME: refactor, avoid deprecated valstat.
+        return min([s.multiplex for s in st])
     #
     # when the model passed in a lambda run the function for each logical cpu
     # (by resolving its EVs to only that CPU)
@@ -1046,10 +1046,16 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     # otherwise we always sum up.
     #
     if isinstance(ev, types.LambdaType):
-        return UVal("null", 0)
-        #return sum([ev(lambda ev, level:
-        #               lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
-        #               for off in range(cpu.threads)])  # TODO: UVal
+        uv = None
+        tmp = [ev(lambda ev, level:
+                  lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
+                  for off in range(cpu.threads)]
+        if tmp:
+            uv = tmp[0]
+            for o in tmp[1:]:
+                uv += o
+            uv.name = ev
+        return uv
 
     index = obj.res_map[(ev, level, obj.name)]
     referenced.add(index)
@@ -1062,16 +1068,17 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
                 (ev in event_fixes and canon_event(event_fixes[ev]) == rmap_ev) or
                 rmap_ev == "dummy")
 
-    if isinstance(res[index], types.TupleType):
+    vv = res[index]
+    if isinstance(vv, types.TupleType):
         if cpuoff == -1:
-            return make_uval(sum(res[index]))  # FIXME: UVal sum
+            vv = sum(vv)
         else:
             try:
-                return make_uval(res[index][cpuoff])  # TODO: stddev
+                vv = vv[cpuoff]
             except IndexError:
                 print >>sys.stderr, "warning: Partial CPU thread data from perf"
                 return UVal("null", 0)
-    return make_uval(res[index], sd=st[index].stddev)
+    return make_uval(vv, sd=st[index].stddev, mux=st[index].multiplex)
 
 def add_key(k, x, y):
     k[x] = y
@@ -1556,18 +1563,14 @@ class Runner:
             self.cycles = cyc
 
     def compute(self, res, rev, valstats, env, match, stat):
-        """
-        res = raw values
-        rev = counter details
-        valstats: stddev + multiplex ratio FIXME: why valstats (stddev) empty?
-        """
         if len(res) == 0:
             print "Nothing measured?"
             return
 
         try:
             idx = rev.index('cycles')
-            self._update_cycles(UVal('cycles', res[idx], valstats[idx].stddev))
+            val = res[idx] if not isinstance(res[idx], tuple) else sum(res[idx])
+            self._update_cycles(UVal('cycles', val, valstats[idx].stddev))
         except ValueError:
             pass
 
@@ -1582,8 +1585,6 @@ class Runner:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
             if stat:
                 stat.referenced |= ref
-            # FIXME: remove deprecated valstat
-            obj.valstat = combine_valstat([valstats[i] for i in ref])
             if not obj.res_map and not all([x in env for x in obj.evnum]):
                 print >>sys.stderr, "%s not measured" % (obj.__class__.__name__,)
             if not obj.metric and not check_ratio(obj.val):
@@ -1632,9 +1633,9 @@ class Runner:
         # step 3: print
         for i, obj in enumerate(olist):
             val = get_uval(obj)
-            # compute absolute value (hack to avoid rewrite of *ratios.py)
+            # compute absolute value, if requested (hack to avoid rewrite of *ratios.py)
             absval = None
-            if has(obj, 'domain') and self.cycles is not None:
+            if args.absval and has(obj, 'domain') and self.cycles is not None:
                 if obj.domain in ("Clocks", "Clocks_Estimated"):
                     absval = val * self.cycles
                 elif obj.domain in ("Stalls", "Slots"):
