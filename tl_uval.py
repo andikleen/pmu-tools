@@ -67,7 +67,7 @@ class UVal:
         if self.stddev is not None:
             if self.is_ratio:
                 if self.value != 0.:
-                    v = self.stddev / self.value * 100.
+                    v = self.stddev * 100.
                 else:
                     v = 0.
                 vs += "{:.2f}".format(v)
