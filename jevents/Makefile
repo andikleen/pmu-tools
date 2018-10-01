@@ -1,3 +1,4 @@
+.PHONY = all clean-examples all-examples install clean html man
 PREFIX=$(DESTDIR)/usr/local
 LIB=$(PREFIX)/lib64
 BIN=$(PREFIX)/bin
@@ -13,7 +14,7 @@ all: libjevents.a showevent listevents event-rmap all-examples
 clean-examples:
 	make -C examples clean
 
-all-examples:
+all-examples: libjevents.a
 	make -C examples
 
 install: libjevents.a listevents showevent event-rmap

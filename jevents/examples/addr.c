@@ -185,13 +185,15 @@ int main(int ac, char **av)
 
 	if (perf_enable(&loads) < 0)
 		err("PERF_EVENT_IOC_ENABLE");
-	perf_enable(&stores);
+	if (0)
+		perf_enable(&stores);
 
 	test_load();
 
 	if (perf_disable(&loads) < 0)
 		err("PERF_EVENT_IOC_DISABLE");
-	perf_disable(&stores);
+	if (0)
+		perf_disable(&stores);
 
 	gen_hist("loads", &loads);
 	perf_fd_close(&loads);

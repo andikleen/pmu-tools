@@ -176,20 +176,23 @@ int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
 {
 	struct event *e, *leader = NULL;
 	int i;
+	int err = 0;
 
 	for (e = el->eventlist; e; e = e->next) {
 		for (i = 0; i < el->num_cpus; i++) {
 			if (setup_event(e, i, leader,
 					measure_all,
-					measure_pid) < 0)
-				return -1;
+					measure_pid) < 0) {
+				err = -1;
+				continue;
+			}
 		}
 		if (e->group_leader)
 			leader = e;
 		if (e->end_group)
 			leader = NULL;
 	}
-	return 0;
+	return err;
 }
 
 /**

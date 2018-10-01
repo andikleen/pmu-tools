@@ -12,7 +12,7 @@ trap failed ERR 0
 PATH=.:./examples:$PATH
 
 
-listevents > l
+$V listevents > l
 [ $(wc -l < l) -gt 50 ] 
 grep -q offcore_response l
 
@@ -24,15 +24,18 @@ else
 	E=instructions
 fi
 
-jestat true
-jestat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
-jestat -a sleep 1
+$V jestat true
+$V jestat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
+$V jestat -a sleep 1
 
-showevent $E
+# test all events
+$V jestat $(listevents  | awk ' { print "-e " $1 } ' ) -a sleep 5
 
-event-rmap $E
+$V showevent $E
 
-examples/addr
+$V event-rmap $E
+
+$V examples/addr
 examples/rtest
 examples/rtest2
 

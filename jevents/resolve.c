@@ -29,6 +29,7 @@
 */
 
 #define _GNU_SOURCE 1
+#include "jevents.h"
 #include <linux/perf_event.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,6 +39,7 @@
 #include <unistd.h>
 #include <sys/fcntl.h>
 #include <glob.h>
+#include <assert.h>
 
 #ifndef PERF_ATTR_SIZE_VER1
 #define PERF_ATTR_SIZE_VER1	72
@@ -73,7 +75,7 @@ static int read_file(char **val, const char *fmt, ...)
 	return ret;
 }
 
-#define BITS(x) ((1U << (x)) - 1)
+#define BITS(x) ((x) == 64 ? -1ULL : (1ULL << (x)) - 1)
 
 static bool try_parse(char *format, char *fmt, __u64 val, __u64 *config)
 {
@@ -87,7 +89,8 @@ static bool try_parse(char *format, char *fmt, __u64 val, __u64 *config)
 	return true;
 }
 
-static int read_qual(const char *qual, struct perf_event_attr *attr)
+static int read_qual(const char *qual, struct perf_event_attr *attr,
+		const char *str)
 {
 	while (*qual) {
 		switch (*qual) { 
@@ -105,7 +108,7 @@ static int read_qual(const char *qual, struct perf_event_attr *attr)
 			break;
 		/* XXX more */
 		default:
-			fprintf(stderr, "Unknown modifier %c at end\n", *qual);
+			fprintf(stderr, "Unknown modifier %c at end for %s\n", *qual, str);
 			return -1;
 		}
 		qual++;
@@ -122,6 +125,18 @@ static bool special_attr(char *name, int val, struct perf_event_attr *attr)
 	if (!strcmp(name, "freq")) {
 		attr->sample_freq = val;
 		attr->freq = 1;
+		return true;
+	}
+	if (!strcmp(name, "config")) {
+		attr->config = val;
+		return true;
+	}
+	if (!strcmp(name, "config1")) {
+		attr->config2 = val;
+		return true;
+	}
+	if (!strcmp(name, "config2")) {
+		attr->config2 = val;
 		return true;
 	}
 	return false;
@@ -153,13 +168,14 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 			    read_file(&alias, "/sys/devices/%s/events/%s", pmu, name) == 0) {
 				if (parse_terms(pmu, alias, attr, 1) < 0) {
 					free(alias);
-					fprintf(stderr, "Cannot parse kernel event alias %s\n", name);
+					fprintf(stderr, "Cannot parse kernel event alias %s for %s\n", name,
+							term);
 					break;
 				}
 				free(alias);
 				continue;
 			}
-			fprintf(stderr, "Cannot parse qualifier %s\n", name);
+			fprintf(stderr, "Cannot parse qualifier %s for %s\n", name, term);
 			break;
 		}
 		bool ok = try_parse(format, "config:%d-%d", val, &attr->config) ||
@@ -169,8 +185,8 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 		bool ok2 = try_parse(format, "config2:%d-%d", val, &attr->config2) ||
 			try_parse(format, "config2:%d", val, &attr->config2);
 		if (!ok && !ok2) {
-			fprintf(stderr, "Cannot parse kernel format %s: %s\n",
-					name, format);
+			fprintf(stderr, "Cannot parse kernel format %s: %s for %s\n",
+					name, format, term);
 			break;
 		}
 		if (ok2)
@@ -204,16 +220,17 @@ static int try_pmu_type(char **type, char *fmt, char *pmu)
 int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 {
 	char pmu[30], config[200];
-	int qual_off;
+	int qual_off = -1;
 
 	memset(attr, 0, sizeof(struct perf_event_attr));
 	attr->size = PERF_ATTR_SIZE_VER0;
 	attr->type = PERF_TYPE_RAW;
 
 	if (sscanf(str, "r%llx%n", &attr->config, &qual_off) == 1) {
+		assert(qual_off != -1);
 		if (str[qual_off] == 0)
 			return 0;
-		if (str[qual_off] == ':' && read_qual(str + qual_off, attr) == 0)
+		if (str[qual_off] == ':' && read_qual(str + qual_off, attr, str) == 0)
 			return 0;
 		return -1;
 	}
@@ -230,7 +247,7 @@ int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 	free(type);
 	if (parse_terms(pmu, config, attr, 0) < 0)
 		return -1;
-	if (read_qual(str + qual_off, attr) < 0)
+	if (qual_off != -1 && read_qual(str + qual_off, attr, str) < 0)
 		return -1;
 	return 0;
 }
@@ -240,7 +257,7 @@ int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
  * @func: Callback function to call for each event.
  * @data: data pointer to pass to func.
  */
-int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc, char *pmu),
+int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc),
 		     void *data)
 {
 	int ret = 0;
@@ -276,7 +293,7 @@ int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc
 
 		char *buf;
 		asprintf(&buf, "%s/%s/", pmu, event);
-		ret = func(data, buf, val2, "", pmu);
+		ret = func(data, buf, val2, "");
 		free(val2);
 		free(buf);
 		if (ret)
