@@ -338,7 +338,6 @@ g.add_argument('--print-group', '-g', help='Print event group assignments',
 g.add_argument('--raw', help="Print raw values", action='store_true')
 g.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file', type=argparse.FileType('w'))
 g.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
-g.add_argument('--absval', help='Show absolute counter values of events', action='store_true')
 g.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
 
 g = p.add_argument_group('Sampling')
@@ -963,12 +962,9 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
 def ev_append(ev, level, obj):
     if isinstance(ev, types.LambdaType):
         return ev(lambda ev, level: ev_append(ev, level, obj), level)
-    # --
-    assert isinstance(ev, str)
-    # --
     if ev in nonperf_events:
         return 99
-    if not (ev, level, obj.name) in obj.evlevels:  # evlevels is created in collect()
+    if not (ev, level, obj.name) in obj.evlevels:
         obj.evlevels.append((ev, level, obj.name))
     if has(obj, 'nogroup') and obj.nogroup:
         outgroup_events.add(ev.lower())
@@ -1333,7 +1329,6 @@ class Runner:
         self.missed = 0
         self.sample_obj = set()
         self.stat = ComputeStat(args.quiet)
-        self.cycles = None
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         if args.valcsv:
@@ -1555,24 +1550,10 @@ class Runner:
                 else:
                     obj.sibling.thresh = True
 
-    def _update_cycles(self, cyc):
-        assert isinstance(cyc, UVal)
-        if self.cycles is not None:
-            self.cycles.update(cyc)
-        else:
-            self.cycles = cyc
-
     def compute(self, res, rev, valstats, env, match, stat):
         if len(res) == 0:
             print "Nothing measured?"
             return
-
-        try:
-            idx = rev.index('cycles')
-            val = res[idx] if not isinstance(res[idx], tuple) else sum(res[idx])
-            self._update_cycles(UVal('cycles', val, valstats[idx].stddev))
-        except ValueError:
-            pass
 
         # step 1: compute
         for obj in self.olist:
@@ -1633,13 +1614,6 @@ class Runner:
         # step 3: print
         for i, obj in enumerate(olist):
             val = get_uval(obj)
-            # compute absolute value, if requested (hack to avoid rewrite of *ratios.py)
-            absval = None
-            if args.absval and has(obj, 'domain') and self.cycles is not None:
-                if obj.domain in ("Clocks", "Clocks_Estimated"):
-                    absval = val * self.cycles
-                elif obj.domain in ("Stalls", "Slots"):
-                    absval = val * self.cycles  # FIXME: is stalls==slots==clocks?
             desc = obj_desc(obj, olist[i + 1:])
             if obj.metric:
                 out.metric(obj.area if has(obj, 'area') else None,
@@ -1649,10 +1623,7 @@ class Runner:
                         metric_unit(obj))
             elif check_ratio(val):
                 out.ratio(obj.area if has(obj, 'area') else None,
-                        full_name(obj),
-                        val,
-                        absval,
-                        timestamp,
+                        full_name(obj), val, timestamp,
                         node_unit(obj),
                         desc,
                         title,
