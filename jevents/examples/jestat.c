@@ -128,7 +128,8 @@ int main(int ac, char **av)
 		write(2, PAIR("Cannot execute program\n"));
 		_exit(1);
 	}
-	setup_events(el, measure_all, measure_pid);
+	if (setup_events(el, measure_all, measure_pid) < 0)
+		exit(1);
 	signal(SIGINT, sigint);
 	if (child_pid >= 0) {
 		write(child_pipe[1], "x", 1);
