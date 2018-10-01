@@ -20,26 +20,16 @@ ValStat = namedtuple('ValStat', ['stddev', 'multiplex'])
 def geoadd(l):
     return math.sqrt(sum([x**2 for x in l]))
 
+# DEPRECATED
 # use geomean of stddevs and minimum of multiplex ratios for combining
 # XXX better way to combine multiplex ratios?
-def combine_valstat(l):
+def deprecated_combine_valstat(l):
     if not l:
         return []
     return ValStat(geoadd([x.stddev for x in l]), min([x.multiplex for x in l]))
 
 def isnan(x):
     return x != x
-
-def format_valstat(valstat):
-    vs = ""
-    if valstat:
-        if valstat.stddev:
-            vs += "+-%6.2f " % valstat.stddev
-        if valstat.multiplex and not isnan(valstat.multiplex):
-            vs += "[%6.2f%%]" % valstat.multiplex
-    if vs:
-        vs = "%8s" % vs
-    return vs
 
 class ComputeStat:
     """Maintain statistics on measurement data."""

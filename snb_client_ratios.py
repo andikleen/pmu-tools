@@ -107,6 +107,7 @@ def Memory_Bound_Fraction(self, EV, level):
     return (STALLS_MEM_ANY(self, EV, level) + EV("RESOURCE_STALLS.SB", level)) / Backend_Bound_Cycles(self, EV, level)
 
 def Mem_L3_Hit_Fraction(self, EV, level):
+    """formula from https://software.intel.com/en-us/blogs/2013/07/01/estimate-the-penalty-of-cache-miss-more-accurate-on-ivy-bridge"""
     return EV("MEM_LOAD_UOPS_RETIRED.LLC_HIT", level) /(EV("MEM_LOAD_UOPS_RETIRED.LLC_HIT", level) + Mem_L3_Weight * EV("MEM_LOAD_UOPS_MISC_RETIRED.LLC_MISS", level))
 
 def Mispred_Clears_Fraction(self, EV, level):
