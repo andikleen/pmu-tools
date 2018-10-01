@@ -26,10 +26,15 @@ fi
 
 $V jestat true
 $V jestat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
+$V jestat -e "{cpu-cycles,cpu_clk_unhalted.ref_tsc,{$E,cache-references}" -a sleep 1
 $V jestat -a sleep 1
 
 # test all events
-$V jestat $(listevents  | awk ' { print "-e " $1 } ' ) -a sleep 5
+LEN=$(wc -l l | awk ' { print $1 }')
+INC=20
+for ((i = 1; i <= LEN; i += INC)) ; do
+	$V jestat $(nl l | awk -v v=$i -v inc=$INC '$1 >= v && $i <= v+inc { print "-e " $2 } ') -a true
+done
 
 $V showevent $E
 
