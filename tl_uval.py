@@ -37,7 +37,7 @@ class UVal:
     Measurement value annotated with uncertainty. Supports binary operators for error propagation.
     """
 
-    def __init__(self, name, value, stddev=0., samples=1, mux=None, comment="", computed=False):
+    def __init__(self, name, value, stddev=0., samples=1, mux=100., comment="", computed=False):
         self.name = name
         self.comment = comment
         self.value = value
@@ -78,13 +78,17 @@ class UVal:
     def format_mux(self):
         vs = ""
         if self.multiplex and self.multiplex == self.multiplex:
-            vs = "[{:6.2f}%]".format(self.multiplex)
+            vs = "[{:3.1f}%]".format(self.multiplex)
         return vs
 
     def set_desc(self, name, comment):
         """set name and description in one go"""
         self.name = name
         self.comment = comment
+
+    @staticmethod
+    def _merge_mux(lhs, rhs):
+        return min(lhs.multiplex, rhs.multiplex)
 
     def update(self, other):
         """merge data from other event into this"""
@@ -98,7 +102,7 @@ class UVal:
         self.samples = n
         self.value = res.value
         self.stddev = res.stddev
-        self.multiplex = min(self.multiplex, other.multiplex)  # FIXME: is min right? use sample weights?
+        self.multiplex = UVal._merge_mux(self, other)
         log.warning("updated {} with {} => {}".format(strbefore, other, self))
 
     ######################
@@ -118,19 +122,19 @@ class UVal:
 
     @ensure_uval
     def __sub__(self, other):
-        return self._calc(operator.sub, self, other)
+        return UVal._calc(operator.sub, self, other)
 
     @ensure_uval
     def __add__(self, other):
-        return self._calc(operator.add, self, other)
+        return UVal._calc(operator.add, self, other)
 
     @ensure_uval
     def __mul__(self, other):
-        return self._calc(operator.mul, self, other)
+        return UVal._calc(operator.mul, self, other)
 
     @ensure_uval
     def __div__(self, other):
-        return self._calc(operator.div, self, other)
+        return UVal._calc(operator.div, self, other)
 
     @ensure_uval
     def __lt__(self, other):
@@ -159,18 +163,19 @@ class UVal:
     @ensure_uval
     def __rsub__(self, other):
         """other - self"""
-        return self._calc(operator.sub, other, self)
+        return UVal._calc(operator.sub, other, self)
 
     @ensure_uval
     def __rmul__(self, other):
         """other * self"""
-        return self._calc(operator.mul, other, self)
+        return UVal._calc(operator.mul, other, self)
 
     #########################
     # uncertainty propagator
     #########################
 
-    def _calc(ev, op, lhs, rhs, cov=0.):
+    @staticmethod
+    def _calc(op, lhs, rhs, cov=0.):
         """Compute the result of 'lhs [op] rhs' and propagate standard deviations"""
         A = lhs.value
         B = rhs.value
@@ -179,7 +184,7 @@ class UVal:
         # new value
         f = op(float(A), B)
         if isinstance(f, float) and f.is_integer(): f = int(f)
-        # uncertainty: FIXME covariance neglected
+        # uncertainty
         if op in (operator.mul, operator.truediv, operator.div):
             sgn = 1 if op == operator.mul else -1
             if A != 0 and B != 0:
@@ -200,6 +205,6 @@ class UVal:
             log.error("Unsupported operation for uncertainty propagator in {} {} {}".format\
                       (lhs, op, rhs))
         # --
-        ret = UVal(TEMPVAL, value=f, stddev=u, computed=True)
+        ret = UVal(TEMPVAL, value=f, stddev=u, mux=UVal._merge_mux(lhs, rhs), computed=True)
         log.debug("{} {} {} => {}".format(lhs, op, rhs, ret))
         return ret
