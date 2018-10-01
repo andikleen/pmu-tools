@@ -1030,7 +1030,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
         return UVal(name=ev, value=v, stddev=sd, mux=mux)
 
     if ev in env:
-        return UVal(name=ev, val=env[ev], stddev=0)
+        return UVal(name=ev, value=env[ev], stddev=0)
     if ev == "mux":
         return min([s.multiplex for s in st])
     #

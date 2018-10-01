@@ -123,6 +123,7 @@ class OutputHuman(Output):
         self.print_desc(desc, sample)
 
     def metric(self, area, name, l, timestamp, desc, title, unit):
+        l.is_metric = True
         self.item(area, name, l, timestamp, unit, desc, title, None, "")
 
 def convert_ts(ts):
