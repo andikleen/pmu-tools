@@ -54,9 +54,10 @@ class UVal:
         if self.value is None: return ""
         if self.is_ratio:
             return "{:>13.2f}".format(self.value * 100.)
+        elif self.value > 1000:
+            return "{:,}".format(round(self.value))
         else:
-            v = int(self.value) if self.value > 10000 else self.value
-            return "{:,}".format(v)
+            return "{:13.2f}".format(self.value)
 
     def format_uncertainty(self):
         """string representation of measurement uncertainty"""
@@ -166,9 +167,19 @@ class UVal:
         return UVal._calc(operator.sub, other, self)
 
     @ensure_uval
+    def __radd__(self, other):
+        """other + self"""
+        return UVal._calc(operator.add, other, self)
+
+    @ensure_uval
     def __rmul__(self, other):
         """other * self"""
         return UVal._calc(operator.mul, other, self)
+
+    @ensure_uval
+    def __rdiv__(self, other):
+        """other / self"""
+        return UVal._calc(operator.div, other, self)
 
     #########################
     # uncertainty propagator
