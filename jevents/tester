@@ -33,7 +33,10 @@ $V jestat -a sleep 1
 LEN=$(wc -l l | awk ' { print $1 }')
 INC=20
 for ((i = 1; i <= LEN; i += INC)) ; do
-	$V jestat $(nl l | awk -v v=$i -v inc=$INC '$1 >= v && $i <= v+inc { print "-e " $2 } ') -a true
+	# skip i915/vcs-* which often returns ENODEV for no good reason
+	$V jestat $(nl l |
+		    egrep -v 'i915/vcs' |
+		    awk -v v=$i -v inc=$INC '$1 >= v && $1 <= v+inc { print "-e " $2 } ') -a true
 done
 
 $V showevent $E
