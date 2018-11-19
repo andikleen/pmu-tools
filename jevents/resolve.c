@@ -237,7 +237,7 @@ bool jevent_pmu_uncore(const char *str)
  * @str: perf style event (e.g. cpu/event=1/)
  * @attr: perf_attr to fill in.
  *
- * Resolve perf new style event descriptor to perf ATTR. User must initiali
+ * Resolve perf new style event descriptor to perf ATTR. User must initialize
  * attr->sample_type and attr->read_format as needed after this call,
  * and possibly other fields. Returns 0 when succeeded.
  */
