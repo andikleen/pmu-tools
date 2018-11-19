@@ -26,7 +26,7 @@ fi
 
 $V jestat true
 $V jestat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
-$V jestat -e "{cpu-cycles,cpu_clk_unhalted.ref_tsc,{$E,cache-references}" -a sleep 1
+$V jestat -e "{cpu-cycles,cpu_clk_unhalted.ref_tsc},{$E,cache-references}" -a sleep 1
 $V jestat -a sleep 1
 
 # test all events
