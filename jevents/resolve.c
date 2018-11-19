@@ -153,9 +153,10 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 
 	while ((term = strsep(&config, ",")) != NULL) {
 		char name[30];
-		int n, val = 1;
+		int n;
+		unsigned long long val = 1;
 
-		n = sscanf(term, "%30[^=]=%i", name, &val);
+		n = sscanf(term, "%30[^=]=%lli", name, &val);
 		if (n < 1)
 			break;
 		if (special_attr(name, val, attr))
