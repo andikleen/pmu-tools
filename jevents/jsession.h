@@ -10,6 +10,7 @@ struct event {
 	struct perf_event_attr attr;
 	char *event;
 	bool end_group, group_leader;
+	bool uncore;
 	struct efd {
 		int fd;
 		uint64_t val[3];

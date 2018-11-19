@@ -2,6 +2,7 @@
 #define JEVENTS_H 1
 
 #include <sys/types.h>
+#include <stdbool.h>
 
 int json_events(const char *fn,
 		int (*func)(void *data, char *name, char *event, char *desc,
@@ -25,5 +26,6 @@ int rmap_event(unsigned event, char **name, char **desc);
 int perf_event_open(struct perf_event_attr *attr, pid_t pid,
 		    int cpu, int group_fd, unsigned long flags);
 char *resolve_pmu(int type);
+bool jevent_pmu_uncore(const char *str);
 
 #endif

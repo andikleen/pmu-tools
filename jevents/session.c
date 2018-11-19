@@ -95,6 +95,7 @@ int parse_events(struct eventlist *el, char *events)
 		}
 
 		struct event *e = new_event(el, s);
+		e->uncore = jevent_pmu_uncore(s);
 		e->group_leader = group_leader;
 		e->end_group = end_group;
 		if (resolve_event(s, &e->attr) < 0) {
@@ -177,14 +178,27 @@ int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
 	struct event *e, *leader = NULL;
 	int i;
 	int err = 0;
+	int ret;
 
 	for (e = el->eventlist; e; e = e->next) {
-		for (i = 0; i < el->num_cpus; i++) {
-			if (setup_event(e, i, leader,
-					measure_all,
-					measure_pid) < 0) {
-				err = -1;
+		if (e->uncore) {
+			/* XXX for every socket. for now just 0. */
+			ret = setup_event(e, 0, leader, measure_all, measure_pid);
+			if (ret < 0) {
+				err = ret;
 				continue;
+			}
+			for (i = 1; i < el->num_cpus; i++)
+				e->efd[i].fd = -1;
+		} else {
+			for (i = 0; i < el->num_cpus; i++) {
+				ret = setup_event(e, i, leader,
+						measure_all,
+						measure_pid);
+				if (ret < 0) {
+					err = ret;
+					continue;
+				}
 			}
 		}
 		if (e->group_leader)
@@ -226,6 +240,13 @@ int read_all_events(struct eventlist *el)
 	int i;
 
 	for (e = el->eventlist; e; e = e->next) {
+		if (e->uncore) {
+			/* XXX all sockets */
+			if (e->efd[0].fd < 0)
+				continue;
+			if (read_event(e, 0) < 0)
+				return -1;
+		}
 		for (i = 0; i < el->num_cpus; i++) {
 			if (e->efd[i].fd < 0)
 				continue;

@@ -209,6 +209,29 @@ static int try_pmu_type(char **type, char *fmt, char *pmu)
 }
 
 /**
+ * jevent_pmu_uncore - Is perf event string for an uncore PMU.
+ * @pmu: perf pmu
+ * Return true if yes, false if not or unparseable.
+ */
+bool jevent_pmu_uncore(const char *str)
+{
+	char *cpumask;
+	int cpus;
+	char pmu[30];
+
+	if (!strchr(str, '/'))
+		return false;
+	if (sscanf(str, "%30[^/]", pmu) < 1)
+		return false;
+	int ret = read_file(&cpumask, "/sys/devices/%s/cpumask", pmu);
+	if (ret < 0)
+		return false;
+	bool isuncore = sscanf(cpumask, "%d", &cpus) == 1 && cpus == 0;
+	free(cpumask);
+	return isuncore;
+}
+
+/**
  * jevent_name_to_attr - Resolve perf style event to perf_attr
  * @str: perf style event (e.g. cpu/event=1/)
  * @attr: perf_attr to fill in.
