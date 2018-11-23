@@ -20,6 +20,10 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define N_COUNTER 4
 
 struct measure {
@@ -44,6 +48,8 @@ void measure_group_finish(void);
 void measure_print_all(FILE *fh);
 void measure_free_all(void);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif

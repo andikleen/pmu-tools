@@ -4,6 +4,9 @@
 #include <linux/perf_event.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct event {
 	struct event *next;
@@ -30,5 +33,9 @@ int read_event(struct event *e, int cpu);
 int read_all_events(struct eventlist *el);
 struct eventlist *alloc_eventlist(void);
 uint64_t event_scaled_value(struct event *e, int cpu);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

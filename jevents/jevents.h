@@ -4,6 +4,10 @@
 #include <sys/types.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int json_events(const char *fn,
 		int (*func)(void *data, char *name, char *event, char *desc,
 			    char *pmu),
@@ -27,5 +31,9 @@ int perf_event_open(struct perf_event_attr *attr, pid_t pid,
 		    int cpu, int group_fd, unsigned long flags);
 char *resolve_pmu(int type);
 bool jevent_pmu_uncore(const char *str);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

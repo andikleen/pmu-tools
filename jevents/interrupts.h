@@ -18,8 +18,16 @@
 #ifndef INTERRUPTS_H
 #define INTERRUPTS_H 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void interrupts_init(void);
 void interrupts_exit(void);
 unsigned long long get_interrupts(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

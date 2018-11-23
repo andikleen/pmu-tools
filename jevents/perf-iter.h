@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct perf_event_mmap_page;
 struct perf_event_header;
@@ -42,5 +45,9 @@ static inline uint64_t *perf_hdr_payload(struct perf_event_header *hdr)
 {
 	return (uint64_t *)(hdr + 1);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
