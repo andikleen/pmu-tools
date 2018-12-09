@@ -128,7 +128,7 @@ static void free_events(void)
  *
  * Return: -1 on failure, otherwise 0.
  */
-int read_events(char *fn)
+int read_events(const char *fn)
 {
 	if (eventlist_init) {
 		// treat subsequent read_events calls after the first as replacing the
