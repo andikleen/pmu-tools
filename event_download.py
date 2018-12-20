@@ -35,7 +35,7 @@ def get_cpustr():
     if cpuinfo is None:
         cpuinfo = '/proc/cpuinfo'
     f = open(cpuinfo, 'r')
-    cpu = [None, None, None]
+    cpu = [None, None, None, None]
     for j in f:
         n = j.split()
         if n[0] == 'vendor_id':
@@ -44,9 +44,11 @@ def get_cpustr():
             cpu[2] = int(n[2])
         elif n[0] == 'cpu' and n[1] == 'family':
             cpu[1] = int(n[3])
+        elif n[0] == 'stepping' and n[1] == ':':
+            cpu[3] = int(n[2])
         if all(cpu):
             break
-    return "%s-%d-%X" % (cpu[0], cpu[1], cpu[2])
+    return "%s-%d-%X-%X" % tuple(cpu)
 
 def sanitize(s, a):
     o = ""
@@ -97,25 +99,36 @@ def getfile(url, dir, fn):
     o.close()
     f.close()
 
+def cpu_without_step(match):
+    if match.count("-") < 3:
+        return match
+    n = match.split("-")
+    return "%s-%s-%s" % tuple(n[:3])
+
 allowed_chars = string.ascii_letters + '_-.' + string.digits
 def download(match, key=None, link=True):
+    match2 = cpu_without_step(match)
     found = 0
     dir = getdir()
     try:
         getfile(modelpath, dir, "mapfile.csv")
         models = open(os.path.join(dir, "mapfile.csv"))
         for j in models:
+            if j.startswith("Family-model"):
+                continue
             n = j.rstrip().split(",")
             if len(n) < 4:
                 if len(n) > 0:
                     print "Cannot parse", n
                 continue
-            cpu, version, name, type = n
-            if not fnmatch(cpu, match) or (key is not None and type not in key) or type.startswith("EventType"):
+            cpu, version, name, typ = n
+            if not (fnmatch(match, cpu) or fnmatch(match2, cpu)):
+                continue
+            if key is not None and typ not in key:
                 continue
             cpu = sanitize(cpu, allowed_chars)
             url = urlpath + name
-            fn = "%s-%s.json" % (cpu, sanitize(type, allowed_chars))
+            fn = "%s-%s.json" % (match, sanitize(typ, allowed_chars))
             try:
                 os.remove(os.path.join(dir, fn))
             except OSError:
@@ -157,7 +170,11 @@ def eventlist_name(name=None, key="core"):
     if not name:
         name = get_cpustr()
     cache = getdir()
-    return "%s/%s-%s.json" % (cache, name, key)
+    fn = "%s/%s-%s.json" % (cache, name, key)
+    if not os.path.exists(fn):
+        name = cpu_without_step(name)
+        fn = "%s/%s-%s.json" % (cache, name, key)
+    return fn
 
 if __name__ == '__main__':
     # only import argparse when actually called from command line
