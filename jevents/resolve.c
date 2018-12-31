@@ -139,6 +139,11 @@ static bool special_attr(char *name, int val, struct perf_event_attr *attr)
 		attr->config2 = val;
 		return true;
 	}
+	if (!strcmp(name, "name")) {
+		// we accept the name attribute, but don't have anywhere to put it inside
+		// perf_event_attr, so we just drop it but at least avoid an unhandled attr error
+		return true;
+	}
 	return false;
 }
 
