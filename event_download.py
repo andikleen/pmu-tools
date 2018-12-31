@@ -46,7 +46,7 @@ def get_cpustr():
             cpu[1] = int(n[3])
         elif n[0] == 'stepping' and n[1] == ':':
             cpu[3] = int(n[2])
-        if all(cpu):
+        if all(v is not None for v in cpu):
             break
     return "%s-%d-%X-%X" % tuple(cpu)
 
