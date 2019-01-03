@@ -33,26 +33,30 @@
 #include "jevents.h"
 
 /**
- * get_cpu_str - Return string describing the current CPU.
+ * get_cpu_str - Return string describing the current CPU or NULL.
+ * Needs to be freed by caller.
  *
  * Used to store JSON event lists in the cache directory.
  */
 char *get_cpu_str(void)
 {
-	return get_cpu_str_type("-core");
+	return get_cpu_str_type("-core", NULL);
 }
 
 /**
- * get_cpu_str - Return string describing the current CPU for type
+ * get_cpu_str - Return string describing the current CPU for type or NULL.
  * @type: "-core" or "-uncore"
+ * @idstr_step: if non NULL write idstr with stepping to pointer.
+ * Both result and idstr_step (if non NULL) need to be freed by
+ * caller.
  */
-char *get_cpu_str_type(char *type)
+char *get_cpu_str_type(char *type, char **idstr_step)
 {
 	char *line = NULL;
 	size_t llen = 0;
 	int found = 0, n;
 	char vendor[30];
-	int model = 0, fam = 0;
+	int model = 0, fam = 0, step = 0;
 	char *res = NULL;
 	FILE *f = fopen("/proc/cpuinfo", "r");
 
@@ -65,8 +69,14 @@ char *get_cpu_str_type(char *type)
 			found++;
 		else if (sscanf(line, "cpu family : %d", &fam) == 1)
 			found++;
-		if (found == 3) {
-			n = asprintf(&res, "%s-%d-%X%s", vendor, fam, model, type);
+		else if (sscanf(line, "stepping : %d", &step) == 1)
+			found++;
+		if (found == 4) {
+			if (idstr_step)
+				asprintf(idstr_step, "%s-%d-%X-%X%s", vendor, fam,
+						model, step, type);
+			n = asprintf(&res, "%s-%d-%X%s", vendor, fam, model,
+					type);
 			if (n < 0)
 				res = NULL;
 			break;

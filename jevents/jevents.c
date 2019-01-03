@@ -42,8 +42,9 @@
 
 static const char *json_default_name(char *type)
 {
-	char *cache;
-	char *idstr = get_cpu_str_type(type);
+	char *cache = NULL;
+	char *idstr_step = NULL;
+	char *idstr = get_cpu_str_type(type, &idstr_step);
 	char *res = NULL;
 	char *home = NULL;
 	char *emap;
@@ -52,10 +53,9 @@ static const char *json_default_name(char *type)
 	if (emap) {
 		if (access(emap, R_OK) == 0)
 			return emap;
-		idstr = malloc(strlen(emap) + strlen(type) + 1);
-		if (!idstr)
-			exit(ENOMEM);
-		sprintf(idstr, "%s%s", emap, type);
+		free(idstr);
+		if (asprintf(&idstr, "%s%s", emap, type) < 0)
+			goto out;
 	}
 
 	cache = getenv("XDG_CACHE_HOME");
@@ -64,14 +64,19 @@ static const char *json_default_name(char *type)
 		if (!home || asprintf(&cache, "%s/.cache", home) < 0)
 			goto out;
 	}
-	if (cache && idstr)
-		asprintf(&res, "%s/pmu-events/%s.json",
-			     cache,
-			     idstr);
-	if (home)
-		free(cache);
+	if (cache && idstr) {
+		asprintf(&res, "%s/pmu-events/%s.json", cache, idstr_step);
+		if (access(res, R_OK) != 0) {
+			free(res);
+			asprintf(&res, "%s/pmu-events/%s.json",
+				     cache,
+				     idstr);
+		}
+	}
 out:
+	free(cache);
 	free(idstr);
+	free(idstr_step);
 	return res;
 }
 

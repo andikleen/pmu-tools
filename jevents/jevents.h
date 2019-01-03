@@ -13,7 +13,7 @@ int json_events(const char *fn,
 			    char *pmu),
 		void *data);
 char *get_cpu_str(void);
-char *get_cpu_str_type(char *type);
+char *get_cpu_str_type(char *type, char **idstr_step);
 
 struct perf_event_attr;
 
