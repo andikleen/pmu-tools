@@ -41,7 +41,6 @@
 
 static char *mapfile(const char *fn, size_t *size)
 {
-	unsigned ps = sysconf(_SC_PAGESIZE);
 	struct stat st;
 	char *map = NULL;
 	int err;
@@ -53,9 +52,7 @@ static char *mapfile(const char *fn, size_t *size)
 	if (err < 0)
 		goto out;
 	*size = st.st_size;
-	map = mmap(NULL,
-		   (st.st_size + ps - 1) & ~(ps -1),
-		   PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0);
+	map = mmap(NULL, st.st_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0);
 	if (map == (char *)MAP_FAILED)
 		map = NULL;
 out:
@@ -65,8 +62,7 @@ out:
 
 static void unmapfile(char *map, size_t size)
 {
-	unsigned ps = sysconf(_SC_PAGESIZE);
-	munmap(map, (size + ps - 1) & ~(ps - 1));
+	munmap(map, size);
 }
 
 /*
