@@ -327,7 +327,8 @@ int json_events(const char *fn,
 				}
 				addfield(map, &desc, ". ", "Unit: ", NULL);
 				addfield(map, &desc, "", pmu, NULL);
-			} else if (json_streq(map, field, "Filter")) {
+			} else if (json_streq(map, field, "Filter") &&
+				   !json_streq(map, val, "na")) {
 				addfield(map, &filter, "", "", val);
 			}
 			/* ignore unknown fields */
