@@ -1,6 +1,6 @@
 # build jevents first
 CFLAGS := -g -Wall -O2  -I .. -Wno-unused-result
-CXXFLAGS := -g -Wall  -O2 
+CXXFLAGS := -g -Wall  -O2  -fPIC
 LDFLAGS := -L ..
 LDLIBS = -ljevents
 
