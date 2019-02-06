@@ -57,7 +57,7 @@ if __name__ == '__main__':
     p.add_argument('--clearbit', type=int, help='Bit number to clear')
     p.add_argument('--cpu', type=int, default=0, help='CPU to read on (writes always change all)')
     args = p.parse_args()
-    if not args.value and not args.setbit and not args.clearbit:
+    if args.value is None and not args.setbit and not args.clearbit:
         print "%x" % (readmsr(args.msr, args.cpu))
     elif args.setbit:
         changebit(args.msr, args.setbit, 1)
