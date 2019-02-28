@@ -122,13 +122,17 @@ def download(match, key=None, link=True):
                     print "Cannot parse", n
                 continue
             cpu, version, name, typ = n
-            if not (fnmatch(match, cpu) or fnmatch(match2, cpu)):
+            if not (fnmatch(cpu, match) or fnmatch(cpu, match2) or
+                    fnmatch(match2, cpu) or fnmatch(match, cpu)):
                 continue
             if key is not None and typ not in key:
                 continue
             cpu = sanitize(cpu, allowed_chars)
             url = urlpath + name
-            fn = "%s-%s.json" % (match, sanitize(typ, allowed_chars))
+            matchfn = match
+            if matchfn == "*":
+                matchfn = cpu
+            fn = "%s-%s.json" % (matchfn, sanitize(typ, allowed_chars))
             try:
                 os.remove(os.path.join(dir, fn))
             except OSError:
