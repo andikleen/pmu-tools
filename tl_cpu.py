@@ -80,6 +80,7 @@ class CPU:
         self.sockettocpus = defaultdict(list)
         self.cputosocket = {}
         self.allcpus = []
+        self.step = 0
         self.name = ""
         cpuinfo = os.getenv("CPUINFO")
         if cpuinfo is None:
@@ -128,9 +129,12 @@ class CPU:
                     ok += 1
                     self.has_tsx = "rtm" in n
                     self.hypervisor = "hypervisor" in n
-        if ok >= 6:
+                elif n[0] == "stepping":
+                    ok += 1
+                    self.step = int(n[2])
+        if ok >= 7:
             for i in known_cpus:
-                if self.model in i[1]:
+                if self.model in i[1] or (self.model, self.step) in i[1]:
                     self.realcpu = i[0]
                     if not forced_cpu:
                         self.cpu = i[0]

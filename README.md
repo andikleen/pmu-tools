@@ -5,6 +5,17 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev update to Ahmad Yasin's TMA 3.5:
+	- Support for Cascade Lake
+	- Add PMM_Bound nodes for persistent memory
+	- Add L3_Cache_Fill_BW, L3_Cache_Access_BW metrics
+	- new Ports breakdown into Alu, Store, Load
+	- Added L2[MH]PKI_ metrics
+	- Added MEM_PMM_Read/Write_Latency/BW metrics for persistent memory
+	- Fix IpArith formulas
+	- Fixed description for L1/2/3MPKI
+	- Mem_Read_latency changed to DRAM_Read_Latency / DRAM_Parallel_Reads
+	- Change break down of server subset
 * toplev update to Ahmad Yasin's TMA 3.4
 	- Add Serializing_Operations on most parts and Average_Frequency
 	- More Erratas whitelisted

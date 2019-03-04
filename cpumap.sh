@@ -18,4 +18,5 @@ cpus[skl]=GenuineIntel-6-5E
 cpus[bdw-de]=GenuineIntel-6-56
 cpus[bdx]=GenuineIntel-6-4F
 cpus[knl]=GenuineIntel-6-57
-cpus[skx]=GenuineIntel-6-55
+cpus[skx]=GenuineIntel-6-55-01234
+cpus[clx]=GenuineIntel-6-55-56789ABCDEF
