@@ -30,6 +30,7 @@
 # PERF=... perf binary to use (default "perf")
 # EVENTMAP=eventmap
 # EVENTMAP2=eventmap
+# EVENTMAP3=eventmap
 # OFFCORE=eventmap
 # UNCORE=eventmap
 # UNCORE2=eventmap
@@ -766,21 +767,18 @@ def add_extra_env(emap, el):
                     emap.add_uncore(uc)
     except IOError:
         print >>sys.stderr, "Cannot open", uc
-    try:
-        e2 = os.getenv("EVENTMAP2")
-        if e2:
-            e2 = canon_emapvar(e2, "core")
-            emap.read_events(e2)
-            # don't try to download for now
-    except IOError:
-        print >>sys.stderr, "Cannot open", e2
-    try:
-        u2 = os.getenv("UNCORE2")
-        if u2:
-            u2 = canon_emapvar(u2, "uncore")
-            emap.add_uncore(u2, True)
-    except IOError:
-        print >>sys.stderr, "Cannot open", u2
+    def read_map(env, typ, r):
+        try:
+            e2 = os.getenv(env)
+            if e2:
+                e2 = canon_emapvar(e2, typ)
+                r(e2)
+                # don't try to download for now
+        except IOError:
+            print >>sys.stderr, "Cannot open", e2
+    read_map("EVENTMAP2", "core", lambda r: emap.read_events(r))
+    read_map("EVENTMAP3", "core", lambda r: emap.read_events(r))
+    read_map("UNCORE2", "uncore", lambda r: emap.add_uncore(r))
     return emap
 
 def canon_emapvar(el, typ):
