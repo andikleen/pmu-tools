@@ -30,6 +30,14 @@ def num_offline_cpus():
                 offline += 1
     return offline
 
+def reduced_counters():
+    val = 1
+    fn = "/sys/devices/cpu/allow_tsx_force_abort"
+    if os.path.exists(fn):
+        with open(fn, "r") as f:
+            val = int(f.read())
+    return val == 0
+
 class CPU:
     """Detect the CPU."""
     # overrides for easy regression tests
@@ -150,6 +158,8 @@ class CPU:
                 self.counters = 4
             else:
                 self.counters = 8
+            if reduced_counters():
+                self.counters -= 1
             # chicken bit to override if we get it wrong
             counters = os.getenv("TLCOUNTERS")
             if counters:
