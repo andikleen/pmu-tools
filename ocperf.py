@@ -493,18 +493,15 @@ class EmapNativeJSON(object):
             anyf = 0
             if name in fixed_counters:
                 code, umask, anyf = fixed_counters[name]
-            if 'other' in m and m['other'] in row:
+            if m['other'] in row:
                 other = gethex('other') << 16
             else:
                 other = 0
-            if 'edge' in m:
-                other |= gethex('edge') << 18
-            if 'any' in m and m['any'] in row:
+            other |= gethex('edge') << 18
+            if m['any'] in row:
                 other |= (gethex('any') | anyf) << 21
-            if 'cmask' in m:
-                other |= getdec('cmask') << 24
-            if 'invert' in m:
-                other |= gethex('invert') << 23
+            other |= getdec('cmask') << 24
+            other |= gethex('invert') << 23
             val = code | (umask << 8) | other
             val &= EVMASK
             d = get('desc')
@@ -524,8 +521,7 @@ class EmapNativeJSON(object):
                     e.extra += "u"
                 if other & (1<<17):
                     e.extra += "k"
-            if ('msr_index' in m and m['msr_index'] in row
-                    and get('msr_index') and get('msr_value')):
+            if (m['msr_index'] in row and get('msr_index') and get('msr_value')):
                 msrnum = gethex('msr_index')
                 msrval = gethex('msr_value')
                 if version.offcore and msrnum in (0x1a6, 0x1a7):
@@ -538,7 +534,7 @@ class EmapNativeJSON(object):
                 else:
                     e.msrval = msrval
                     e.msr = msrnum
-            if 'overflow' in m and m['overflow'] in row:
+            if m['overflow'] in row:
                 e.overflow = get('overflow')
                 #if e.overflow == "0":
                 #    print >>sys.stderr, "Warning: %s has no overflow value" % (name,)
