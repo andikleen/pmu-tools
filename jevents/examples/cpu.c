@@ -14,62 +14,14 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-/* CPU detection and event tables */
 #include <cpuid.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <linux/perf_event.h>
 
 #include "cpu.h"
-
-struct cpu_events {
-	int *models;
-	unsigned mem_stores;
-	unsigned mem_loads;
-};
-
-#define MEM_LOADS_SNB 0x1cd	/* MEM_TRANS_RETIRED.LOAD_LATENCY */
-#define MEM_STORES_SNB 0x2cd 	/* MEM_TRANS_RETIRED.PRECISE_STORES */
-static int snb_models[] = { 42, 45, 58, 62, 0 };
-
-#define MEM_LOADS_HSW MEM_LOADS_SNB
-#define MEM_STORES_HSW 0x82d0
-static int hsw_models[] = { 60, 70, 71, 63, 61, 0 };
-
-/* Nehalem and Westmere */
-#define MEM_LOADS_NHM 0x100b	/* MEM_INST_RETIRED.LOAD_LATENCY */
-#define MEM_STORES_NHM -1	/* not supported */
-
-static int nhm_models[] = { 26, 30, 46, 37, 44, 47, 0 };
-
-struct cpu_events events[] = { 
-	{ snb_models, MEM_STORES_SNB, MEM_LOADS_SNB },
-	{ nhm_models, MEM_STORES_NHM, MEM_LOADS_NHM },
-	{ hsw_models, MEM_STORES_HSW, MEM_LOADS_HSW },
-	{}
-};
-
-static unsigned get_cpu_model(void)
-{
-	unsigned sig;
-	if (__get_cpuid_max(0, &sig) >= 1 && sig == *(int *)"Genu") {
-		unsigned a, b, c, d;
-		__cpuid(1, a, b, c, d);
-		unsigned family = (a >> 8) & 0xf;
-		if (family == 6)
-			return ((a >> 4) & 0xf) + (((a >> 16) & 0xf) << 4);
-	}
-	return 0;
-}
-
-static bool match_cpu_model(int mod, int *models)
-{
-	int i;
-	for (i = 0; models[i]; i++)
-		if (models[i] == mod)
-			return true;
-	return false;
-}
+#include "jevents.h"
 
 /**  
  * mem_stores_event - Return precise mem load event for current CPU.
@@ -80,11 +32,11 @@ static bool match_cpu_model(int mod, int *models)
 
 unsigned mem_loads_event(void)
 {
-	int mod = get_cpu_model();
-	int i;
-	for (i = 0; events[i].models; i++)
-		if (match_cpu_model(mod, events[i].models))
-			return events[i].mem_loads;	
+	struct perf_event_attr attr;
+
+	if (!resolve_event("MEM_INST_RETIRED.LOAD_LATENCY_ABOVE_THRESHOLD_0", &attr) ||
+	    !resolve_event("MEM_TRANS_RETIRED.LOAD_LATENCY_GT_4", &attr))
+		return attr.config;
 	return -1;
 }
 
@@ -96,10 +48,10 @@ unsigned mem_loads_event(void)
  */
 unsigned mem_stores_event(void)
 {
-	int mod = get_cpu_model();
-	int i;
-	for (i = 0; events[i].models; i++)
-		if (match_cpu_model(mod, events[i].models))
-			return events[i].mem_stores;
+	struct perf_event_attr attr;
+
+	if (!resolve_event("MEM_INST_RETIRED.ALL_STORES", &attr) ||
+	    !resolve_event("MEM_UOPS_RETIRED.ALL_STORES", &attr))
+		return attr.config;
 	return -1;
 }
