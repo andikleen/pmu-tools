@@ -28,14 +28,22 @@ $V jestat true
 $V jestat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
 $V jestat -e "{cpu-cycles,cpu_clk_unhalted.ref_tsc},{$E,cache-references}" -a sleep 1
 $V jestat -a sleep 1
+$V jestat -a -e "uops_executed.thread:k" sleep 1
+$V jestat -a -e "offcore_response.all_data_rd.any_response:config1=0x1" sleep 1
 
 # test all events
 LEN=$(wc -l l | awk ' { print $1 }')
 INC=20
+
+# skip i915/vcs-* which often returns ENODEV for no good reason
+SKIP="i915-vcs"
+if [ ! -d /sys/devices/uncore_upi_0 ] ; then
+	SKIP="$SKIP|upi_"
+fi
+
 for ((i = 1; i <= LEN; i += INC)) ; do
-	# skip i915/vcs-* which often returns ENODEV for no good reason
 	$V jestat $(nl l |
-		    egrep -v 'i915/vcs' |
+		    egrep -v "$SKIP" |
 		    awk -v v=$i -v inc=$INC '$1 >= v && $1 <= v+inc { print "-e " $2 } ') -a true
 done
 
