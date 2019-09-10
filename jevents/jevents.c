@@ -132,6 +132,7 @@ static struct map {
 	{ "IMPH-U", "cbox" },
 	/* FIXME: need to convert event/umask like ocperf for ncu */
 	{ "NCU", "cbox" },
+	{ "UPI LL", "upi" },
 	{}
 };
 
