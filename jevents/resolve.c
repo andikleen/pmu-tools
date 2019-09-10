@@ -218,7 +218,8 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 				free(alias);
 				continue;
 			}
-			fprintf(stderr, "Cannot parse qualifier %s for %s\n", name, term);
+			if (n > 1)
+				fprintf(stderr, "Cannot open kernel format %s for %s\n", name, term);
 			break;
 		}
 		bool ok = try_parse(format, "config:%d-%d", val, &attr->config) ||
