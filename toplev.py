@@ -901,9 +901,9 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
 
         multiplex = float('nan')
         event = event.rstrip()
-        if re.match(r"[0-9.]+", count):
+        if re.match(r"\s*[0-9.]+", count):
             val = float(count)
-        elif count.startswith("<"):
+        elif re.match(r"\s*<", count):
             account[event].errors[count.replace("<","").replace(">","")] += 1
             multiplex = 0.
             val = 0
