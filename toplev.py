@@ -504,6 +504,8 @@ def raw_event(i, name="", period=False):
                 print >>sys.stderr, "%s not found" % (i,)
             return "dummy"
         oi = i
+        if re.match("^[0-9]", name):
+            name = "T" + name
         i = e.output(noname=True, name=name, period=period)
         if len(re.findall(r'[a-z0-9_]+/.*?/[a-z]*', i)) > 1:
             print "Event", oi, "maps to multiple units. Ignored."
