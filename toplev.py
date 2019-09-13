@@ -142,6 +142,8 @@ class PerfFeatures:
         self.supports_power = works(perf + " list  | grep -q power/")
         # problem in 4.12. fixed in v4.14, suppresses duplicate events
         self.supports_nomerge = works(perf + " stat --no-merge true")
+        # guests don't support offcore response
+        self.supports_ocr = works(perf + " stat -e '{cpu/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true")
 
 def kv_to_key(v):
     return v[0] * 100 + v[1]
@@ -492,6 +494,9 @@ notfound_cache = set()
 def raw_event(i, name="", period=False):
     orig_i = i
     if "." in i or "_" in i:
+        if re.match(r'^(OCR|OFFCORE_RESPONSE).*', i) and not feat.supports_ocr:
+            print >>sys.stderr, "%s not supported in guest" % i
+            return "dummy"
         if i in fixed_counters:
             return fixed_counters[i]
         e = emap.getevent(i)
