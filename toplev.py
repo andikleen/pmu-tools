@@ -1658,13 +1658,17 @@ def clean_event(e):
 
 def do_sample(sample_obj, rest, count):
     # XXX use :ppp if available
-    samples = [("cycles:pp", "Precise cycles", )]
+    if cpu.hypervisor:
+        samples = [("cycles", "Cycles", )]
+    else:
+        samples = [("cycles:pp", "Precise cycles", )]
     for obj in sample_obj:
         for s in obj.sample:
             samples.append((s, obj.name))
     nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
-    nsamp = [(remove_pp(x[0]), x[1]) if unsup_event(x[0], unsup_pebs) else x
-                for x in nsamp]
+    nsamp = [(remove_pp(x[0]), x[1])
+             if (unsup_event(x[0], unsup_pebs) or cpu.hypervisor) else x
+             for x in nsamp]
     if cmp(nsamp, samples):
         missing = [x[0] for x in set(samples) - set(nsamp)]
         if not args.quiet:
