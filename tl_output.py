@@ -272,5 +272,5 @@ class OutputCSV(Output):
             l.append(title)
         stddev = val.format_uncertainty().strip()
         multiplex = val.multiplex if not isnan(val.multiplex) else ""
-        self.writer.writerow(l + [hdr, val.format_value().strip(), remark, desc, sample, stddev,
+        self.writer.writerow(l + [hdr, val.format_value_raw().strip(), remark, desc, sample, stddev,
                                   multiplex, bn])
