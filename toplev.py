@@ -840,8 +840,23 @@ perf_fields = [
     r"Joules",
     ""]
 
+def group_join(events):
+    e = ""
+    last = None
+    sep = ""
+    for j in events:
+        e += sep
+        # add dummy event to separate identical events to avoid merging
+        # in perf stat
+        if last == j[0] and sep:
+            e += "emulation-faults,"
+        e += event_group(j)
+        sep = ","
+        last = j[-1]
+    return e
+
 def do_execute(runner, events, out, rest, res, rev, valstats, env):
-    evstr = ",emulation-faults," .join(map(event_group, events))
+    evstr = group_join(events)
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
