@@ -1704,9 +1704,9 @@ def sysctl(name):
 
 # check nmi watchdog
 if sysctl("kernel.nmi_watchdog") != 0:
-    sys.exit("Please disable the NMI watchdog as it permanently consumes one "
-             "hw-PMU counter.\n"
-             "(echo 0 > /proc/sys/kernel/nmi_watchdog)")
+    cpu.counters -= 1
+    print >>sys.stderr, "Consider disabling nmi watchdog"
+    print >>sys.stderr, "(echo 0 > /proc/sys/kernel/nmi_watchdog as root)"
 
 if cpu.cpu is None:
     sys.exit("Unsupported CPU model %d" % (cpu.model,))

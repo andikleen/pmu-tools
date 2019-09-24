@@ -87,6 +87,7 @@ grep BDE70 log
 
 # test L1 uses a single group
 onegroup() {
+	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
 	grep perf $1 | tr -cd '{}' | awk ' { if ($1 != "{}") { print "more than one group for L1" ; exit(1); } } '
 }
 
