@@ -90,8 +90,8 @@ def file_exists(s):
     exists_cache[s] = found
     return found
 
-def has_format(s):
-    return file_exists("/sys/devices/cpu/format/" + s)
+def has_format(s, pmu="cpu"):
+    return file_exists("/sys/devices/%s/format/%s" % (pmu, s))
 
 class PerfVersion:
     def __init__(self):
@@ -215,7 +215,7 @@ class Event:
         self.desc = desc
 
     # XXX return with pmu to be consistent with Uncore and fix callers
-    def output_newstyle(self, extra="", noname=False, period=False, name=""):
+    def output_newstyle(self, extra="", noname=False, period=False, name="", noexplode=False):
         """Format an perf event for output and return as perf event string.
            Always uses new style (cpu/.../)."""
         val = self.val
@@ -233,7 +233,7 @@ class Event:
             e += ",period=%d" % self.period
         return e
 
-    def output(self, use_raw=False, flags="", noname=False, period=False, name=""):
+    def output(self, use_raw=False, flags="", noname=False, period=False, name="", noexplode=False):
         """Format an event for output and return as perf event string.
            use_raw when true return old style perf string (rXXX).
            Otherwise chose between old and new style based on the
@@ -332,7 +332,7 @@ class UncoreEvent:
     # XXX cannot separate sockets
     # extra: perf flags
     # flags: emon flags
-    def output_newstyle(self, newextra="", noname=False, period=False, name="", flags=""):
+    def output_newstyle(self, newextra="", noname=False, period=False, name="", flags="", noexplode=False):
         e = self
         o = "/event=%#x" % e.code
         if e.umask:
@@ -386,7 +386,7 @@ class UncoreEvent:
 	    if one_unit and n > 0:
 		return False
             return box_exists(box_name(n))
-        if not box_exists(e.unit) and box_n_exists(0):
+	if not noexplode and not box_exists(e.unit) and box_n_exists(0):
             return ",".join(["uncore_" + box_name(x) + o.replace("_NUM", "_%d" % (x)) for x in
                              itertools.takewhile(box_n_exists, itertools.count())])
         return "uncore_%s%s" % (e.unit, o.replace("_NUM", ""))
