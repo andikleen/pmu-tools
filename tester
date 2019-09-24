@@ -206,7 +206,7 @@ TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore:on
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_1'
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1' --noexplode
 
-EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
+TOPOLOGY=top2 EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
 
 checkp_record '{cpu/cpu_clk_unhalted.thread/,cpu/br_inst_retired.all_branches/}:S'  \
 	'{cpu/event=0x3c,umask=0x0,name=cpu_clk_unhalted_thread,period=2000003/,cpu/event=0xc4,umask=0x0,name=br_inst_retired_all_branches/}:S'
