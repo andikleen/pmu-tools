@@ -944,15 +944,14 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
         # to all cpus in the socket to make the result lists match
         # unless we use -A ??
         # also -C xxx causes them to be duplicated too, unless single thread
-        if ((event.startswith("power") or event.startswith("uncore")) and
+	if (re.match(r'power|uncore', event) and
                 title != "" and (not (args.core and not args.single_thread))):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
             for j in cpu.sockettocpus[socket]:
-                if not args.core or display_core(j, True):
-                    res["%d" % (j)].append(val)
-                    rev["%d" % (j)].append(event)
-                    valstats["%d" % (j)].append(st)
+                res["%d" % (j)].append(val)
+                rev["%d" % (j)].append(event)
+                valstats["%d" % (j)].append(st)
         else:
             res[title].append(val)
             rev[title].append(event)
@@ -1004,7 +1003,7 @@ def do_event_rmap(e):
     if n.upper() in fixes:
         n = fixes[n.upper()].lower()
         if n:
-            return n
+	    return n
     return "dummy"
 
 rmap_cache = dict()
