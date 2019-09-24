@@ -48,6 +48,7 @@
 # --print       only print
 # --force-download Force event list download
 # --experimental Support experimental events
+# --noexplode  Don't list all sub pmus for uncore events. Rely on perf stat to merge.
 import sys
 import os
 import subprocess
@@ -840,7 +841,7 @@ def find_emap():
         pass
     return None
 
-def process_events(event, print_only, period):
+def process_events(event, print_only, period, noexplode):
     if emap is None:
         return event, False
     overflow = None
@@ -873,14 +874,14 @@ def process_events(event, print_only, period):
             if ev:
                 qual = "".join(merge_extra(extra_set(ev.extra), extra_set(m.group(4))))
                 end += qual
-                i = ev.output_newstyle(period=period)
+                i = ev.output_newstyle(period=period, noexplode=noexplode)
             else:
                 start = ""
                 end = ""
         else:
             ev = emap.getevent(i)
             if ev:
-                i = ev.output(period=period)
+                i = ev.output(period=period, noexplode=noexplode)
         if ev:
             if ev.msr:
                 msr.checked_writemsr(ev.msr, ev.msrval, print_only)
@@ -916,6 +917,7 @@ def process_args():
         perf = "perf"
     cmd = [perf]
 
+    noexplode = False
     overflow = None
     print_only = False
     never, no, yes = range(3)
@@ -930,13 +932,16 @@ def process_args():
             pass
         elif sys.argv[i] == "--no-period":
             record = never
+        elif sys.argv[i] == "--noexplode":
+            noexplode = True
         elif sys.argv[i] == "record" and record == no:
             cmd.append(sys.argv[i])
             record = yes
         elif sys.argv[i][0:2] == '-e' or sys.argv[i] == '--event':
             event, i, prefix = getarg(i, cmd)
             event, overflow = process_events(event, print_only,
-                                             True if record == yes else False)
+                                             True if record == yes else False,
+                                             noexplode)
             cmd.append(prefix + event)
         elif record and (sys.argv[i][0:2] == '-c' or sys.argv[i] == '--count'):
             oarg, i, prefix = getarg(i, cmd)
@@ -1015,6 +1020,8 @@ if __name__ == '__main__':
             force_download = True
         if j == "--experimental":
             experimental = True
+        if j == "--noexplode":
+            noexplode = True
     emap = find_emap()
     if not emap:
         print >>sys.stderr, "Do not recognize CPU or cannot find CPU map file."

@@ -113,13 +113,13 @@ checkmsr2 slm offcore_response.any_request.any_response "msr 1a6 = 18008"
 # parser checks
 checkp() 
 {
-	$WRAP ./ocperf.py --print stat -e "$1" > tlog
+	$WRAP ./ocperf.py --print stat $3 -e "$1" > tlog
 	grep "$2" tlog
 }
 
 checknotp()
 {
-	$WRAP ./ocperf.py --print stat -e "$1" > tlog
+	$WRAP ./ocperf.py --print stat $3 -e "$1" > tlog
 	grep -v "$2" tlog
 }
 
@@ -197,6 +197,7 @@ EOL
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1'
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_0'
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_1'
+TOPOLOGY=top2 UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1' --noexplode
 
 EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
 
