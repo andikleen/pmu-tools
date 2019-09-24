@@ -140,8 +140,6 @@ class PerfFeatures:
         if not self.logfd_supported:
             sys.exit("perf binary is too old or perf is disabled in /proc/sys/kernel/perf_event_paranoid")
         self.supports_power = works(perf + " list  | grep -q power/")
-        # problem in 4.12. fixed in v4.14, suppresses duplicate events
-        self.supports_nomerge = works(perf + " stat --no-merge true")
         # guests don't support offcore response
         self.supports_ocr = works(perf + " stat -e '{cpu/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true")
 
@@ -511,14 +509,11 @@ def raw_event(i, name="", period=False):
         oi = i
         if re.match("^[0-9]", name):
             name = "T" + name
-        i = e.output(noname=True, name=name, period=period)
-        if len(re.findall(r'[a-z0-9_]+/.*?/[a-z]*', i)) > 1:
-            print "Event", oi, "maps to multiple units. Ignored."
-            return "dummy" # FIXME
+	i = e.output(noname=True, name=name, period=period, noexplode=True)
+	# hack for running tl-tester on on client system where cha doesn't have a cmask
+	if i.startswith("uncore_cha") and ",cmask" in i and not ocperf.has_format("cmask", "uncore_cha_0"):
+	    i = i.replace(",cmask=1", "")
         emap.update_event(e.output(noname=True), e)
-        # next three things should be moved somewhere else
-        if i.startswith("uncore"):
-            outgroup_events.add(i)
         if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
             # for now use the first counter only to simplify
             # the assignment. This is sufficient for current
@@ -533,6 +528,10 @@ def raw_event(i, name="", period=False):
                 errata_events[orig_i] = e.errata
             else:
                 errata_warn_events[orig_i] = e.errata
+    if not i.startswith("cpu"):
+	if not i.startswith("uncore"):
+	    valid_events.add_event(i)
+	outgroup_events.add(i)
     return i
 
 # generate list of converted raw events from events string
@@ -570,8 +569,6 @@ def perf_args(evstr, rest):
     add = []
     if interval_mode:
         add += ['-I', str(interval_mode)]
-    if feat.supports_nomerge:
-        add.append('--no-merge')
     return [perf, "stat", "-x;", "--log-fd", "X"] + add + ["-e", evstr]  + rest
 
 def setup_perf(evstr, rest):
@@ -605,11 +602,14 @@ class ValidEvents:
         self.string = "|".join(self.valid_events)
 
     def __init__(self):
-        self.valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles",
+	self.valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*",
+			     r"msr.*", "emulation-faults",
                              r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
         self.update()
 
     def add_event(self, ev):
+	if re.match(self.string, ev):
+	    return
         # add first to overwrite more generic regexprs list r...
         self.valid_events.insert(0, ev)
         self.update()
@@ -841,7 +841,7 @@ perf_fields = [
     ""]
 
 def do_execute(runner, events, out, rest, res, rev, valstats, env):
-    evstr = ",".join(map(event_group, events))
+    evstr = ",emulation-faults," .join(map(event_group, events))
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
@@ -902,6 +902,11 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
             print "unparseable perf output"
             sys.stdout.write(l)
             continue
+
+        # dummy event used as separator to avoid merging problems
+        if event == "emulation-faults":
+            continue
+
         title = title.replace("CPU", "")
         # code later relies on stripping ku flags
         event = event.replace("/k", "/").replace("/u", "/")
@@ -976,8 +981,6 @@ def ev_append(ev, level, obj):
         obj.evlevels.append((ev, level, obj.name))
     if has(obj, 'nogroup') and obj.nogroup:
         outgroup_events.add(ev.lower())
-    if not ev.startswith("cpu"):
-        valid_events.add_event(ev)
     return 99
 
 def canon_event(e):
