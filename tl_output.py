@@ -241,7 +241,7 @@ class OutputColumnsCSV(OutputColumns):
                         sample = cpu[3]
                     # ignore remark for now
                     vlist.append(cpu[0])
-                    ol[cpuname] = float(cpu[0].value)
+                    ol[cpuname] = float(cpu[0].value) if cpu[0].value else ""
             l += [ol[x] if x in ol else "" for x in cpunames]
             l.append(desc)
             l.append(sample)
