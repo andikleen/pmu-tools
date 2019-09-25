@@ -142,6 +142,9 @@ class PerfFeatures:
         self.supports_power = works(perf + " list  | grep -q power/")
         # guests don't support offcore response
         self.supports_ocr = works(perf + " stat -e '{cpu/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true")
+        self.has_max_precise = os.path.exists("/sys/devices/cpu/caps/max_precise")
+        if self.has_max_precise:
+            self.max_precise = int(open("/sys/devices/cpu/caps/max_precise").read())
 
 def kv_to_key(v):
     return v[0] * 100 + v[1]
@@ -1663,6 +1666,11 @@ class Runner:
             print j,
         print
 
+def supports_pebs():
+    if feat.has_max_precise:
+        return feat.max_precise > 0
+    return not cpu.hypervisor
+
 def remove_pp(s):
     if s.endswith(":pp"):
         return s[:-3]
@@ -1672,26 +1680,32 @@ def clean_event(e):
     return remove_pp(e).replace(".", "_").replace(":", "_").replace('=','')
 
 def do_sample(sample_obj, rest, count):
-    # XXX use :ppp if available
-    if cpu.hypervisor:
-        samples = [("cycles", "Cycles", )]
-    else:
-        samples = [("cycles:pp", "Precise cycles", )]
+    samples = [("cycles:pp", "Precise cycles", )]
     for obj in sample_obj:
         for s in obj.sample:
             samples.append((s, obj.name))
     nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
     nsamp = [(remove_pp(x[0]), x[1])
-             if (unsup_event(x[0], unsup_pebs) or cpu.hypervisor) else x
+             if unsup_event(x[0], unsup_pebs) else x
              for x in nsamp]
     if cmp(nsamp, samples):
         missing = [x[0] for x in set(samples) - set(nsamp)]
         if not args.quiet:
             print >>sys.stderr, "warning: update kernel to handle sample events:"
             print >>sys.stderr, "\n".join(missing)
+
+    def force_pebs(ev):
+        return ev.startswith("FRONTEND_") or ("PREC_DIST" in ev)
+
+    no_pebs = not supports_pebs()
+    if no_pebs:
+        nsamp = [x for x in nsamp if not force_pebs(x[0])]
     sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True) for s in nsamp]
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
+    if no_pebs:
+        sample = re.sub(r'/p+', '/', sample)
+        sample = re.sub(r':p+', '', sample)
     print "Sampling:"
     extra_args = args.sample_args.replace("+", "-").split()
     perf_data = args.sample_basename
