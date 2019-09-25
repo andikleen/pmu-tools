@@ -1219,7 +1219,7 @@ Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
     return desc
 
-def node_filter(obj, test):
+def node_filter(obj, default):
     if args.nodes:
         fname = full_name(obj)
         name = obj.name
@@ -1237,7 +1237,7 @@ def node_filter(obj, test):
                 i += 1
             if match(j[i:]):
                 return True
-    return test()
+    return default
 
 SIB_THRESH = 0.05
 
@@ -1383,11 +1383,10 @@ class Runner:
             if args.reduced and has(obj, 'server') and not obj.server:
                 return False
             if not obj.metric:
-                return node_filter(obj, lambda: obj.level <= self.max_level)
+                return node_filter(obj, obj.level <= self.max_level)
             else:
-                return node_filter(obj,
-                        lambda: (args.metrics or obj.name in add_met)
-                                 and not obj.name in remove_met)
+                want = (args.metrics or obj.name in add_met) and not obj.name in remove_met
+                return node_filter(obj, want)
 
         self.olist = filter(want_node, self.olist)
 
