@@ -173,8 +173,10 @@ TOPOLOGY=topology EVENTMAP=${cpus[$cpu]} FORCECPU=$cpu $WRAP ./toplev.py -o /dev
 cat log
 # need to ignore errors for now to allow testing on laptop for uncore events
 grep "not found" log >> nflog || true
+if ! grep -q hypervisor /proc/cpuinfo ; then
 [ "$cpu" != knl ] && grep /p log
 [ "$cpu" = hsw -o "$cpu" = bdw -o "$cpu" = skl ] && grep /pp log
+fi
 done
 for cpu in $NOSMTCPUS ; do
 EVENTMAP=${cpus[$cpu]} FORCECPU=$cpu $WRAP ./toplev.py -o /dev/null --force-events --no-desc -v --all --show-sample $LOAD >&log
