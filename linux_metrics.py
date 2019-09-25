@@ -46,13 +46,24 @@ class Migrations:
 
 # The events below require trace points, so typically root.
 
+class BadEV:
+    pass
+
+def C(ev):
+    if not os.path.exists("/sys/kernel/debug/tracing/events" + ev.replace(":", "/")):
+        raise BadEV()
+    return ev
+
 class Syscalls:
     name = "Syscalls"
     desc = " Number of syscalls, not including vsyscalls such as gettimeofday."
     nogroup = True
     subplot = "OS metrics"
     def compute(self, EV):
-        self.val = EV("raw_syscalls:sys_enter", 1)
+        try:
+            self.val = EV(C("raw_syscalls:sys_enter"), 1)
+        except BadEV:
+            self.val = 0
         self.thresh = self.val > 0
 
 class Interrupts:
@@ -64,7 +75,10 @@ typically to indicate IO. This includes performance counter sampling interrupts.
     subplot = "Interrupts"
     # can overcount with shared vectors
     def compute(self, EV):
-        self.val = EV("irq:irq_handler_entry", 1) + EV("nmi:nmi_handler", 1)
+        try:
+            self.val = EV(C("irq:irq_handler_entry"), 1) + EV(C("nmi:nmi_handler"), 1)
+        except BadEV:
+            self.val = 0
         self.thresh = self.val > 0
 
 # XXX on older kernels will not count TLB flushes, when they still had an
@@ -79,9 +93,12 @@ or force reschedules."""
     subplot = "Interrupts"
     # can overcount with shared vectors
     def compute(self, EV):
-        self.val = (EV("irq_vectors:call_function_entry", 1) +
-                    EV("irq_vectors:call_function_single_entry", 1) +
-                    EV("irq_vectors:reschedule_entry", 1))
+        try:
+            self.val = (EV(C("irq_vectors:call_function_entry"), 1) +
+                        EV(C("irq_vectors:call_function_single_entry"), 1) +
+                        EV(C("irq_vectors:reschedule_entry"), 1))
+        except BadEV:
+            self.val = 0
         self.thresh = self.val > 0
 
 class Workqueues:
@@ -90,7 +107,10 @@ class Workqueues:
     nogroup = True
     subplot = "Interrupts"
     def compute(self, EV):
-        self.val = EV("workqueue:workqueue_execute_start", 1)
+        try:
+            self.val = EV(C("workqueue:workqueue_execute_start"), 1)
+        except BadEV:
+            self.val = 0
         self.thresh = self.val > 0
 
 class BlockIOs:
@@ -99,7 +119,10 @@ class BlockIOs:
     nogroup = True
     subplot = "IO"
     def compute(self, EV):
-        self.val = EV("block:block_rq_insert", 1)
+        try:
+            self.val = EV(C("block:block_rq_insert"), 1)
+        except BadEV:
+            self.val = 0
         self.thresh = self.val > 0
 
 class NetworkTX:
@@ -108,7 +131,10 @@ class NetworkTX:
     nogroup = True
     subplot = "IO"
     def compute(self, EV):
-        self.val = EV("net:net_dev_start_xmit", 1)
+        try:
+            self.val = EV(C("net:net_dev_start_xmit"), 1)
+        except BadEV:
+            self.val = 0
         self.thresh = self.val > 0
 
 class NetworkRX:
@@ -117,10 +143,13 @@ class NetworkRX:
     nogroup = True
     subplot = "IO"
     def compute(self, EV):
-        self.val = (EV("net:netif_rx", 1) +
-                    EV("net:netif_receive_skb", 1) +
-                    EV("net:napi_gro_receive_entry", 1) +
-                    EV("net:napi_gro_frags_entry", 1))
+        try:
+            self.val = (EV(C("net:netif_rx"), 1) +
+                        EV(C("net:netif_receive_skb"), 1) +
+                        EV(C("net:napi_gro_receive_entry"), 1) +
+                        EV(C("net:napi_gro_frags_entry"), 1))
+        except BadEV:
+            self.val = 0
         self.thresh = self.val > 0
 
 # trace events
