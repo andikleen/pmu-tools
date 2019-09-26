@@ -130,6 +130,13 @@ perf = os.getenv("PERF")
 if not perf:
     perf = "perf"
 
+warned = set()
+
+def warn_once(msg):
+    if msg not in warned:
+        print >>sys.stderr, msg
+        warned.add(msg)
+
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
@@ -1085,14 +1092,22 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     referenced.add(index)
     #print (ev, level, obj.name), "->", index
     if not args.fast:
-        rmap_ev = event_rmap(rev[index]).lower()
+        try:
+            rmap_ev = event_rmap(rev[index]).lower()
+        except IndexError:
+            warn_once("Not enough lines perf output. Missing -- in command line?")
+            return make_uval(0)
         ev = ev.lower()
         assert (rmap_ev == canon_event(ev).replace("/k", "/") or
                 compare_event(rmap_ev, ev) or
                 (ev in event_fixes and canon_event(event_fixes[ev]) == rmap_ev) or
                 rmap_ev == "dummy")
 
-    vv = res[index]
+    try:
+        vv = res[index]
+    except IndexError:
+        warn_once("Not enough lines perf output. Missing -- in command line?")
+        return make_uval(0)
     if isinstance(vv, types.TupleType):
         if cpuoff == -1:
             vv = sum(vv)
