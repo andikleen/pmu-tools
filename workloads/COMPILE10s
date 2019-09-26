@@ -1,0 +1,9 @@
+#!/bin/sh
+
+awk 'BEGIN {
+	print "extern int f2(void); int func(void) { int i; "
+	for(i = 0; i < 100000; i++) {
+		print "i += f2();" 
+	}
+	print "}" } ' |
+gcc -O3 -x c -c -o /dev/null -

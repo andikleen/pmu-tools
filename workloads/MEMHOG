@@ -1,0 +1,3 @@
+#!/bin/sh
+# backend bound. requires numactl
+memhog 1G
