@@ -54,7 +54,8 @@ GPU Energy over measurement period in Joules"""
 
 class Setup:
     def __init__(self, r):
-        r.metric(EnergyCores())
+        if os.path.exists("/sys/devices/power/events/energy-cores"):
+            r.metric(EnergyCores())
         r.metric(EnergyPackage())
         if os.path.exists("/sys/devices/power/events/energy-ram"):
             r.metric(EnergyRAM())

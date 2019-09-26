@@ -68,10 +68,10 @@ static struct event *eventlist[HASHSZ];
 static bool eventlist_init;
 
 /* Weinberg's identifier hash */
-static unsigned hashfn(const char *s)
+static unsigned hashfn(const char *s, int len)
 {
 	unsigned h = 0;
-	while (*s) {
+	while (*s && len--) {
 		int c = tolower(*s);
 		s++;
 		h = h * 67 + (c - 113);
@@ -82,7 +82,7 @@ static unsigned hashfn(const char *s)
 static int collect_events(void *data, char *name, char *event, char *desc,
 			  char *pmu)
 {
-	unsigned h = hashfn(name);
+	unsigned h = hashfn(name, strlen(name));
 	struct event *e = malloc(sizeof(struct event));
 	if (!e)
 		exit(ENOMEM);
@@ -128,7 +128,7 @@ static void free_events(void)
  *
  * Return: -1 on failure, otherwise 0.
  */
-int read_events(char *fn)
+int read_events(const char *fn)
 {
 	if (eventlist_init) {
 		// treat subsequent read_events calls after the first as replacing the
@@ -153,11 +153,11 @@ static struct fixed {
 /*
  * Handle different fixed counter encodings between JSON and perf.
  */
-static char *real_event(char *name, char *event)
+static char *real_event(char *name, char *event, int nlen)
 {
 	int i;
 	for (i = 0; fixed[i].name; i++)
-		if (!strcasecmp(name, fixed[i].name))
+		if (!strncasecmp(name, fixed[i].name, nlen))
 			return fixed[i].event;
 	return event;
 }
@@ -180,15 +180,16 @@ int resolve_event(const char *name, struct perf_event_attr *attr)
 	struct event *e;
 	char *buf;
 	int ret;
-	unsigned h = hashfn(name);
+	int nlen = strcspn(name, ":");
+	unsigned h = hashfn(name, nlen);
 
 	if (!eventlist_init) {
 		if (read_events(NULL) < 0)
 			return -1;
 	}
 	for (e = eventlist[h]; e; e = e->next) {
-		if (!strcasecmp(e->name, name)) {
-			char *event = real_event(e->name, e->event);
+		if (!strncasecmp(e->name, name, nlen)) {
+			char *event = real_event(e->name, e->event, nlen);
 			asprintf(&buf, "%s/%s/", e->pmu, event);
 			ret = jevent_name_to_attr(buf, attr);
 			free(buf);

@@ -89,10 +89,35 @@ static bool try_parse(char *format, char *fmt, __u64 val, __u64 *config)
 	return true;
 }
 
-static int read_qual(const char *qual, struct perf_event_attr *attr,
-		const char *str)
+/**
+ * jevents_update_qual - Update perf_event_attr with event attributes.
+ * @qual: String with qualifiers, see below.
+ * @attr: perf_event_attr to update
+ * @str: Original event, only used for error messages.
+ *
+ * Update a perf_event_attr with qualifiers after :.
+ * Supports most perf qualifiers like p,k,u,I,G etc. (see man perf-list),
+ * and special config=0xxx/config1=0xxxx/config2=0xxx to overwrite
+ * the raw attribute fields.
+ */
+int jevents_update_qual(const char *qual, struct perf_event_attr *attr,
+			const char *str)
 {
 	while (*qual) {
+		/* Should support more qualifiers, like filter */
+		if (!strncmp(qual, "config", 6)) {
+			unsigned long long c;
+			int skip = 0;
+
+			if (sscanf(qual, "config=%llx%n", &c, &skip) == 1)
+				attr->config |= c;
+			else if (sscanf(qual, "config1=%llx%n", &c, &skip) == 1)
+				attr->config1 |= c;
+			else if (sscanf(qual, "config2=%llx%n", &c, &skip) == 1)
+				attr->config2 |= c;
+			qual += skip;
+		}
+
 		switch (*qual) { 
 		case 'p':
 			attr->precise_ip++;
@@ -104,9 +129,21 @@ static int read_qual(const char *qual, struct perf_event_attr *attr,
 			attr->exclude_kernel = 1;
 			break;
 		case 'h':
+		case 'H': /* ??? */
 			attr->exclude_guest = 1;
 			break;
-		/* XXX more */
+		case 'I':
+			attr->exclude_idle = 1;
+			break;
+		case 'G':
+			attr->exclude_hv = 1;
+			break;
+		case 'D':
+			attr->pinned = 1;
+			break;
+		case ':':
+			break;
+		/* should implement 'P'.  */
 		default:
 			fprintf(stderr, "Unknown modifier %c at end for %s\n", *qual, str);
 			return -1;
@@ -128,15 +165,15 @@ static bool special_attr(char *name, int val, struct perf_event_attr *attr)
 		return true;
 	}
 	if (!strcmp(name, "config")) {
-		attr->config = val;
+		attr->config |= val;
 		return true;
 	}
 	if (!strcmp(name, "config1")) {
-		attr->config2 = val;
+		attr->config2 |= val;
 		return true;
 	}
 	if (!strcmp(name, "config2")) {
-		attr->config2 = val;
+		attr->config2 |= val;
 		return true;
 	}
 	if (!strcmp(name, "name")) {
@@ -181,7 +218,8 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 				free(alias);
 				continue;
 			}
-			fprintf(stderr, "Cannot parse qualifier %s for %s\n", name, term);
+			if (n > 1)
+				fprintf(stderr, "Cannot open kernel format %s for %s\n", name, term);
 			break;
 		}
 		bool ok = try_parse(format, "config:%d-%d", val, &attr->config) ||
@@ -259,7 +297,7 @@ int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 		assert(qual_off != -1);
 		if (str[qual_off] == 0)
 			return 0;
-		if (str[qual_off] == ':' && read_qual(str + qual_off, attr, str) == 0)
+		if (str[qual_off] == ':' && jevents_update_qual(str + qual_off, attr, str) == 0)
 			return 0;
 		return -1;
 	}
@@ -276,7 +314,7 @@ int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 	free(type);
 	if (parse_terms(pmu, config, attr, 0) < 0)
 		return -1;
-	if (qual_off != -1 && read_qual(str + qual_off, attr, str) < 0)
+	if (qual_off != -1 && jevents_update_qual(str + qual_off, attr, str) < 0)
 		return -1;
 	return 0;
 }

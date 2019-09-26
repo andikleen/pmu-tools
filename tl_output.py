@@ -241,7 +241,7 @@ class OutputColumnsCSV(OutputColumns):
                         sample = cpu[3]
                     # ignore remark for now
                     vlist.append(cpu[0])
-                    ol[cpuname] = float(cpu[0].value)
+                    ol[cpuname] = float(cpu[0].value) if cpu[0].value else ""
             l += [ol[x] if x in ol else "" for x in cpunames]
             l.append(desc)
             l.append(sample)
@@ -272,5 +272,5 @@ class OutputCSV(Output):
             l.append(title)
         stddev = val.format_uncertainty().strip()
         multiplex = val.multiplex if not isnan(val.multiplex) else ""
-        self.writer.writerow(l + [hdr, val.format_value().strip(), remark, desc, sample, stddev,
+        self.writer.writerow(l + [hdr, val.format_value_raw().strip(), remark, desc, sample, stddev,
                                   multiplex, bn])

@@ -56,6 +56,13 @@ checklist bdw-de 100
 checklist bdw 100
 checklist skl 100
 
+O=$(EVENTMAP=${cpus[skl]} $WRAP ./ocperf.py list | wc -l)
+E=$(EVENTMAP=${cpus[skl]} $WRAP ./ocperf.py list --experimental  | wc -l)
+if [ $E <= $O ] ;then
+	echo "No experimental events on SKL"
+	exit 1
+fi
+
 set -e
 $WRAP ./ocperf.py stat -e inst_retired.any /bin/true
 
@@ -113,13 +120,13 @@ checkmsr2 slm offcore_response.any_request.any_response "msr 1a6 = 18008"
 # parser checks
 checkp() 
 {
-	$WRAP ./ocperf.py --print stat -e "$1" > tlog
+	$WRAP ./ocperf.py --print stat $3 -e "$1" > tlog
 	grep "$2" tlog
 }
 
 checknotp()
 {
-	$WRAP ./ocperf.py --print stat -e "$1" > tlog
+	$WRAP ./ocperf.py --print stat $3 -e "$1" > tlog
 	grep -v "$2" tlog
 }
 
@@ -197,8 +204,9 @@ EOL
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1'
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_0'
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_1'
+TOPOLOGY=top2 UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1' --noexplode
 
-EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
+TOPOLOGY=top2 EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
 
 checkp_record '{cpu/cpu_clk_unhalted.thread/,cpu/br_inst_retired.all_branches/}:S'  \
 	'{cpu/event=0x3c,umask=0x0,name=cpu_clk_unhalted_thread,period=2000003/,cpu/event=0xc4,umask=0x0,name=br_inst_retired_all_branches/}:S'

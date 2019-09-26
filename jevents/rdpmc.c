@@ -22,11 +22,8 @@
 #include <linux/perf_event.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <x86intrin.h>
 #include "jevents.h"
-
-#if defined(__ICC) || defined(__INTEL_COMPILER)
-#include "immintrin.h"
-#endif
 
 /**
  * DOC: Ring 3 counting for CPU performance counters
@@ -130,15 +127,13 @@ unsigned long long rdpmc_read(struct rdpmc_ctx *ctx)
 		rmb();
 		index = buf->index;
 		offset = buf->offset;
-		if (index == 0) /* rdpmc not allowed */
-			return offset;
-#if defined(__ICC) || defined(__INTEL_COMPILER)
+		if (index == 0) { /* rdpmc not allowed */
+			val = 0;
+			break;
+		}
 		val = _rdpmc(index - 1);
-#else
-		val = __builtin_ia32_rdpmc(index - 1);
-#endif
 		rmb();
 	} while (buf->lock != seq);
-	return val + offset;
+	return (val + offset) & 0xffffffffffff;
 }
 

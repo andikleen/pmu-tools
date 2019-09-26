@@ -19,7 +19,9 @@ struct perf_event_attr;
 
 int jevent_name_to_attr(const char *str, struct perf_event_attr *attr);
 int resolve_event(const char *name, struct perf_event_attr *attr);
-int read_events(char *fn);
+int read_events(const char *fn);
+int jevents_update_qual(const char *qual, struct perf_event_attr *attr,
+			const char *str);
 int walk_events(int (*func)(void *data, char *name, char *event, char *desc),
 		                void *data);
 int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc),

@@ -30,6 +30,14 @@ def num_offline_cpus():
                 offline += 1
     return offline
 
+def reduced_counters():
+    val = 1
+    fn = "/sys/devices/cpu/allow_tsx_force_abort"
+    if os.path.exists(fn):
+        with open(fn, "r") as f:
+            val = int(f.read())
+    return val == 0
+
 class CPU:
     """Detect the CPU."""
     # overrides for easy regression tests
@@ -86,26 +94,25 @@ class CPU:
         if cpuinfo is None:
             cpuinfo = "/proc/cpuinfo"
         with open(cpuinfo, "r") as f:
-            ok = 0
+            seen = set()
             for l in f:
                 n = l.split()
                 if len(n) < 3:
                     continue
                 if n[0] == 'processor':
-                    ok += 1
+                    seen.add("processor")
                     cpunum = int(n[2])
                     self.allcpus.append(cpunum)
-                elif (n[0], n[2]) == ("vendor_id", "GenuineIntel") and ok == 0:
-                    ok += 1
+                elif (n[0], n[2]) == ("vendor_id", "GenuineIntel"):
+                    seen.add("vendor_id")
                 elif (len(n) > 3 and
-                        (n[0], n[1], n[3]) == ("cpu", "family", "6") and
-                        ok == 1):
-                    ok += 1
-                elif (n[0], n[1]) == ("model", ":") and ok == 2:
-                    ok += 1
+                        (n[0], n[1], n[3]) == ("cpu", "family", "6")):
+                    seen.add("cpu family")
+                elif (n[0], n[1]) == ("model", ":"):
+                    seen.add("model")
                     self.model = int(n[2])
                 elif (n[0], n[1]) == ("model", "name"):
-                    ok += 1
+                    seen.add("model name")
                     m = re.search(r"@ (\d+\.\d+)GHz", l)
                     if m:
                         self.freq = float(m.group(1))
@@ -126,13 +133,13 @@ class CPU:
                     self.cputocore[cpunum] = key
                     self.cputothread[cpunum] = self.coreids[key].index(cpunum)
                 elif n[0] == "flags":
-                    ok += 1
+                    seen.add("flags")
                     self.has_tsx = "rtm" in n
                     self.hypervisor = "hypervisor" in n
                 elif n[0] == "stepping":
-                    ok += 1
+                    seen.add("stepping")
                     self.step = int(n[2])
-        if ok >= 7:
+        if len(seen) >= 7:
             for i in known_cpus:
                 if self.model in i[1] or (self.model, self.step) in i[1]:
                     self.realcpu = i[0]
@@ -150,6 +157,8 @@ class CPU:
                 self.counters = 4
             else:
                 self.counters = 8
+            if reduced_counters():
+                self.counters -= 1
             # chicken bit to override if we get it wrong
             counters = os.getenv("TLCOUNTERS")
             if counters:

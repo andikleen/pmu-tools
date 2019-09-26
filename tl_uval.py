@@ -59,6 +59,13 @@ class UVal:
         else:
             return "{:13.2f}".format(self.value)
 
+    def format_value_raw(self):
+        if self.value is None: return ""
+        if self.is_ratio:
+            return "{:>13.2f}".format(self.value * 100.)
+        else:
+            return "{:13.2f}".format(self.value)
+
     def format_uncertainty(self):
         """string representation of measurement uncertainty"""
         def isnan(x):
