@@ -53,6 +53,7 @@ fixed_to_num = {
     "cpu/event=0x3c,umask=0x00,any=1/": 1,
     "cpu/event=0x3c,umask=0x0,any=1/": 1,
     "ref-cycles" : 2,
+    "cpu/event=0x0,umask=0x3/": 2,
     "cpu/event=0x0,umask=0x3,any=1/" : 2,
 }
 
@@ -173,31 +174,41 @@ def unsup_event(e, table, min_kernel=None):
         return False
     return False
 
-def needed_limited_counter(evlist, limit_table, limit_set):
-    limited_only = set(evlist) & set(limit_set)
-    assigned = Counter([limit_table[x] for x in limited_only]).values()
+def remove_qual(ev):
+    return re.sub(r'/[ku+]', '/', ev)
+
+def fixed_overflow(evlist):
+    assigned = Counter([fixed_to_num[x] for x in evlist if x in fixed_to_num]).values()
+    return any([x > 1 for x in assigned])
+
+def is_limited(x):
+    return x.startswith("cpu/cycles-ct/")
+
+def limit_overflow(evlist):
+    assigned = Counter([limited_counters[x] for x in evlist if is_limited(x)]).values()
     # 0..1 counter is ok
     # >1   counter is over subscribed
     return sum([x - 1 for x in assigned if x > 1])
 
-def fixed_overflow(evlist):
-    return needed_limited_counter(evlist, fixed_to_num, ingroup_events)
-
-def limit_overflow(evlist):
-    return needed_limited_counter(evlist, limited_counters, limited_set)
-
 # limited to first four counters
-def limit4_set_overflow(evlist):
-    limit4 = [x for x in evlist if fnmatch.fnmatch(x, "cpu/event=0xd[0123],*")]
-    return len(limit4)
+def limit4_overflow(evlist):
+    # hardcoded for ICL (XXX)
+    if cpu.cpu == "icl":
+        limit4 = [x for x in evlist if fnmatch.fnmatch(x, "cpu/event=0xd[0123],*")]
+        return len(limit4)
+    return 0
 
 def needed_counters(evlist):
+    evlist = list(set(evlist)) # remove duplicates first
+    evlist = map(remove_qual, evlist)
     evset = set(evlist)
-    num_generic = len(evset - ingroup_events - limited_set)
+    num = len(evset - ingroup_events)
 
-    # If we need more than 3 fixed counters (happens with any vs no any)
-    # promote those to generic counters
-    num = num_generic + fixed_overflow(evlist)
+    # force split if we overflow fixed or limit4
+    # some fixed could be promoted to generic, but that doesn't work
+    # with ref-cycles.
+    if fixed_overflow(evlist) or limit4_overflow(evlist) > 4:
+        return 100
 
     # account events that only schedule on one of the generic counters
 
@@ -210,10 +221,6 @@ def needed_counters(evlist):
     # a split
     if num_limit > 0:
         num = max(num, cpu.counters) + num_limit
-
-    # force split if we ran out of lower 4 counters
-    if limit4_set_overflow(evlist) > 4:
-        num = 100
 
     return num
 
@@ -1468,7 +1475,7 @@ class Runner:
 
     def add(self, objl, evnum, evlev, force=False):
         # does not fit into a group.
-        if needed_counters(evnum) > cpu.counters and not force:
+        if needed_counters(list(set(evnum))) > cpu.counters and not force:
             self.split_groups(objl, evlev)
             return
         evnum, evlev = dedup2(evnum, evlev)
