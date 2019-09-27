@@ -30,6 +30,7 @@
 # PERF=... perf binary to use (default "perf")
 # EVENTMAP=eventmap
 # EVENTMAP2=eventmap
+# EVENTMAP3=eventmap
 # OFFCORE=eventmap
 # UNCORE=eventmap
 # UNCORE2=eventmap
@@ -493,18 +494,15 @@ class EmapNativeJSON(object):
             anyf = 0
             if name in fixed_counters:
                 code, umask, anyf = fixed_counters[name]
-            if 'other' in m and m['other'] in row:
+            if m['other'] in row:
                 other = gethex('other') << 16
             else:
                 other = 0
-            if 'edge' in m:
-                other |= gethex('edge') << 18
-            if 'any' in m and m['any'] in row:
+            other |= gethex('edge') << 18
+            if m['any'] in row:
                 other |= (gethex('any') | anyf) << 21
-            if 'cmask' in m:
-                other |= getdec('cmask') << 24
-            if 'invert' in m:
-                other |= gethex('invert') << 23
+            other |= getdec('cmask') << 24
+            other |= gethex('invert') << 23
             val = code | (umask << 8) | other
             val &= EVMASK
             d = get('desc')
@@ -524,8 +522,7 @@ class EmapNativeJSON(object):
                     e.extra += "u"
                 if other & (1<<17):
                     e.extra += "k"
-            if ('msr_index' in m and m['msr_index'] in row
-                    and get('msr_index') and get('msr_value')):
+            if (m['msr_index'] in row and get('msr_index') and get('msr_value')):
                 msrnum = gethex('msr_index')
                 msrval = gethex('msr_value')
                 if version.offcore and msrnum in (0x1a6, 0x1a7):
@@ -538,7 +535,7 @@ class EmapNativeJSON(object):
                 else:
                     e.msrval = msrval
                     e.msr = msrnum
-            if 'overflow' in m and m['overflow'] in row:
+            if m['overflow'] in row:
                 e.overflow = get('overflow')
                 #if e.overflow == "0":
                 #    print >>sys.stderr, "Warning: %s has no overflow value" % (name,)
@@ -767,21 +764,18 @@ def add_extra_env(emap, el):
                     emap.add_uncore(uc)
     except IOError:
         print >>sys.stderr, "Cannot open", uc
-    try:
-        e2 = os.getenv("EVENTMAP2")
-        if e2:
-            e2 = canon_emapvar(e2, "core")
-            emap.read_events(e2)
-            # don't try to download for now
-    except IOError:
-        print >>sys.stderr, "Cannot open", e2
-    try:
-        u2 = os.getenv("UNCORE2")
-        if u2:
-            u2 = canon_emapvar(u2, "uncore")
-            emap.add_uncore(u2, True)
-    except IOError:
-        print >>sys.stderr, "Cannot open", u2
+    def read_map(env, typ, r):
+        try:
+            e2 = os.getenv(env)
+            if e2:
+                e2 = canon_emapvar(e2, typ)
+                r(e2)
+                # don't try to download for now
+        except IOError:
+            print >>sys.stderr, "Cannot open", e2
+    read_map("EVENTMAP2", "core", lambda r: emap.read_events(r))
+    read_map("EVENTMAP3", "core", lambda r: emap.read_events(r))
+    read_map("UNCORE2", "uncore", lambda r: emap.add_uncore(r))
     return emap
 
 def canon_emapvar(el, typ):
