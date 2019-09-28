@@ -113,9 +113,9 @@ class OutputHuman(Output):
         if title:
             write("%-*s" % (self.titlelen, title))
         self.print_header(area, hdr)
-        val = "{:>8} +- {:>8} {:{width}}".format(val.format_value(),
-                                                 val.format_uncertainty(),
+        val = "{:>8} {:{width}} +- {:>8}".format(val.format_value(),
                                                  remark,
+                                                 val.format_uncertainty(),
                                                  width=self.unitlen + 1)
         if bn:
             val += " " + bn
