@@ -177,7 +177,10 @@ def eventlist_name(name=None, key="core"):
     fn = "%s/%s-%s.json" % (cache, name, key)
     if not os.path.exists(fn):
         name = cpu_without_step(name)
-        fn = "%s/%s-%s.json" % (cache, name, key)
+        if "*" in fn:
+            fn = "%s/%s" % (cache, name)
+        else:
+            fn = "%s/%s-%s.json" % (cache, name, key)
     return fn
 
 if __name__ == '__main__':

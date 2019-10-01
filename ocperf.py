@@ -72,7 +72,6 @@ experimental = False
 exists_cache = dict()
 
 topology = None
-file_exists = dict()
 
 def file_exists(s):
     if s in exists_cache:
@@ -94,6 +93,13 @@ def file_exists(s):
 
 def has_format(s, pmu="cpu"):
     return file_exists("/sys/devices/%s/format/%s" % (pmu, s))
+
+warned = set()
+
+def warn_once(s):
+    if s not in warned:
+        print >>sys.stderr, s
+        warned.add(s)
 
 class PerfVersion:
     def __init__(self):
@@ -254,19 +260,17 @@ class Event:
             ename = "cpu/%s/" % (self.output_newstyle(extra=",".join(newe), noname=noname, period=period, name=name)) + extra
         return ename
 
+    def filter_qual(self):
+        pass
+
 box_to_perf = {
     "cbo": "cbox",
     "qpi_ll": "qpi",
     "sbo": "sbox",
 }
 
-box_cache = dict()
-
 def box_exists(box):
-    n = "/sys/devices/uncore_%s" % (box)
-    if n not in box_cache:
-        box_cache[n] = file_exists(n)
-    return box_cache[n]
+    return file_exists("/sys/devices/uncore_%s" % (box))
 
 def int_or_zero(row, name):
     if name in row:
@@ -283,6 +287,30 @@ uncore_units = {
     "m3kti": "m3upi",
     "upi ll": "upi",
 }
+
+def convert_uncore(flags):
+    o = ""
+    while flags:
+        for j in uncore_map:
+            match, repl = j[0], j[1]
+            m = re.match(match, flags)
+            if m:
+                if repl == "":
+                    pass
+                elif len(j) > 2:
+                    o += "," + repl + ("%#x" % (int(m.group(1), 0) << j[2]))
+                else:
+                    o += "," + repl + m.group(1)
+                flags = flags[m.end():]
+            if flags == "":
+                break
+            if flags[0:1] == ":":
+                flags = flags[1:]
+        else:
+            if flags != "":
+                print >>sys.stderr, "Uncore cannot parse", flags
+                break
+    return o
 
 class UncoreEvent:
     def __init__(self, name, row):
@@ -351,28 +379,10 @@ class UncoreEvent:
                 flags += ","
             flags += e.newextra
 
-	one_unit = False
+        one_unit = "one_unit" in flags
+        o += convert_uncore(flags)
 
         # xxx subctr, occ_sel, filters
-        if flags:
-            for j in uncore_map:
-                match, repl = j[0], j[1]
-                m = re.match(match, flags)
-                if m:
-		    if repl == "":
-			if match.startswith("one_unit"):
-			    one_unit = True
-		    elif len(j) > 2:
-                        o += "," + repl + ("%#x" % (int(m.group(1), 0) << j[2]))
-                    else:
-                        o += "," + repl + m.group(1)
-                    flags = flags[m.end():]
-                if flags == "":
-                    break
-                if flags[0:1] == ":":
-                    flags = flags[1:]
-            if flags != "":
-                print >>sys.stderr, "Uncore cannot parse", flags
         if version.has_name and not noname:
             if name == "":
                 name = e.name.replace(".", "_")
@@ -392,6 +402,22 @@ class UncoreEvent:
             return ",".join(["uncore_" + box_name(x) + o.replace("_NUM", "_%d" % (x)) for x in
                              itertools.takewhile(box_n_exists, itertools.count())])
         return "uncore_%s%s" % (e.unit, o.replace("_NUM", ""))
+
+    def filter_qual(self):
+        def check_qual(q):
+            if q == "":
+                return False
+            if q == "one_unit":
+                return True
+            if "=" in q:
+                q, _ = q.split("=")
+            if has_format(q, self.unit) or has_format(q, self.unit + "_0"):
+                return True
+            warn_once("%s: format %s not supported. Filtering out" % (self.unit, q))
+            return False
+
+        self.newextra = ",".join(filter(check_qual, convert_uncore(self.newextra).split(",")))
+
 
     output = output_newstyle
 
@@ -719,6 +745,13 @@ class EmapNativeJSON(object):
             except UnicodeEncodeError:
                 pass
 
+def handle_io_error(f, name, warn=False):
+    try:
+        f(name)
+    except IOError:
+        if warn:
+            print >>sys.stderr, "Cannot open", name
+
 def json_with_extra(el):
     name = event_download.eventlist_name(el, "core")
     emap = EmapNativeJSON(name)
@@ -816,6 +849,7 @@ def find_emap():
         if not force_download:
             emap = json_with_extra(el)
             if emap:
+                add_extra_env(emap, el)
                 return emap
     except IOError:
         pass
@@ -825,12 +859,13 @@ def find_emap():
             toget.append("offcore")
         if not os.getenv("UNCORE"):
             toget.append("uncore")
-        if not os.getenv("UNCORE"):
-            toget.append("uncore")
         if experimental:
             toget += [x + " experimental" for x in toget]
         event_download.download(el, toget)
-        return json_with_extra(el)
+        emap = json_with_extra(el)
+        if emap:
+            add_extra_env(emap, el)
+            return emap
     except IOError:
         pass
     return None
