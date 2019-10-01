@@ -535,7 +535,7 @@ def raw_event(i, name="", period=False):
         if e is None:
             if i not in notfound_cache:
                 notfound_cache.add(i)
-                print >>sys.stderr, "%s not found %s" % (i, emap.lasterr, )
+                print >>sys.stderr, "%s not found" % i
             return "dummy"
         oi = i
         if re.match("^[0-9]", name):
