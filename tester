@@ -58,7 +58,7 @@ checklist skl 100
 
 O=$(EVENTMAP=${cpus[skl]} $WRAP ./ocperf.py list | wc -l)
 E=$(EVENTMAP=${cpus[skl]} $WRAP ./ocperf.py list --experimental  | wc -l)
-if [ $E <= $O ] ;then
+if [ $E -lt $O ] ;then
 	echo "No experimental events on SKL"
 	exit 1
 fi
@@ -205,6 +205,7 @@ TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore' '
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_0'
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_1'
 TOPOLOGY=top2 UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1' --noexplode
+TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox[^_]' --noexplode
 
 TOPOLOGY=top2 EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
 
