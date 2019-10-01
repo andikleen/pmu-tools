@@ -5,6 +5,16 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now can run with the NMI watchdog enabled
+	- This may reduce the need for being root to change this setting
+	- It may still require kernel.perf_event_paranoid settings <1, unless
+	  --single-thread is used. Some functionality like uncore monitoring
+	  requires root or kernel.perf_event_paranoid < 0.
+* toplev now supports running in KVM guests
+	- The guest needs to have the PMU enabled (e.g. -cpu host for qemu)
+	- The guest should report the same CPU type as the host (also -cpu host),
+	  otherwise the current CPU needs to be overriden with FORCECPU=../EVENTMAP=..
+	- PEBS sampling, offcore response, and uncore monitoring are not supported
 * toplev update to Ahmad Yasin's TMA 3.5:
 	- Support for Cascade Lake
 	- Add PMM_Bound nodes for persistent memory
