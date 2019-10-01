@@ -225,10 +225,23 @@ def needed_counters(evlist):
     return num
 
 def event_group(evlist):
-    e = ",".join(add_filter(evlist))
-    if not args.no_group and 1 < needed_counters(evlist) <= cpu.counters:
-        e = "{%s}" % (e,)
-    return e
+    evlist = add_filter(evlist)
+    # keep uncore events outside groups for now
+    def notuncore(ev):
+        return not ev.startswith("uncore_")
+    l = []
+    while len(evlist) > 0:
+        if not notuncore(evlist[0]):
+            l.append(evlist[0])
+            evlist = evlist[1:]
+            continue
+        g = list(itertools.takewhile(notuncore, evlist))
+        e = ",".join(g)
+        if not args.no_group and needed_counters(g) <= cpu.counters:
+            e = "{%s}" % e
+        l.append(e)
+        evlist = evlist[len(g):]
+    return ",".join(l)
 
 def exe_dir():
     d = os.path.dirname(sys.argv[0])
