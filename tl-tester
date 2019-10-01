@@ -10,7 +10,7 @@ WRAP=${WRAP:-}
 
 failed() {
 	echo FAILED
-	[ -f nflog ] && cat nflog && rm nflog
+	[ -f nflog ] && ( sort nflog | uniq ) && rm nflog
 }
 trap failed ERR 0
 
@@ -177,7 +177,7 @@ TOPOLOGY=topology EVENTMAP=${cpus[$cpu]} UNCORE=${cpus[$cpu]} FORCECPU=$cpu \
 $WRAP ./toplev.py -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log
 cat log
 # need to ignore errors for now to allow testing on laptop for uncore events
-grep "not found" log >> nflog || true
+egrep "missing|not found" log >> nflog || true
 if ! grep -q hypervisor /proc/cpuinfo ; then
 [ "$cpu" != knl ] && grep /p log
 [ "$cpu" = hsw -o "$cpu" = bdw -o "$cpu" = skl ] && grep /pp log
@@ -187,7 +187,7 @@ for cpu in $NOSMTCPUS ; do
 EVENTMAP=${cpus[$cpu]} UNCORE=${cpus[$cpu]} FORCECPU=$cpu \
 $WRAP ./toplev.py -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log
 cat log
-grep "not found" log >> nflog || true
+egrep "not found|missing" log >> nflog || true
 done
 
 trap "" ERR 0
@@ -195,4 +195,4 @@ trap "" ERR 0
 echo
 echo "$badschedules bad schedules: $badschedlist"
 echo "SUCCEEDED"
-[ -f nflog ] && cat nflog && rm nflog
+[ -f nflog ] && ( sort nflog | uniq ) && rm nflog
