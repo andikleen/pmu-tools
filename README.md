@@ -5,6 +5,14 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev update to Ahmad Yasin's/Anton Hanna's TMA 3.6:
+	- {Load|Store}_STLB_(Hit|Miss): new metrics that breakdown DTLB_{Load|Store} costs
+	- L2_Evictions_(Silent|NonSilent)_PKI: L2 (silent|non silent) evictions rate per Kilo instructios
+	- IpFarBranch - Instructions per Far Branch
+	- Renamed 0/1/2/3m_Ports_Utilized
+	- DSB_Switches is now available
+	- Count Domain changes for multiple nodes. New threshold for IpTB ( Instructions per Taken Branches )
+	- Re-organized/renamed Metric Group (e.g. Frontend_Bound => Frontend)
 * toplev now can run with the NMI watchdog enabled
 	- This may reduce the need for being root to change this setting
 	- It may still require kernel.perf_event_paranoid settings <1, unless
