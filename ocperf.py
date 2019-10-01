@@ -162,7 +162,7 @@ qualval_map = (
     (r"(?:sa|sample-after|period)=([0-9]+)", "period=%d", 0))
 
 uncore_map = (
-    (r'Match=(0x[0-9a-f])', "filter_occ="),
+    (r'[Mm]atch=(0x[0-9a-fA-F]+)', "filter_occ="),
     (r'filter1=(0x[0-9a-fA-F]+)', "config1=", 32),
     ("nc=(\d+)", "filter_nc="),
     (r'filter=(0x[0-9a-fA-F]+)', "config1="),
@@ -465,14 +465,14 @@ missing_boxes = set()
 def check_uncore_event(e):
     if uncore_exists(e.unit):
         if e.cmask and not uncore_exists(e.unit, "/format/cmask"):
-            print >>sys.stderr, "Uncore unit", e.unit, "missing cmask for", e.name
+            warn_once("Uncore unit " + e.unit + " missing cmask for " + e.name)
             return None
         if e.umask and not uncore_exists(e.unit, "/format/umask"):
-            print >>sys.stderr, "Uncore unit", e.unit, "missing umask for", e.name
+            warn_once("Uncore unit " + e.unit + " missing umask for " + e.name)
             return None
         return e
     if e.unit not in missing_boxes:
-        print >>sys.stderr, "Uncore unit", e.unit, "missing"
+        warn_once("Uncore unit " + e.unit + " missing")
         missing_boxes.add(e.unit)
     return None
 
