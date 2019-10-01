@@ -381,6 +381,7 @@ g.add_argument('--sample-basename', help='Base name of sample perf.data files', 
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
+p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true')
 args, rest = p.parse_known_args()
 
 rest = [x for x in rest if x != "--"]
@@ -534,15 +535,15 @@ def raw_event(i, name="", period=False):
         if e is None:
             if i not in notfound_cache:
                 notfound_cache.add(i)
-                print >>sys.stderr, "%s not found" % (i,)
+                print >>sys.stderr, "%s not found %s" % (i, emap.lasterr, )
             return "dummy"
         oi = i
         if re.match("^[0-9]", name):
             name = "T" + name
+        if args.filterquals:
+            e.filter_qual()
 	i = e.output(noname=True, name=name, period=period, noexplode=True)
-	# hack for running tl-tester on on client system where cha doesn't have a cmask
-	if i.startswith("uncore_cha") and ",cmask" in i and not ocperf.has_format("cmask", "uncore_cha_0"):
-	    i = i.replace(",cmask=1", "")
+
         emap.update_event(e.output(noname=True), e)
         if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
             # for now use the first counter only to simplify
