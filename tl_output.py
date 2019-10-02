@@ -79,10 +79,12 @@ class OutputHuman(Output):
             self.titlelen = max(map(len, cpus)) + 1
 
     def print_desc(self, desc, sample):
-        if desc and not self.args.no_desc:
+        if self.args.no_desc:
+            return
+        if desc:
             print >>self.logf, "\t" + desc
-        if desc and sample and not self.args.no_desc:
-            print >>self.logf, "\t" + "Sampling events: ", sample
+            if sample:
+                print >>self.logf, "\t" + "Sampling events: ", sample
 
     def print_timestamp(self, timestamp):
         if timestamp:
@@ -93,7 +95,7 @@ class OutputHuman(Output):
 
     def print_header(self, area, hdr):
         hdr = "%-14s %s" % (area, hdr)
-        self.logf.write("%-*s " % (self.hdrlen, hdr + ":"))
+        self.logf.write("%-*s " % (self.hdrlen, (hdr + ":") if hdr.strip() else " "))
 
     # timestamp Timestamp in interval mode
     # title     CPU
@@ -182,7 +184,7 @@ class OutputColumns(OutputHuman):
             for cpuname in cpunames:
                 if cpuname in node:
                     cpu = node[cpuname]
-                    uval, desc, sample, remark, bn = cpu
+                    uval, remark, desc, sample, bn = cpu
                     v = uval.format_value()
                     if bn:
                         v += "*"
@@ -194,7 +196,7 @@ class OutputColumns(OutputHuman):
                     write("%*s " % (VALCOL_LEN, ""))
             if remark:
                 cval = combine_uval(vlist)
-                vs = cval.format_uncertainty() + " " + cval.format_mux()
+                vs = "+- " + cval.format_uncertainty() + " " + cval.format_mux()
                 write(" %-*s %s" % (self.unitlen, remark, vs))
             write("\n")
             self.print_desc(desc, sample)

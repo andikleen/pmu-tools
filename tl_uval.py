@@ -111,7 +111,6 @@ class UVal:
         self.value = res.value
         self.stddev = res.stddev
         self.multiplex = UVal._merge_mux(self, other)
-        log.warning("updated {} with {} => {}".format(strbefore, other, self))
 
     ######################
     # operators
