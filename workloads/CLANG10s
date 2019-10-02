@@ -2,9 +2,9 @@
 
 awk 'BEGIN {
 	print "extern int f2(void); int func(void) { int i; "
-	for(i = 0; i < 11500; i++) {
-		print "i += f2();" 
+	for(i = 0; i < 200000; i++) {
+		print "i += f2();"
 	}
 	print "return i;"
 	print "}" } ' |
-gcc -O3 -x c -c -o /dev/null -
+clang -O3 -x c -c -o /dev/null -
