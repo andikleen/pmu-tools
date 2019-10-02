@@ -45,7 +45,7 @@ fi
 
 
 checklog0() {
-	grep -v unparseable log
+	grep -v unparseable log$$
 }
 
 DCPU=hsw
@@ -56,9 +56,9 @@ EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
 LC_ALL=pl_PL.utf8 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
 
 DIRECT_MSR=1 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py $LOAD
-EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 $LOAD | tee log
+EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 $LOAD | tee log$$
 checklog0
-EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 --single-thread $LOAD | tee log
+EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 --single-thread $LOAD | tee log$$
 checklog0
 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -d -l4 --single-thread --columns $LOAD | tee log
 checklog0
@@ -115,12 +115,12 @@ if ! grep -q hypervisor /proc/cpuinfo ; then
 TOPOLOGY=topology EVENTMAP=${cpus[$j]} UNCORE=${cpus[$j]} FORCEHT=1 FORCECPU=$j $WRAP ./toplev.py --force-events -d $ALL --filterquals $LOAD 2>&1 | tee log.$j
 checklog log.$j
 fi
-TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py --force-events -d $ALL $LOAD 2>&1 | tee log.$j
+TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=0 FORCECPU=$j $WRAP ./toplev.py --force-events --filterquals -d $ALL $LOAD 2>&1 | tee log.$j
 TOPOLOGY=topology EVENTMAP=${cpus[$j]} FORCEHT=1 FORCECPU=$j FORCE_NMI_WATCHDOG=1 \
 $WRAP ./toplev.py --force-events --filterquals -d $ALL $LOAD 2>&1 | tee log.$j
 TOPOLOGY=topology EVENTMAP=${cpus[$j]} UNCORE=${cpus[$j]} FORCEHT=0 FORCECPU=$j \
 $WRAP ./toplev.py --force-events -d $ALL --filterquals $LOAD 2>&1 | tee log.$j
-#checklog log.$j
+checklog log.$j
 done
 
 for j in $NOSMTCPUS ; do
@@ -133,11 +133,13 @@ checklog log.$j
 done
 
 # misc features
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -o log -d --ignore-errata --stats --metrics --force-events --no-multiplex -l4 $LOAD
-grep Turbo_Utilization log
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -o log$$ -d --ignore-errata --stats --metrics --force-events --no-multiplex -l4 $LOAD
+grep Turbo_Utilization log$$
+rm log$$
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --all --fast $LOAD
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --perf-output x.csv -d --all $LOAD
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --import x.csv -d --all
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --perf-output x$$.csv -d --all $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --import x$$.csv -d --all
+rm x$$.csv
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --stats --metrics --no-multiplex --columns -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --no-desc --power -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py -d --no-desc $ALL --no-group $LOAD
@@ -148,25 +150,27 @@ if python -c 'import matplotlib.pyplot' ; then
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --graph -o x.png -d --metrics -l4 $LOAD
 fi
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 sleep 1
-EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -o log -m -l4 -I 100 $LOAD
-grep IPC log
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -o log$$ -m -l4 -I 100 $LOAD
+grep IPC log$$
 checklog0
+rm log$$
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 --columns sleep 1
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 -I 100 --columns -x, sleep 1
-EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 --valcsv val.csv --user $LOAD | tee log
-grep :u log
-grep /u log
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --all --sample-repeat 10 --filterqual -a sleep 0.1  | tee log
+EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -d -l4 --valcsv val.csv --user $LOAD | tee log$$
+grep :u log$$
+grep /u log$$
+rm log$$
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --all --sample-repeat 5 --filterqual -a sleep 0.1  | tee log
 # do all perf.data exist?
-rm perf.data.{1,2,3,4,5,6,7,8,9,10}
+rm perf.data.{1,2,3,4,5}
 
 # need new perf
 # test other perf output formats
-EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log -d -l4 -I 1000 -a --per-core sleep 1
+EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ -d -l4 -I 1000 -a --per-core sleep 1
 checklog0
-EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log -d -l4 -I 1000 -a --per-socket sleep 1
+EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ -d -l4 -I 1000 -a --per-socket sleep 1
 checklog0
-EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log -d --no-desc -l4 -I 1000 -a -A sleep 1
+EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ -d --no-desc -l4 -I 1000 -a -A sleep 1
 checklog0
 
 EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py  -l4 true
@@ -174,20 +178,20 @@ EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py  -l4 true
 $WRAP ./toplev.py -o /dev/null --no-desc -v -l5 --run-sample $LOAD
 for cpu in $SMTCPUS ; do
 TOPOLOGY=topology EVENTMAP=${cpus[$cpu]} UNCORE=${cpus[$cpu]} FORCECPU=$cpu \
-$WRAP ./toplev.py -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log
-cat log
+$WRAP ./toplev.py -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log$$
+cat log$$
 # need to ignore errors for now to allow testing on laptop for uncore events
-egrep "missing|not found" log >> nflog || true
+egrep "missing|not found" log$$ >> nflog || true
 if ! grep -q hypervisor /proc/cpuinfo ; then
-[ "$cpu" != knl ] && grep /p log
-[ "$cpu" = hsw -o "$cpu" = bdw -o "$cpu" = skl ] && grep /pp log
+[ "$cpu" != knl ] && grep /p log$$
+[ "$cpu" = hsw -o "$cpu" = bdw -o "$cpu" = skl ] && grep /pp log$$
 fi
 done
 for cpu in $NOSMTCPUS ; do
 EVENTMAP=${cpus[$cpu]} UNCORE=${cpus[$cpu]} FORCECPU=$cpu \
-$WRAP ./toplev.py -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log
-cat log
-egrep "not found|missing" log >> nflog || true
+$WRAP ./toplev.py -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log$$
+cat log$$
+egrep "not found|missing" log$$ >> nflog || true
 done
 
 trap "" ERR 0
