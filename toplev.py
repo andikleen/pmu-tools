@@ -237,7 +237,7 @@ def event_group(evlist):
             continue
         g = list(itertools.takewhile(notuncore, evlist))
         e = ",".join(g)
-        if not args.no_group and needed_counters(g) <= cpu.counters:
+        if not args.no_group and needed_counters(g) <= cpu.counters and len(g) > 1:
             e = "{%s}" % e
         l.append(e)
         evlist = evlist[len(g):]
