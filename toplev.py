@@ -175,7 +175,7 @@ def unsup_event(e, table, min_kernel=None):
     return False
 
 def remove_qual(ev):
-    return re.sub(r'/[ku+]', '/', ev)
+    return re.sub(r':[ku]', '', re.sub(r'/[ku+]', '/', ev))
 
 def fixed_overflow(evlist):
     assigned = Counter([fixed_to_num[x] for x in evlist if x in fixed_to_num]).values()
