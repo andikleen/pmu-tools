@@ -172,6 +172,11 @@ EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --all --sample-repeat 5 --f
 # do all perf.data exist?
 rm perf.data.{1,2,3,4,5}
 
+EVENTMAP=${cpus[skl]} FORCECPU=skl $WRAP ./toplev.py -o log$$ --single-thread -r3 true
+grep '\+-.*[0-9][1-9]' log$$
+
+rm log$$
+
 # need new perf
 # test other perf output formats
 EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ -d -l4 -I 1000 -a --per-core sleep 1
