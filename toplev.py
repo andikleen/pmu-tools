@@ -452,6 +452,8 @@ def check_ratio(l):
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
 cpu = CPU(known_cpus)
+if cpu.force_hypervisor:
+    feat.has_max_precise = False
 
 def print_perf(r):
     if args.quiet:

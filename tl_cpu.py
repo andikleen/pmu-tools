@@ -74,6 +74,10 @@ class CPU:
         self.counters = 0
         self.has_tsx = False
         self.hypervisor = False
+        self.force_hypervisor = False
+        if os.getenv("HYPERVISOR"):
+            self.hypervisor = True
+            self.force_hypervisor = True
         self.freq = 0.0
         self.siblings = {}
         self.threads = 0
