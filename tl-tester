@@ -70,16 +70,16 @@ EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -x, -v -d -l4
 checklog0
 # temporarily disabled because perf has a regression that causes segfaults with -r
 #EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc -r2 -l4 $LOAD
-KERNEL_VERSION=2.1 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc --all $LOAD | tee log
+KERNEL_VERSION=2.1 EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc --all $LOAD | tee log$$
 checklog0
-EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc --metrics -x, -v -d -l4 $LOAD | tee log
+EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc --metrics -x, -v -d -l4 $LOAD | tee log$$
 checklog0
-EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py -g --raw -v --debug --stats -d $ALL --kernel $LOAD | tee log
+EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py -g --raw -v --debug --stats -d $ALL --kernel $LOAD | tee log$$
 checklog0
-EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc --stats -d $ALL --kernel --valcsv val.csv --no-multiplex $LOAD | tee log
+EVENTMAP=${cpus[$DCPU]} FORCECPU=$DCPU $WRAP ./toplev.py --no-desc --stats -d $ALL --kernel --valcsv val.csv --no-multiplex $LOAD | tee log$$
 checklog0
-grep :k log
-grep /k log
+grep :k log$$
+grep /k log$$
 EVENTMAP=${cpus[$DCPU]} FORCECPU=simple $WRAP ./toplev.py --no-desc -l1 $LOAD
 # check errata handling
 EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py --handle-errata --force-events --no-desc --all $LOAD | tee log
