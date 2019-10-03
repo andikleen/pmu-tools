@@ -115,13 +115,14 @@ class OutputHuman(Output):
         if title:
             write("%-*s" % (self.titlelen, title))
         self.print_header(area, hdr)
-        val = "{:>8} {:{width}} +- {:>8}".format(val.format_value(),
-                                                 remark,
-                                                 val.format_uncertainty(),
-                                                 width=self.unitlen + 1)
+        vals = "{:>8} {:{width}}".format(remark,
+                                        val.format_value(),
+                                        width=self.unitlen + 1)
+        if val.stddev:
+            vals += " +- {:>8}".format(val.format_uncertainty())
         if bn:
-            val += " " + bn
-        write(val + "\n")
+            vals += " " + bn
+        write(vals + "\n")
         self.print_desc(desc, sample)
 
     def metric(self, area, name, l, timestamp, desc, title, unit):
@@ -196,8 +197,8 @@ class OutputColumns(OutputHuman):
                     write("%*s " % (VALCOL_LEN, ""))
             if remark:
                 cval = combine_uval(vlist)
-                vs = "+- " + cval.format_uncertainty() + " " + cval.format_mux()
-                write(" %-*s %s" % (self.unitlen, remark, vs))
+                vs = (" +- " + cval.format_uncertainty() + " " + cval.format_mux()) if cval.stddev else ""
+                write(" %-*s%s" % (self.unitlen, remark, vs))
             write("\n")
             self.print_desc(desc, sample)
         self.nodes = dict()
