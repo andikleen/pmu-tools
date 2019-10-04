@@ -147,6 +147,8 @@ class MSR:
 qual_map = (
     ("amt1", "any=1", EVENTSEL_ANY, ""),
     ("i1", "inv=1", EVENTSEL_INV, ""),
+    ("e1", "edge=1", 0, ""),
+    ("e0", "edge=0", 0, ""),
     ("tx", "in_tx=1", 0, ""),
     ("sup", "", 0, "k"),
     ("SUP", "", 0, "k"),
@@ -162,6 +164,8 @@ qualval_map = (
     (r"(?:sa|sample-after|period)=([0-9]+)", "period=%d", 0))
 
 uncore_map = (
+    (r'e(\d)', 'edge='),
+    (r't=(\d+)', "thresh="),
     (r'[Mm]atch=(0x[0-9a-fA-F]+)', "filter_occ="),
     (r'filter1=(0x[0-9a-fA-F]+)', "config1=", 32),
     ("nc=(\d+)", "filter_nc="),
@@ -292,6 +296,8 @@ def convert_uncore(flags):
     o = ""
     while flags:
         for j in uncore_map:
+            if flags[0] == ",":
+                flags = flags[1:]
             match, repl = j[0], j[1]
             m = re.match(match, flags)
             if m:
