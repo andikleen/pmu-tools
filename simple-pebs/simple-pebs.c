@@ -322,7 +322,7 @@ static struct miscdevice simple_pebs_miscdev = {
 	&simple_pebs_fops
 };
 
-struct debug_store { 
+struct s_debug_store {
 	u64 bts_base;
 	u64 bts_index;
 	u64 bts_max;
@@ -335,21 +335,21 @@ struct debug_store {
 	u64 pebs_reset[4];
 };
 
-static DEFINE_PER_CPU(struct debug_store *, cpu_ds);
+static DEFINE_PER_CPU(struct s_debug_store *, cpu_ds);
 static DEFINE_PER_CPU(unsigned long, cpu_old_ds);
 
 /* Allocate DS and PEBS buffer */
 static int allocate_buffer(void)
 {
-	struct debug_store *ds;
+	struct s_debug_store *ds;
 	unsigned num_pebs;
 
-	ds = kmalloc(sizeof(struct debug_store), GFP_KERNEL);
+	ds = kmalloc(sizeof(struct s_debug_store), GFP_KERNEL);
 	if (!ds) {
 		pr_err("Cannot allocate DS\n");
 		return -1;
 	}
-	memset(ds, 0, sizeof(struct debug_store));
+	memset(ds, 0, sizeof(struct s_debug_store));
 	/* Set up buffer */
 	ds->pebs_base = (unsigned long)kmalloc(PEBS_BUFFER_SIZE, GFP_KERNEL);
 	if (!ds->pebs_base) {
@@ -440,7 +440,7 @@ asm("    .globl simple_pebs_entry\n"
 
 void simple_pebs_pmi(void)
 {
-	struct debug_store *ds;
+	struct s_debug_store *ds;
 	struct pebs_v1 *pebs, *end;
 	u64 *outbu, *outbu_end, *outbu_start;
 
@@ -608,7 +608,7 @@ static void simple_pebs_cpu_reset(void *arg)
 		__this_cpu_write(out_buffer, 0);
 	}
 	if (__this_cpu_read(cpu_ds)) {
-		struct debug_store *ds = __this_cpu_read(cpu_ds);
+		struct s_debug_store *ds = __this_cpu_read(cpu_ds);
 		kfree((void *)ds->pebs_base);
 		kfree(ds);
 		__this_cpu_write(cpu_ds, 0);
