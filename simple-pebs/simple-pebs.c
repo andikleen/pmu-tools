@@ -54,6 +54,7 @@
 #include <asm/desc.h>
 #include <cpuid.h>
 #include "simple-pebs.h"
+#include "compat.h"
 
 #define MSR_IA32_PERFCTR0    		0x000000c1
 #define MSR_IA32_EVNTSEL0    		0x00000186
@@ -70,7 +71,7 @@
 #define EVTSEL_INT BIT(20)
 #define EVTSEL_EN  BIT(22)
 
-#define PEBS_BUFFER_SIZE	(64 * 1024) /* PEBS buffer size */
+#define S_PEBS_BUFFER_SIZE	(64 * 1024) /* PEBS buffer size */
 #define OUT_BUFFER_SIZE		(64 * 1024) /* must be multiple of 4k */
 #define PERIOD 100003
 
@@ -351,14 +352,14 @@ static int allocate_buffer(void)
 	}
 	memset(ds, 0, sizeof(struct s_debug_store));
 	/* Set up buffer */
-	ds->pebs_base = (unsigned long)kmalloc(PEBS_BUFFER_SIZE, GFP_KERNEL);
+	ds->pebs_base = (unsigned long)kmalloc(S_PEBS_BUFFER_SIZE, GFP_KERNEL);
 	if (!ds->pebs_base) {
 		pr_err("Cannot allocate PEBS buffer\n");
 		kfree(ds);
 		return -1;
 	}
-	memset((void *)ds->pebs_base, 0, PEBS_BUFFER_SIZE);
-	num_pebs = PEBS_BUFFER_SIZE / pebs_record_size;
+	memset((void *)ds->pebs_base, 0, S_PEBS_BUFFER_SIZE);
+	num_pebs = S_PEBS_BUFFER_SIZE / pebs_record_size;
 	ds->pebs_index = ds->pebs_base;
 	ds->pebs_max = ds->pebs_base + (num_pebs - 1) * pebs_record_size + 1;
 	ds->pebs_thresh = ds->pebs_base + (num_pebs - num_pebs/10) * pebs_record_size ;
@@ -502,20 +503,30 @@ void simple_pebs_pmi(void)
 	status_dump("pmi3");
 }
 
+unsigned long *vectors;
+
 /* Get vector */
 static int simple_pebs_get_vector(void)
 {
 	gate_desc desc, *idt;
 
+	vectors = (unsigned long *)kallsyms_lookup_name("used_vectors");
+	if (!vectors)
+		vectors = (unsigned long *)kallsyms_lookup_name("system_vectors");
+	if (!vectors) {
+		pr_err("Could not resolve system/used vectors. Missing CONFIG_KALLSYMS_ALL?\n");
+		return -1;
+	}
+
 	/* No locking */
-	while (test_bit(pebs_vector, used_vectors)) {
+	while (test_bit(pebs_vector, vectors)) {
 		if (pebs_vector == 0x40) {
 			pr_err("No free vector found\n");
 			return -1;
 		}
 		pebs_vector--;
 	}
-	set_bit(pebs_vector, used_vectors);
+	set_bit(pebs_vector, vectors);
 	idt = (gate_desc *)kallsyms_lookup_name("idt_table");
 	if (!idt) {
 		pr_err("Could not resolve idt_table. Did you enable CONFIG_KALLSYMS_ALL?\n");
@@ -530,7 +541,8 @@ static int simple_pebs_get_vector(void)
 
 static void simple_pebs_free_vector(void)
 {
-	clear_bit(pebs_vector, used_vectors);
+	if (vectors)
+		clear_bit(pebs_vector, vectors);
 	/* Not restoring the IDT. Assume the kernel always inits when it reallocates */
 }
 
@@ -570,7 +582,7 @@ static void simple_pebs_cpu_init(void *arg)
 	/* Set up DS */
 	rdmsrl(MSR_IA32_DS_AREA, old_ds);
 	__this_cpu_write(cpu_old_ds, old_ds);
-	wrmsrl(MSR_IA32_DS_AREA, __this_cpu_read(cpu_ds));
+	wrmsrl(MSR_IA32_DS_AREA, (unsigned long)__this_cpu_read(cpu_ds));
 
 	/* Set up LVT */
 	__this_cpu_write(old_lvtpc, apic_read(APIC_LVTPC));
