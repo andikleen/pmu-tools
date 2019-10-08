@@ -217,6 +217,12 @@ def convert_extra(extra, val, newe):
         break
     return nextra, val
 
+def gen_name(n, sup):
+    n = n.replace(".", "_").replace(":", "_").replace("=", "_")
+    if sup:
+        n += "_k"
+    return n
+
 class Event:
     def __init__(self, name, val, desc):
         self.val = val
@@ -240,7 +246,7 @@ class Event:
             if name:
                 e += ",name=" + name
             elif not noname:
-                e += ",name=%s" % (self.name.replace(".", "_").replace(":", "_").replace("=", "_"))
+                e += ",name=%s" % (gen_name(self.name, "sup" in (self.extra + extra)))
         if period and self.period and not ",period=" in e:
             e += ",period=%d" % self.period
         return e
