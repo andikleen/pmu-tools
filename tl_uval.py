@@ -89,11 +89,6 @@ class UVal:
             vs = "[{:3.1f}%]".format(self.multiplex)
         return vs
 
-    def set_desc(self, name, comment):
-        """set name and description in one go"""
-        self.name = name
-        self.comment = comment
-
     @staticmethod
     def _merge_mux(lhs, rhs):
         return min(lhs.multiplex, rhs.multiplex)
