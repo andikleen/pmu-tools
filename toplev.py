@@ -721,15 +721,16 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             combined_res = zip(*[res[x] for x in cpus])
             st = [deprecated_combine_valstat(z)
                   for z in itertools.izip(*[valstats[x] for x in cpus])]
-            # TODO: combine_valstat is deprecated
 
-            # repeat a few times to get stable threshold values
+            # may need to repeat to get stable threshold values
             # in case of mutual dependencies between SMT and non SMT
-            # XXX use better algorithm
+            # but don't loop forever (?)
             used_stat = stat
-            for _ in range(3):
-                runner.compute(res[j], rev[j], valstats[j], env, thread_node, used_stat)
-                runner.compute(combined_res, rev[cpus[0]], st, env, core_node, used_stat)
+            for _ in xrange(3):
+                changed = runner.compute(res[j], rev[j], valstats[j], env, thread_node, used_stat)
+                changed += runner.compute(combined_res, rev[cpus[0]], st, env, core_node, used_stat)
+                if changed == 0:
+                    break
                 used_stat = None
 
             # find bottleneck
@@ -1607,18 +1608,28 @@ class Runner:
                 self.missed)
 
     def propagate_siblings(self):
+        changed = [0]
+
+        def propagate(k, changed):
+            if not k.thresh:
+                k.thresh = True
+                changed[0] += 1
+
         for obj in self.olist:
             if obj.thresh and obj.sibling:
                 if isinstance(obj.sibling, (list, tuple)):
                     for k in obj.sibling:
-                        k.thresh = True
+                        propagate(k, changed)
                 else:
-                    obj.sibling.thresh = True
+                    propagate(obj.sibling, changed)
+        return changed[0]
 
     def compute(self, res, rev, valstats, env, match, stat):
         if len(res) == 0:
             print "Nothing measured?"
             return
+
+        changed = 0
 
         # step 1: compute
         for obj in self.olist:
@@ -1627,8 +1638,11 @@ class Runner:
             if not match(obj):
                 continue
             ref = set()
+            oldthresh = obj.thresh
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
+            if obj.thresh != oldthresh:
+                changed += 1
             if stat:
                 stat.referenced |= ref
             if not obj.res_map and not all([x in env for x in obj.evnum]):
@@ -1643,7 +1657,8 @@ class Runner:
                 stat.errors.add(obj.name)
 
         # step 2: propagate siblings
-        self.propagate_siblings()
+        changed += self.propagate_siblings()
+        return changed
 
     def print_res(self, out, timestamp, title, match, bn):
         out.logf.flush()
