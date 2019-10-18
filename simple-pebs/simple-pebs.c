@@ -149,7 +149,13 @@ static bool check_cpu(void)
 	case 58: /* IvyBridge */
 	case 63: /* Haswell_EP */
 	case 69: /* Haswell_ULT */
+	case 61: /* Broadwell client */
+	case 78: /* Skylake */
+	case 85: /* Skylake */
+	case 86: /* Broadwell */
 	case 94: /* Skylake */
+	case 142: /* Kabylake */
+	case 158: /* Kabylake */
 		pebs_event = 0x1c2; /* UOPS_RETIRED.ALL */
 		break;
 
