@@ -175,7 +175,7 @@ uncore_map = (
     (r"opc=?(0x[0-9a-fA-F]+)", "filter_opc="),
     (r"tid=?(0x[0-9a-fA-F]+)", "filter_tid="),
     (r"state=?(0x[0-9a-fA-F]+)", "filter_state="),
-    (r"c(?:mask=)?(0x[0-9a-fA-F]+|[0-9]+)", "cmask="))
+    (r"c(?:mask=)?(0x[0-9a-fA-F]+|[0-9]+)", "thresh="))
 
 # newe gets modified
 def convert_extra(extra, val, newe):
