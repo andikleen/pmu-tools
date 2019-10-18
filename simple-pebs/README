@@ -8,17 +8,20 @@
 ##
 ## The code is written in a way that it should be easy to adapt to other OS.
 ##
-## It is not compiling anymore under recent Linux kernels due
-## to some API changes (but can be made to work with simple changes)
-## Please don't open bugs about it. If you can't fix it SimplePEBS
-## is likely not for you.
-##
 ## If you just want to use PEBS on Linux the builtin Linux perf
 ## support is near always a better choice. All functionality
 ## supported by simple pebs is supported by Linux perf in a better way.
 ## You may need a recent enough kernel to support your CPU.
 ##
-
+## You'll need to disable Kernel page table isolation with the "nopti" kernel boot
+## option. Otherwise the system will hard crash randomly on module load.
+##
+## CPU hotplug and suspend to ram are not supported on newer kernels.
+##
+## On recent CPUs:
+## Should work on CPUs before Icelake, but may need to add more model numbers
+## to the initialization checker.
+##
 
 PEBS "Precise Event Based Sampling" is a profiling technology in Intel CPUs,
 that uses microcode to do (mostly) precise event samples.
@@ -40,7 +43,17 @@ dumper.c	Dump samples running from running Linux driver. -b to write binary samp
 
 samples.c	Decode (ELF symbols) sample from running Linux driver.
 
-gencsv.c	Generate Vtune style CSV format from sample file (not useful).
 histogram.c	Generate histogram from sample file
 
 toperf.c	Generate perf.data from sample file
+
+Equivalent Linux perf command lines:
+
+insmod simple-pebs.ko / dumper -b
+		-> perf record -c 100003 -a r1c2:pp sleep X
+		   (or other event code, see also perf list)
+		   To dump addresses add -d
+
+samples ->	perf script
+
+histogram ->	perf report --stdio
