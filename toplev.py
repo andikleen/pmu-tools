@@ -206,7 +206,7 @@ def limit4_overflow(evlist):
         return len(limit4)
     return 0
 
-def needed_counters(evlist):
+def needed_counters(evlist, nolimit=False):
     evlist = list(set(evlist)) # remove duplicates first
     evlist = map(remove_qual, evlist)
     evset = set(evlist)
@@ -215,7 +215,7 @@ def needed_counters(evlist):
     # force split if we overflow fixed or limit4
     # some fixed could be promoted to generic, but that doesn't work
     # with ref-cycles.
-    if fixed_overflow(evlist) or limit4_overflow(evlist) > 4:
+    if not nolimit and (fixed_overflow(evlist) or limit4_overflow(evlist) > 4):
         return 100
 
     # account events that only schedule on one of the generic counters
@@ -227,7 +227,7 @@ def needed_counters(evlist):
     # if we need more than one of a limited counter make it look
     # like it fills the group to limit first before adding them to force
     # a split
-    if num_limit > 0:
+    if num_limit > 0 and not nolimit:
         num = max(num, cpu.counters) + num_limit
 
     return num
@@ -599,13 +599,12 @@ def has(obj, name):
 def flatten(x):
     return itertools.chain(*x)
 
-def print_header(work, evlist):
-    evnames0 = [obj.evlist for obj in work]
-    evnames = set(flatten(evnames0))
+def print_header(work):
+    evnames = set(flatten([obj.evlist for obj in work]))
     names = ["%s%s" % (obj.__class__.__name__, ("[%d]" % obj.__class__.level) if has(obj, 'level') else "") for obj in work]
     pwrap(" ".join(names) + ":", 78)
     pwrap(" ".join(map(mark_fixed, evnames)).lower() +
-          " [%d counters]" % (needed_counters(raw_events(evnames))), 75, "  ")
+          " [%d counters]" % (needed_counters(raw_events(evnames), True)), 75, "  ")
 
 def perf_args(evstr, rest):
     add = []
@@ -1535,7 +1534,7 @@ class Runner:
             self.evgroups.append(evnum)
             self.evbases.append(base)
             if print_group:
-                print_header(objl, get_names(evlev))
+                print_header(objl)
 
     # collect the events by pre-computing the equation
     def collect(self):
