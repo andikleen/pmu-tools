@@ -1935,10 +1935,6 @@ if args.list_metric_groups:
         print >>sys.stderr, "Other arguments ignored"
     sys.exit(0)
 
-if len(rest) == 0 and not import_mode:
-    p.print_help()
-    sys.exit(0)
-
 def setup_with_metrics(p, runner):
     old_metrics = args.metrics
     args.metrics = True
