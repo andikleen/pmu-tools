@@ -1143,10 +1143,12 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     #print (ev, level, obj.name), "->", index
     if not args.fast:
         try:
-            rmap_ev = event_rmap(rev[index]).lower()
+            r = rev[index]
         except IndexError:
-            warn_once("Not enough lines perf output. Missing -- in command line?")
-            return make_uval(0)
+            warn_once("Not enough lines in perf output for rev (%d vs %d for %s)" %
+                    (index, len(rev), obj.name))
+            return 0
+        rmap_ev = event_rmap(r).lower()
         ev = ev.lower()
         assert (rmap_ev == canon_event(ev).replace("/k", "/") or
                 compare_event(rmap_ev, ev) or
@@ -1156,7 +1158,8 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     try:
         vv = res[index]
     except IndexError:
-        warn_once("Not enough lines perf output. Missing -- in command line?")
+        warn_once("Not enough lines in perf output for res (%d vs %d for %s)" %
+                (index, len(res), obj.name))
         return make_uval(0)
     if isinstance(vv, types.TupleType):
         if cpuoff == -1:
