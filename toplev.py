@@ -377,7 +377,6 @@ g.add_argument('--print-group', '-g', help='Print event group assignments',
 g.add_argument('--raw', help="Print raw values", action='store_true')
 g.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file', type=argparse.FileType('w'))
 g.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
-g.add_argument('--detailed', '-d', help=argparse.SUPPRESS, action='store_true')
 
 g = p.add_argument_group('Sampling')
 g.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
@@ -442,7 +441,6 @@ import_mode = args.__dict__['import'] is not None
 event_nocheck = import_mode # XXX also for print
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
-detailed_model = (args.level > 1) or args.detailed
 csv_mode = args.csv
 interval_mode = args.interval
 ring_filter = ""
@@ -1892,8 +1890,6 @@ elif cpu.cpu == "knl":
     model = knl_ratios
 else:
     ht_warning()
-    if detailed_model and not args.quiet:
-        print >>sys.stderr, "Sorry, no detailed model for your CPU. Only Level 1 supported."
     import simple_ratios
     model = simple_ratios
 
