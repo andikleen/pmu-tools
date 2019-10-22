@@ -101,6 +101,9 @@ unsup_events = (
     # commit 3a632cb229b
     ("CYCLE_ACTIVITY.*", (("hsw", "hsx"), (3, 11), None)))
 
+event_nocheck = False
+import_mode = False
+
 errata_whitelist = []
 
 ingroup_events = frozenset(fixed_to_num.keys())
@@ -149,10 +152,15 @@ class PerfFeatures:
             sys.exit("perf binary is too old or perf is disabled in /proc/sys/kernel/perf_event_paranoid")
         self.supports_power = works(perf + " list  | grep -q power/")
         # guests don't support offcore response
-        self.supports_ocr = works(perf + " stat -e '{cpu/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true")
-        self.has_max_precise = os.path.exists("/sys/devices/cpu/caps/max_precise")
-        if self.has_max_precise:
-            self.max_precise = int(open("/sys/devices/cpu/caps/max_precise").read())
+        if event_nocheck:
+            self.supports_ocr = True
+            self.has_max_precise = True
+            self.max_precise = 3
+        else:
+            self.supports_ocr = works(perf + " stat -e '{cpu/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true")
+            self.has_max_precise = os.path.exists("/sys/devices/cpu/caps/max_precise")
+            if self.has_max_precise:
+                self.max_precise = int(open("/sys/devices/cpu/caps/max_precise").read())
 
 def kv_to_key(v):
     return v[0] * 100 + v[1]
@@ -430,6 +438,8 @@ if args.sample_repeat:
 if args.handle_errata:
     args.ignore_errata = False
 
+import_mode = args.__dict__['import'] is not None
+event_nocheck = import_mode # XXX also for print
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
 detailed_model = (args.level > 1) or args.detailed
@@ -451,7 +461,7 @@ def check_ratio(l):
         return True
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
-cpu = CPU(known_cpus)
+cpu = CPU(known_cpus, nocheck=event_nocheck)
 if cpu.force_hypervisor:
     feat.has_max_precise = False
 
@@ -468,7 +478,7 @@ def print_perf(r):
 class PerfRun:
     """Control a perf subprocess."""
     def execute(self, r):
-        if args.__dict__['import']:
+        if import_mode:
             self.perf = None
             return open(args.__dict__['import'], 'r')
 
@@ -530,10 +540,10 @@ def raw_event(i, name="", period=False):
             return "dummy"
         if i in fixed_counters:
             return fixed_counters[i]
-        e = emap.getevent(i)
+        e = emap.getevent(i, nocheck=event_nocheck)
         if e is None:
             if i in event_fixes:
-                e = emap.getevent(event_fixes[i])
+                e = emap.getevent(event_fixes[i], nocheck=event_nocheck)
         if e is None:
             if i not in notfound_cache:
                 notfound_cache.add(i)
@@ -1047,7 +1057,7 @@ fixes = dict(zip(event_fixes.values(), event_fixes.keys()))
 
 def do_event_rmap(e):
     n = canon_event(emap.getperf(e))
-    if emap.getevent(n):
+    if emap.getevent(n, nocheck=event_nocheck):
         return n
     if n.upper() in fixes:
         n = fixes[n.upper()].lower()
@@ -1073,10 +1083,10 @@ def map_fields(obj, fields):
 
 # compare events to handle name aliases
 def compare_event(aname, bname):
-    a = emap.getevent(aname)
+    a = emap.getevent(aname, nocheck=event_nocheck)
     if a is None:
         return False
-    b = emap.getevent(bname)
+    b = emap.getevent(bname, nocheck=event_nocheck)
     if b is None:
         return False
     fields = ('val','event','cmask','edge','inv')
@@ -1172,7 +1182,7 @@ class BadEvent:
 
 # XXX check for errata
 def sample_event(e):
-    ev = emap.getevent(e)
+    ev = emap.getevent(e, nocheck=event_nocheck)
     if not ev:
         raise BadEvent(e)
     postfix = ring_filter
@@ -1301,6 +1311,8 @@ def find_bn(olist, match):
 pmu_does_not_exist = set()
 
 def missing_pmu(e):
+    if event_nocheck:
+        return False
     m = re.match(r"([a-z0-9_]+)/", e)
     if m:
         pmu = m.group(1)
@@ -1904,7 +1916,7 @@ if args.list_metric_groups:
         print >>sys.stderr, "Other arguments ignored"
     sys.exit(0)
 
-if len(rest) == 0 and not args.__dict__['import']:
+if len(rest) == 0 and not import_mode:
     p.print_help()
     sys.exit(0)
 
@@ -1929,7 +1941,7 @@ if not args.no_util:
 if args.power and feat.supports_power:
     import power_metrics
     setup_with_metrics(power_metrics, runner)
-    if not args.quiet:
+    if not args.quiet and not import_mode:
         print "Running with --power. Will measure complete system."
     check_root()
     if "-a" not in rest:
@@ -1952,11 +1964,11 @@ if args.frequency:
 
 if smt_mode and "--per-socket" in rest:
     sys.exit("toplev not compatible with --per-socket")
-if smt_mode and "--per-core" in rest:
-    sys.exit("toplev not compatible with --per-core")
+if args.per_core and not smt_mode:
+    rest = ["--per-core"] + rest
 
 if not args.single_thread and cpu.ht:
-    if not args.quiet:
+    if not args.quiet and not import_mode:
         print "Will measure complete system."
     if smt_mode:
         if args.cpu:

@@ -604,8 +604,9 @@ class EmapNativeJSON(object):
             e.period = int(get('sav')) if m['sav'] in row else 0
             self.add_event(e)
 
-    def getevent(self, e):
-        """Retrieve an event with name e. Return Event object or None."""
+    def getevent(self, e, nocheck=False):
+        """Retrieve an event with name e. Return Event object or None.
+           When nocheck is set don't check against current system."""
         e = e.lower()
         extra = ""
         edelim = ""
@@ -637,7 +638,9 @@ class EmapNativeJSON(object):
         elif e.startswith("offcore") and (e + "_0") in self.events:
             return update_ename(self.getevent(e + "_0" + edelim + extra), e)
         elif e in self.uncore_events:
-            ev = check_uncore_event(self.uncore_events[e])
+            ev = self.uncore_events[e]
+            if ev and not nocheck:
+                ev = check_uncore_event(ev)
             if ev and extra:
                 ev = copy.deepcopy(ev)
                 ev.newextra = extra

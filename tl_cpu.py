@@ -66,7 +66,7 @@ class CPU:
             return True
         return False
 
-    def __init__(self, known_cpus):
+    def __init__(self, known_cpus, nocheck):
         self.model = 0
         self.cpu = None
         self.realcpu = "simple"
@@ -157,11 +157,11 @@ class CPU:
                 self.standard_counters = "0,1"
             # when running in a hypervisor always assume worst case HT in on
             # also when CPUs are offline assume SMT is on
-            elif self.ht or self.hypervisor or num_offline_cpus() > 0:
+            elif self.ht or self.hypervisor or (num_offline_cpus() > 0 and not nocheck):
                 self.counters = 4
             else:
                 self.counters = 8
-            if reduced_counters():
+            if not nocheck and reduced_counters():
                 self.counters -= 1
             # chicken bit to override if we get it wrong
             counters = os.getenv("TLCOUNTERS")
