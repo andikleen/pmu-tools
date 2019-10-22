@@ -94,7 +94,8 @@ class OutputHuman(Output):
                 self.logf.write("%6.9f " % timestamp)
 
     def print_header(self, area, hdr):
-        hdr = "%-14s %s" % (area, hdr)
+        if area:
+            hdr = "%-14s %s" % (area, hdr)
         self.logf.write("%-*s " % (self.hdrlen, (hdr + ":") if hdr.strip() else " "))
 
     # timestamp Timestamp in interval mode

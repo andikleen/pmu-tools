@@ -370,6 +370,7 @@ g.add_argument('--long-desc', help='Print long descriptions instead of abbreviat
                 action='store_true')
 g.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
 g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
+g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file', type=argparse.FileType('w'))
 
 g = p.add_argument_group('Additional information')
@@ -1417,6 +1418,9 @@ def parse_metric_group(l, mg):
         add += [x.name for x in mg[n]]
     return add, rem
 
+def obj_area(obj):
+    return obj.area if has(obj, 'area') and not args.no_area else None
+
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
@@ -1713,7 +1717,7 @@ class Runner:
 
         # pre compute column lengths
         for obj in olist:
-            out.set_hdr(full_name(obj), obj.area if has(obj, 'area') else None)
+            out.set_hdr(full_name(obj), obj_area(obj))
             if obj.metric:
                 out.set_unit(metric_unit(obj))
             else:
@@ -1729,13 +1733,12 @@ class Runner:
             val = get_uval(obj)
             desc = obj_desc(obj, olist[i + 1:])
             if obj.metric:
-                out.metric(obj.area if has(obj, 'area') else None,
-                        obj.name, val, timestamp,
+                out.metric(obj_area(obj), obj.name, val, timestamp,
                         desc,
                         title,
                         metric_unit(obj))
             elif check_ratio(val):
-                out.ratio(obj.area if has(obj, 'area') else None,
+                out.ratio(obj_area(obj),
                         full_name(obj), val, timestamp,
                         node_unit(obj),
                         desc,
