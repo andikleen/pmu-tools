@@ -353,6 +353,7 @@ g.add_argument('--ignore-errata', help='Do not disable events with errata', acti
 g.add_argument('--handle-errata', help='Disable events with errata', action='store_true')
 
 g = p.add_argument_group('Output')
+g.add_argument('--per-core', help='Aggregate output per core', action='store_true')
 g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
 g.add_argument('--desc', help='Force event descriptions', action='store_true')
 g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
@@ -711,6 +712,12 @@ def display_keys(runner, keys):
         all_cpus += ["S%d" % x for x in range(cpu.sockets)]
     return all_cpus
 
+def verify_rev(rev, cpus_in_core):
+    for k in cpus_in_core[1:]:
+        for ind, o in enumerate(rev[k]):
+            assert o == rev[cpus_in_core[0]][ind]
+        assert len(rev[k]) == len(rev[cpus_in_core[0]])
+
 def print_keys(runner, res, rev, valstats, out, interval, env):
     stat = runner.stat
     out.set_cpus(display_keys(runner, res.keys()))
@@ -719,24 +726,33 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
         for j in sorted(res.keys()):
             if j != "" and int(j) not in runner.allowed_threads:
                 continue
+            core = key_to_coreid(j)
+            if args.per_core and core in printed_cores:
+                continue
 
             runner.reset_thresh()
 
-            # collect counts from all threads of cores as lists
-            # this way the model can access all threads individually
-            core = key_to_coreid(j)
-            cpus = [x for x in res.keys() if key_to_coreid(x) == core]
-            combined_res = zip(*[res[x] for x in cpus])
-            st = [deprecated_combine_valstat(z)
-                  for z in itertools.izip(*[valstats[x] for x in cpus])]
+            cpus_in_core = [x for x in res.keys() if key_to_coreid(x) == core]
+            combined_res = zip(*[res[x] for x in cpus_in_core])
+            combined_st = [deprecated_combine_valstat(z)
+                  for z in itertools.izip(*[valstats[x] for x in cpus_in_core])]
+
+            if args.per_core:
+                merged_res = combined_res
+                merged_st = combined_st
+            else:
+                merged_res = res[j]
+                merged_st = valstats[j]
 
             # may need to repeat to get stable threshold values
             # in case of mutual dependencies between SMT and non SMT
             # but don't loop forever (?)
             used_stat = stat
             for _ in xrange(3):
-                changed = runner.compute(res[j], rev[j], valstats[j], env, thread_node, used_stat)
-                changed += runner.compute(combined_res, rev[cpus[0]], st, env, core_node, used_stat)
+                changed = runner.compute(merged_res, rev[j], merged_st, env, thread_node, used_stat)
+                if core not in printed_cores:
+                    verify_rev(rev, cpus_in_core)
+                    changed += runner.compute(combined_res, rev[cpus_in_core[0]], combined_st, env, core_node, used_stat)
                 if changed == 0:
                     break
                 used_stat = None
@@ -751,7 +767,11 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
 
             # print the non SMT nodes
             # recompute the nodes so we get up-to-date values
-            runner.print_res(out, interval, thread_fmt(j), thread_node, bn)
+            if args.per_core:
+                fmt = core_fmt(int(j))
+            else:
+                fmt = thread_fmt(j)
+            runner.print_res(out, interval, fmt, thread_node, bn)
     else:
         for j in sorted(res.keys()):
             if j != "" and is_number(j) and int(j) not in runner.allowed_threads:
