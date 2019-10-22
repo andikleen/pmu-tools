@@ -1136,7 +1136,6 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
             uv = tmp[0]
             for o in tmp[1:]:
                 uv += o
-            uv.name = ev
         return uv
 
     index = obj.res_map[(ev, level, obj.name)]
@@ -1167,8 +1166,10 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
                 vv = vv[cpuoff]
             except IndexError:
                 print >>sys.stderr, "warning: Partial CPU thread data from perf"
-                return UVal("null", 0)
-    return make_uval(vv, sd=st[index].stddev, mux=st[index].multiplex)
+                return 0
+    if st[index].stddev or st[index].multiplex:
+        return make_uval(vv, sd=st[index].stddev, mux=st[index].multiplex)
+    return vv
 
 def add_key(k, x, y):
     k[x] = y
