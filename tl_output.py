@@ -18,7 +18,6 @@ import re
 from tl_stat import isnan
 from tl_uval import UVal, combine_uval
 
-
 class Output:
     """Abstract base class for Output classes."""
     def __init__(self, logfile, version):
@@ -67,6 +66,11 @@ class Output:
     def flush(self):
         pass
 
+def fmt_below(below):
+    if below:
+        return "?"
+    return ""
+
 class OutputHuman(Output):
     """Generate human readable single-column output."""
     def __init__(self, logfile, args, version, cpu):
@@ -113,7 +117,7 @@ class OutputHuman(Output):
     # sample    Sample Objects (string)
     # vs        Statistics object
     # bn        marker for bottleneck
-    # below     below if below, or ""
+    # below     True if below
     # Example:
     # C0    BE      Backend_Bound:                                62.00 %
     def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
@@ -125,7 +129,7 @@ class OutputHuman(Output):
         vals = "{:<{unitlen}} {:>} {:<{belowlen}}".format(
                     ("  " if unit[0] != "%" else "") + unit,
                     val.format_value(),
-                    "?" if below else "",
+                    fmt_below(below),
                     unitlen=self.unitlen + 1,
                     belowlen=self.belowlen)
         if val.stddev:
@@ -198,7 +202,7 @@ class OutputColumns(OutputHuman):
                     uval, unit, desc, sample, bn, below = cpu
                     v = uval.format_value()
                     vlist.append(uval)
-                    write("%*s%s " % (VALCOL_LEN, v, "?" if below == "below" else "*" if bn else " "))
+                    write("%*s%s " % (VALCOL_LEN, v, "?" if below else "*" if bn else " "))
                 else:
                     write("%*s  " % (VALCOL_LEN, ""))
             if unit:
@@ -226,7 +230,7 @@ class OutputColumnsCSV(OutputColumns):
         if key not in self.nodes:
             self.nodes[key] = dict()
         assert title not in self.nodes[key]
-        self.nodes[key][title] = (val, unit + " " + below, desc, sample)
+        self.nodes[key][title] = (val, unit + " " + fmt_below(below), desc, sample)
 
     def flush(self):
         cpunames = sorted(self.cpunames)
@@ -283,5 +287,5 @@ class OutputCSV(Output):
         stddev = val.format_uncertainty().strip()
         multiplex = val.multiplex if not isnan(val.multiplex) else ""
         self.writer.writerow(l + [hdr, val.format_value_raw().strip(),
-                                  (unit + " " + ("?" if below else "")).strip(),
+                                  (unit + " " + fmt_below(below)).strip(),
                                   desc, sample, stddev, multiplex, bn])

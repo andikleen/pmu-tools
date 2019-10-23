@@ -1382,7 +1382,7 @@ def node_unit(obj):
     return (" " + obj_domain(obj)) if has(obj, 'domain') else ""
 
 def node_below(obj):
-    return "below" if not obj.thresh else ""
+    return not obj.thresh
 
 class Summary:
     """Accumulate counts for summary."""
