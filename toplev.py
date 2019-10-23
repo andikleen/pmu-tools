@@ -704,7 +704,10 @@ def display_core(cpunum, ignore_thread=False):
 def display_keys(runner, keys):
     if len(keys) > 1 and smt_mode:
         cores = [key_to_coreid(x) for x in keys if int(x) in runner.allowed_threads]
-        threads = map(thread_fmt, runner.allowed_threads)
+        if not args.per_core:
+            threads = map(thread_fmt, runner.allowed_threads)
+        else:
+            threads = []
         all_cpus = list(set(map(core_fmt, cores) + threads))
     else:
         all_cpus = keys
