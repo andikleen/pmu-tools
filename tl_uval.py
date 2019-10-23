@@ -53,11 +53,11 @@ class UVal:
     def format_value(self):
         if self.value is None: return ""
         if self.is_ratio:
-            return "{:>13.2f}".format(self.value * 100.)
+            return "{:>15.2f}".format(self.value * 100.)
         elif self.value > 1000:
-            return "{:,}".format(round(self.value))
+            return "{:15,.2f}".format(self.value)
         else:
-            return "{:13.2f}".format(self.value)
+            return "{:15.2f}".format(self.value)
 
     def format_value_raw(self):
         if self.value is None: return ""

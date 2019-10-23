@@ -26,7 +26,8 @@ class Output:
         self.printed_descs = set()
         self.hdrlen = 30
         self.version = version
-        self.unitlen = 5
+        self.unitlen = 12
+        self.belowlen = 0
 
     # pass all possible hdrs in advance to compute suitable padding
     def set_hdr(self, hdr, area):
@@ -34,13 +35,17 @@ class Output:
             hdr = "%-14s %s" % (area, hdr)
         self.hdrlen = max(len(hdr) + 1, self.hdrlen)
 
+    def set_below(self, below):
+        if below:
+            self.belowlen = 1
+
     def set_unit(self, unit):
         self.unitlen = max(len(unit), self.unitlen)
 
     def set_cpus(self, cpus):
         pass
 
-    def item(self, area, name, uval, timestamp, remark, desc, title, sample, bn):
+    def item(self, area, name, uval, timestamp, unit, desc, title, sample, bn, below):
         assert isinstance(uval, UVal)
         # --
         if desc in self.printed_descs:
@@ -49,15 +54,15 @@ class Output:
             self.printed_descs.add(desc)
         if not area:
             area = ""
-        self.show(timestamp, title, area, name, uval, remark, desc, sample, bn)
+        self.show(timestamp, title, area, name, uval, unit, desc, sample, bn, below)
 
-    def ratio(self, area, name, uval, timestamp, remark, desc, title, sample, bn):
+    def ratio(self, area, name, uval, timestamp, unit, desc, title, sample, bn, below):
         uval.is_ratio = True
-        self.item(area, name, uval, timestamp, "%" + remark, desc, title, sample, bn)
+        self.item(area, name, uval, timestamp, unit, desc, title, sample, bn, below)
 
     def metric(self, area, name, uval, timestamp, desc, title, unit):
         uval.is_metric = True
-        self.item(area, name, uval, timestamp, unit, desc, title, None, "")
+        self.item(area, name, uval, timestamp, unit, desc, title, None, "", "")
 
     def flush(self):
         pass
@@ -96,29 +101,33 @@ class OutputHuman(Output):
     def print_header(self, area, hdr):
         if area:
             hdr = "%-14s %s" % (area, hdr)
-        self.logf.write("%-*s " % (self.hdrlen, (hdr + ":") if hdr.strip() else " "))
+        self.logf.write("%-*s " % (self.hdrlen, hdr))
 
     # timestamp Timestamp in interval mode
     # title     CPU
     # area      FE/BE ...
     # hdr       Node Name
     # val       Formatted measured value
-    # remark    above/below/""
+    # unit      unit
     # desc      Object description
     # sample    Sample Objects (string)
     # vs        Statistics object
     # bn        marker for bottleneck
+    # below     below if below, or ""
     # Example:
     # C0    BE      Backend_Bound:                                62.00 %
-    def show(self, timestamp, title, area, hdr, val, remark, desc, sample, bn):
+    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
         self.print_timestamp(timestamp)
         write = self.logf.write
         if title:
             write("%-*s" % (self.titlelen, title))
         self.print_header(area, hdr)
-        vals = "{:>8} {:{width}}".format(remark,
-                                        val.format_value(),
-                                        width=self.unitlen + 1)
+        vals = "{:<{unitlen}} {:>} {:<{belowlen}}".format(
+                    ("  " if unit[0] != "%" else "") + unit,
+                    val.format_value(),
+                    "?" if below else "",
+                    unitlen=self.unitlen + 1,
+                    belowlen=self.belowlen)
         if val.stddev:
             vals += " +- {:>8}".format(val.format_uncertainty())
         if bn:
@@ -128,7 +137,7 @@ class OutputHuman(Output):
 
     def metric(self, area, name, l, timestamp, desc, title, unit):
         l.is_metric = True
-        self.item(area, name, l, timestamp, unit, desc, title, None, "")
+        self.item(area, name, l, timestamp, unit, desc, title, None, "", "")
 
 def convert_ts(ts):
     if isnan(ts):
@@ -147,19 +156,19 @@ class OutputColumns(OutputHuman):
     def set_cpus(self, cpus):
         self.cpunames = cpus
 
-    def show(self, timestamp, title, area, hdr, val, remark, desc, sample, bn):
+    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
         if self.args.single_thread:
-            OutputHuman.show(self, timestamp, title, area, hdr, val, remark, desc, sample, bn)
+            OutputHuman.show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below)
             return
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
             self.nodes[key] = dict()
         assert title not in self.nodes[key]
-        self.nodes[key][title] = (val, remark, desc, sample, bn)
+        self.nodes[key][title] = (val, unit, desc, sample, bn, below)
 
     def flush(self):
-        VALCOL_LEN = 14
+        VALCOL_LEN = 16
         write = self.logf.write
 
         cpunames = sorted(self.cpunames)
@@ -169,7 +178,7 @@ class OutputColumns(OutputHuman):
                 write("%9s" % "")
             self.print_header("", "")
             for j in cpunames:
-                write("%*s " % (VALCOL_LEN, j))
+                write("%*s  " % (VALCOL_LEN, j))
             write("\n")
             self.printed_header = True
 
@@ -177,7 +186,7 @@ class OutputColumns(OutputHuman):
             node = self.nodes[key]
             desc = None
             sample = None
-            remark = None
+            unit = None
             if self.timestamp:
                 self.print_timestamp(self.timestamp)
 
@@ -186,20 +195,17 @@ class OutputColumns(OutputHuman):
             for cpuname in cpunames:
                 if cpuname in node:
                     cpu = node[cpuname]
-                    uval, remark, desc, sample, bn = cpu
+                    uval, unit, desc, sample, bn, below = cpu
                     v = uval.format_value()
-                    if bn:
-                        v += "*"
-                    if remark in ("above", "below", "Metric", "CoreMetric", "CoreClocks"): # XXX
-                        remark = ""
                     vlist.append(uval)
-                    write("%*s " % (VALCOL_LEN, v))
+                    write("%*s%s " % (VALCOL_LEN, v, "?" if below == "below" else "*" if bn else " "))
                 else:
-                    write("%*s " % (VALCOL_LEN, ""))
-            if remark:
+                    write("%*s  " % (VALCOL_LEN, ""))
+            if unit:
+                # XXX should move this to be per entry?
                 cval = combine_uval(vlist)
                 vs = (" +- " + cval.format_uncertainty() + " " + cval.format_mux()) if cval.stddev else ""
-                write(" %-*s%s" % (self.unitlen, remark, vs))
+                write(" %-*s%s" % (self.unitlen, ("  " if unit[0] != "%" else "") + unit, vs))
             write("\n")
             self.print_desc(desc, sample)
         self.nodes = dict()
@@ -214,13 +220,13 @@ class OutputColumnsCSV(OutputColumns):
         self.writer.writerow(["# " + version + " on " + cpu.name])
 
     # XXX implement bn
-    def show(self, timestamp, title, area, hdr, val, remark, desc, sample, bn):
+    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
             self.nodes[key] = dict()
         assert title not in self.nodes[key]
-        self.nodes[key][title] = (val, remark, desc, sample)
+        self.nodes[key][title] = (val, unit + " " + below, desc, sample)
 
     def flush(self):
         cpunames = sorted(self.cpunames)
@@ -243,7 +249,7 @@ class OutputColumnsCSV(OutputColumns):
                         desc = re.sub(r"\s+", " ", desc)
                     if cpu[3]:
                         sample = cpu[3]
-                    # ignore remark for now
+                    # ignore unit for now
                     vlist.append(cpu[0])
                     ol[cpuname] = float(cpu[0].value) if cpu[0].value else ""
             l += [ol[x] if x in ol else "" for x in cpunames]
@@ -265,7 +271,7 @@ class OutputCSV(Output):
         self.args = args
         self.writer.writerow(["# " + version + " on " + cpu.name])
 
-    def show(self, timestamp, title, area, hdr, val, remark, desc, sample, bn):
+    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
         if self.args.no_desc:
             desc = ""
         desc = re.sub(r"\s+", " ", desc)
@@ -276,5 +282,6 @@ class OutputCSV(Output):
             l.append(title)
         stddev = val.format_uncertainty().strip()
         multiplex = val.multiplex if not isnan(val.multiplex) else ""
-        self.writer.writerow(l + [hdr, val.format_value_raw().strip(), remark, desc, sample, stddev,
-                                  multiplex, bn])
+        self.writer.writerow(l + [hdr, val.format_value_raw().strip(),
+                                  (unit + " " + ("?" if below else "")).strip(),
+                                  desc, sample, stddev, multiplex, bn])

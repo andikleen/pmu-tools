@@ -1261,11 +1261,14 @@ def thread_node(obj):
 def count(f, l):
     return len(filter(f, l))
 
+def obj_domain(obj):
+    return obj.domain.replace("Estimated", "est").replace("Calculated", "calc")
+
 def metric_unit(obj):
     if has(obj, 'unit'):
         return obj.unit
     if has(obj, 'domain'):
-        return obj.domain
+        return obj_domain(obj).replace("SystemMetric", "SysMetric")
     return "Metric"
 
 # only check direct children, the rest are handled recursively
@@ -1373,8 +1376,10 @@ def olist_by_metricgroup(l, mg):
     return ml
 
 def node_unit(obj):
-    return (((" " + obj.domain) if has(obj, 'domain') else "") +
-             (" below" if not obj.thresh else ""))
+    return (" " + obj_domain(obj)) if has(obj, 'domain') else ""
+
+def node_below(obj):
+    return "below" if not obj.thresh else ""
 
 class Summary:
     """Accumulate counts for summary."""
@@ -1722,6 +1727,7 @@ class Runner:
                 out.set_unit(metric_unit(obj))
             else:
                 out.set_unit(node_unit(obj))
+            out.set_below(node_below(obj))
 
         def get_uval(ob):
             u = ob.val if isinstance(ob.val, UVal) else UVal(ob.name, ob.val)
@@ -1737,14 +1743,15 @@ class Runner:
                         desc,
                         title,
                         metric_unit(obj))
-            elif check_ratio(val):
+            else:
                 out.ratio(obj_area(obj),
                         full_name(obj), val, timestamp,
-                        node_unit(obj),
+                        "%" + node_unit(obj),
                         desc,
                         title,
                         sample_desc(obj.sample) if has(obj, 'sample') else None,
-                        "<==" if obj == bn else "")
+                        "<==" if obj == bn else "",
+                        node_below(obj))
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
 
