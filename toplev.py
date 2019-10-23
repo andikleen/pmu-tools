@@ -344,7 +344,12 @@ g.add_argument('--power', help='Display power metrics', action='store_true')
 g.add_argument('--nodes', help='Include or exclude nodes (with + to add, - to remove, comma separated list, wildcards allowed)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 g.add_argument('--metric-group', help='Add (+) or remove (-) metric groups of metrics, comma separated list.', default=None)
+
+g = p.add_argument_group('Query nodes')
+g.add_argument('--list-metrics', help='List all metrics', action='store_true')
+g.add_argument('--list-nodes', help='List all nodes', action='store_true')
 g.add_argument('--list-metric-groups', help='List metric groups', action='store_true')
+g.add_argument('--list-all', help='List every supported node/metric/metricgroup', action='store_true')
 
 g = p.add_argument_group('Workarounds')
 g.add_argument('--no-group', help='Dont use groups', action='store_true')
@@ -1279,9 +1284,9 @@ def children_over(l, obj):
     n = [o.thresh for o in l if 'parent' in o.__dict__ and o.parent == obj]
     return any(n)
 
-def obj_desc(obj, rest):
+def obj_desc(obj, rest, force=False):
     # hide description if children are also printed
-    if not args.long_desc and children_over(rest, obj):
+    if not force and not args.long_desc and children_over(rest, obj):
         desc = ""
     else:
         desc = obj.desc[1:].replace("\n", "\n\t")
@@ -1759,10 +1764,15 @@ class Runner:
                     self.sample_obj.add(obj)
 
     def list_metric_groups(self):
-        print "MetricGroups: ",
-        for j in self.metricgroups.keys():
-            print j,
-        print
+        print "MetricGroups:"
+        pwrap(" ".join(self.metricgroups.keys()), indent="        ")
+
+    def list_nodes(self, title, filt):
+        print "%s:" % title
+        for obj in self.olist:
+            if filt(obj):
+                print full_name(obj)
+                print "\t",obj_desc(obj, rest=[], force=True)
 
 def supports_pebs():
     if feat.has_max_precise:
@@ -1942,8 +1952,13 @@ if "base_frequency" in model.__dict__:
 if "model" in model.__dict__:
     model.model = cpu.modelid
 
-if args.list_metric_groups:
+if args.list_metrics or args.list_all:
+    runner.list_nodes("Metrics", lambda(obj): obj.metric)
+if args.list_nodes or args.list_all:
+    runner.list_nodes("Nodes", lambda(obj): not obj.metric)
+if args.list_metric_groups or args.list_all:
     runner.list_metric_groups()
+if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_all:
     if len(rest) > 0:
         print >>sys.stderr, "Other arguments ignored"
     sys.exit(0)
