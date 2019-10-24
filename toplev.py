@@ -341,9 +341,9 @@ g.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
 g.add_argument('--all', help="Measure everything available", action='store_true')
 g.add_argument('--frequency', help="Measure frequency", action='store_true')
 g.add_argument('--power', help='Display power metrics', action='store_true')
-g.add_argument('--nodes', help='Include or exclude nodes (with + to add, - to remove, comma separated list, wildcards allowed)')
+g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, comma separated list, wildcards allowed)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
-g.add_argument('--metric-group', help='Add (+) or remove (-) metric groups of metrics, comma separated list.', default=None)
+g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, comma separated list.', default=None)
 
 g = p.add_argument_group('Query nodes')
 g.add_argument('--list-metrics', help='List all metrics', action='store_true')
@@ -1415,24 +1415,35 @@ class Summary:
 def parse_metric_group(l, mg):
     if l is None:
         return [], []
+
     add, rem = [], []
     for n in l.split(","):
-        if n[0:1] == '-':
+        if n[0:1] == '-' or n[0:1] == '^':
             if n[1:] not in mg:
-                print "metric group", n[1:], "not found"
+                print >>sys.stderr, "metric group", n[1:], "not found"
                 continue
-            rem += mg[n[1:]]
+            rem += [x.name for x in mg[n[1:]]]
             continue
         if n[0:1] == '+':
             n = n[1:]
         if n not in mg:
-            print "metric group", n, "not found"
+            print >>sys.stderr, "metric group", n, "not found"
             continue
         add += [x.name for x in mg[n]]
     return add, rem
 
 def obj_area(obj):
     return obj.area if has(obj, 'area') and not args.no_area else None
+
+def get_parents(obj):
+    def get_par(obj):
+        return obj.parent if 'parent' in obj.__dict__ else None
+    p = get_par(obj)
+    l = []
+    while p:
+        l.append(p)
+        p = get_par(p)
+    return l
 
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
@@ -1442,6 +1453,7 @@ class Runner:
         self.evgroups = list()
         self.evbases = list()
         self.olist = []
+        self.odict = dict()
         self.max_level = max_level
         self.missed = 0
         self.sample_obj = set()
@@ -1460,6 +1472,7 @@ class Runner:
         obj.res = None
         obj.res_map = dict()
         self.olist.append(obj)
+        self.odict[obj.name] = obj
         if has(obj, 'metricgroup'):
             for j in obj.metricgroup:
                 self.metricgroups[j].append(obj)
@@ -1468,14 +1481,24 @@ class Runner:
     def filter_nodes(self):
         add_met, remove_met = parse_metric_group(args.metric_group, self.metricgroups)
 
+        add_obj = set([self.odict[x] for x in add_met])
+        parents = [get_parents(x) for x in add_obj]
+        if add_obj:
+            for o in self.olist:
+                if not has(o, 'sibling') or o.sibling is None:
+                    continue
+                m = set(o.sibling) & add_obj
+                for s in m:
+                    parents.append(s)
+                    parents += get_parents(s)
+
         def want_node(obj):
             if args.reduced and has(obj, 'server') and not obj.server:
                 return False
-            if not obj.metric:
-                return node_filter(obj, obj.level <= self.max_level)
-            else:
-                want = (args.metrics or obj.name in add_met) and not obj.name in remove_met
-                return node_filter(obj, want)
+            want = ((obj.metric and args.metrics) or obj.name in add_met or obj in parents) and not obj.name in remove_met
+            if not obj.metric and obj.level <= self.max_level:
+                want = True
+            return node_filter(obj, want)
 
         self.olist = filter(want_node, self.olist)
 
@@ -1973,10 +1996,6 @@ def check_root():
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1) and not args.quiet:
         print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
 
-if args.nodes:
-    runner.check_nodes(args.nodes)
-runner.filter_nodes()
-
 if not args.no_util:
     import perf_metrics
     setup_with_metrics(perf_metrics, runner)
@@ -2004,6 +2023,10 @@ if args.frequency:
     args.metrics = True
     frequency.SetupCPU(runner, cpu)
     args.metrics = old_metrics
+
+if args.nodes:
+    runner.check_nodes(args.nodes)
+runner.filter_nodes()
 
 if smt_mode and "--per-socket" in rest:
     sys.exit("toplev not compatible with --per-socket")
