@@ -1177,7 +1177,8 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
             try:
                 vv = vv[cpuoff]
             except IndexError:
-                print >>sys.stderr, "warning: Partial CPU thread data from perf"
+                warn_once("warning: Partial CPU thread data from perf for %s" %
+                        obj.name)
                 return 0
     if st[index].stddev or st[index].multiplex:
         return make_uval(vv, sd=st[index].stddev, mux=st[index].multiplex)
