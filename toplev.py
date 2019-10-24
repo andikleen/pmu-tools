@@ -1866,7 +1866,7 @@ def sysctl(name):
 # check nmi watchdog
 if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
     cpu.counters -= 1
-    print >>sys.stderr, "Consider disabling nmi watchdog"
+    print >>sys.stderr, "Consider disabling nmi watchdog to minimize multiplexing"
     print >>sys.stderr, "(echo 0 > /proc/sys/kernel/nmi_watchdog as root)"
 
 if cpu.cpu is None:
