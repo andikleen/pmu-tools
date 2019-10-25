@@ -1344,6 +1344,7 @@ def find_bn(olist, match):
 
 pmu_does_not_exist = set()
 
+# XXX check if PMU can be accessed from current user
 def missing_pmu(e):
     if event_nocheck:
         return False
