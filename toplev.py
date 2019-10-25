@@ -359,6 +359,7 @@ g.add_argument('--handle-errata', help='Disable events with errata', action='sto
 
 g = p.add_argument_group('Output')
 g.add_argument('--per-core', help='Aggregate output per core', action='store_true')
+g.add_argument('--per-socket', help='Aggregate output per socket', action='store_true')
 g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
 g.add_argument('--desc', help='Force event descriptions', action='store_true')
 g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
@@ -681,10 +682,16 @@ def key_to_coreid(k):
     x = cpu.cputocore[int(k)]
     return x[0] * 1000 + x[1]
 
+def key_to_socketid(k):
+    return cpu.cputocore[int(k)][0]
+
 def core_fmt(core):
     if cpu.sockets > 1:
         return "S%d-C%d" % (core / 1000, core % 1000,)
     return "C%d" % (core % 1000,)
+
+def socket_fmt(core):
+    return "S%d" % (core / 1000)
 
 def thread_fmt(j):
     return core_fmt(key_to_coreid(j)) + ("-T%d" % cpu.cputothread[int(j)])
@@ -708,12 +715,15 @@ def display_core(cpunum, ignore_thread=False):
 
 def display_keys(runner, keys):
     if len(keys) > 1 and smt_mode:
-        cores = [key_to_coreid(x) for x in keys if int(x) in runner.allowed_threads]
-        if not args.per_core:
-            threads = map(thread_fmt, runner.allowed_threads)
+        if args.per_socket:
+            all_cpus = list(set(map(socket_fmt, runner.allowed_threads)))
         else:
-            threads = []
-        all_cpus = list(set(map(core_fmt, cores) + threads))
+            cores = [key_to_coreid(x) for x in keys if int(x) in runner.allowed_threads]
+            if not args.per_core:
+                threads = map(thread_fmt, runner.allowed_threads)
+            else:
+                threads = []
+            all_cpus = list(set(map(core_fmt, cores) + threads))
     else:
         all_cpus = keys
     if any(map(package_node, runner.olist)):
@@ -731,21 +741,32 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
     out.set_cpus(display_keys(runner, res.keys()))
     if smt_mode:
         printed_cores = set()
+        printed_sockets = set()
         for j in sorted(res.keys()):
             if j != "" and int(j) not in runner.allowed_threads:
                 continue
+
+            sid = key_to_socketid(j)
             core = key_to_coreid(j)
             if args.per_core and core in printed_cores:
+                continue
+            if args.per_socket and sid in printed_sockets:
                 continue
 
             runner.reset_thresh()
 
-            cpus_in_core = [x for x in res.keys() if key_to_coreid(x) == core]
-            combined_res = zip(*[res[x] for x in cpus_in_core])
+            if args.per_socket:
+                if sid in printed_sockets:
+                    continue
+                cpus = [x for x in res.keys() if key_to_socketid(x) == sid]
+            else:
+                cpus = [x for x in res.keys() if key_to_coreid(x) == core]
+            combined_res = zip(*[res[x] for x in cpus])
             combined_st = [deprecated_combine_valstat(z)
-                  for z in itertools.izip(*[valstats[x] for x in cpus_in_core])]
+                  for z in itertools.izip(*[valstats[x] for x in cpus])]
+            env['num_merged'] = len(cpus)
 
-            if args.per_core:
+            if args.per_core or args.per_socket:
                 merged_res = combined_res
                 merged_st = combined_st
             else:
@@ -759,8 +780,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             for _ in xrange(3):
                 changed = runner.compute(merged_res, rev[j], merged_st, env, thread_node, used_stat)
                 if core not in printed_cores:
-                    verify_rev(rev, cpus_in_core)
-                    changed += runner.compute(combined_res, rev[cpus_in_core[0]], combined_st, env, core_node, used_stat)
+                    verify_rev(rev, cpus)
+                    changed += runner.compute(combined_res, rev[cpus[0]], combined_st, env, core_node, used_stat)
                 if changed == 0:
                     break
                 used_stat = None
@@ -769,18 +790,24 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             bn = find_bn(runner.olist, not_package_node)
 
             # print the SMT aware nodes
-            if core not in printed_cores:
+            if args.per_socket:
+                runner.print_res(out, interval, socket_fmt(core), core_node, bn)
+                printed_sockets.add(sid)
+            else:
                 runner.print_res(out, interval, core_fmt(core), core_node, bn)
                 printed_cores.add(core)
 
             # print the non SMT nodes
             # recompute the nodes so we get up-to-date values
-            if args.per_core:
+            if args.per_socket:
+                fmt = socket_fmt(int(j))
+            elif args.per_core:
                 fmt = core_fmt(int(j))
             else:
                 fmt = thread_fmt(j)
             runner.print_res(out, interval, fmt, thread_node, bn)
     else:
+        env['num_merged'] = 1
         for j in sorted(res.keys()):
             if j != "" and is_number(j) and int(j) not in runner.allowed_threads:
                 continue
@@ -1140,7 +1167,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
         uv = None
         tmp = [ev(lambda ev, level:
                   lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
-                  for off in range(cpu.threads)]
+                  for off in xrange(env['num_merged'])]
         if tmp:
             uv = tmp[0]
             for o in tmp[1:]:
@@ -2030,8 +2057,8 @@ if args.nodes:
     runner.check_nodes(args.nodes)
 runner.filter_nodes()
 
-if smt_mode and "--per-socket" in rest:
-    sys.exit("toplev not compatible with --per-socket")
+if args.per_socket and not smt_mode:
+    rest = ["--per-socket"] + rest
 if args.per_core and not smt_mode:
     rest = ["--per-core"] + rest
 

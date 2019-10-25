@@ -184,6 +184,8 @@ EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ -l4 -I 1
 checklog0
 EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ -l4 -I 1000 -a --per-socket sleep 1
 checklog0
+EVENTMAP=${cpus[skl]} FORCEHT=1 FORCECPU=skl $WRAP ./toplev.py -o log$$ -l4 -I 1000 -a --per-socket sleep 1
+checklog0
 EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ --no-desc -l4 -I 1000 -a -A sleep 1
 checklog0
 EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ --no-desc --no-area -l4 -I 1000 -a -A sleep 1
