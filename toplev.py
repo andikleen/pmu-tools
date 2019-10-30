@@ -14,7 +14,7 @@
 # Measure a workload using the topdown performance model:
 # estimate on which part of the CPU pipeline it bottlenecks.
 #
-# Must find ocperf in python module path. add to paths below if needed.
+# Must find ocperf in python module path.
 # Handles a variety of perf and kernel versions, but older ones have various
 # limitations.
 
@@ -65,7 +65,7 @@ unsup_pebs = (
 )
 
 ivb_ht_39 = (("ivb", "ivt"), (4, 1), (3, 9))
-# uncomment if you removed commit 741a698f420c3
+# uncomment if you removed commit 741a698f420c3 from kernel
 #ivb_ht_39 = ((), None, None)
 
 # both kernel bugs and first time a core was supported
@@ -730,11 +730,11 @@ def display_keys(runner, keys):
         all_cpus += ["S%d" % x for x in range(cpu.sockets)]
     return all_cpus
 
-def verify_rev(rev, cpus_in_core):
-    for k in cpus_in_core[1:]:
+def verify_rev(rev, cpus):
+    for k in cpus:
         for ind, o in enumerate(rev[k]):
-            assert o == rev[cpus_in_core[0]][ind]
-        assert len(rev[k]) == len(rev[cpus_in_core[0]])
+            assert o == rev[cpus[0]][ind]
+        assert len(rev[k]) == len(rev[cpus[0]])
 
 def print_keys(runner, res, rev, valstats, out, interval, env):
     stat = runner.stat
