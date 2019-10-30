@@ -714,7 +714,7 @@ def display_core(cpunum, ignore_thread=False):
         return True
     return False
 
-def display_keys(runner, keys):
+def display_keys(runner, keys, args):
     if len(keys) > 1 and smt_mode:
         if args.per_socket:
             all_cpus = list(set(map(socket_fmt, runner.allowed_threads)))
@@ -737,9 +737,9 @@ def verify_rev(rev, cpus):
             assert o == rev[cpus[0]][ind]
         assert len(rev[k]) == len(rev[cpus[0]])
 
-def print_keys(runner, res, rev, valstats, out, interval, env):
+def print_keys(runner, res, rev, valstats, out, interval, env, args):
     stat = runner.stat
-    out.set_cpus(display_keys(runner, res.keys()))
+    out.set_cpus(display_keys(runner, res.keys(), args))
     if smt_mode:
         printed_cores = set()
         printed_sockets = set()
@@ -757,8 +757,6 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             runner.reset_thresh()
 
             if args.per_socket:
-                if sid in printed_sockets:
-                    continue
                 cpus = [x for x in res.keys() if key_to_socketid(x) == sid]
             else:
                 cpus = [x for x in res.keys() if key_to_coreid(x) == core]
@@ -839,17 +837,41 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
     stat.referenced_check(res)
     stat.compute_errors()
 
+class DummyArgs:
+    def __init__(self, d):
+        self.per_thread = False
+        self.per_core = False
+        self.per_socket = False
+        self.__dict__.update(d)
+
+def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
+    if args.per_core + args.per_thread + args.per_socket > 1:
+        if args.per_thread:
+            out.remark("Per thread")
+            out.reset()
+            print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'per_thread': True}))
+        if args.per_core:
+            out.remark("Per core")
+            out.reset()
+            print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'per_core': True}))
+        if args.per_socket:
+            out.remark("Per socket")
+            out.reset()
+            print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'per_socket': True}))
+    else:
+        print_keys(runner, res, rev, valstats, out, interval, env, args)
+
 def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
     if runner.summary:
         runner.summary.add(res, rev, valstats, env);
-    print_keys(runner, res, rev, valstats, out, interval, env)
+    print_and_split_keys(runner, res, rev, valstats, out, interval, env)
 
 def print_summary(runner, out):
     if not args.summary:
         return
-    print_keys(runner, runner.summary.res, runner.summary.rev,
-               runner.summary.valstats, out,
-               float('nan'), runner.summary.env)
+    print_and_split_keys(runner, runner.summary.res, runner.summary.rev,
+                         runner.summary.valstats, out,
+                         float('nan'), runner.summary.env)
 
 def is_outgroup(x):
     return set(x) - outgroup_events == set()
@@ -2083,9 +2105,6 @@ if not args.single_thread and cpu.ht:
         rest = ["-a"] + rest
     if "-A" not in rest:
         rest = ["-A"] + rest
-
-if args.per_socket + args.per_core + args.per_thread > 1:
-    sys.exit("Only one of --per-thread / --per-core / --per-socket allowed currently")
 
 if args.core:
     runner.allowed_threads = [x for x in cpu.allcpus if display_core(x, False)]

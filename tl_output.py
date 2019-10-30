@@ -66,6 +66,12 @@ class Output:
     def flush(self):
         pass
 
+    def remark(self, m):
+        pass
+
+    def reset(self):
+        pass
+
 def fmt_below(below):
     if below:
         return "?"
@@ -82,6 +88,9 @@ class OutputHuman(Output):
         self.args = args
         self.titlelen = 7
         self.logf.write("# " + version + " on " + cpu.name + "\n")
+
+    def remark(self, m):
+        self.logf.write('\n%s:\n' % m)
 
     def set_cpus(self, cpus):
         if len(cpus) > 0:
@@ -213,6 +222,9 @@ class OutputColumns(OutputHuman):
             write("\n")
             self.print_desc(desc, sample)
         self.nodes = dict()
+
+    def reset(self):
+        self.printed_header = False
 
 class OutputColumnsCSV(OutputColumns):
     """Columns output in CSV mode."""

@@ -150,6 +150,10 @@ EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics --per-soc
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics --per-thread --columns -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics --per-thread -x, --columns -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics --per-thread -x, --columns -l4 $LOAD
+EVENTMAP=${cpus[skl]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics  --per-thread --per-core --per-socket --summary -a -l4 $LOAD
+EVENTMAP=${cpus[skl]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics  --per-thread --per-core --per-socket --summary -x, -a -l4 $LOAD
+EVENTMAP=${cpus[skl]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics  --per-thread --per-core --per-socket --summary --columns -x, -a -l4 $LOAD
+EVENTMAP=${cpus[skl]} FORCECPU=hsw $WRAP ./toplev.py --all --single-thread  --per-thread --per-core --per-socket --summary -a -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --no-desc --power -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --no-desc $ALL --no-group $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --no-desc --sw -l4 $LOAD
