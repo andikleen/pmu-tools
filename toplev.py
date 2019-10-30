@@ -793,7 +793,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             if args.per_socket:
                 runner.print_res(out, interval, socket_fmt(core), core_node, bn)
                 printed_sockets.add(sid)
-            else:
+            elif core not in printed_cores:
                 runner.print_res(out, interval, core_fmt(core), core_node, bn)
                 printed_cores.add(core)
 
