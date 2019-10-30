@@ -221,7 +221,6 @@ class OutputColumnsCSV(OutputColumns):
         OutputColumns.__init__(self, logfile, args, version, cpu)
         self.writer = csv.writer(self.logf, delimiter=sep)
         self.printed_header = False
-        self.writer.writerow(["# " + version + " on " + cpu.name])
 
     # XXX implement bn
     def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
