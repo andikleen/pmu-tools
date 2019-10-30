@@ -145,6 +145,11 @@ EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --perf-output x$$.csv --all
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --import x$$.csv --all
 rm x$$.csv
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics --no-multiplex --columns -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics --per-core --columns -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics --per-socket --columns -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics --per-thread --columns -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics --per-thread -x, --columns -l4 $LOAD
+EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --stats --metrics --per-thread -x, --columns -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --no-desc --power -l4 $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --no-desc $ALL --no-group $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --no-desc --sw -l4 $LOAD
@@ -188,7 +193,9 @@ EVENTMAP=${cpus[skl]} FORCEHT=1 FORCECPU=skl $WRAP ./toplev.py -o log$$ -l4 -I 1
 checklog0
 EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ --no-desc -l4 -I 1000 -a -A sleep 1
 checklog0
-EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ --no-desc --no-area -l4 -I 1000 -a -A sleep 1
+EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ --summary --no-desc --no-area -l4 -I 1000 -a -A sleep 1
+checklog0
+EVENTMAP=${cpus[skl]} FORCEHT=1 FORCECPU=skl $WRAP ./toplev.py -o log$$ -l4 -I 1000 -a --per-thread sleep 1
 checklog0
 
 EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py  -l4 true

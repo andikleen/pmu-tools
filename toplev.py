@@ -360,6 +360,7 @@ g.add_argument('--handle-errata', help='Disable events with errata', action='sto
 g = p.add_argument_group('Output')
 g.add_argument('--per-core', help='Aggregate output per core', action='store_true')
 g.add_argument('--per-socket', help='Aggregate output per socket', action='store_true')
+g.add_argument('--per-thread', help='Aggregate output per CPU thread', action='store_true')
 g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
 g.add_argument('--desc', help='Force event descriptions', action='store_true')
 g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
@@ -793,19 +794,22 @@ def print_keys(runner, res, rev, valstats, out, interval, env):
             if args.per_socket:
                 runner.print_res(out, interval, socket_fmt(core), core_node, bn)
                 printed_sockets.add(sid)
-            elif core not in printed_cores:
+            elif not args.per_thread and core not in printed_cores:
                 runner.print_res(out, interval, core_fmt(core), core_node, bn)
                 printed_cores.add(core)
 
             # print the non SMT nodes
-            # recompute the nodes so we get up-to-date values
             if args.per_socket:
                 fmt = socket_fmt(int(j))
             elif args.per_core:
                 fmt = core_fmt(int(j))
             else:
                 fmt = thread_fmt(j)
-            runner.print_res(out, interval, fmt, thread_node, bn)
+            if args.per_thread:
+                filt = any_node
+            else:
+                filt = thread_node
+            runner.print_res(out, interval, fmt, filt, bn)
     else:
         env['num_merged'] = 1
         for j in sorted(res.keys()):
@@ -1292,6 +1296,9 @@ def thread_node(obj):
         return False
     if core_node(obj):
         return False
+    return True
+
+def any_node(obj):
     return True
 
 def count(f, l):
@@ -2075,6 +2082,9 @@ if not args.single_thread and cpu.ht:
         rest = ["-a"] + rest
     if "-A" not in rest:
         rest = ["-A"] + rest
+
+if args.per_socket + args.per_core + args.per_thread > 1:
+    sys.exit("Only one of --per-thread / --per-core / --per-socket allowed currently")
 
 if args.core:
     runner.allowed_threads = [x for x in cpu.allcpus if display_core(x, False)]
