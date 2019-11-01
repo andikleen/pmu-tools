@@ -322,7 +322,7 @@ g.add_argument('--no-multiplex',
                action='store_true')
 g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
 g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumption', action='store_true')
-g.add_argument('--import', help='Import specified perf stat output file instead of running perf')
+g.add_argument('--import', help='Import specified perf stat output file instead of running perf', dest='_import')
 
 g = p.add_argument_group('Measurement filtering')
 g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
@@ -361,7 +361,7 @@ g = p.add_argument_group('Output')
 g.add_argument('--per-core', help='Aggregate output per core', action='store_true')
 g.add_argument('--per-socket', help='Aggregate output per socket', action='store_true')
 g.add_argument('--per-thread', help='Aggregate output per CPU thread', action='store_true')
-g.add_argument('--global', help='Aggregate output for all CPUs', action='store_true')
+g.add_argument('--global', help='Aggregate output for all CPUs', action='store_true', dest='_global')
 g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
 g.add_argument('--desc', help='Force event descriptions', action='store_true')
 g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
@@ -413,7 +413,6 @@ if args.pid:
     rest = ["--pid", args.pid] + rest
 if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
-args._global = args.__dict__['global']
 
 if args.all:
     args.tsx = True
@@ -448,7 +447,7 @@ if args.sample_repeat:
 if args.handle_errata:
     args.ignore_errata = False
 
-import_mode = args.__dict__['import'] is not None
+import_mode = args._import is not None
 event_nocheck = import_mode # XXX also for print
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
@@ -489,7 +488,7 @@ class PerfRun:
     def execute(self, r):
         if import_mode:
             self.perf = None
-            return open(args.__dict__['import'], 'r')
+            return open(args._import, 'r')
 
         outp, inp = pty.openpty()
         n = r.index("--log-fd")
