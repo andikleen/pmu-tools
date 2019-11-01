@@ -94,6 +94,9 @@ def file_exists(s):
 def has_format(s, pmu="cpu"):
     return file_exists("/sys/devices/%s/format/%s" % (pmu, s))
 
+def has_format_any(f, u):
+    return has_format(f, u) or has_format(f, u + "_0")
+
 warned = set()
 
 def warn_once(s):
@@ -174,8 +177,13 @@ uncore_map = (
     (r"u(0x[0-9a-fA-F]+)", "umask="),
     (r"opc=?(0x[0-9a-fA-F]+)", "filter_opc="),
     (r"tid=?(0x[0-9a-fA-F]+)", "filter_tid="),
-    (r"state=?(0x[0-9a-fA-F]+)", "filter_state="),
-    (r"c(?:mask=)?(0x[0-9a-fA-F]+|[0-9]+)", "thresh="))
+    (r"state=?(0x[0-9a-fA-F]+)", "filter_state="))
+
+uncore_map_thresh = (
+    (r"c(?:mask=)?(0x[0-9a-fA-F]+|[0-9]+)", "thresh="),)
+
+uncore_map_cmask = (
+    (r"c(?:mask=)?(0x[0-9a-fA-F]+|[0-9]+)", "cmask="),)
 
 # newe gets modified
 def convert_extra(extra, val, newe):
@@ -298,10 +306,10 @@ uncore_units = {
     "upi ll": "upi",
 }
 
-def convert_uncore(flags):
+def convert_uncore(flags, extra_map):
     o = ""
     while flags:
-        for j in uncore_map:
+        for j in uncore_map + extra_map:
             if flags[0] == ",":
                 flags = flags[1:]
             match, repl = j[0], j[1]
@@ -392,7 +400,13 @@ class UncoreEvent:
             flags += e.newextra
 
         one_unit = "one_unit" in flags
-        o += convert_uncore(flags)
+
+        if has_format_any("cmask", "uncore_" + e.unit):
+            extra_map = uncore_map_cmask
+        else:
+            extra_map = uncore_map_thresh
+
+        o += convert_uncore(flags, extra_map)
 
         # xxx subctr, occ_sel, filters
         if version.has_name and not noname:
@@ -423,7 +437,7 @@ class UncoreEvent:
                 return True
             if "=" in q:
                 q, _ = q.split("=")
-            if has_format(q, self.unit) or has_format(q, self.unit + "_0"):
+            if has_format_any(q, "uncore_" + self.unit):
                 return True
             warn_once("%s: format %s not supported. Filtering out" % (self.unit, q))
             return False
