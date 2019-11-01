@@ -442,7 +442,7 @@ class UncoreEvent:
             warn_once("%s: format %s not supported. Filtering out" % (self.unit, q))
             return False
 
-        self.newextra = ",".join(filter(check_qual, convert_uncore(self.newextra).split(",")))
+        self.newextra = ",".join(filter(check_qual, convert_uncore(self.newextra, ()).split(",")))
 
 
     output = output_newstyle
