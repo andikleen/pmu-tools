@@ -361,6 +361,7 @@ g = p.add_argument_group('Output')
 g.add_argument('--per-core', help='Aggregate output per core', action='store_true')
 g.add_argument('--per-socket', help='Aggregate output per socket', action='store_true')
 g.add_argument('--per-thread', help='Aggregate output per CPU thread', action='store_true')
+g.add_argument('--global', help='Aggregate output for all CPUs', action='store_true')
 g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
 g.add_argument('--desc', help='Force event descriptions', action='store_true')
 g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
@@ -412,6 +413,7 @@ if args.pid:
     rest = ["--pid", args.pid] + rest
 if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
+args._global = args.__dict__['global']
 
 if args.all:
     args.tsx = True
@@ -715,6 +717,8 @@ def display_core(cpunum, ignore_thread=False):
     return False
 
 def display_keys(runner, keys, args):
+    if args._global:
+        return ("",)
     if len(keys) > 1 and smt_mode:
         if args.per_socket:
             all_cpus = list(set(map(socket_fmt, runner.allowed_threads)))
@@ -756,7 +760,9 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
 
             runner.reset_thresh()
 
-            if args.per_socket:
+            if args._global:
+                cpus = res.keys()
+            elif args.per_socket:
                 cpus = [x for x in res.keys() if key_to_socketid(x) == sid]
             else:
                 cpus = [x for x in res.keys() if key_to_coreid(x) == core]
@@ -765,7 +771,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
                   for z in itertools.izip(*[valstats[x] for x in cpus])]
             env['num_merged'] = len(cpus)
 
-            if args.per_core or args.per_socket:
+            if args.per_core or args.per_socket or args._global:
                 merged_res = combined_res
                 merged_st = combined_st
             else:
@@ -787,6 +793,10 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
 
             # find bottleneck
             bn = find_bn(runner.olist, not_package_node)
+
+            if args._global:
+                runner.print_res(out, interval, "", not_package_node, bn)
+                break
 
             # print the SMT aware nodes
             if args.per_socket:
@@ -816,23 +826,33 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
             runner.print_res(out, interval, j, not_package_node, bn)
-    packages = set()
-    for j in sorted(res.keys()):
-        if j == "":
-            continue
-        if is_number(j):
-            if int(j) not in runner.allowed_threads:
+    if args._global:
+        cpus = [x for x in res.keys()
+                if (not is_number(j)) or int(j) in runner.allowed_threads]
+        combined_res = [sum([res[j][i] for j in cpus])
+                        for i in xrange(len(res[cpus[0]]))]
+        combined_st = [deprecated_combine_valstat([valstats[j][i] for j in cpus])
+                       for i in xrange(len(valstats[cpus[0]]))]
+        runner.compute(combined_res, rev[cpus[0]], combined_st, env, package_node, stat)
+        runner.print_res(out, interval, "", package_node, None)
+    else:
+        packages = set()
+        for j in sorted(res.keys()):
+            if j == "":
                 continue
-            p_id = cpu.cputosocket[int(j)]
-            if p_id in packages:
-                continue
-            packages.add(p_id)
-            jname = "S%d" % p_id
-        else:
-            jname = j
-        runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
-        runner.print_res(out, interval, jname, package_node, None)
-        # no bottlenecks from package nodes for now
+            if is_number(j):
+                if int(j) not in runner.allowed_threads:
+                    continue
+                p_id = cpu.cputosocket[int(j)]
+                if p_id in packages:
+                    continue
+                packages.add(p_id)
+                jname = "S%d" % p_id
+            else:
+                jname = j
+            runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
+            runner.print_res(out, interval, jname, package_node, None)
+    # no bottlenecks from package nodes for now
     out.flush()
     stat.referenced_check(res)
     stat.compute_errors()
@@ -842,10 +862,11 @@ class DummyArgs:
         self.per_thread = False
         self.per_core = False
         self.per_socket = False
+        self._global = False
         self.__dict__.update(d)
 
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
-    if args.per_core + args.per_thread + args.per_socket > 1:
+    if args.per_core + args.per_thread + args.per_socket + args._global > 1:
         if args.per_thread:
             out.remark("Per thread")
             out.reset()
@@ -858,6 +879,10 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
             out.remark("Per socket")
             out.reset()
             print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'per_socket': True}))
+        if args._global:
+            out.remark("Global")
+            out.reset()
+            print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'_global': True}))
     else:
         print_keys(runner, res, rev, valstats, out, interval, env, args)
 
@@ -2091,6 +2116,8 @@ if args.per_socket and not smt_mode:
     rest = ["--per-socket"] + rest
 if args.per_core and not smt_mode:
     rest = ["--per-core"] + rest
+if args._global and not smt_mode:
+    rest = ["-a"] + rest
 
 if not args.single_thread and cpu.ht:
     if not args.quiet and not import_mode:
