@@ -967,16 +967,16 @@ def group_number(num, events):
     gnums = map(group_nums, events)
     return list(flatten(gnums))[num]
 
-def dump_raw(interval, title, event, val, index, events, stddev, multiplex):
+def dump_raw(interval, title, event, val, index, events, stddev, multiplex, nodes):
     if event in fixed_to_name:
         ename = fixed_to_name[event].lower()
     else:
         ename = event_rmap(event)
     gnum = group_number(index, events)
     if args.raw:
-        print "raw", title, "event", event, "val", val, "ename", ename, "index", index, "group", gnum
+        print "raw", title, "event", event, "val", val, "ename", ename, "index", index, "group", gnum, "nodes", nodes
     if args.valcsv:
-        runner.valcsv.writerow((interval, title, gnum, ename, val, event, index, stddev, multiplex))
+        runner.valcsv.writerow((interval, title, gnum, ename, val, event, index, stddev, multiplex, nodes))
 
 perf_fields = [
     r"[0-9.]+",
@@ -1126,7 +1126,8 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                      event,
                      val,
                      len(res[title]) - len(init_res[title]) - 1,
-                     events, stddev, multiplex)
+                     events, stddev, multiplex,
+                     " ".join([o.name.replace(" ", "_") for o in runner.indexobj[len(res[title]) - 1]]))
     inf.close()
     if 'interval-s' not in env:
             set_interval(env, time.time() - start)
@@ -1546,10 +1547,11 @@ class Runner:
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv)
             self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value",
-                                  "Perf-event", "Index", "STDEV", "MULTI"))
+                                  "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
         self.summary = None
         if args.summary:
             self.summary = Summary()
+        self.indexobj = None
 
     def do_run(self, obj):
         obj.res = None
@@ -1762,6 +1764,8 @@ class Runner:
                 len(set(self.evnum)),
                 len(self.olist),
                 self.missed)
+        if args.valcsv or args.raw:
+            self.gen_indexobj()
 
     def propagate_siblings(self):
         changed = [0]
@@ -1868,6 +1872,12 @@ class Runner:
                         node_below(obj))
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
+
+    def gen_indexobj(self):
+        self.indexobj = defaultdict(list)
+        for o in self.olist:
+            for n in o.res_map.values():
+                self.indexobj[n].append(o)
 
     def list_metric_groups(self):
         print "MetricGroups:"

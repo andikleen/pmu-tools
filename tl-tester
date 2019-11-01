@@ -175,10 +175,12 @@ checklog0
 rm log$$
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -l4 -I 100 --columns sleep 1
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -l4 -I 100 --columns -x, sleep 1
-EVENTMAP=${cpus[skl]} FORCECPU=ivb $WRAP ./toplev.py -l4 --valcsv val.csv --user $LOAD | tee log$$
+EVENTMAP=${cpus[skl]} FORCECPU=ivb $WRAP ./toplev.py --all --valcsv val.csv $LOAD | tee log$$
+EVENTMAP=${cpus[skl]} FORCECPU=ivb $WRAP ./toplev.py --all --valcsv val.csv --user $LOAD | tee log$$
 grep :u log$$
 grep /u log$$
 rm log$$
+rm val.csv
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --all --sample-repeat 5 --filterqual -a sleep 0.1  | tee log
 # do all perf.data exist?
 rm perf.data.{1,2,3,4,5}
