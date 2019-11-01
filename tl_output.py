@@ -15,18 +15,49 @@
 import locale
 import csv
 import re
+import sys
 from tl_stat import isnan
 from tl_uval import UVal, combine_uval
 
+def open_logfile(name, typ):
+    if name is None or name == "":
+        return sys.stderr
+    if isinstance(name, file):
+        return name
+    if typ:
+        if "." in name:
+            name = re.sub(r'(.*)\.', r'\1-%s.' % typ, name)
+        else:
+            name += "-" + typ
+    try:
+        return open(name, "w")
+    except IOError:
+        sys.exit("Cannot open logfile %s" % name)
+
 class Output:
     """Abstract base class for Output classes."""
-    def __init__(self, logfile, version):
-        self.logf = logfile
+    def __init__(self, logfile, version, cpu, args):
+        if args.split_output:
+            self.logfiles = dict()
+            if args.per_thread:
+                self.logfiles['thread'] = open_logfile(logfile, "thread")
+            if args.per_core:
+                self.logfiles['core'] = open_logfile(logfile, "core")
+            if args.per_socket:
+                self.logfiles['socket'] = open_logfile(logfile, "socket")
+            if args._global:
+                self.logfiles['global'] = open_logfile(logfile, "global")
+        else:
+            self.logfiles = None
+            self.logf = open_logfile(logfile, None)
         self.printed_descs = set()
         self.hdrlen = 30
         self.version = version
         self.unitlen = 12
         self.belowlen = 0
+        self.version = "%s on %s" % (version, cpu.name)
+        self.curname = ""
+        self.printedversion = set()
 
     # pass all possible hdrs in advance to compute suitable padding
     def set_hdr(self, hdr, area):
@@ -67,10 +98,23 @@ class Output:
         pass
 
     def remark(self, m):
-        self.logf.write('\n%s:\n' % m)
+        if not self.logfiles:
+            self.logf.write('\n%s:\n' % m)
 
-    def reset(self):
-        pass
+    def reset(self, name):
+        if self.logfiles:
+            self.logf = self.logfiles[name]
+            self.curname = name
+
+    def print_version(self):
+        if self.curname not in self.printedversion:
+            if self.logfiles:
+                self.logfiles[self.curname].write("# " + self.version + "\n")
+            else:
+                self.logf.write("# " + self.version + "\n")
+            self.printedversion.add(self.curname)
+
+
 
 def fmt_below(below):
     if below:
@@ -80,14 +124,13 @@ def fmt_below(below):
 class OutputHuman(Output):
     """Generate human readable single-column output."""
     def __init__(self, logfile, args, version, cpu):
-        Output.__init__(self, logfile, version)
+        Output.__init__(self, logfile, version, cpu, args)
         try:
             locale.setlocale(locale.LC_ALL, '')
         except locale.Error:
             pass
         self.args = args
         self.titlelen = 7
-        self.logf.write("# " + version + " on " + cpu.name + "\n")
 
     def set_cpus(self, cpus):
         if len(cpus) > 0:
@@ -127,6 +170,7 @@ class OutputHuman(Output):
     # Example:
     # C0    BE      Backend_Bound:                                62.00 %
     def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
+        self.print_version()
         self.print_timestamp(timestamp)
         write = self.logf.write
         if title:
@@ -170,6 +214,7 @@ class OutputColumns(OutputHuman):
         if self.args.single_thread:
             OutputHuman.show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below)
             return
+        self.print_version()
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
@@ -220,7 +265,8 @@ class OutputColumns(OutputHuman):
             self.print_desc(desc, sample)
         self.nodes = dict()
 
-    def reset(self):
+    def reset(self, name):
+        Output.reset(self, name)
         self.printed_header = False
 
 class OutputColumnsCSV(OutputColumns):
@@ -228,11 +274,17 @@ class OutputColumnsCSV(OutputColumns):
 
     def __init__(self, logfile, sep, args, version, cpu):
         OutputColumns.__init__(self, logfile, args, version, cpu)
-        self.writer = csv.writer(self.logf, delimiter=sep)
+        self.writer = dict()
+        if self.logfiles:
+            for n, f in self.logfiles.iteritems():
+                self.writer[n] = csv.writer(f, delimiter=sep)
+        else:
+            self.writer[''] = csv.writer(self.logf, delimiter=sep)
         self.printed_header = False
 
     # XXX implement bn
     def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
+        self.print_version()
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
@@ -244,7 +296,7 @@ class OutputColumnsCSV(OutputColumns):
         cpunames = sorted(self.cpunames)
         if not self.printed_header:
             ts = ["Timestamp"] if self.timestamp else []
-            self.writer.writerow(ts + ["Area", "Node"] + cpunames + ["Description", "Sample", "Stddev", "Multiplex"])
+            self.writer[self.curname].writerow(ts + ["Area", "Node"] + cpunames + ["Description", "Sample", "Stddev", "Multiplex"])
             self.printed_header = True
         for key in sorted(sorted(self.nodes.keys(), key=lambda x: x[1]), key=lambda x: x[0] == ""):
             node = self.nodes[key]
@@ -274,18 +326,23 @@ class OutputColumnsCSV(OutputColumns):
                 l += (vs.format_uncertainty().strip(), vs.format_mux().strip())
             else:
                 l += ["", ""]
-            self.writer.writerow(l)
+            self.writer[self.curname].writerow(l)
         self.nodes = dict()
 
 class OutputCSV(Output):
     """Output data in CSV format."""
     def __init__(self, logfile, sep, args, version, cpu):
-        Output.__init__(self, logfile, version)
-        self.writer = csv.writer(self.logf, delimiter=sep)
+        Output.__init__(self, logfile, version, cpu, args)
+        self.writer = dict()
+        if self.logfiles:
+            for n, f in self.logfiles.iteritems():
+                self.writer[n] = csv.writer(f, delimiter=sep)
+        else:
+            self.writer[''] = csv.writer(self.logf, delimiter=sep)
         self.args = args
-        self.writer.writerow(["# " + version + " on " + cpu.name])
 
     def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
+        self.print_version()
         if self.args.no_desc:
             desc = ""
         desc = re.sub(r"\s+", " ", desc)
@@ -296,6 +353,6 @@ class OutputCSV(Output):
             l.append(title)
         stddev = val.format_uncertainty().strip()
         multiplex = val.multiplex if not isnan(val.multiplex) else ""
-        self.writer.writerow(l + [hdr, val.format_value_raw().strip(),
+        self.writer[self.curname].writerow(l + [hdr, val.format_value_raw().strip(),
                                   (unit + " " + fmt_below(below)).strip(),
                                   desc, sample, stddev, multiplex, bn])

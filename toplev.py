@@ -367,8 +367,9 @@ g.add_argument('--desc', help='Force event descriptions', action='store_true')
 g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
                action='store_true')
 g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
-g.add_argument('--output', '-o', help='Set output file', default=sys.stderr,
-               type=argparse.FileType('w'))
+g.add_argument('--output', '-o', help='Set output file')
+g.add_argument('--split-output', help='Generate multiple output files, one for each specified aggregation option (with -o)',
+               action='store_true')
 g.add_argument('--graph', help='Automatically graph interval output with tl-barplot.py',
                action='store_true')
 g.add_argument("--graph-cpu", help="CPU to graph using --graph")
@@ -431,8 +432,10 @@ if args.graph:
     else:
         title = "cpu %s" % (args.graph_cpu if args.graph_cpu else 0)
     extra += '--title "' + title + '" '
-    if args.output != sys.stderr:
-        extra += '--output "' + args.output.name + '" '
+    if args.split_output:
+        sys.exit("--split-output not allowed with --graph")
+    if args.output != "":
+        extra += '--output "' + args.output + '" '
     if args.graph_cpu:
         extra += "--cpu " + args.graph_cpu + " "
     args.csv = ','
@@ -868,19 +871,19 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
     if args.per_core + args.per_thread + args.per_socket + args._global > 1:
         if args.per_thread:
             out.remark("Per thread")
-            out.reset()
+            out.reset("thread")
             print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'per_thread': True}))
         if args.per_core:
             out.remark("Per core")
-            out.reset()
+            out.reset("core")
             print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'per_core': True}))
         if args.per_socket:
             out.remark("Per socket")
-            out.reset()
+            out.reset("socket")
             print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'per_socket': True}))
         if args._global:
             out.remark("Global")
-            out.reset()
+            out.reset("global")
             print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'_global': True}))
     else:
         print_keys(runner, res, rev, valstats, out, interval, env, args)

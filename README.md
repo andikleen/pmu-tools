@@ -8,7 +8,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 * toplev now supports --per-core / --per-socket output in SMT mode, and also a --global mode.
   This also works with reprocessed data (from --perf-output / --import), so it is possible
   to slice a single collection. It is also possible to specify them at the same time
-  to get separate summaries.
+  to get separate summaries. With --split-output -o file the different aggregations
+  are written to different files.
 * toplev update to Ahmad Yasin's/Anton Hanna's TMA 3.6:
 	- {Load|Store}_STLB_(Hit|Miss): new metrics that breakdown DTLB_{Load|Store} costs
 	- L2_Evictions_(Silent|NonSilent)_PKI: L2 (silent|non silent) evictions rate per Kilo instructios
