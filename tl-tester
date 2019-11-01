@@ -204,7 +204,8 @@ checklog0
 
 EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py  -l4 true
 
-$WRAP ./toplev.py -o /dev/null --no-desc -v -l5 --run-sample $LOAD
+# check current platform
+$WRAP ./toplev.py -o /dev/null --no-desc -v --all --run-sample $LOAD
 HYPERVISOR=1 $WRAP ./toplev.py -o /dev/null --no-desc -v -l5 --run-sample $LOAD
 for cpu in $SMTCPUS ; do
 TOPOLOGY=topology EVENTMAP=${cpus[$cpu]} UNCORE=${cpus[$cpu]} FORCECPU=$cpu \
