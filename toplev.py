@@ -693,8 +693,8 @@ def core_fmt(core):
         return "S%d-C%d" % (core / 1000, core % 1000,)
     return "C%d" % (core % 1000,)
 
-def socket_fmt(core):
-    return "S%d" % (core / 1000)
+def socket_fmt(j):
+    return "S%d" % cpu.cputocore[j][0]
 
 def thread_fmt(j):
     return core_fmt(key_to_coreid(j)) + ("-T%d" % cpu.cputothread[int(j)])
@@ -797,27 +797,27 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
             if args._global:
                 runner.print_res(out, interval, "", not_package_node, bn)
                 break
+            if args.per_socket:
+                runner.print_res(out, interval, socket_fmt(int(j)), not_package_node, bn)
+                printed_sockets.add(sid)
+                continue
+            if args.per_thread:
+                runner.print_res(out, interval, thread_fmt(int(j)), any_node, bn)
+                continue
+
+            # per core or mixed core/thread mode
 
             # print the SMT aware nodes
-            if args.per_socket:
-                runner.print_res(out, interval, socket_fmt(core), core_node, bn)
-                printed_sockets.add(sid)
-            elif not args.per_thread and core not in printed_cores:
+            if core not in printed_cores:
                 runner.print_res(out, interval, core_fmt(core), core_node, bn)
                 printed_cores.add(core)
 
             # print the non SMT nodes
-            if args.per_socket:
-                fmt = socket_fmt(int(j))
-            elif args.per_core:
-                fmt = core_fmt(int(j))
+            if args.per_core:
+                fmt = core_fmt(core)
             else:
-                fmt = thread_fmt(j)
-            if args.per_thread:
-                filt = any_node
-            else:
-                filt = thread_node
-            runner.print_res(out, interval, fmt, filt, bn)
+                fmt = thread_fmt(int(j))
+            runner.print_res(out, interval, fmt, thread_node, bn)
     else:
         env['num_merged'] = 1
         for j in sorted(res.keys()):
@@ -835,7 +835,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
                        for i in xrange(len(valstats[cpus[0]]))]
         runner.compute(combined_res, rev[cpus[0]], combined_st, env, package_node, stat)
         runner.print_res(out, interval, "", package_node, None)
-    else:
+    elif not args.per_thread:
         packages = set()
         for j in sorted(res.keys()):
             if j == "":
