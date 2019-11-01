@@ -67,7 +67,7 @@ class Output:
         pass
 
     def remark(self, m):
-        pass
+        self.logf.write('\n%s:\n' % m)
 
     def reset(self):
         pass
@@ -88,9 +88,6 @@ class OutputHuman(Output):
         self.args = args
         self.titlelen = 7
         self.logf.write("# " + version + " on " + cpu.name + "\n")
-
-    def remark(self, m):
-        self.logf.write('\n%s:\n' % m)
 
     def set_cpus(self, cpus):
         if len(cpus) > 0:
