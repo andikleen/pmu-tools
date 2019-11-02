@@ -37,7 +37,7 @@ def open_logfile(name, typ):
 class Output:
     """Abstract base class for Output classes."""
     def __init__(self, logfile, version, cpu, args):
-        if args.split_output:
+        if args.split_output and args.per_thread + args.per_core + args.per_socket + args._global > 0:
             self.logfiles = dict()
             if args.per_thread:
                 self.logfiles['thread'] = open_logfile(logfile, "thread")
@@ -113,8 +113,6 @@ class Output:
             else:
                 self.logf.write("# " + self.version + "\n")
             self.printedversion.add(self.curname)
-
-
 
 def fmt_below(below):
     if below:

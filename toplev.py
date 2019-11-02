@@ -1824,7 +1824,8 @@ class Runner:
         return changed
 
     def print_res(self, out, timestamp, title, match, bn):
-        out.logf.flush()
+        if has(out, 'logf') and out.logf == sys.stderr:
+            out.logf.flush()
 
         # determine all objects to print
         olist = []
