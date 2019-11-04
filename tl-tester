@@ -28,7 +28,7 @@ EOL
 
 set -x
 
-LOAD="${LOAD:--- gcc -o /dev/null hello.c}"
+LOAD="${LOAD:--- gcc -O3 -o /dev/null hello.c}"
 LOAD0="-- taskset -c 0 $LOAD"
 
 set -o pipefail
