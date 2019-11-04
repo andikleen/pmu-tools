@@ -2199,4 +2199,5 @@ if args.sample_repeat:
 else:
     ret = measure_and_sample(None)
 
+out.print_footer()
 sys.exit(ret)

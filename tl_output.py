@@ -57,6 +57,7 @@ class Output:
         self.belowlen = 0
         self.version = "%s on %s" % (version, cpu.name)
         self.curname = ""
+        self.curname_nologf = ""
         self.printedversion = set()
 
     # pass all possible hdrs in advance to compute suitable padding
@@ -105,6 +106,7 @@ class Output:
         if self.logfiles:
             self.logf = self.logfiles[name]
             self.curname = name
+        self.curname_nologf = name
 
     def print_version(self):
         if self.curname not in self.printedversion:
@@ -113,6 +115,18 @@ class Output:
             else:
                 self.logf.write("# " + self.version + "\n")
             self.printedversion.add(self.curname)
+
+    print_header = print_version
+
+    def print_footer(self):
+        pass
+
+    def print_footer_all(self):
+        if self.logfiles:
+           for f in self.logfiles.values():
+               f.write("# %s\n" % self.version)
+        else:
+            self.logf.write("# " + self.version + "\n")
 
 def fmt_below(below):
     if below:
@@ -149,7 +163,7 @@ class OutputHuman(Output):
             else:
                 self.logf.write("%6.9f " % timestamp)
 
-    def print_header(self, area, hdr):
+    def print_line_header(self, area, hdr):
         if area:
             hdr = "%-14s %s" % (area, hdr)
         self.logf.write("%-*s " % (self.hdrlen, hdr))
@@ -168,12 +182,12 @@ class OutputHuman(Output):
     # Example:
     # C0    BE      Backend_Bound:                                62.00 %
     def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
-        self.print_version()
+        self.print_header()
         self.print_timestamp(timestamp)
         write = self.logf.write
         if title:
             write("%-*s" % (self.titlelen, title))
-        self.print_header(area, hdr)
+        self.print_line_header(area, hdr)
         vals = "{:<{unitlen}} {:>} {:<{belowlen}}".format(
                     ("  " if unit[0] != "%" else "") + unit,
                     val.format_value(),
@@ -212,7 +226,7 @@ class OutputColumns(OutputHuman):
         if self.args.single_thread:
             OutputHuman.show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below)
             return
-        self.print_version()
+        self.print_header()
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
@@ -229,7 +243,7 @@ class OutputColumns(OutputHuman):
         if not self.printed_header:
             if self.timestamp:
                 write("%9s" % "")
-            self.print_header("", "")
+            self.print_line_header("", "")
             for j in cpunames:
                 write("%*s  " % (VALCOL_LEN, j))
             write("\n")
@@ -243,7 +257,7 @@ class OutputColumns(OutputHuman):
             if self.timestamp:
                 self.print_timestamp(self.timestamp)
 
-            self.print_header(key[0], key[1])
+            self.print_line_header(key[0], key[1])
             vlist = []
             for cpuname in cpunames:
                 if cpuname in node:
@@ -282,7 +296,7 @@ class OutputColumnsCSV(OutputColumns):
 
     # XXX implement bn
     def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
-        self.print_version()
+        self.print_header()
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
@@ -327,6 +341,8 @@ class OutputColumnsCSV(OutputColumns):
             self.writer[self.curname].writerow(l)
         self.nodes = dict()
 
+    print_footer = Output.print_footer_all
+
 class OutputCSV(Output):
     """Output data in CSV format."""
     def __init__(self, logfile, sep, args, version, cpu):
@@ -338,9 +354,22 @@ class OutputCSV(Output):
         else:
             self.writer[''] = csv.writer(self.logf, delimiter=sep)
         self.args = args
+        self.printed_headers = set()
+
+    def print_header(self, timestamp, title):
+        if self.curname_nologf not in self.printed_headers:
+            l = []
+            if timestamp:
+                l.append("Timestamp")
+            if title:
+                l.append("CPUs")
+            self.writer[self.curname].writerow(l +
+                ['Area', 'Value', 'Unit', 'Description',
+                 'Sample', 'Stddev', 'Multiplex', 'Bottleneck'])
+            self.printed_headers.add(self.curname_nologf)
 
     def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
-        self.print_version()
+        self.print_header(timestamp, title)
         if self.args.no_desc:
             desc = ""
         desc = re.sub(r"\s+", " ", desc)
@@ -354,3 +383,5 @@ class OutputCSV(Output):
         self.writer[self.curname].writerow(l + [hdr, val.format_value_raw().strip(),
                                   (unit + " " + fmt_below(below)).strip(),
                                   desc, sample, stddev, multiplex, bn])
+
+    print_footer = Output.print_footer_all
