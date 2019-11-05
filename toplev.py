@@ -322,7 +322,7 @@ g.add_argument('--no-multiplex',
                action='store_true')
 g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
 g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumption', action='store_true')
-g.add_argument('--import', help='Import specified perf stat output file instead of running perf', dest='_import')
+g.add_argument('--import', help='Import specified perf stat output file instead of running perf. Must be for same cpu, same arguments, same /proc/cpuinfo', dest='_import')
 
 g = p.add_argument_group('Measurement filtering')
 g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
@@ -332,7 +332,7 @@ g.add_argument('--pid', '-p', help=argparse.SUPPRESS)
 g.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
 
 g = p.add_argument_group('Select events')
-g.add_argument('--level', '-l', help='Measure upto level N (max 5)',
+g.add_argument('--level', '-l', help='Measure upto level N (max 6)',
                type=int, default=1)
 g.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
 g.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
@@ -343,7 +343,7 @@ g.add_argument('--frequency', help="Measure frequency", action='store_true')
 g.add_argument('--power', help='Display power metrics', action='store_true')
 g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, comma separated list, wildcards allowed)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
-g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, comma separated list.', default=None)
+g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, comma separated list from --list-metric-groups.', default=None)
 
 g = p.add_argument_group('Query nodes')
 g.add_argument('--list-metrics', help='List all metrics', action='store_true')
@@ -377,7 +377,7 @@ g.add_argument('--title', help='Set title of graph')
 g.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
 g.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
                 action='store_true')
-g.add_argument('--columns', help='Print CPU output in multiple columns', action='store_true')
+g.add_argument('--columns', help='Print CPU output in multiple columns for each node', action='store_true')
 g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
 g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file', type=argparse.FileType('w'))
