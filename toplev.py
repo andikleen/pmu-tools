@@ -718,15 +718,21 @@ def display_core(cpunum, ignore_thread=False):
         return True
     return False
 
-def display_keys(runner, keys, args):
-    if args._global:
+OUTPUT_CORE_THREAD = 0
+OUTPUT_CORE = 1
+OUTPUT_THREAD = 2
+OUTPUT_SOCKET = 3
+OUTPUT_GLOBAL = 4
+
+def display_keys(runner, keys, mode):
+    if mode == OUTPUT_GLOBAL:
         return ("",)
     if len(keys) > 1 and smt_mode:
-        if args.per_socket:
+        if mode == OUTPUT_SOCKET:
             all_cpus = list(set(map(socket_fmt, runner.allowed_threads)))
         else:
             cores = [key_to_coreid(x) for x in keys if int(x) in runner.allowed_threads]
-            if not args.per_core:
+            if mode != OUTPUT_CORE:
                 threads = map(thread_fmt, runner.allowed_threads)
             else:
                 threads = []
@@ -743,9 +749,9 @@ def verify_rev(rev, cpus):
             assert o == rev[cpus[0]][ind]
         assert len(rev[k]) == len(rev[cpus[0]])
 
-def print_keys(runner, res, rev, valstats, out, interval, env, args):
+def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat = runner.stat
-    out.set_cpus(display_keys(runner, res.keys(), args))
+    out.set_cpus(display_keys(runner, res.keys(), mode))
     if smt_mode:
         printed_cores = set()
         printed_sockets = set()
@@ -755,16 +761,16 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
 
             sid = key_to_socketid(j)
             core = key_to_coreid(j)
-            if args.per_core and core in printed_cores:
+            if mode == OUTPUT_CORE and core in printed_cores:
                 continue
-            if args.per_socket and sid in printed_sockets:
+            if mode == OUTPUT_SOCKET and sid in printed_sockets:
                 continue
 
             runner.reset_thresh()
 
-            if args._global:
+            if mode == OUTPUT_GLOBAL:
                 cpus = res.keys()
-            elif args.per_socket:
+            elif mode == OUTPUT_SOCKET:
                 cpus = [x for x in res.keys() if key_to_socketid(x) == sid]
             else:
                 cpus = [x for x in res.keys() if key_to_coreid(x) == core]
@@ -773,7 +779,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
                   for z in itertools.izip(*[valstats[x] for x in cpus])]
             env['num_merged'] = len(cpus)
 
-            if args.per_core or args.per_socket or args._global:
+            if mode in (OUTPUT_CORE,OUTPUT_SOCKET,OUTPUT_GLOBAL):
                 merged_res = combined_res
                 merged_st = combined_st
             else:
@@ -796,14 +802,14 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
             # find bottleneck
             bn = find_bn(runner.olist, not_package_node)
 
-            if args._global:
+            if mode == OUTPUT_GLOBAL:
                 runner.print_res(out, interval, "", not_package_node, bn)
                 break
-            if args.per_socket:
+            if mode == OUTPUT_SOCKET:
                 runner.print_res(out, interval, socket_fmt(int(j)), not_package_node, bn)
                 printed_sockets.add(sid)
                 continue
-            if args.per_thread:
+            if mode == OUTPUT_THREAD:
                 runner.print_res(out, interval, thread_fmt(int(j)), any_node, bn)
                 continue
 
@@ -815,7 +821,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
                 printed_cores.add(core)
 
             # print the non SMT nodes
-            if args.per_core:
+            if mode == OUTPUT_CORE:
                 fmt = core_fmt(core)
             else:
                 fmt = thread_fmt(int(j))
@@ -828,7 +834,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
             runner.print_res(out, interval, j, not_package_node, bn)
-    if args._global:
+    if mode == OUTPUT_GLOBAL:
         cpus = [x for x in res.keys()
                 if (not is_number(j)) or int(j) in runner.allowed_threads]
         combined_res = [sum([res[j][i] for j in cpus])
@@ -837,7 +843,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
                        for i in xrange(len(valstats[cpus[0]]))]
         runner.compute(combined_res, rev[cpus[0]], combined_st, env, package_node, stat)
         runner.print_res(out, interval, "", package_node, None)
-    elif not args.per_thread:
+    elif mode != OUTPUT_THREAD:
         packages = set()
         for j in sorted(res.keys()):
             if j == "":
@@ -859,34 +865,35 @@ def print_keys(runner, res, rev, valstats, out, interval, env, args):
     stat.referenced_check(res)
     stat.compute_errors()
 
-class DummyArgs:
-    def __init__(self, d):
-        self.per_thread = False
-        self.per_core = False
-        self.per_socket = False
-        self._global = False
-        self.__dict__.update(d)
-
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
     if args.per_core + args.per_thread + args.per_socket + args._global > 1:
         if args.per_thread:
             out.remark("Per thread")
             out.reset("thread")
-            print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'per_thread': True}))
+            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_THREAD)
         if args.per_core:
             out.remark("Per core")
             out.reset("core")
-            print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'per_core': True}))
+            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_CORE)
         if args.per_socket:
             out.remark("Per socket")
             out.reset("socket")
-            print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'per_socket': True}))
+            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_SOCKET)
         if args._global:
             out.remark("Global")
             out.reset("global")
-            print_keys(runner, res, rev, valstats, out, interval, env, DummyArgs({'_global': True}))
+            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_GLOBAL)
     else:
-        print_keys(runner, res, rev, valstats, out, interval, env, args)
+        mode = OUTPUT_CORE_THREAD
+        if args.per_thread:
+            mode = OUTPUT_THREAD
+        elif args.per_core:
+            mode = OUTPUT_CORE
+        elif args.per_socket:
+            mode = OUTPUT_SOCKET
+        elif args._global:
+            mode = OUTPUT_GLOBAL
+        print_keys(runner, res, rev, valstats, out, interval, env, mode)
 
 def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
     if runner.summary:
