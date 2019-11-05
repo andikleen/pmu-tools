@@ -2100,6 +2100,10 @@ def check_root():
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1) and not args.quiet:
         print >>sys.stderr, "Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid"
 
+if args.nodes:
+    runner.check_nodes(args.nodes)
+runner.filter_nodes()
+
 if not args.no_util:
     import perf_metrics
     setup_with_metrics(perf_metrics, runner)
@@ -2127,10 +2131,6 @@ if args.frequency:
     args.metrics = True
     frequency.SetupCPU(runner, cpu)
     args.metrics = old_metrics
-
-if args.nodes:
-    runner.check_nodes(args.nodes)
-runner.filter_nodes()
 
 if args.per_socket and not smt_mode:
     rest = ["--per-socket"] + rest
