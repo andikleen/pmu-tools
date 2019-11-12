@@ -1866,6 +1866,7 @@ class Runner:
                 if obj.name not in stat.errors:
                     stat.errcount += obj.errcount
                 stat.errors.add(obj.name)
+                stat.referenced |= set(obj.res_map.itervalues())
 
         # step 2: propagate siblings
         changed += self.propagate_siblings()
