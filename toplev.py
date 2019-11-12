@@ -23,7 +23,7 @@ import exceptions, argparse, time, types, fnmatch, csv, copy
 from collections import defaultdict, Counter
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
-from tl_cpu import CPU
+import tl_cpu
 import tl_output
 import ocperf
 from tl_uval import UVal, combine_uval
@@ -146,11 +146,14 @@ def works(x):
 
 class PerfFeatures:
     """Adapt to the quirks of various perf versions."""
-    def __init__(self):
+    def __init__(self, args):
         self.logfd_supported = works(perf + " stat --log-fd 3 3>/dev/null true")
         if not self.logfd_supported:
             sys.exit("perf binary is too old or perf is disabled in /proc/sys/kernel/perf_event_paranoid")
-        self.supports_power = works(perf + " list  | grep -q power/")
+        self.supports_power = (
+                not args.no_uncore
+                and not args.force_hypervisor
+                and works(perf + " list  | grep -q power/"))
         # guests don't support offcore response
         if event_nocheck:
             self.supports_ocr = True
@@ -256,11 +259,6 @@ def exe_dir():
     if d:
         return d
     return "."
-
-feat = PerfFeatures()
-emap = ocperf.find_emap()
-if not emap:
-    sys.exit("Unknown CPU or CPU event map not found.")
 
 p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
 description='''
@@ -382,6 +380,14 @@ g.add_argument('--summary', help='Print summary at the end. Only useful with -I'
 g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file', type=argparse.FileType('w'))
 
+g = p.add_argument_group('Environment')
+g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus if not x[0] == "simple"])
+g.add_argument('--force-topology', metavar='findsysoutput', help='Use specified topology file (find /sys/devices)')
+g.add_argument('--force-cpuinfo', metavar='cpuinfo', help='Use specified cpuinfo file (/proc/cpuinfo)')
+g.add_argument('--force-hypervisor', help='Assume running under hypervisor (no uncore, no offcore, no PEBS)', action='store_true')
+g.add_argument('--no-uncore', help='Disable uncore events', action='store_true')
+g.add_argument('--no-check', help='Do not check that PMU units exist', action='store_true')
+
 g = p.add_argument_group('Additional information')
 g.add_argument('--print-group', '-g', help='Print event group assignments',
                action='store_true')
@@ -401,6 +407,11 @@ p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
 p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true')
 args, rest = p.parse_known_args()
+
+feat = PerfFeatures(args)
+emap = ocperf.find_emap()
+if not emap:
+    sys.exit("Unknown CPU or CPU event map not found.")
 
 rest = [x for x in rest if x != "--"]
 
@@ -434,7 +445,7 @@ if args.graph:
     extra += '--title "' + title + '" '
     if args.split_output:
         sys.exit("--split-output not allowed with --graph")
-    if args.output != "":
+    if args.output:
         extra += '--output "' + args.output + '" '
     if args.graph_cpu:
         extra += "--cpu " + args.graph_cpu + " "
@@ -451,7 +462,7 @@ if args.handle_errata:
     args.ignore_errata = False
 
 import_mode = args._import is not None
-event_nocheck = import_mode # XXX also for print
+event_nocheck = import_mode or args.no_check # XXX also for print
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
 csv_mode = args.csv
@@ -472,9 +483,37 @@ def check_ratio(l):
         return True
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
-cpu = CPU(known_cpus, nocheck=event_nocheck)
-if cpu.force_hypervisor:
-    feat.has_max_precise = False
+def gen_cpu_name(cpu):
+    for j in known_cpus:
+        if cpu == j[0]:
+            if isinstance(j[1][0], int):
+                return "GenuineIntel-6-%02X" % j[1][0]
+            return "GenuineIntel-6-%02X-%02X" % j[1][0]
+    assert False
+
+env = tl_cpu.Env()
+
+if args.force_cpu:
+    env.forcecpu = args.force_cpu
+    if not os.getenv("EVENTMAP"):
+        os.putenv("EVENTMAP", gen_cpu_name(args.force_cpu))
+if args.force_topology:
+    if not os.getenv("TOPOLOGY"):
+        os.putenv("TOPOLOGY", args.force_topology)
+if args.force_cpuinfo:
+    env.cpuinfo = args.force_cpuinfo
+if args.force_hypervisor:
+    env.hypervisor = True
+
+cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
+
+if cpu.hypervisor:
+    feat.max_precise = 0
+    feat.has_max_precise = True
+    feat.supports_ocr = False
+
+if cpu.hypervisor or args.no_uncore:
+    feat.supports_power = False
 
 def print_perf(r):
     if args.quiet:
@@ -1589,6 +1628,8 @@ class Runner:
 
         def want_node(obj):
             if args.reduced and has(obj, 'server') and not obj.server:
+                return False
+            if args.no_uncore and has(obj, 'domain') and obj.area == "Info.System":
                 return False
             want = ((obj.metric and args.metrics) or obj.name in add_met or obj in parents) and not obj.name in remove_met
             if not obj.metric and obj.level <= self.max_level:

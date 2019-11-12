@@ -38,11 +38,20 @@ def reduced_counters():
             val = int(f.read())
     return val == 0
 
+class Env:
+    def __init__(self):
+        self.forcecpu = os.getenv("FORCECPU")
+        self.forcecounters = os.getenv("FORCECOUNTERS")
+        self.forceht = os.getenv("FORCEHT")
+        self.hypervisor = os.getenv("HYPERVISOR")
+        self.cpuinfo = os.getenv("CPUINFO")
+        self.tlcounters = os.getenv("TLCOUNTERS")
+
 class CPU:
     """Detect the CPU."""
     # overrides for easy regression tests
     def force_cpu(self, known_cpus):
-        force = os.getenv("FORCECPU")
+        force = self.env.forcecpu
         if not force:
             return False
         self.cpu = None
@@ -55,18 +64,19 @@ class CPU:
         return True
 
     def force_counters(self):
-        cnt = os.getenv("FORCECOUNTERS")
+        cnt = self.env.forcecounters
         if cnt:
             self.counters = int(cnt)
 
     def force_ht(self):
-        ht = os.getenv("FORCEHT")
+        ht = self.env.forceht
         if ht:
             self.ht = int(ht)
             return True
         return False
 
-    def __init__(self, known_cpus, nocheck):
+    def __init__(self, known_cpus, nocheck, env):
+        self.env = env
         self.model = 0
         self.cpu = None
         self.realcpu = "simple"
@@ -75,7 +85,7 @@ class CPU:
         self.has_tsx = False
         self.hypervisor = False
         self.force_hypervisor = False
-        if os.getenv("HYPERVISOR"):
+        if self.env.hypervisor:
             self.hypervisor = True
             self.force_hypervisor = True
         self.freq = 0.0
@@ -94,7 +104,7 @@ class CPU:
         self.allcpus = []
         self.step = 0
         self.name = ""
-        cpuinfo = os.getenv("CPUINFO")
+        cpuinfo = self.env.cpuinfo
         if cpuinfo is None:
             cpuinfo = "/proc/cpuinfo"
         with open(cpuinfo, "r") as f:
@@ -164,7 +174,7 @@ class CPU:
             if not nocheck and reduced_counters():
                 self.counters -= 1
             # chicken bit to override if we get it wrong
-            counters = os.getenv("TLCOUNTERS")
+            counters = self.env.tlcounters
             if counters:
                 self.counters = int(counters)
         self.sockets = len(sockets.keys())
