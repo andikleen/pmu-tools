@@ -5,6 +5,7 @@
 # for non root set kernel.perf_event_paranoid = -1
 
 set -e
+set -o pipefail
 
 WRAP=${WRAP:-}
 
