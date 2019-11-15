@@ -175,7 +175,8 @@ EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --no-uncore $LOAD
 $WRAP ./toplev.py --force-hypervisor --force-cpu hsw $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --metric-group +TopDownL1,TLB $LOAD
 if python -c 'import matplotlib.pyplot' ; then
-EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --graph -o x.png --metrics -l4 $LOAD
+$WRAP ./toplev.py --force-cpu snb --graph -o x.png --all $LOAD
+[ `stat -c %s x.png` -gt 1000 ]
 fi
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -l4 -I 100 sleep 1
 EVENTMAP=${cpus[ivb]} FORCECPU=ivb $WRAP ./toplev.py -o log$$ -m -l4 -I 100 $LOAD
