@@ -800,6 +800,7 @@ def add_extra_env(emap, el):
         oc = os.getenv("OFFCORE")
         if oc:
             oc = canon_emapvar(oc, "matrix")
+            oc = event_download.eventlist_name(el, "offcore")
             emap.add_offcore(oc)
         else:
             oc = event_download.eventlist_name(el, "offcore")
@@ -815,6 +816,7 @@ def add_extra_env(emap, el):
         uc = os.getenv("UNCORE")
         if uc:
             uc = canon_emapvar(uc, "uncore")
+            uc = event_download.eventlist_name(el, "uncore")
             emap.add_uncore(uc)
         else:
             uc = event_download.eventlist_name(el, "uncore")
