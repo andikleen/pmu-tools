@@ -462,7 +462,7 @@ if args.handle_errata:
     args.ignore_errata = False
 
 import_mode = args._import is not None
-event_nocheck = import_mode or args.no_check # XXX also for print
+event_nocheck = import_mode or args.no_check
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
 csv_mode = args.csv
