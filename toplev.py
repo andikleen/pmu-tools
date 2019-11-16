@@ -2033,7 +2033,12 @@ runner = Runner(args.level)
 
 pe = lambda x: None
 if args.debug:
-    pe = lambda x: sys.stdout.write(x + "\n")
+    printed_error = set()
+    def print_err(x):
+        if x not in printed_error:
+            print x
+            printed_error.add(x)
+    pe = lambda e: print_err(e)
 
 if args.single_thread:
     cpu.ht = False
