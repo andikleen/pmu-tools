@@ -40,7 +40,7 @@ class TLData:
         for r in csvf:
             if r[0].strip().startswith("#"):
                 continue
-            if r[0] == "Timestamp":
+            if r[0] == "Timestamp" or r[0] == "CPUs":
                 continue
             if re.match(r'[CS]\d+.*', r[1]):
                 ts, cpu, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4], r[5]

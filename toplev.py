@@ -487,6 +487,8 @@ def gen_cpu_name(cpu):
     for j in known_cpus:
         if cpu == j[0]:
             if isinstance(j[1][0], int):
+                if cpu == "skx":
+                    return "GenuineIntel-6-%02X-4" % j[1][0]
                 return "GenuineIntel-6-%02X" % j[1][0]
             return "GenuineIntel-6-%02X-%02X" % j[1][0]
     assert False
