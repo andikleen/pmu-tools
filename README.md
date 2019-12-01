@@ -177,7 +177,7 @@ jevents also supports self profiling with Linux since Linux 3.3. Self
 profiling is a program monitoring its own execution, either for controlled
 benchmarking or to optimize itself.
 For self-profiling on older kernels you can use
-[simple-pmu] (http://halobates.de/simple-pmu)
+[simple-pmu](http://halobates.de/simple-pmu)
 * Support for Intel "offcore" events on older Linux systems where
 the kernel perf subsystem does not support them natively.
 Offcore events allow to categorize memory accesses that go outside the core.
@@ -379,8 +379,8 @@ with -lX, with X being the level.
 On non-SMT systems only the program is measured by default, while
 with SMT on the whole system is measured.
 
-[IVB model] (http://halobates.de/ivb-hierarchy.svg)
-[Simple model] (http://halobates.de/simple-hierarchy.svg)
+[IVB model](http://halobates.de/ivb-hierarchy.svg)
+[Simple model](http://halobates.de/simple-hierarchy.svg)
 
 ## Examples:
 
@@ -481,7 +481,7 @@ This usually requires setting the correct event map with EVENTMAP=...
 
 ## ucevent uncore monitoring
 
-Please see the [ucevent documentation] (http://github.com/andikleen/pmu-tools/tree/master/ucevent/#ucevent-uncore-monitoring)
+Please see the [ucevent documentation](http://github.com/andikleen/pmu-tools/tree/master/ucevent/#ucevent-uncore-monitoring)
 
 ## interval-plot:
 
@@ -492,7 +492,7 @@ Requires matplotlib to be installed.
 Below is the level 2 toplev measurement of a Linux kernel compile.
 Note that tl-barplot below is normally better to plot toplev output.
 
-![plot-example] (http://halobates.de/interval.plot.l2.png)
+![plot-example](http://halobates.de/interval.plot.l2.png)
 
 ## interval-normalize:
 
@@ -516,7 +516,7 @@ Requires matplotlib to be installed.
 
 	toplev.py --single-thread -l3 --title "GNU grep" --graph grep -r foo /usr/*
 
-![tl-barplot-example] (http://halobates.de/grep.3.svg)
+![tl-barplot-example](http://halobates.de/grep.3.svg)
 
 This assumes the workload is single threaded. tl-barplot can only
 display a single CPU, if --single-thread is not appropriate then
@@ -525,7 +525,7 @@ the CPU to plot needs to be specified with --graph-cpu.
 With a new enough matplotlib you can also enable xkcd mode
 (install Humor Sans first)
 
-![tl-barplot-xkcd] (http://halobates.de/povray.2.png)
+![tl-barplot-xkcd](http://halobates.de/povray.2.png)
 
 ## tl-serve:
 
