@@ -190,7 +190,13 @@ int resolve_event(const char *name, struct perf_event_attr *attr)
 	for (e = eventlist[h]; e; e = e->next) {
 		if (!strncasecmp(e->name, name, nlen)) {
 			char *event = real_event(e->name, e->event, nlen);
-			asprintf(&buf, "%s/%s/", e->pmu, event);
+			char *s;
+
+			asprintf(&buf, "%s/%s%s/", e->pmu, event, name + nlen);
+			for (s = buf; *s; s++) {
+				if (*s == ':')
+					*s = ',';
+			}
 			ret = jevent_name_to_attr(buf, attr);
 			free(buf);
 			return ret;

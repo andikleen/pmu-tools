@@ -116,6 +116,8 @@ int jevents_update_qual(const char *qual, struct perf_event_attr *attr,
 			else if (sscanf(qual, "config2=%llx%n", &c, &skip) == 1)
 				attr->config2 |= c;
 			qual += skip;
+			if (*qual == 0)
+				break;
 		}
 
 		switch (*qual) { 
@@ -169,7 +171,7 @@ static bool special_attr(char *name, int val, struct perf_event_attr *attr)
 		return true;
 	}
 	if (!strcmp(name, "config1")) {
-		attr->config2 |= val;
+		attr->config1 |= val;
 		return true;
 	}
 	if (!strcmp(name, "config2")) {
@@ -297,7 +299,7 @@ int jevent_name_to_attr(const char *str, struct perf_event_attr *attr)
 		assert(qual_off != -1);
 		if (str[qual_off] == 0)
 			return 0;
-		if (str[qual_off] == ':' && jevents_update_qual(str + qual_off, attr, str) == 0)
+		if (str[qual_off] == ':' && jevents_update_qual(str + qual_off + 1, attr, str) == 0)
 			return 0;
 		return -1;
 	}
