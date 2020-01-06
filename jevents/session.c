@@ -67,6 +67,28 @@ static struct event *new_event(struct eventlist *el, char *s)
 	return e;
 }
 
+static char *grab_event(char *s, char **next)
+{
+	char *p = s;
+	if (s == NULL || *s == 0)
+		return NULL;
+	*next = NULL;
+	while (*s) {
+		if (*s == '/') {
+			s++;
+			while (*s && *s != '/')
+				s++;
+		}
+		if (*s == ',') {
+			*s = 0;
+			*next = s + 1;
+			break;
+		}
+		s++;
+	}
+	return p;
+}
+
 /**
  * parse_events - parse a perf style string with events
  * @el: List of events allocated earlier
@@ -76,14 +98,13 @@ static struct event *new_event(struct eventlist *el, char *s)
  */
 int parse_events(struct eventlist *el, char *events)
 {
-	char *s, *tmp;
+	char *s, *next;
 
 	events = strdup(events);
 	if (!events)
 		return -1;
-	for (s = strtok_r(events, ",", &tmp);
-	     s;
-	     s = strtok_r(NULL, ",", &tmp)) {
+	next = events;
+	while ((s = grab_event(next, &next)) != NULL) {
 		bool group_leader = false, end_group = false;
 		int len;
 
