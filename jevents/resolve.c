@@ -155,7 +155,8 @@ int jevents_update_qual(const char *qual, struct perf_event_attr *attr,
 	return 0;
 }
 
-static bool special_attr(char *name, int val, struct perf_event_attr *attr)
+static bool special_attr(char *name, unsigned long long val,
+			 struct perf_event_attr *attr)
 {
 	if (!strcmp(name, "period")) {
 		attr->sample_period = val;
