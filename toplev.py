@@ -320,7 +320,9 @@ g.add_argument('--no-multiplex',
                action='store_true')
 g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
 g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumption', action='store_true')
-g.add_argument('--import', help='Import specified perf stat output file instead of running perf. Must be for same cpu, same arguments, same /proc/cpuinfo', dest='_import')
+g.add_argument('--import', help='Import specified perf stat output file instead of running perf. Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
+                dest='_import')
+g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later', action='store_true')
 
 g = p.add_argument_group('Measurement filtering')
 g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
