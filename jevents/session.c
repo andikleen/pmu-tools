@@ -57,6 +57,8 @@ static struct event *new_event(struct eventlist *el, char *s)
 {
 	struct event *e = calloc(sizeof(struct event) +
 				 sizeof(struct efd) * el->num_cpus, 1);
+	int i;
+
 	e->next = NULL;
 	if (!el->eventlist)
 		el->eventlist = e;
@@ -64,6 +66,8 @@ static struct event *new_event(struct eventlist *el, char *s)
 		el->eventlist_last->next = e;
 	el->eventlist_last = e;
 	e->event = strdup(s);
+	for (i = 0; i < el->num_cpus; i++)
+		e->efd[i].fd = -1;
 	return e;
 }
 
@@ -99,6 +103,7 @@ static char *grab_event(char *s, char **next)
 int parse_events(struct eventlist *el, char *events)
 {
 	char *s, *next;
+	bool ingroup = false;
 
 	events = strdup(events);
 	if (!events)
@@ -111,22 +116,53 @@ int parse_events(struct eventlist *el, char *events)
 		if (s[0] == '{') {
 			s++;
 			group_leader = true;
+			ingroup = true;
 		} else if (len = strlen(s), len > 0 && s[len - 1] == '}') {
 			s[len - 1] = 0;
 			end_group = true;
 		}
 
 		struct event *e = new_event(el, s);
-		e->uncore = jevent_pmu_uncore(s);
 		e->group_leader = group_leader;
 		e->end_group = end_group;
-		if (resolve_event(s, &e->attr) < 0) {
+		e->ingroup = ingroup;
+		if (resolve_event_extra(s, &e->attr, &e->extra) < 0) {
 			fprintf(stderr, "Cannot resolve %s\n", e->event);
-			return -1;
+			goto err;
 		}
+		e->uncore = jevent_pmu_uncore(e->extra.decoded);
+		if (e->extra.multi_pmu) {
+			int err;
+			struct event *ne;
+			struct perf_event_attr attr = e->attr;
+
+			while ((err = jevent_next_pmu(&e->extra, &attr)) == 1) {
+				if (ingroup) {
+					// XXX should fix by duplicating the group
+					fprintf(stderr, "Cannot handle multi pmu event %s in group\n", s);
+					goto err;
+				}
+				ne = new_event(el, s);
+				ne->attr = attr;
+				ne->orig = e;
+				ne->uncore = e->uncore;
+				jevent_copy_extra(&ne->extra, &e->extra);
+			}
+			if (err < 0) {
+				fprintf(stderr, "Cannot find PMU for event %s\n", e->event);
+				goto err;
+			}
+		}
+		if (end_group)
+			ingroup = false;
 	}
 	free(events);
 	return 0;
+
+err:
+	free_eventlist(el);
+	free(events);
+	return -1;
 }
 
 static bool cpu_online(int i)
@@ -291,4 +327,39 @@ uint64_t event_scaled_value(struct event *e, int cpu)
 	if (val[1] != val[2] && val[2])
 		return val[0] * (double)val[1] / (double)val[2];
 	return val[0];
+}
+
+/**
+ * close_event - Close (but not free) an event.
+ * @el: Event list
+ * @e: Event to close
+ * After this setup_event can be called again.
+ */
+void close_event(struct eventlist *el, struct event *e)
+{
+	int i;
+	for (i = 0; i < el->num_cpus; i++) {
+		if (e->efd[i].fd >= 0) {
+			close(e->efd[i].fd);
+			e->efd[i].fd = -1;
+		}
+	}
+}
+
+/**
+ * free_eventlist - Free and close a event list and its events.
+ * @el: Event list to free.
+ */
+void free_eventlist(struct eventlist *el)
+{
+	struct event *e, *next;
+
+	for (e = el->eventlist; e; e = next) {
+		next = e->next;
+		close_event(el, e);
+		jevent_free_extra(&e->extra);
+		free(e->event);
+		free(e);
+	}
+	free(el);
 }

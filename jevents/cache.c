@@ -163,6 +163,80 @@ static char *real_event(char *name, char *event, int nlen)
 }
 
 /**
+ * resolve_event_extra - Resolve named performance counter event
+ * @name: Name of performance counter event (case in-sensitive)
+ * @attr: perf_event_attr to initialize with name.
+ * @extra: Extra structure to fill in, or 0. When passed its content
+ * have to be freed with jevent_free_extra()
+ *
+ * The attr structure is cleared initially.
+ * The user typically has to set up attr->sample_type/read_format
+ * _after_ this call.
+ * Note this function is only thread-safe when read_events() has
+ * been called first single-threaded.
+ * When extra is passed and no error happens extra must be freed
+ * later with jevent_free_extra()
+ * Return: -1 on failure, otherwise 0.
+ *
+ * Some events may need multiple PMUs. In this case extra->multi_pmu
+ * is set, and jevent_next_pmu() must be used to iterate the attr
+ * through the extra PMUs.
+ *
+ * The decoded event in perf format is in extra->decoded
+ */
+
+int resolve_event_extra(const char *name, struct perf_event_attr *attr,
+			struct jevent_extra *extra)
+{
+	struct event *e;
+	char *buf;
+	int ret;
+	int nlen = strcspn(name, ":");
+	unsigned h = hashfn(name, nlen);
+	struct jevent_extra extras;
+
+	if (!eventlist_init) {
+		if (read_events(NULL) < 0)
+			return -1;
+	}
+	if (!extra)
+		extra = &extras;
+	for (e = eventlist[h]; e; e = e->next) {
+		if (!strncasecmp(e->name, name, nlen)) {
+			char *event = real_event(e->name, e->event, nlen);
+			char *s;
+
+			asprintf(&buf, "%s/%s/%s", e->pmu, event, name + nlen + (name[nlen] ? 1 : 0));
+			for (s = buf; *s; s++) {
+				if (*s == ':')
+					*s = ',';
+			}
+			ret = jevent_name_to_attr_extra(buf, attr, extra);
+			extra->decoded = buf;
+			if (ret) {
+				jevent_free_extra(extra);
+				free(buf);
+			}
+			return ret;
+		}
+	}
+	/* Try a perf style event */
+	if (jevent_name_to_attr_extra(name, attr, extra) == 0) {
+		if (extra != &extras)
+			extra->decoded = strdup(name);
+		return 0;
+	}
+	asprintf(&buf, "cpu/%s/", name);
+	ret = jevent_name_to_attr(buf, attr);
+	extra->decoded = buf;
+	if (extra == &extras || ret)
+		free(buf);
+	if (ret == 0)
+		return ret;
+	return -1;
+}
+
+/**
  * resolve_event - Resolve named performance counter event
  * @name: Name of performance counter event (case in-sensitive)
  * @attr: perf_event_attr to initialize with name.
@@ -173,44 +247,13 @@ static char *real_event(char *name, char *event, int nlen)
  * Note this function is only thread-safe when read_events() has
  * been called first single-threaded.
  * Return: -1 on failure, otherwise 0.
+ *
+ * Deprecated. Should migrate to resolve_event_extra
  */
 
 int resolve_event(const char *name, struct perf_event_attr *attr)
 {
-	struct event *e;
-	char *buf;
-	int ret;
-	int nlen = strcspn(name, ":");
-	unsigned h = hashfn(name, nlen);
-
-	if (!eventlist_init) {
-		if (read_events(NULL) < 0)
-			return -1;
-	}
-	for (e = eventlist[h]; e; e = e->next) {
-		if (!strncasecmp(e->name, name, nlen)) {
-			char *event = real_event(e->name, e->event, nlen);
-			char *s;
-
-			asprintf(&buf, "%s/%s%s/", e->pmu, event, name + nlen);
-			for (s = buf; *s; s++) {
-				if (*s == ':')
-					*s = ',';
-			}
-			ret = jevent_name_to_attr(buf, attr);
-			free(buf);
-			return ret;
-		}
-	}
-	/* Try a perf style event */
-	if (jevent_name_to_attr(name, attr) == 0)
-		return 0;
-	asprintf(&buf, "cpu/%s/", name);
-	ret = jevent_name_to_attr(buf, attr);
-	free(buf);
-	if (ret == 0)
-		return ret;
-	return -1;
+	return resolve_event_extra(name, attr, NULL);
 }
 
 /**
