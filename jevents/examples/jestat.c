@@ -235,6 +235,8 @@ int main(int ac, char **av)
 		}
 	}
 	read_all_events(el);
-	print_data(el, 0, false, no_aggr);
+	print_data(el, (gettime() - starttime)/1e6,
+			interval != 0 && starttime,
+			no_aggr);
 	return 0;
 }
