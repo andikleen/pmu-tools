@@ -50,6 +50,7 @@ struct eventlist *alloc_eventlist(void)
 	if (!el)
 		return NULL;
 	el->num_cpus = sysconf(_SC_NPROCESSORS_CONF);
+	jevents_socket_cpus(&el->num_sockets, &el->socket_cpus);
 	return el;
 }
 
@@ -237,17 +238,21 @@ int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
 	int i;
 	int err = 0;
 	int ret;
+	int success = 0;
 
 	for (e = el->eventlist; e; e = e->next) {
 		if (e->uncore) {
-			/* XXX for every socket. for now just 0. */
-			ret = setup_event(e, 0, leader, measure_all, measure_pid);
-			if (ret < 0) {
-				err = ret;
-				continue;
-			}
-			for (i = 1; i < el->num_cpus; i++)
+			for (i = 0; i < el->num_cpus; i++)
 				e->efd[i].fd = -1;
+			for (i = 0; i < el->num_sockets; i++) {
+				ret = setup_event(e, el->socket_cpus[i], leader, measure_all, measure_pid);
+				if (ret < 0) {
+					err = ret;
+					continue;
+				} else {
+					success++;
+				}
+			}
 		} else {
 			for (i = 0; i < el->num_cpus; i++) {
 				ret = setup_event(e, i, leader,
@@ -256,6 +261,8 @@ int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
 				if (ret < 0) {
 					err = ret;
 					continue;
+				} else {
+					success++;
 				}
 			}
 		}
@@ -264,6 +271,8 @@ int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
 		if (e->end_group)
 			leader = NULL;
 	}
+	if (success > 0)
+		return 0;
 	return err;
 }
 
@@ -298,13 +307,6 @@ int read_all_events(struct eventlist *el)
 	int i;
 
 	for (e = el->eventlist; e; e = e->next) {
-		if (e->uncore) {
-			/* XXX all sockets */
-			if (e->efd[0].fd < 0)
-				continue;
-			if (read_event(e, 0) < 0)
-				return -1;
-		}
 		for (i = 0; i < el->num_cpus; i++) {
 			if (e->efd[i].fd < 0)
 				continue;
@@ -361,5 +363,6 @@ void free_eventlist(struct eventlist *el)
 		free(e->event);
 		free(e);
 	}
+	free(el->socket_cpus);
 	free(el);
 }

@@ -49,6 +49,7 @@ int perf_event_open(struct perf_event_attr *attr, pid_t pid,
 		    int cpu, int group_fd, unsigned long flags);
 char *resolve_pmu(int type);
 bool jevent_pmu_uncore(const char *str);
+int jevents_socket_cpus(int *lenp, int **socket_cpus);
 
 #ifdef __cplusplus
 }

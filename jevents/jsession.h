@@ -27,6 +27,8 @@ struct eventlist {
 	struct event *eventlist;
 	struct event *eventlist_last;
 	int num_cpus;
+	int num_sockets;
+	int *socket_cpus;
 };
 
 int parse_events(struct eventlist *el, char *events);

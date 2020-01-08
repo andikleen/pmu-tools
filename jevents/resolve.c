@@ -515,6 +515,39 @@ char *resolve_pmu(int type)
 	return pmun;
 }
 
+int jevents_socket_cpus(int *len, int **cpup)
+{
+	unsigned char seen[1024];
+	glob_t g;
+	if (glob("/sys/devices/system/cpu/cpu*/topology/physical_package_id", 0, NULL, &g))
+		return -1;
+	memset(seen, 0, sizeof seen);
+	*cpup = calloc(g.gl_pathc, sizeof(int));
+	int i;
+	*len = 0;
+	for (i = 0; i < g.gl_pathc; i++) {
+		int cpu;
+		char *id;
+		int pid;
+		sscanf(g.gl_pathv[i], "/sys/devices/system/cpu/cpu%d", &cpu);
+		if (read_file(&id, g.gl_pathv[i]) < 0) {
+			free(*cpup);
+			*len = 0;
+			return -1;
+		}
+		sscanf(id, "%d", &pid);
+		free(id);
+		if (pid >= sizeof(seen)*8)
+			continue;
+		if (!(seen[pid / 8] & (1 << (pid % 8)))) {
+			seen[pid / 8] |= (1 << (pid % 8));
+			(*cpup)[(*len)++] = cpu;
+		}
+	}
+	globfree(&g);
+	return 0;
+}
+
 #ifdef TEST
 #include "jevents.h"
 int main(int ac, char **av)
