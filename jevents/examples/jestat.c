@@ -104,21 +104,25 @@ static struct option opts[] = {
 	{ "no-aggr", no_argument, 0, 'A' },
 	{ "verbose", no_argument, 0, 'v' },
 	{ "append", no_argument, 0, OPT_APPEND },
+	{ "delay", required_argument, 0, 'D' },
 	{},
 };
 
 void usage(void)
 {
 	fprintf(stderr, "Usage: jstat [-a] [-e events] [-I interval] [-C cpus] [-A] program\n"
-			"--all -a	    Measure global system\n"
+			"--all -a	     Measure global system\n"
 			"-e --events list    Comma separate list of events to measure. Use {} for groups\n"
 			"-I N --interval N   Print events every N ms\n"
 			"-C CPUS --cpu CPUS  Only measure on CPUs. List of numbers or ranges a-b\n"
 			"-A --no-aggr        Print values for individual CPUs\n"
 			"-v --verbose        Print perf_event_open arguments\n"
 			"-o file	     Output results to file\n"
-			"--append	    (with -o) Append results to file\n"
-			"Run event_download.py once first to use symbolic events\n");
+			"--append	     (with -o) Append results to file\n"
+			"-D N --delay N	     Wait N ms after starting program before measurement\n"
+			"Run event_download.py once first to use symbolic events\n"
+			"Run listevents to show available events\n");
+
 	exit(1);
 }
 
@@ -169,12 +173,13 @@ int main(int ac, char **av)
 	int verbose = 0;
 	char *openmode = "w";
 	char *outname = NULL;
+	int initial_delay = 0;
 
 	setlocale(LC_NUMERIC, "");
 	el = alloc_eventlist();
 	outfh = stderr;
 
-	while ((opt = getopt_long(ac, av, "ae:p:I:C:Avo:", opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "ae:p:I:C:Avo:D:", opts, NULL)) != -1) {
 		switch (opt) {
 		case 'e':
 			if (parse_events(el, optarg) < 0)
@@ -202,6 +207,9 @@ int main(int ac, char **av)
 		case 'o':
 			outname = optarg;
 			break;
+		case 'D':
+			initial_delay = atoi(optarg);
+			break;
 		default:
 			usage();
 		}
@@ -228,7 +236,8 @@ int main(int ac, char **av)
 	if (measure_pid == 0) {
 		char buf;
 		/* Wait for events to be set up */
-		read(child_pipe[0], &buf, 1);
+		if (!initial_delay)
+			read(child_pipe[0], &buf, 1);
 		if (av[optind] == NULL) {
 			pause();
 			_exit(0);
@@ -237,7 +246,10 @@ int main(int ac, char **av)
 		write(2, PAIR("Cannot execute program\n"));
 		_exit(1);
 	}
-	if (setup_events_cpumask(el, measure_all, measure_pid, cpumask) < 0)
+	if (initial_delay)
+		usleep(initial_delay * 1000);
+	if (setup_events_cpumask(el, measure_all, measure_pid, cpumask,
+				initial_delay == 0 && !measure_all) < 0)
 		exit(1);
 	if (verbose)
 		print_event_list_attr(el, stdout);

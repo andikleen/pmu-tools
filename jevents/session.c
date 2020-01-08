@@ -215,16 +215,17 @@ static bool cpumask_match(char *mask, int ocpu)
  * @leader: Leader event to define a group.
  * @measure_all: If true measure all processes (may need root)
  * @measure_pid: If not -1 measure specific process.
+ * @enable_on_exec: If true only enable on exec
  *
  * This is a low level function. Normally setup_events() should be used.
  * Return -1 on failure.
  */
 
 int setup_event(struct event *e, int cpu, struct event *leader,
-		bool measure_all, int measure_pid)
+		bool measure_all, int measure_pid, bool enable_on_exec)
 {
 	e->attr.inherit = 1;
-	if (!measure_all) {
+	if (enable_on_exec) {
 		e->attr.disabled = 1;
 		e->attr.enable_on_exec = 1;
 	}
@@ -255,12 +256,13 @@ int setup_event(struct event *e, int cpu, struct event *leader,
  * @measure_all: If true measure all of system (may need root)
  * @measure_pid: If not -1 measure pid.
  * @cpumask: string of cpus to measure on, or NULL for all
+ * @enable_on_exec: If true only enable on exec
  *
  * Return -1 on failure, otherwise 0.
  */
 
 int setup_events_cpumask(struct eventlist *el, bool measure_all, int measure_pid,
-			 char *cpumask)
+			 char *cpumask, bool enable_on_exec)
 {
 	struct event *e, *leader = NULL;
 	int i;
@@ -275,7 +277,8 @@ int setup_events_cpumask(struct eventlist *el, bool measure_all, int measure_pid
 			for (i = 0; i < el->num_sockets; i++) {
 				if (!cpumask_match(cpumask, el->socket_cpus[i]))
 					continue;
-				ret = setup_event(e, el->socket_cpus[i], leader, measure_all, measure_pid);
+				ret = setup_event(e, el->socket_cpus[i], leader, measure_all,
+						  measure_pid, enable_on_exec);
 				if (ret < 0) {
 					err = ret;
 					continue;
@@ -289,7 +292,8 @@ int setup_events_cpumask(struct eventlist *el, bool measure_all, int measure_pid
 					continue;
 				ret = setup_event(e, i, leader,
 						measure_all,
-						measure_pid);
+						measure_pid,
+						enable_on_exec);
 				if (ret < 0) {
 					err = ret;
 					continue;
@@ -319,7 +323,8 @@ int setup_events_cpumask(struct eventlist *el, bool measure_all, int measure_pid
 
 int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
 {
-	return setup_events_cpumask(el, measure_all, measure_pid, NULL);
+	return setup_events_cpumask(el, measure_all, measure_pid, NULL,
+			measure_all == 0);
 }
 
 /**
