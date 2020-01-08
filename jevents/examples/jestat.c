@@ -38,6 +38,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <getopt.h>
+#include <errno.h>
 #include <signal.h>
 #include <locale.h>
 #include <sys/wait.h>
@@ -49,6 +50,8 @@
 #define err(x) perror(x), exit(1)
 #define PAIR(x) x, sizeof(x) - 1
 
+FILE *outfh;
+
 void print_data_aggr(struct eventlist *el, double ts, bool print_ts)
 {
 	struct event *e;
@@ -59,8 +62,8 @@ void print_data_aggr(struct eventlist *el, double ts, bool print_ts)
 		for (i = 0; i < el->num_cpus; i++)
 			v += event_scaled_value(e, i);
 		if (print_ts)
-			printf("%08.4f\t", ts);
-		printf("%-30s %'15lu\n", e->extra.name ? e->extra.name : e->event, v);
+			fprintf(outfh, "%08.4f\t", ts);
+		fprintf(outfh, "%-30s %'15lu\n", e->extra.name ? e->extra.name : e->event, v);
 	}
 }
 
@@ -76,8 +79,9 @@ void print_data_no_aggr(struct eventlist *el, double ts, bool print_ts)
 				continue;
 			v = event_scaled_value(e, i);
 			if (print_ts)
-				printf("%08.4f\t", ts);
-			printf("%3d %-30s %'15lu\n", i, e->extra.name ? e->extra.name : e->event, v);
+				fprintf(outfh, "%08.4f\t", ts);
+			fprintf(outfh, "%3d %-30s %'15lu\n", i,
+					e->extra.name ? e->extra.name : e->event, v);
 		}
 	}
 }
@@ -90,6 +94,8 @@ void print_data(struct eventlist *el, double ts, bool print_ts, bool no_aggr)
 		print_data_aggr(el, ts, print_ts);
 }
 
+enum { OPT_APPEND = 1000 };
+
 static struct option opts[] = {
 	{ "all-cpus", no_argument, 0, 'a' },
 	{ "events", required_argument, 0, 'e'},
@@ -97,6 +103,7 @@ static struct option opts[] = {
 	{ "cpu", required_argument, 0, 'C' },
 	{ "no-aggr", no_argument, 0, 'A' },
 	{ "verbose", no_argument, 0, 'v' },
+	{ "append", no_argument, 0, OPT_APPEND },
 	{},
 };
 
@@ -109,6 +116,8 @@ void usage(void)
 			"-C CPUS --cpu CPUS  Only measure on CPUs. List of numbers or ranges a-b\n"
 			"-A --no-aggr        Print values for individual CPUs\n"
 			"-v --verbose        Print perf_event_open arguments\n"
+			"-o file	     Output results to file\n"
+			"--append	    (with -o) Append results to file\n"
 			"Run event_download.py once first to use symbolic events\n");
 	exit(1);
 }
@@ -158,11 +167,14 @@ int main(int ac, char **av)
 	char *cpumask = NULL;
 	bool no_aggr = false;
 	int verbose = 0;
+	char *openmode = "w";
+	char *outname = NULL;
 
 	setlocale(LC_NUMERIC, "");
 	el = alloc_eventlist();
+	outfh = stderr;
 
-	while ((opt = getopt_long(ac, av, "ae:p:I:C:Av", opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "ae:p:I:C:Avo:", opts, NULL)) != -1) {
 		switch (opt) {
 		case 'e':
 			if (parse_events(el, optarg) < 0)
@@ -184,8 +196,22 @@ int main(int ac, char **av)
 		case 'v':
 			verbose++;
 			break;
+		case OPT_APPEND:
+			openmode = "a";
+			break;
+		case 'o':
+			outname = optarg;
+			break;
 		default:
 			usage();
+		}
+	}
+	if (outname) {
+		outfh = fopen(outname, openmode);
+		if (!outfh) {
+			fprintf(stderr, "Cannot open %s: %s\n", optarg,
+					strerror(errno));
+			exit(1);
 		}
 	}
 	if (av[optind] == NULL && !measure_all) {
