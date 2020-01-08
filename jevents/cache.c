@@ -229,8 +229,10 @@ int resolve_event_extra(const char *name, struct perf_event_attr *attr,
 	asprintf(&buf, "cpu/%s/", name);
 	ret = jevent_name_to_attr(buf, attr);
 	extra->decoded = buf;
-	if (extra == &extras || ret)
+	if (extra == &extras || ret) {
 		free(buf);
+		extra->decoded = NULL;
+	}
 	if (ret == 0)
 		return ret;
 	return -1;
