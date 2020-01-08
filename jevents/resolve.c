@@ -382,6 +382,11 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 		extra = &dummy;
 	memset(extra, 0, sizeof(struct jevent_extra));
 
+	if (!strcmp(str, "cycles"))
+		str = "cpu/cpu-cycles/";
+	if (!strcmp(str, "branches"))
+		str = "cpu/branch-instructions/";
+
 	if (sscanf(str, "r%llx%n", &attr->config, &qual_off) == 1) {
 		assert(qual_off != -1);
 		if (str[qual_off] == 0)
