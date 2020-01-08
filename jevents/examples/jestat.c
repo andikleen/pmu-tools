@@ -75,7 +75,7 @@ void print_data_no_aggr(struct eventlist *el, double ts, bool print_ts)
 			v = event_scaled_value(e, i);
 			if (print_ts)
 				printf("%08.4f\t", ts);
-			printf("%-3d %-30s %'15lu\n", i, e->extra.name ? e->extra.name : e->event, v);
+			printf("%3d %-30s %'15lu\n", i, e->extra.name ? e->extra.name : e->event, v);
 		}
 	}
 }
