@@ -28,7 +28,7 @@
  */
 
 /* Poor man's perf stat using jevents */
-/* jstat [-a] [-p pid] [-e events] program */
+/* jstat [-a] [-p pid] [-e events] [-A] [-C cpus] program */
 /* Supports named events if downloaded first (w/ event_download.py) */
 /* Run listevents to show the available events */
 
@@ -49,7 +49,7 @@
 #define err(x) perror(x), exit(1)
 #define PAIR(x) x, sizeof(x) - 1
 
-void print_data(struct eventlist *el, double ts, bool print_ts)
+void print_data_aggr(struct eventlist *el, double ts, bool print_ts)
 {
 	struct event *e;
 	int i;
@@ -64,21 +64,47 @@ void print_data(struct eventlist *el, double ts, bool print_ts)
 	}
 }
 
+void print_data_no_aggr(struct eventlist *el, double ts, bool print_ts)
+{
+	struct event *e;
+	int i;
+
+	for (e = el->eventlist; e; e = e->next) {
+		uint64_t v;
+		for (i = 0; i < el->num_cpus; i++) {
+			v = event_scaled_value(e, i);
+			if (print_ts)
+				printf("%08.4f\t", ts);
+			printf("%-3d %-30s %'15lu\n", i, e->extra.name ? e->extra.name : e->event, v);
+		}
+	}
+}
+
+void print_data(struct eventlist *el, double ts, bool print_ts, bool no_aggr)
+{
+	if (no_aggr)
+		print_data_no_aggr(el, ts, print_ts);
+	else
+		print_data_aggr(el, ts, print_ts);
+}
+
 static struct option opts[] = {
 	{ "all-cpus", no_argument, 0, 'a' },
 	{ "events", required_argument, 0, 'e'},
 	{ "interval", required_argument, 0, 'I' },
 	{ "cpu", required_argument, 0, 'C' },
+	{ "no-aggr", no_argument, 0, 'A' },
 	{},
 };
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: jstat [-a] [-e events] [-I interval] [-C cpus] program\n"
+	fprintf(stderr, "Usage: jstat [-a] [-e events] [-I interval] [-C cpus] [-A] program\n"
 			"--all -a	    Measure global system\n"
 			"-e --events list    Comma separate list of events to measure. Use {} for groups\n"
 			"-I N --interval N   Print events every N ms\n"
 			"-C CPUS --cpu CPUS  Only measure on CPUs. List of numbers or ranges a-b\n"
+			"-A --no-aggr        Print values for individual CPUs\n"
 			"Run event_download.py once first to use symbolic events\n");
 	exit(1);
 }
@@ -101,14 +127,14 @@ double gettime(void)
 	return (double)tv.tv_sec * 1e6 + tv.tv_usec;
 }
 
-bool cont_measure(int ret, struct eventlist *el)
+bool cont_measure(int ret, struct eventlist *el, bool no_aggr)
 {
 	if (ret < 0 && gotalarm) {
 		gotalarm = false;
 		read_all_events(el);
 		if (!starttime)
 			starttime = gettime();
-		print_data(el, (gettime() - starttime) / 1e6, true);
+		print_data(el, (gettime() - starttime) / 1e6, true, no_aggr);
 		return true;
 	}
 	return false;
@@ -126,11 +152,12 @@ int main(int ac, char **av)
 	int child_pid;
 	int ret;
 	char *cpumask = NULL;
+	bool no_aggr = false;
 
 	setlocale(LC_NUMERIC, "");
 	el = alloc_eventlist();
 
-	while ((opt = getopt_long(ac, av, "ae:p:I:C:", opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "ae:p:I:C:A", opts, NULL)) != -1) {
 		switch (opt) {
 		case 'e':
 			if (parse_events(el, optarg) < 0)
@@ -145,6 +172,9 @@ int main(int ac, char **av)
 			break;
 		case 'C':
 			cpumask = optarg;
+			break;
+		case 'A':
+			no_aggr = true;
 			break;
 		default:
 			usage();
@@ -194,17 +224,17 @@ int main(int ac, char **av)
 		write(child_pipe[1], "x", 1);
 		for (;;) {
 			ret = waitpid(measure_pid, NULL, 0);
-			if (!cont_measure(ret, el))
+			if (!cont_measure(ret, el, no_aggr))
 				break;
 		}
 	} else {
 		for (;;) {
 			ret = pause();
-			if (!cont_measure(ret, el))
+			if (!cont_measure(ret, el, no_aggr))
 				break;
 		}
 	}
 	read_all_events(el);
-	print_data(el, 0, false);
+	print_data(el, 0, false, no_aggr);
 	return 0;
 }
