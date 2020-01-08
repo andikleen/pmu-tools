@@ -68,15 +68,17 @@ static struct option opts[] = {
 	{ "all-cpus", no_argument, 0, 'a' },
 	{ "events", required_argument, 0, 'e'},
 	{ "interval", required_argument, 0, 'I' },
+	{ "cpu", required_argument, 0, 'C' },
 	{},
 };
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: jstat [-a] [-e events] [-I interval] program\n"
+	fprintf(stderr, "Usage: jstat [-a] [-e events] [-I interval] [-C cpus] program\n"
 			"--all -a	    Measure global system\n"
 			"-e --events list    Comma separate list of events to measure. Use {} for groups\n"
 			"-I N --interval N   Print events every N ms\n"
+			"-C CPUS --cpu CPUS  Only measure on CPUs. List of numbers or ranges a-b\n"
 			"Run event_download.py once first to use symbolic events\n");
 	exit(1);
 }
@@ -123,11 +125,12 @@ int main(int ac, char **av)
 	int interval = 0;
 	int child_pid;
 	int ret;
+	char *cpumask = NULL;
 
 	setlocale(LC_NUMERIC, "");
 	el = alloc_eventlist();
 
-	while ((opt = getopt_long(ac, av, "ae:p:I:", opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "ae:p:I:C:", opts, NULL)) != -1) {
 		switch (opt) {
 		case 'e':
 			if (parse_events(el, optarg) < 0)
@@ -139,6 +142,9 @@ int main(int ac, char **av)
 			break;
 		case 'I':
 			interval = atoi(optarg);
+			break;
+		case 'C':
+			cpumask = optarg;
 			break;
 		default:
 			usage();
@@ -167,7 +173,7 @@ int main(int ac, char **av)
 		write(2, PAIR("Cannot execute program\n"));
 		_exit(1);
 	}
-	if (setup_events(el, measure_all, measure_pid) < 0)
+	if (setup_events_cpumask(el, measure_all, measure_pid, cpumask) < 0)
 		exit(1);
 	signal(SIGINT, sigint);
 	if (interval) {
