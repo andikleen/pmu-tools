@@ -33,6 +33,8 @@ struct eventlist {
 
 int parse_events(struct eventlist *el, char *events);
 int setup_events(struct eventlist *el, bool measure_all, int measure_pid);
+int setup_events_cpumask(struct eventlist *el, bool measure_all, int measure_pid,
+			 char *cpumask);
 int setup_event(struct event *e, int cpu, struct event *leader, bool measure_all, int measure_pid);
 int read_event(struct event *e, int cpu);
 int read_all_events(struct eventlist *el);

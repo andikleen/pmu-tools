@@ -182,6 +182,32 @@ static bool cpu_online(int i)
 	return ret;
 }
 
+static bool cpumask_match(char *mask, int ocpu)
+{
+	if (!mask)
+		return true;
+	while (*mask) {
+		char *endp;
+		int cpu = strtoul(mask, &endp, 0);
+		if (mask == endp)
+			return false;
+		if (cpu == ocpu)
+			return true;
+		if (*endp == '-') {
+			mask = endp + 1;
+			int cpu2 = strtoul(mask, &endp, 0);
+			if (mask == endp)
+				return ocpu > cpu;
+			if (ocpu > cpu && ocpu <= cpu2)
+				return true;
+		}
+		mask = endp;
+		if (*mask == ',')
+			mask++;
+	}
+	return false;
+}
+
 /**
  * setup_event - Create perf descriptor for a single event.
  * @e: Event to measure.
@@ -228,11 +254,13 @@ int setup_event(struct event *e, int cpu, struct event *leader,
  * @el: List of events, allocated and parsed earlier.
  * @measure_all: If true measure all of system (may need root)
  * @measure_pid: If not -1 measure pid.
+ * @cpumask: string of cpus to measure on, or NULL for all
  *
  * Return -1 on failure, otherwise 0.
  */
 
-int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
+int setup_events_cpumask(struct eventlist *el, bool measure_all, int measure_pid,
+			 char *cpumask)
 {
 	struct event *e, *leader = NULL;
 	int i;
@@ -245,6 +273,8 @@ int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
 			for (i = 0; i < el->num_cpus; i++)
 				e->efd[i].fd = -1;
 			for (i = 0; i < el->num_sockets; i++) {
+				if (!cpumask_match(cpumask, el->socket_cpus[i]))
+					continue;
 				ret = setup_event(e, el->socket_cpus[i], leader, measure_all, measure_pid);
 				if (ret < 0) {
 					err = ret;
@@ -255,6 +285,8 @@ int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
 			}
 		} else {
 			for (i = 0; i < el->num_cpus; i++) {
+				if (!cpumask_match(cpumask, i))
+					continue;
 				ret = setup_event(e, i, leader,
 						measure_all,
 						measure_pid);
@@ -274,6 +306,20 @@ int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
 	if (success > 0)
 		return 0;
 	return err;
+}
+
+/**
+ * setup_events - Set up perf events for a event list.
+ * @el: List of events, allocated and parsed earlier.
+ * @measure_all: If true measure all of system (may need root)
+ * @measure_pid: If not -1 measure pid.
+ *
+ * Return -1 on failure, otherwise 0.
+ */
+
+int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
+{
+	return setup_events_cpumask(el, measure_all, measure_pid, NULL);
 }
 
 /**
