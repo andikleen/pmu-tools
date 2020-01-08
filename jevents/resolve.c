@@ -553,6 +553,43 @@ int jevents_socket_cpus(int *len, int **cpup)
 	return 0;
 }
 
+void jevent_print_attr(FILE *f, struct perf_event_attr *attr)
+{
+	fprintf(f, "type: %d\n", attr->type);
+	fprintf(f, "config: %llx\n", attr->config);
+	fprintf(f, "read_format: %llx\n", attr->read_format);
+	if (attr->sample_type)
+		fprintf(f, "sample_type: %llx\n", attr->sample_type);
+	fprintf(f, "sample_period/freq: %lld\n", attr->sample_period);
+	if (attr->config1)
+		fprintf(f, "config1: %llx\n", attr->config1);
+	if (attr->config2)
+		fprintf(f, "config1: %llx\n", attr->config1);
+	fprintf(f, "flags: ");
+#define FLAG(fl) if (attr->fl) fprintf(f, "%s ", #fl);
+#define FIELD(fl) if (attr->fl) fprintf(f, #fl ": %d ", attr->fl)
+	FLAG(disabled);
+	FLAG(inherit);
+	FLAG(pinned);
+	FLAG(exclusive);
+	FLAG(exclude_user);
+	FLAG(exclude_kernel);
+	FLAG(exclude_hv);
+	FLAG(exclude_idle);
+	FLAG(mmap);
+	FLAG(comm);
+	FLAG(freq);
+	FLAG(inherit_stat);
+	FLAG(enable_on_exec);
+	FLAG(task);
+	FLAG(watermark);
+	FLAG(exclude_host);
+	FLAG(exclude_guest);
+#undef FLAG
+	fprintf(f, "\n");
+	/* Some stuff missing */
+}
+
 #ifdef TEST
 #include "jevents.h"
 int main(int ac, char **av)

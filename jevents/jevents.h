@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include <glob.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +51,7 @@ int perf_event_open(struct perf_event_attr *attr, pid_t pid,
 char *resolve_pmu(int type);
 bool jevent_pmu_uncore(const char *str);
 int jevents_socket_cpus(int *lenp, int **socket_cpus);
+void jevent_print_attr(FILE *f, struct perf_event_attr *attr);
 
 #ifdef __cplusplus
 }

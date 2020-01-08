@@ -96,6 +96,7 @@ static struct option opts[] = {
 	{ "interval", required_argument, 0, 'I' },
 	{ "cpu", required_argument, 0, 'C' },
 	{ "no-aggr", no_argument, 0, 'A' },
+	{ "verbose", no_argument, 0, 'v' },
 	{},
 };
 
@@ -107,6 +108,7 @@ void usage(void)
 			"-I N --interval N   Print events every N ms\n"
 			"-C CPUS --cpu CPUS  Only measure on CPUs. List of numbers or ranges a-b\n"
 			"-A --no-aggr        Print values for individual CPUs\n"
+			"-v --verbose        Print perf_event_open arguments\n"
 			"Run event_download.py once first to use symbolic events\n");
 	exit(1);
 }
@@ -155,11 +157,12 @@ int main(int ac, char **av)
 	int ret;
 	char *cpumask = NULL;
 	bool no_aggr = false;
+	int verbose = 0;
 
 	setlocale(LC_NUMERIC, "");
 	el = alloc_eventlist();
 
-	while ((opt = getopt_long(ac, av, "ae:p:I:C:A", opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "ae:p:I:C:Av", opts, NULL)) != -1) {
 		switch (opt) {
 		case 'e':
 			if (parse_events(el, optarg) < 0)
@@ -177,6 +180,9 @@ int main(int ac, char **av)
 			break;
 		case 'A':
 			no_aggr = true;
+			break;
+		case 'v':
+			verbose++;
 			break;
 		default:
 			usage();
@@ -207,6 +213,8 @@ int main(int ac, char **av)
 	}
 	if (setup_events_cpumask(el, measure_all, measure_pid, cpumask) < 0)
 		exit(1);
+	if (verbose)
+		print_event_list_attr(el, stdout);
 	signal(SIGINT, sigint);
 	if (interval) {
 		struct itimerval itv = {

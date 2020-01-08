@@ -41,6 +41,7 @@ int read_all_events(struct eventlist *el);
 struct eventlist *alloc_eventlist(void);
 uint64_t event_scaled_value(struct event *e, int cpu);
 void free_eventlist(struct eventlist *el);
+void print_event_list_attr(struct eventlist *el, FILE *f);
 
 #ifdef __cplusplus
 }

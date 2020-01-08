@@ -412,3 +412,18 @@ void free_eventlist(struct eventlist *el)
 	free(el->socket_cpus);
 	free(el);
 }
+
+void print_event_list_attr(struct eventlist *el, FILE *f)
+{
+	struct event *e;
+
+	for (e = el->eventlist; e; e = e->next) {
+		fprintf(f, "%s:\n", e->event);
+		if (e->extra.name)
+			fprintf(f, "name: %s\n", e->extra.name);
+		if (e->extra.decoded)
+			fprintf(f, "perf: %s\n", e->extra.decoded);
+		jevent_print_attr(f, &e->attr);
+		fprintf(f, "\n");
+	}
+}
