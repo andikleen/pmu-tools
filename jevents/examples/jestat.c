@@ -72,6 +72,8 @@ void print_data_no_aggr(struct eventlist *el, double ts, bool print_ts)
 	for (e = el->eventlist; e; e = e->next) {
 		uint64_t v;
 		for (i = 0; i < el->num_cpus; i++) {
+			if (e->efd[i].fd < 0)
+				continue;
 			v = event_scaled_value(e, i);
 			if (print_ts)
 				printf("%08.4f\t", ts);
