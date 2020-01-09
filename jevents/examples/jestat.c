@@ -149,8 +149,6 @@ bool cont_measure(int ret, struct eventlist *el, bool no_aggr)
 	if (ret < 0 && gotalarm) {
 		gotalarm = false;
 		read_all_events(el);
-		if (!starttime)
-			starttime = gettime();
 		print_data(el, (gettime() - starttime) / 1e6, true, no_aggr);
 		return true;
 	}
@@ -258,7 +256,7 @@ int main(int ac, char **av)
 		struct itimerval itv = {
 			.it_value = {
 				.tv_sec = interval / 1000,
-				.tv_usec = (interval % 1000) * 1000
+				.tv_usec = (interval % 1000) * 1000,
 			},
 		};
 		itv.it_interval = itv.it_value;
@@ -266,21 +264,18 @@ int main(int ac, char **av)
 		sigaction(SIGALRM, &(struct sigaction){
 				.sa_handler = sigalarm,
 			 }, NULL);
+		starttime = gettime();
 		setitimer(ITIMER_REAL, &itv, NULL);
 	}
 	if (child_pid >= 0) {
 		write(child_pipe[1], "x", 1);
-		for (;;) {
+		do
 			ret = waitpid(measure_pid, NULL, 0);
-			if (!cont_measure(ret, el, no_aggr))
-				break;
-		}
+		while (cont_measure(ret, el, no_aggr));
 	} else {
-		for (;;) {
+		do
 			ret = pause();
-			if (!cont_measure(ret, el, no_aggr))
-				break;
-		}
+		while (cont_measure(ret, el, no_aggr));
 	}
 	read_all_events(el);
 	print_data(el, (gettime() - starttime)/1e6,
