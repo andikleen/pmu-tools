@@ -246,8 +246,13 @@ int main(int ac, char **av)
 	}
 	if (initial_delay)
 		usleep(initial_delay * 1000);
-	if (setup_events_cpumask(el, measure_all, measure_pid, cpumask,
-				initial_delay == 0 && !measure_all) < 0)
+	int flags = 0;
+	if (initial_delay == 0 && !measure_all)
+		flags |= SE_ENABLE_ON_EXEC;
+	if (measure_all)
+		flags |= SE_MEASURE_ALL;
+
+	if (setup_events_cpumask(el, measure_pid, cpumask, flags) < 0)
 		exit(1);
 	if (verbose)
 		print_event_list_attr(el, stdout);

@@ -213,19 +213,18 @@ static bool cpumask_match(char *mask, int ocpu)
  * @e: Event to measure.
  * @cpu: CPU to measure.
  * @leader: Leader event to define a group.
- * @measure_all: If true measure all processes (may need root)
  * @measure_pid: If not -1 measure specific process.
- * @enable_on_exec: If true only enable on exec
+ * @flags:  Measurement flags: %SE_ENABLE_ON_EXEC, %SE_MEASURE_ALL
  *
  * This is a low level function. Normally setup_events() should be used.
  * Return -1 on failure.
  */
 
-int setup_event(struct event *e, int cpu, struct event *leader,
-		bool measure_all, int measure_pid, bool enable_on_exec)
+int setup_event_flags(struct event *e, int cpu, struct event *leader,
+		      int measure_pid, int flags)
 {
 	e->attr.inherit = 1;
-	if (enable_on_exec) {
+	if (flags & SE_ENABLE_ON_EXEC) {
 		e->attr.disabled = 1;
 		e->attr.enable_on_exec = 1;
 	}
@@ -233,7 +232,7 @@ int setup_event(struct event *e, int cpu, struct event *leader,
 				PERF_FORMAT_TOTAL_TIME_RUNNING;
 
 	e->efd[cpu].fd = perf_event_open(&e->attr,
-			measure_all ? -1 : measure_pid,
+			(flags & SE_MEASURE_ALL) ? -1 : measure_pid,
 			cpu,
 			leader ? leader->efd[cpu].fd : -1,
 			0);
@@ -251,18 +250,37 @@ int setup_event(struct event *e, int cpu, struct event *leader,
 }
 
 /**
+ * setup_event - Create perf descriptor for a single event.
+ * @e: Event to measure.
+ * @cpu: CPU to measure.
+ * @leader: Leader event to define a group.
+ * @measure_all: If true measure all processes (may need root)
+ * @measure_pid: If not -1 measure specific process.
+ *
+ * This is a low level function. Normally setup_events() should be used.
+ * Return -1 on failure.
+ */
+
+int setup_event(struct event *e, int cpu, struct event *leader,
+		bool measure_all, int measure_pid)
+{
+	return setup_event_flags(e, cpu, leader,
+			measure_pid,
+			!measure_all ? SE_ENABLE_ON_EXEC : 0);
+}
+
+/**
  * setup_events - Set up perf events for a event list.
  * @el: List of events, allocated and parsed earlier.
- * @measure_all: If true measure all of system (may need root)
  * @measure_pid: If not -1 measure pid.
  * @cpumask: string of cpus to measure on, or NULL for all
- * @enable_on_exec: If true only enable on exec
+ * @flags: %SE_MEASURE_ALL or %SE_ENABLE_ON_EXEC
  *
  * Return -1 on failure, otherwise 0.
  */
 
-int setup_events_cpumask(struct eventlist *el, bool measure_all, int measure_pid,
-			 char *cpumask, bool enable_on_exec)
+int setup_events_cpumask(struct eventlist *el, int measure_pid,
+			 char *cpumask, int flags)
 {
 	struct event *e, *leader = NULL;
 	int i;
@@ -277,8 +295,8 @@ int setup_events_cpumask(struct eventlist *el, bool measure_all, int measure_pid
 			for (i = 0; i < el->num_sockets; i++) {
 				if (!cpumask_match(cpumask, el->socket_cpus[i]))
 					continue;
-				ret = setup_event(e, el->socket_cpus[i], leader, measure_all,
-						  measure_pid, enable_on_exec);
+				ret = setup_event_flags(e, el->socket_cpus[i], leader,
+						  measure_pid, flags);
 				if (ret < 0) {
 					err = ret;
 					continue;
@@ -290,10 +308,9 @@ int setup_events_cpumask(struct eventlist *el, bool measure_all, int measure_pid
 			for (i = 0; i < el->num_cpus; i++) {
 				if (!cpumask_match(cpumask, i))
 					continue;
-				ret = setup_event(e, i, leader,
-						measure_all,
+				ret = setup_event_flags(e, i, leader,
 						measure_pid,
-						enable_on_exec);
+						flags);
 				if (ret < 0) {
 					err = ret;
 					continue;
@@ -323,8 +340,8 @@ int setup_events_cpumask(struct eventlist *el, bool measure_all, int measure_pid
 
 int setup_events(struct eventlist *el, bool measure_all, int measure_pid)
 {
-	return setup_events_cpumask(el, measure_all, measure_pid, NULL,
-			measure_all == 0);
+	return setup_events_cpumask(el, measure_pid, NULL,
+			measure_all ? SE_MEASURE_ALL : SE_ENABLE_ON_EXEC);
 }
 
 /**
