@@ -180,7 +180,7 @@ uncore_map = (
     (r"state=?(0x[0-9a-fA-F]+)", "filter_state="))
 
 uncore_map_thresh = (
-    (r"c(?:mask=)?(0x[0-9a-fA-F]+|[0-9]+)", "thresh="),)
+    (r"c(?:mask=)?([0-9a-fA-Fx]+)", "thresh="),)
 
 uncore_map_cmask = (
     (r"c(?:mask=)?(0x[0-9a-fA-F]+|[0-9]+)", "cmask="),)
