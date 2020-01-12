@@ -86,13 +86,7 @@ void print_data_no_aggr(struct eventlist *el, double ts, bool print_ts)
 	}
 }
 
-void print_data(struct eventlist *el, double ts, bool print_ts, bool no_aggr)
-{
-	if (no_aggr)
-		print_data_no_aggr(el, ts, print_ts);
-	else
-		print_data_aggr(el, ts, print_ts);
-}
+void (*print_data)(struct eventlist *el, double ts, bool print_ts) = print_data_aggr;
 
 enum { OPT_APPEND = 1000 };
 
@@ -144,12 +138,12 @@ double gettime(void)
 	return (double)tv.tv_sec * 1e6 + tv.tv_usec;
 }
 
-bool cont_measure(int ret, struct eventlist *el, bool no_aggr)
+bool cont_measure(int ret, struct eventlist *el)
 {
 	if (ret < 0 && gotalarm) {
 		gotalarm = false;
 		read_all_events(el);
-		print_data(el, (gettime() - starttime) / 1e6, true, no_aggr);
+		print_data(el, (gettime() - starttime) / 1e6, true);
 		return true;
 	}
 	return false;
@@ -167,11 +161,11 @@ int main(int ac, char **av)
 	int child_pid;
 	int ret;
 	char *cpumask = NULL;
-	bool no_aggr = false;
 	int verbose = 0;
 	char *openmode = "w";
 	char *outname = NULL;
 	int initial_delay = 0;
+	int flags = 0;
 
 	setlocale(LC_NUMERIC, "");
 	el = alloc_eventlist();
@@ -186,6 +180,7 @@ int main(int ac, char **av)
 			break;
 		case 'a':
 			measure_all = true;
+			flags |= SE_MEASURE_ALL;
 			break;
 		case 'I':
 			interval = atoi(optarg);
@@ -194,7 +189,7 @@ int main(int ac, char **av)
 			cpumask = optarg;
 			break;
 		case 'A':
-			no_aggr = true;
+			print_data = print_data_no_aggr;
 			break;
 		case 'v':
 			verbose++;
@@ -246,11 +241,8 @@ int main(int ac, char **av)
 	}
 	if (initial_delay)
 		usleep(initial_delay * 1000);
-	int flags = 0;
 	if (initial_delay == 0 && !measure_all)
 		flags |= SE_ENABLE_ON_EXEC;
-	if (measure_all)
-		flags |= SE_MEASURE_ALL;
 
 	if (setup_events_cpumask(el, measure_pid, cpumask, flags) < 0)
 		exit(1);
@@ -276,15 +268,14 @@ int main(int ac, char **av)
 		write(child_pipe[1], "x", 1);
 		do
 			ret = waitpid(measure_pid, NULL, 0);
-		while (cont_measure(ret, el, no_aggr));
+		while (cont_measure(ret, el));
 	} else {
 		do
 			ret = pause();
-		while (cont_measure(ret, el, no_aggr));
+		while (cont_measure(ret, el));
 	}
 	read_all_events(el);
 	print_data(el, (gettime() - starttime)/1e6,
-			interval != 0 && starttime,
-			no_aggr);
+			interval != 0 && starttime);
 	return 0;
 }
