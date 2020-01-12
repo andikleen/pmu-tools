@@ -52,18 +52,31 @@
 
 FILE *outfh;
 
+void print_runtime(uint64_t *val)
+{
+	if (val[1] != val[2])
+		fprintf(outfh, " [%2.2f%%]", ((double)val[2] / val[1]) * 100.);
+}
+
 void print_data_aggr(struct eventlist *el, double ts, bool print_ts)
 {
 	struct event *e;
 	int i;
 
 	for (e = el->eventlist; e; e = e->next) {
-		uint64_t v = 0;
-		for (i = 0; i < el->num_cpus; i++)
+		uint64_t v = 0,val[3] = {0,0,0};
+		for (i = 0; i < el->num_cpus; i++) {
 			v += event_scaled_value(e, i);
+			// assumes all are scaled the same way
+			val[1] += e->efd[i].val[1];
+			val[2] += e->efd[i].val[2];
+		}
+
 		if (print_ts)
 			fprintf(outfh, "%08.4f\t", ts);
-		fprintf(outfh, "%-30s %'15lu\n", e->extra.name ? e->extra.name : e->event, v);
+		fprintf(outfh, "%-30s %'15lu", e->extra.name ? e->extra.name : e->event, v);
+		print_runtime(val);
+		putc('\n', outfh);
 	}
 }
 
@@ -80,8 +93,10 @@ void print_data_no_aggr(struct eventlist *el, double ts, bool print_ts)
 			v = event_scaled_value(e, i);
 			if (print_ts)
 				fprintf(outfh, "%08.4f\t", ts);
-			fprintf(outfh, "%3d %-30s %'15lu\n", i,
+			fprintf(outfh, "%3d %-30s %'15lu", i,
 					e->extra.name ? e->extra.name : e->event, v);
+			print_runtime(e->efd[i].val);
+			putc('\n', outfh);
 		}
 	}
 }
