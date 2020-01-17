@@ -1208,6 +1208,12 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
 
         account[event].total += 1
 
+        def dup_val(l, val, event, st):
+            for j in l:
+                res["%d" % (j)].append(val)
+                rev["%d" % (j)].append(event)
+                valstats["%d" % (j)].append(st)
+
         # power/uncore events are only output once for every socket. duplicate them
         # to all cpus in the socket to make the result lists match
         # unless we use -A ??
@@ -1217,10 +1223,13 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                 (not (args.core and not args.single_thread))):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
-            for j in cpu.sockettocpus[socket]:
-                res["%d" % (j)].append(val)
-                rev["%d" % (j)].append(event)
-                valstats["%d" % (j)].append(st)
+            dup_val(cpu.sockettocpus[socket], val, event, st)
+        # per core events are only output once. duplicate them.
+        elif re.match(r'(S\d+-)?(D\d+-)?C\d+', title) and not args.single_thread:
+            m = re.match(r'(?:S(\d+)-)?(?:D(\d+)-)?C(\d+)', title)
+            # ignore die for now (XXX)
+            socket, core = int(m.group(1)), int(m.group(3))
+            dup_val(cpu.coreids[(socket, core)], val, event, st)
         else:
             res[title].append(val)
             rev[title].append(event)
