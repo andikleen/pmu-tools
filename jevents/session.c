@@ -149,6 +149,7 @@ int parse_events(struct eventlist *el, char *events)
 				ne->attr = attr;
 				ne->orig = e;
 				ne->uncore = e->uncore;
+				e->num_clones++;
 				jevent_copy_extra(&ne->extra, &e->extra);
 			}
 			if (err < 0) {
@@ -398,6 +399,27 @@ uint64_t event_scaled_value(struct event *e, int cpu)
 	if (val[1] != val[2] && val[2])
 		return val[0] * (double)val[1] / (double)val[2];
 	return val[0];
+}
+
+/**
+ * event_scaled_value_sum - Retrieve a summed up read value for a cpu
+ * @e: Event
+ * @cpu: CPU number
+ * Return scaled value read earlier. When the event was cloned
+ * (e.g. uncore event with multiple instances) it returns
+ * the sum of clones. @e must be the first event, and later
+ * clones (e->orig != NULL) should be skipped by caller.
+ */
+uint64_t event_scaled_value_sum(struct event *e, int cpu)
+{
+	uint64_t sum = event_scaled_value(e, cpu);
+	int num_clones = e->num_clones;
+	struct event *ce;
+	for (ce = e->next; ce && num_clones > 0; ce = ce->next) {
+		if (ce->orig == e)
+			sum += event_scaled_value(ce, cpu);
+	}
+	return sum;
 }
 
 /**

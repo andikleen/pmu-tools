@@ -16,6 +16,7 @@ struct event {
 	bool end_group, group_leader, ingroup;
 	bool uncore;
 	struct event *orig;	/* Original event if cloned */
+	int num_clones;		/* number of clones for this event */
 	struct jevent_extra extra;
 	struct efd {
 		int fd;
@@ -46,6 +47,7 @@ int read_event(struct event *e, int cpu);
 int read_all_events(struct eventlist *el);
 struct eventlist *alloc_eventlist(void);
 uint64_t event_scaled_value(struct event *e, int cpu);
+uint64_t event_scaled_value_sum(struct event *e, int cpu);
 void free_eventlist(struct eventlist *el);
 void print_event_list_attr(struct eventlist *el, FILE *f);
 
