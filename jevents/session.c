@@ -100,6 +100,8 @@ static char *grab_event(char *s, char **next)
  * @events: Comma separated lists of events. {} style groups are legal.
  *
  * JSON events are supported, if the event lists are downloaded first.
+ * In case of an error the caller needs to call free_eventlist, unless
+ * they want to reuse the already existing events.
  */
 int parse_events(struct eventlist *el, char *events)
 {
@@ -161,7 +163,6 @@ int parse_events(struct eventlist *el, char *events)
 	return 0;
 
 err:
-	free_eventlist(el);
 	free(events);
 	return -1;
 }
