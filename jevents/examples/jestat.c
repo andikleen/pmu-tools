@@ -51,6 +51,8 @@
 #define PAIR(x) x, sizeof(x) - 1
 
 FILE *outfh;
+uint64_t (*scaled_value)(struct event *e, int cpu) = event_scaled_value;
+bool merge;
 
 void print_runtime(uint64_t *val)
 {
@@ -64,9 +66,12 @@ void print_data_aggr(struct eventlist *el, double ts, bool print_ts)
 	int i;
 
 	for (e = el->eventlist; e; e = e->next) {
+		if (merge && e->orig)
+			continue;
+
 		uint64_t v = 0,val[3] = {0,0,0};
 		for (i = 0; i < el->num_cpus; i++) {
-			v += event_scaled_value(e, i);
+			v += scaled_value(e, i);
 			// assumes all are scaled the same way
 			val[1] += e->efd[i].val[1];
 			val[2] += e->efd[i].val[2];
@@ -90,7 +95,9 @@ void print_data_no_aggr(struct eventlist *el, double ts, bool print_ts)
 		for (i = 0; i < el->num_cpus; i++) {
 			if (e->efd[i].fd < 0)
 				continue;
-			v = event_scaled_value(e, i);
+			if (merge && e->orig)
+				continue;
+			v = scaled_value(e, i);
 			if (print_ts)
 				fprintf(outfh, "%08.4f\t", ts);
 			fprintf(outfh, "%3d %-30s %'15lu", i,
@@ -103,7 +110,7 @@ void print_data_no_aggr(struct eventlist *el, double ts, bool print_ts)
 
 void (*print_data)(struct eventlist *el, double ts, bool print_ts) = print_data_aggr;
 
-enum { OPT_APPEND = 1000 };
+enum { OPT_APPEND = 1000, OPT_MERGE };
 
 static struct option opts[] = {
 	{ "all-cpus", no_argument, 0, 'a' },
@@ -114,6 +121,7 @@ static struct option opts[] = {
 	{ "verbose", no_argument, 0, 'v' },
 	{ "append", no_argument, 0, OPT_APPEND },
 	{ "delay", required_argument, 0, 'D' },
+	{ "merge", no_argument, 0, OPT_MERGE },
 	{},
 };
 
@@ -129,6 +137,7 @@ void usage(void)
 			"-o file	     Output results to file\n"
 			"--append	     (with -o) Append results to file\n"
 			"-D N --delay N	     Wait N ms after starting program before measurement\n"
+			"--merge	     Sum multiple instances of uncore events\n"
 			"Run event_download.py once first to use symbolic events\n"
 			"Run listevents to show available events\n");
 
@@ -211,6 +220,10 @@ int main(int ac, char **av)
 			break;
 		case OPT_APPEND:
 			openmode = "a";
+			break;
+		case OPT_MERGE:
+			merge = true;
+			scaled_value = event_scaled_value_sum;
 			break;
 		case 'o':
 			outname = optarg;
