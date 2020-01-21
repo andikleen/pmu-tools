@@ -533,7 +533,8 @@ int jevents_socket_cpus(int *len, int **cpup)
 		return -1;
 	*cpup = calloc(g.gl_pathc, sizeof(int));
 	int i;
-	*len = g.gl_pathc;
+	for (i = 0; i < g.gl_pathc; i++)
+		(*cpup)[i] = -1;
 	for (i = 0; i < g.gl_pathc; i++) {
 		int cpu;
 		char *id;
@@ -546,8 +547,11 @@ int jevents_socket_cpus(int *len, int **cpup)
 		}
 		sscanf(id, "%d", &pid);
 		free(id);
-		assert(pid < *len);
-		if ((*cpup)[pid] == 0 || cpu < (*cpup)[pid])
+		if ((*cpup)[pid] < 0) {
+			(*len)++;
+			(*cpup)[pid] = cpu;
+		}
+		if (cpu < (*cpup)[pid])
 			(*cpup)[pid] = cpu;
 	}
 	globfree(&g);
