@@ -395,7 +395,7 @@ uint64_t event_scaled_value(struct event *e, int cpu)
 {
 	uint64_t *val = e->efd[cpu].val;
 	if (val[1] != val[2] && val[2])
-		return val[0] * (double)val[2] / (double)val[1];
+		return val[0] * (double)val[1] / (double)val[2];
 	return val[0];
 }
 
