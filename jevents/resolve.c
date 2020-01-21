@@ -520,16 +520,20 @@ char *resolve_pmu(int type)
 	return pmun;
 }
 
+/**
+ * jevents_socket_cpus - Return a single CPU for each socket.
+ * @len: Output argument, set to number of sockets
+ * @cpup: Output argument, pointer to array of int for one CPU for each socket
+ * Caller must free *cpup afterwards.
+ */
 int jevents_socket_cpus(int *len, int **cpup)
 {
-	unsigned char seen[1024];
 	glob_t g;
 	if (glob("/sys/devices/system/cpu/cpu*/topology/physical_package_id", 0, NULL, &g))
 		return -1;
-	memset(seen, 0, sizeof seen);
 	*cpup = calloc(g.gl_pathc, sizeof(int));
 	int i;
-	*len = 0;
+	*len = g.gl_pathc;
 	for (i = 0; i < g.gl_pathc; i++) {
 		int cpu;
 		char *id;
@@ -542,12 +546,9 @@ int jevents_socket_cpus(int *len, int **cpup)
 		}
 		sscanf(id, "%d", &pid);
 		free(id);
-		if (pid >= sizeof(seen)*8)
-			continue;
-		if (!(seen[pid / 8] & (1 << (pid % 8)))) {
-			seen[pid / 8] |= (1 << (pid % 8));
-			(*cpup)[(*len)++] = cpu;
-		}
+		assert(pid < *len);
+		if ((*cpup)[pid] == 0 || cpu < (*cpup)[pid])
+			(*cpup)[pid] = cpu;
 	}
 	globfree(&g);
 	return 0;
