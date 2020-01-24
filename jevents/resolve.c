@@ -533,7 +533,7 @@ int jevents_socket_cpus(int *len, int **cpup)
 		return -1;
 	*cpup = calloc(g.gl_pathc, sizeof(int));
 	int i;
-	*lenp = 0;
+	*len = 0;
 	for (i = 0; i < g.gl_pathc; i++)
 		(*cpup)[i] = -1;
 	for (i = 0; i < g.gl_pathc; i++) {
