@@ -849,7 +849,6 @@ def add_extra_env(emap, el):
     read_map("EVENTMAP2", "core", lambda r: emap.read_events(r))
     read_map("EVENTMAP3", "core", lambda r: emap.read_events(r))
     read_map("UNCORE2", "uncore", lambda r: emap.add_uncore(r))
-    return emap
 
 def canon_emapvar(el, typ):
     if ("*" in el or "." in el or "_" in el) and not "/" in el and not file_exists(el):
