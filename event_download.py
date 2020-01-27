@@ -174,7 +174,12 @@ def eventlist_name(name=None, key="core"):
     if not name:
         name = get_cpustr()
     cache = getdir()
-    fn = "%s/%s-%s.json" % (cache, name, key)
+    fn = name
+    if ".json" not in name:
+        fn = "%s-%s.json" % (name, key)
+    if "/" in fn:
+        return fn
+    fn = "%s/%s" % (cache, fn)
     if not os.path.exists(fn):
         name = cpu_without_step(name)
         if "*" in fn:
