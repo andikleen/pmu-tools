@@ -279,7 +279,16 @@ class Event:
         return ename
 
     def filter_qual(self):
-        pass
+        def check_qual(q):
+            if q == "":
+                return True
+            if "=" in q:
+                q, _ = q.split("=")
+            if has_format_any(q, "cpu"):
+                return True
+            warn_once("cpu: format %s not supported. Filtering out" % q)
+            return False
+        self.newextra = ",".join(filter(check_qual, self.newextra.split(",")))
 
 box_to_perf = {
     "cbo": "cbox",
