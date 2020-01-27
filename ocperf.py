@@ -825,7 +825,7 @@ def add_extra_env(emap, el):
         uc = os.getenv("UNCORE")
         if uc:
             uc = canon_emapvar(uc, "uncore")
-            uc = event_download.eventlist_name(el, "uncore")
+            uc = event_download.eventlist_name(uc, "uncore")
             emap.add_uncore(uc)
         else:
             uc = event_download.eventlist_name(el, "uncore")
