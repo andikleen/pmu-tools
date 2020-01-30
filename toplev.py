@@ -448,7 +448,7 @@ if args.all:
     args.sw = True
     args.metrics = True
     args.frequency = True
-    args.level = 5
+    args.level = 6
 
 if args.graph:
     if not args.interval:
