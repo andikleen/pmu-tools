@@ -212,7 +212,7 @@ def limit4_overflow(evlist):
 
 def needed_counters(evlist, nolimit=False):
     evlist = list(set(evlist)) # remove duplicates first
-    evlist = map(remove_qual, evlist)
+    evlist = list(map(remove_qual, evlist))
     evset = set(evlist)
     num = len(evset - ingroup_events)
 
@@ -582,7 +582,7 @@ def add_filter_event(e):
 
 def add_filter(s):
     if ring_filter:
-        s = map(add_filter_event, s)
+        s = list(map(add_filter_event, s))
     return s
 
 notfound_cache = set()
@@ -627,14 +627,14 @@ def raw_event(i, name="", period=False):
             else:
                 errata_warn_events[orig_i] = e.errata
     if not i.startswith("cpu"):
-	if not i.startswith("uncore"):
-	    valid_events.add_event(i)
-	outgroup_events.add(i)
+        if not i.startswith("uncore"):
+            valid_events.add_event(i)
+        outgroup_events.add(i)
     return i
 
 # generate list of converted raw events from events string
 def raw_events(evlist):
-    return map(raw_event, evlist)
+    return list(map(raw_event, evlist))
 
 def mark_fixed(s):
     r = raw_event(s)
@@ -777,7 +777,7 @@ def display_keys(runner, keys, mode):
         else:
             cores = [key_to_coreid(x) for x in keys if int(x) in runner.allowed_threads]
             if mode != OUTPUT_CORE:
-                threads = map(thread_fmt, runner.allowed_threads)
+                threads = list(map(thread_fmt, runner.allowed_threads))
             else:
                 threads = []
             all_cpus = list(set(map(core_fmt, cores) + threads))
@@ -997,7 +997,7 @@ def execute_no_multiplex(runner, out, rest):
 
 def execute(runner, out, rest):
     env = dict()
-    events = filter(lambda x: len(x) > 0, runner.evgroups)
+    events = list(filter(lambda x: len(x) > 0, runner.evgroups))
     ctx = SaveContext()
     ret, res, rev, interval, valstats = do_execute(runner, events,
                                          out, rest,
@@ -1018,7 +1018,7 @@ def group_number(num, events):
             idx = gnum.next()
         return [idx] * len(group)
 
-    gnums = map(group_nums, events)
+    gnums = list(map(group_nums, events))
     return list(flatten(gnums))[num]
 
 def dump_raw(interval, title, event, val, index, events, stddev, multiplex, nodes):
@@ -1101,7 +1101,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
         n = l.split(";")
 
         # filter out the empty unit field added by 3.14
-        n = filter(lambda x: x != "" and x != "Joules", n)
+        n = list(filter(lambda x: x != "" and x != "Joules", n))
 
         # timestamp is already removed
         # -a --per-socket socket,numcpus,count,event,...
@@ -1238,7 +1238,7 @@ def map_fields(obj, fields):
         if has(obj, name):
             return obj.name
         return None
-    return map(map_field, fields)
+    return list(map(map_field, fields))
 
 # compare events to handle name aliases
 def compare_event(aname, bname):
@@ -1323,13 +1323,8 @@ def add_key(k, x, y):
 # dedup a and keep b uptodate
 def dedup2(a, b):
     k = dict()
-    map(lambda x, y: add_key(k, x, y), a, b)
-    return k.keys(), map(lambda x: k[x], k.keys())
-
-def cmp_obj(a, b):
-    if a.level == b.level:
-        return a.nc - b.nc
-    return a.level - b.level
+    list(map(lambda x, y: add_key(k, x, y), a, b))
+    return list(k.keys()), list(map(lambda x: k[x], k.keys()))
 
 def update_res_map(evnum, objl, base):
     for obj in objl:
@@ -1641,7 +1636,7 @@ class Runner:
                 want = True
             return node_filter(obj, want)
 
-        self.olist = filter(want_node, self.olist)
+        self.olist = list(filter(want_node, self.olist))
 
     # check nodes argument for typos
     def check_nodes(self, nodesarg):
@@ -1677,13 +1672,13 @@ class Runner:
         if len(levels) == 1:
             # when there is only a single left just fill groups
             while evlev:
-                n = grab_group(map(raw_event, get_names(evlev)))
+                n = grab_group(list(map(raw_event, get_names(evlev))))
                 l = evlev[:n]
                 self.add(objl, raw_events(get_names(l)), l, True)
                 evlev = evlev[n:]
         else:
             for l in levels:
-                evl = filter(lambda x: x[1] == l, evlev)
+                evl = list(filter(lambda x: x[1] == l, evlev))
                 # don't filter objects, the lower level functions
                 # have to handle missing entries
                 if evl:
