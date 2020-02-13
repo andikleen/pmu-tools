@@ -20,7 +20,7 @@
 
 from __future__ import print_function
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import exceptions, argparse, time, types, fnmatch, csv, copy
+import argparse, time, types, fnmatch, csv, copy
 from collections import defaultdict, Counter
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -960,7 +960,9 @@ class SaveContext:
     def __init__(self):
         try:
             self.startoffset = sys.stdin.tell()
-        except exceptions.IOError:
+        except OSError:
+            self.startoffset = None
+        except IOError:
             self.startoffset = None
 
     def restore(self):
@@ -1079,9 +1081,11 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                 l = l + l2.strip()
             if l.startswith("#") or len(l) == 0:
                 continue
-        except exceptions.IOError:
+        except OSError:
              # handle pty EIO
              break
+        except IOError:
+            break
         except KeyboardInterrupt:
             continue
         if interval_mode:
