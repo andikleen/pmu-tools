@@ -609,7 +609,7 @@ def raw_event(i, name="", period=False):
             name = "T" + name
         if args.filterquals:
             e.filter_qual()
-	i = e.output(noname=True, name=name, period=period, noexplode=True)
+        i = e.output(noname=True, name=name, period=period, noexplode=True)
 
         emap.update_event(e.output(noname=True), e)
         if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
