@@ -698,14 +698,14 @@ class ValidEvents:
         self.string = "|".join(self.valid_events)
 
     def __init__(self):
-	self.valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*",
-			     r"msr.*", "emulation-faults",
+        self.valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*",
+                             r"msr.*", "emulation-faults",
                              r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
         self.update()
 
     def add_event(self, ev):
-	if re.match(self.string, ev):
-	    return
+        if re.match(self.string, ev):
+            return
         # add first to overwrite more generic regexprs list r...
         self.valid_events.insert(0, ev)
         self.update()
@@ -1159,7 +1159,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
         # to all cpus in the socket to make the result lists match
         # unless we use -A ??
         # also -C xxx causes them to be duplicated too, unless single thread
-	if (re.match(r'power|uncore', event) and
+        if (re.match(r'power|uncore', event) and
                 title != "" and is_number(title) and
                 (not (args.core and not args.single_thread))):
             cpunum = int(title)
@@ -1220,7 +1220,7 @@ def do_event_rmap(e):
     if n.upper() in fixes:
         n = fixes[n.upper()].lower()
         if n:
-	    return n
+            return n
     return "dummy"
 
 rmap_cache = dict()

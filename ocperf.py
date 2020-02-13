@@ -421,10 +421,10 @@ class UncoreEvent:
         def box_name(n):
             return "%s_%d" % (e.unit, n)
         def box_n_exists(n):
-	    if one_unit and n > 0:
-		return False
+            if one_unit and n > 0:
+                return False
             return box_exists(box_name(n))
-	if not noexplode and not box_exists(e.unit) and box_n_exists(0):
+        if not noexplode and not box_exists(e.unit) and box_n_exists(0):
             return ",".join(["uncore_" + box_name(x) + o.replace("_NUM", "_%d" % (x)) for x in
                              itertools.takewhile(box_n_exists, itertools.count())])
         return "uncore_%s%s" % (e.unit, o.replace("_NUM", ""))
