@@ -2,6 +2,7 @@
 # configure latego workaround on Sandy Bridge EP
 # can be run as a standalone tool or used as module
 # latego enable|disable hexevent
+from __future__ import print_function
 import msr
 import pci
 import signal
@@ -18,7 +19,7 @@ def local_direct2core(val):
             pci.changebit(b, 14, 0, 0x84, 1, val)
             c += 1
     if c == 0:
-        print "no local devices found"
+        print("no local devices found")
 
 def remote_direct2core(val):
     c = 0
@@ -28,7 +29,7 @@ def remote_direct2core(val):
             pci.changebit(b, 9, 0, 0x80, 1, val)
             c += 1
     if c == 0:
-        print "no remote devices found"
+        print("no remote devices found")
 
 def direct2core(val):
     # make sure all cores are awake when we do that
@@ -94,10 +95,10 @@ def setup_event(event, val):
     if event in latego_events:
         v = latego_events[event]
         if v & d2c:
-            print "%s direct2core" % (action)
+            print("%s direct2core" % (action))
             direct2core(val)
         if v & bypass:
-            print "%s bypass" % (action)
+            print("%s bypass" % (action))
             set_bypass(val)
         if val:
             enabled = v
@@ -111,10 +112,10 @@ if __name__ == '__main__':
     elif len(sys.argv) == 3 and sys.argv[1] == "disable":
         setup_event(get_event(sys.argv[2]), 0)
     elif len(sys.argv) == 2 and sys.argv[1] == "list":
-        print "%-45s %04s" % ("name", "hex")
+        print("%-45s %04s" % ("name", "hex"))
         for i in latego_names.keys():
-            print "%-45s %04x" % (i, latego_names[i], )
+            print("%-45s %04x" % (i, latego_names[i], ))
     else:
-        print "Usage: latego enable|disable hexevent|namedevent"
-        print "       latego list"
+        print("Usage: latego enable|disable hexevent|namedevent")
+        print("       latego list")
         sys.exit(1)

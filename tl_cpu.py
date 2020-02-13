@@ -60,7 +60,7 @@ class CPU:
                 self.cpu = i[0]
                 break
         if self.cpu is None:
-            print "Unknown FORCECPU ",force
+            print("Unknown FORCECPU ",force)
         return True
 
     def force_counters(self):

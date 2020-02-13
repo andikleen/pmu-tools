@@ -50,6 +50,7 @@
 # --force-download Force event list download
 # --experimental Support experimental events
 # --noexplode  Don't list all sub pmus for uncore events. Rely on perf stat to merge.
+from __future__ import print_function
 import sys
 import os
 import subprocess
@@ -113,7 +114,7 @@ class PerfVersion:
         try:
             version = subprocess.Popen([perf, "--version"], stdout=subprocess.PIPE).communicate()[0]
         except OSError:
-            print "Cannot run", perf
+            print("Cannot run", perf)
             version = ""
         m = re.match(r"perf version (\d+)\.(\d+)\.", version)
         if m:
@@ -136,7 +137,7 @@ class MSR:
         self.reg = {}
 
     def writemsr(self, msrnum, val, print_only = False):
-        print "msr %x = %x" % (msrnum, val, )
+        print("msr %x = %x" % (msrnum, val, ))
         if print_only:
             return
         msrmod.writemsr(msrnum, val)
@@ -221,7 +222,7 @@ def convert_extra(extra, val, newe):
             nextra += extra[0]
             extra = extra[1:]
             continue
-        print >>sys.stderr, "bad event qualifier", extra
+        print("bad event qualifier", extra, file=sys.stderr)
         break
     return nextra, val
 
@@ -328,7 +329,7 @@ def convert_uncore(flags, extra_map):
                 flags = flags[1:]
         else:
             if flags != "":
-                print >>sys.stderr, "Uncore cannot parse", flags
+                print("Uncore cannot parse", flags, file=sys.stderr)
                 break
     return o
 
@@ -473,11 +474,11 @@ def merge_extra(a, b):
 
 def print_event(name, desc, f, human, wrap):
     desc = "".join([y for y in desc if y < chr(127)])
-    print >>f,"  %-42s" % (name,),
+    print("  %-42s" % (name,), end='', file=f)
     if human:
-        print >>f, "\n%s" % (wrap.fill(desc),)
+        print("\n%s" % (wrap.fill(desc),), file=f)
     else:
-        print >>f, " [%s]" % (desc,)
+        print(" [%s]" % (desc,), file=f)
 
 def uncore_exists(box, postfix=""):
     if file_exists("/sys/devices/uncore_" + box + postfix):
@@ -590,7 +591,7 @@ class EmapNativeJSON(object):
             if m['overflow'] in row:
                 e.overflow = get('overflow')
                 #if e.overflow == "0":
-                #    print >>sys.stderr, "Warning: %s has no overflow value" % (name,)
+                #    print("Warning: %s has no overflow value" % (name,))
             else:
                 e.overflow = None
             e.pebs = get('pebs')
@@ -719,7 +720,7 @@ class EmapNativeJSON(object):
         try:
             data = json.load(open(name, 'rb'))
         except ValueError as e:
-            print >>sys.stderr, "Cannot open", name + ":", e.message
+            print("Cannot open", name + ":", e.message, file=sys.stderr)
             self.error = True
             return
         if u'PublicDescription' not in data[0]:
@@ -779,13 +780,13 @@ def handle_io_error(f, name, warn=False):
         f(name)
     except IOError:
         if warn:
-            print >>sys.stderr, "Cannot open", name
+            print("Cannot open", name, file=sys.stderr)
 
 def json_with_extra(el):
     name = event_download.eventlist_name(el, "core")
     emap = EmapNativeJSON(name)
     if not emap or emap.error:
-        print >>sys.stderr, "parsing", name, "failed"
+        print("parsing", name, "failed", file=sys.stderr)
         return None
     if experimental:
         try:
@@ -811,7 +812,7 @@ def add_extra_env(emap, el):
                 if os.path.exists(oc):
                     emap.add_offcore(oc)
     except IOError:
-        print >>sys.stderr, "Cannot open", oc
+        print("Cannot open", oc, file=sys.stderr)
     try:
         uc = os.getenv("UNCORE")
         if uc:
@@ -827,7 +828,7 @@ def add_extra_env(emap, el):
                 if os.path.exists(uc):
                     emap.add_uncore(uc)
     except IOError:
-        print >>sys.stderr, "Cannot open", uc
+        print("Cannot open", uc, file=sys.stderr)
     def read_map(env, typ, r):
         try:
             e2 = os.getenv(env)
@@ -836,7 +837,7 @@ def add_extra_env(emap, el):
                 r(e2)
                 # don't try to download for now
         except IOError:
-            print >>sys.stderr, "Cannot open", e2
+            print("Cannot open", e2, file=sys.stderr)
     read_map("EVENTMAP2", "core", lambda r: emap.read_events(r))
     read_map("EVENTMAP3", "core", lambda r: emap.read_events(r))
     read_map("UNCORE2", "uncore", lambda r: emap.add_uncore(r))
@@ -1007,8 +1008,8 @@ def process_args():
             oarg, i, prefix = getarg(i, cmd)
             if oarg == "default":
                 if overflow is None:
-                    print >>sys.stderr,"""
-Specify the -e events before -c default or event has no overflow field."""
+                    print("""
+Specify the -e events before -c default or event has no overflow field.""", file=sys.stderr)
                     sys.exit(1)
                 cmd.append(prefix + overflow)
             else:
@@ -1016,7 +1017,7 @@ Specify the -e events before -c default or event has no overflow field."""
         else:
             cmd.append(sys.argv[i])
         i += 1
-    print " ".join(map(pipes.quote, cmd))
+    print(" ".join(map(pipes.quote, cmd)))
     if print_only:
         sys.exit(0)
     return cmd
@@ -1039,7 +1040,7 @@ def perf_cmd(cmd):
         try:
             l = subprocess.Popen(cmd, stdout=pager)
             l.wait()
-            print >>pager
+            print(file=pager)
             emap.dumpevents(pager, proc is not None)
             if proc:
                 pager.close()
@@ -1066,7 +1067,7 @@ def perf_cmd(cmd):
                 i = re.sub("[rR]aw 0x([0-9a-f]{4,})", raw, i)
                 i = re.sub("r([0-9a-f]{4,})", raw, i)
                 i = re.sub("(cpu/.*?/)", lambda e: emap.getperf(e.group(1)), i)
-                print i,
+                print(i, end='')
         except IOError:
             pass
         pipe.close()
@@ -1084,7 +1085,7 @@ if __name__ == '__main__':
             noexplode = True
     emap = find_emap()
     if not emap:
-        print >>sys.stderr, "Do not recognize CPU or cannot find CPU map file."
+        print("Do not recognize CPU or cannot find CPU map file.", file=sys.stderr)
     msr = MSR()
     cmd = process_args()
     try:

@@ -11,6 +11,7 @@
 # more details.
 #
 # Maintain error data on perf measurements
+from __future__ import print_function
 import sys
 import math
 from collections import namedtuple
@@ -66,5 +67,5 @@ class ComputeStat:
             self.prev_errors = self.errors
             self.errors = set()
         if self.mismeasured and self.mismeasured > self.prev_mismeasured and not self.quiet:
-            print "warning: Mismeasured:", " ".join(self.mismeasured)
+            print("warning: Mismeasured:", " ".join(self.mismeasured))
             self.prev_mismeasured = self.mismeasured
