@@ -2132,9 +2132,9 @@ if "model" in model.__dict__:
     model.model = cpu.modelid
 
 if args.list_metrics or args.list_all:
-    runner.list_nodes("Metrics", lambda(obj): obj.metric)
+    runner.list_nodes("Metrics", lambda obj: obj.metric)
 if args.list_nodes or args.list_all:
-    runner.list_nodes("Nodes", lambda(obj): not obj.metric)
+    runner.list_nodes("Nodes", lambda obj: not obj.metric)
 if args.list_metric_groups or args.list_all:
     runner.list_metric_groups()
 if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_all:

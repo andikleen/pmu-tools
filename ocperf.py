@@ -537,9 +537,9 @@ class EmapNativeJSON(object):
 
     def read_table(self, r, m):
         for row in r:
-            get = lambda (x): row[m[x]]
-            gethex = lambda (x): int(get(x).split(",")[0], 16)
-            getdec = lambda (x): int(get(x), 10)
+            get = lambda x: row[m[x]]
+            gethex = lambda x: int(get(x).split(",")[0], 16)
+            getdec = lambda x: int(get(x), 10)
 
             name = get('name').lower().rstrip()
             code = gethex('code')
