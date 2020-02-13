@@ -1778,7 +1778,7 @@ class Runner:
         curev = []
         curlev = []
         # sort objects by level and inside each level by num-counters
-        solist = sorted(self.olist, cmp=cmp_obj)
+        solist = sorted(self.olist, key=lambda x: (x.level, x.nc))
         # try to fit each objects events into groups
         # that fit into the available CPU counters
         for obj in solist:
