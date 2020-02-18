@@ -44,9 +44,10 @@ known_cpus = (
     ("knl", (87, )),
     ("skx", ((85, 4,) )),
     ("clx", ((85, 5,) )),
+    ("icl", (126, )),
 )
 
-tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx")
+tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl")
 
 fixed_to_num = {
     "instructions" : 0,
@@ -56,6 +57,11 @@ fixed_to_num = {
     "ref-cycles" : 2,
     "cpu/event=0x0,umask=0x3/": 2,
     "cpu/event=0x0,umask=0x3,any=1/" : 2,
+    "slots": 3,
+    "topdown-fe-bound": 100,
+    "topdown-be-bound": 101,
+    "topdown-bad-spec": 102,
+    "topdown-retiring": 103,
 }
 
 # handle kernels that don't support all events
@@ -210,9 +216,13 @@ def limit4_overflow(evlist):
         return len(limit4)
     return 0
 
+def ismetric(x):
+    return re.match(r"cpu/event=0x0,umask=0x(1[0123]|4)/", x) is not None
+
 def needed_counters(evlist, nolimit=False):
     evlist = list(set(evlist)) # remove duplicates first
     evlist = list(map(remove_qual, evlist))
+    evlist = [x for x in evlist if not ismetric(x)] # XXX fixme ignore metrics for now
     evset = set(evlist)
     num = len(evset - ingroup_events)
 
@@ -625,6 +635,8 @@ def raw_event(i, name="", period=False):
             return "dummy"
         if i in fixed_counters:
             return fixed_counters[i]
+        if not cpu.ht or args.per_thread:
+            i = i.replace(":percore", "")
         e = emap.getevent(i, nocheck=event_nocheck)
         if e is None:
             if i in event_fixes:
@@ -2141,6 +2153,12 @@ elif cpu.cpu == "clx":
     clx_server_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
     model = clx_server_ratios
+elif cpu.cpu == "icl":
+    import icl_client_ratios
+    icl_client_ratios.smt_enabled = cpu.ht
+    smt_mode = cpu.ht
+    model = icl_client_ratios
+    core_domains = set(["CoreClocks", "CoreMetric"])
 elif cpu.cpu == "slm":
     import slm_ratios
     model = slm_ratios

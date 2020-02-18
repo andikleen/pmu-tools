@@ -34,7 +34,7 @@ LOAD0="-- taskset -c 0 $LOAD"
 
 set -o pipefail
 
-SMTCPUS="snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx"
+SMTCPUS="snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl"
 NOSMTCPUS="slm simple"
 ALLCPUS="$SMTCPUS $NOSMTCPUS"
 
@@ -211,13 +211,13 @@ EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ -l4 -I 1
 checklog0
 EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ -l4 -I 1000 -a --per-socket sleep 1
 checklog0
-EVENTMAP=${cpus[skl]} FORCEHT=1 FORCECPU=skl $WRAP ./toplev.py -o log$$ -l4 -I 1000 -a --per-socket sleep 1
+EVENTMAP=${cpus[skl]} FORCEHT=1 FORCECPU=skl $WRAP ./toplev.py -o log$$ -l4 -I 1000 -a --per-socket --filterquals sleep 1
 checklog0
 EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ --no-desc -l4 -I 1000 -a -A sleep 1
 checklog0
 EVENTMAP=${cpus[snb]} FORCEHT=0 FORCECPU=snb $WRAP ./toplev.py -o log$$ --summary --no-desc --no-area -l4 -I 1000 -a -A sleep 1
 checklog0
-EVENTMAP=${cpus[skl]} FORCEHT=1 FORCECPU=skl $WRAP ./toplev.py -o log$$ -l4 -I 1000 -a --per-thread sleep 1
+EVENTMAP=${cpus[skl]} FORCEHT=1 FORCECPU=skl $WRAP ./toplev.py -o log$$ -l4 -I 1000 -a --per-thread --filterquals sleep 1
 checklog0
 
 EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py  -l4 true
