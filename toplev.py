@@ -627,7 +627,7 @@ def add_filter(s):
 
 notfound_cache = set()
 
-def raw_event(i, name="", period=False):
+def raw_event(i, name="", period=False, nopebs=True):
     orig_i = i
     if "." in i or "_" in i:
         if re.match(r'^(OCR|OFFCORE_RESPONSE).*', i) and not feat.supports_ocr:
@@ -651,6 +651,8 @@ def raw_event(i, name="", period=False):
             name = "T" + name
         if args.filterquals:
             e.filter_qual()
+        if nopebs and 'extra' in e.__dict__:
+            e.extra = e.extra.replace("p", "")
         i = e.output(noname=True, name=name, period=period, noexplode=True)
 
         emap.update_event(e.output(noname=True), e)
@@ -2038,7 +2040,7 @@ def do_sample(sample_obj, rest, count):
     no_pebs = not supports_pebs()
     if no_pebs:
         nsamp = [x for x in nsamp if not force_pebs(x[0])]
-    sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True) for s in nsamp]
+    sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True, nopebs=False) for s in nsamp]
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
     if no_pebs:
