@@ -340,7 +340,8 @@ def convert_uncore(flags, extra_map):
                 flags = flags[1:]
         else:
             if flags != "":
-                print("Uncore cannot parse", flags, file=sys.stderr)
+                if len(extra_map) > 0:
+                    print("Uncore cannot parse", flags, file=sys.stderr)
                 break
     return o
 
