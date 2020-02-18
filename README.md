@@ -5,6 +5,33 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev update to Ahmad Yasin's/Anton Hanna's TMA 4.0:
+   New Models
+    ICL: New model for IceLake client processor
+
+    Note that running on Icelake with HyperThreading enabled requires updating the perf
+    tool to a recent version that supports the "percore" notifier.
+
+    New Metrics and Info groups
+    - IpFLOP: Instructions per Floating Point (FP) Operation [BDW onwards]
+    - New breakdown for Frontend\_Bandwidth per fetch unit: MITE, DSB & LSD
+    - IO\_{Read|Write}\_BW: Average IO (network or disk) Bandwidth Use for {Reads|Writes} [server models]
+    - LSD\_Coverage: Fraction of Uops delivered by the LSD (Loop Stream Detector; aka Loop Cache)
+    - New Info group: Frontend that hosts LSD\_Coverage, DSB\_Coverage and IpBAClear
+
+    Key Enhancements & fixes
+
+    - Tuned/balanced Frontend\_Latency & Frontend\_Bandwidth (Bandwidth exposed as a very short FE latency) [SKL onwards]
+    - Tuned/balanced Memory\_Bound & Core\_Bound in Backend\_Bound breakdown [SKL onwards]
+    - Tuned L2\_Bound Node for high memory BW workloads [SKL onwards]
+    - BpTB, IpL, IpS & IpB renamed to BpTkBranch, IpLoad, IpStore & IpBranch respectively (Inst\_Mix info metrics)
+    - Backporting IpFarBranch to all pre SKL models
+    - Renamed DRAM\_{Read\_Latency|Parallel\_Reads} to MEM\_{Read\_Latency|Parallel\_Reads}
+    - Fixed Count Domain for (Load|Store|ALU)\_Op\_Utilization [SNB onwards]
+    - Removed OCR L3 prefetch Remote HitM events [SKX,CLX]
+    - Fixed descriptions for Ports\_Utilized\_{0|1|2|3m}
+    - Fixed Pause latency [CLX]
+
 * toplev can now generate a script with --gen-script to collect toplev data on a different
   system. The generated data can be then imported with --import
 * toplev / event_download / ocperf have been ported to python3. They still work with python2,
@@ -17,16 +44,16 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
   to get separate summaries. With --split-output -o file the different aggregations
   are written to different files.
 * toplev update to Ahmad Yasin's/Anton Hanna's TMA 3.6:
-	- {Load|Store}_STLB_(Hit|Miss): new metrics that breakdown DTLB_{Load|Store} costs
-	- L2_Evictions_(Silent|NonSilent)_PKI: L2 (silent|non silent) evictions rate per Kilo instructios
+	- {Load|Store}\_STLB\_(Hit|Miss): new metrics that breakdown DTLB\_{Load|Store} costs
+	- L2\_Evictions\_(Silent|NonSilent)\_PKI: L2 (silent|non silent) evictions rate per Kilo instructios
 	- IpFarBranch - Instructions per Far Branch
-	- Renamed 0/1/2/3m_Ports_Utilized
-	- DSB_Switches is now available
+	- Renamed 0/1/2/3m\_Ports\_Utilized
+	- DSB\_Switches is now available
 	- Count Domain changes for multiple nodes. New threshold for IpTB ( Instructions per Taken Branches )
-	- Re-organized/renamed Metric Group (e.g. Frontend_Bound => Frontend)
+	- Re-organized/renamed Metric Group (e.g. Frontend\_Bound => Frontend)
 * toplev now can run with the NMI watchdog enabled
 	- This may reduce the need for being root to change this setting
-	- It may still require kernel.perf_event_paranoid settings <1, unless
+	- It may still require kernel.perf\_event\_paranoid settings <1, unless
 	  --single-thread --user is used. Some functionality like uncore
 	  monitoring requires root or kernel.perf_event_paranoid < 0.
 * toplev now supports running in KVM guests
@@ -34,134 +61,6 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 	- The guest should report the same CPU type as the host (also -cpu host),
 	  otherwise the current CPU needs to be overriden with FORCECPU=../EVENTMAP=..
 	- PEBS sampling, offcore response, and uncore monitoring are not supported
-* toplev update to Ahmad Yasin's TMA 3.5:
-	- Support for Cascade Lake
-	- Add PMM_Bound nodes for persistent memory
-	- Add L3_Cache_Fill_BW, L3_Cache_Access_BW metrics
-	- new Ports breakdown into Alu, Store, Load
-	- Added L2[MH]PKI_ metrics
-	- Added MEM_PMM_Read/Write_Latency/BW metrics for persistent memory
-	- Fix IpArith formulas
-	- Fixed description for L1/2/3MPKI
-	- Mem_Read_latency changed to DRAM_Read_Latency / DRAM_Parallel_Reads
-	- Change break down of server subset
-* toplev update to Ahmad Yasin's TMA 3.4
-	- Add Serializing_Operations on most parts and Average_Frequency
-	- More Erratas whitelisted
-	- Improved Branch_Misprediction metrics
-	- Better Port utilization analysis on Skylake
-	- Add Clear_Frontend_Cost metric
-* Add a link to Ahmad Yasin's [toplev/TopDown tutorial](http://www.cs.technion.ac.il/~erangi/TMA_using_Linux_perf__Ahmad_Yasin.pdf)
-* ucevent now supports the Skylake Server uncore.
-* toplev update to Ahmad Yasin's TMA 3.31:
-	- Full support for Skylake Server
-	- Add L1/L2/L3 MKPI (Miss Per Kilo Instruction) metrics
-	- Full floating point FLOPS support on Broadwell+, and support for AVX512 on Skylake
-	- Mark estimated and measured domains
-	- Improve BAClear_Cost metric
-	- Tuned Core_Bound and Memory_Bound thresholds
-	- Remove some metrics to reduce multiplexing
-	- Report AVX frequency limitations
-* toplev can now import pre-recorded perf stat output with --import, and also output perf stat output
-  with --perf-output
-* toplev and ocperf can override /proc/cpuinfo with the CPUINFO variable
-* ocperf now supports experimental event lists. They can be enabled using a new
-  --experimental flag.
-* toplev now supports Xeon Scalable Server (Skylake Server)
-	- So far no support for uncore events
-* toplev now supports metric groups (--metric-groups) and (--list-metric-groups) to configure
-the metrics to measure in a fine grained way.
-* toplev has a new Silvermont and Knights Landing model. The Silvermont model now requires
-multiplexing for L1, but can distinguish BadSpeculation and Backend Bound. There are additional metrics.
-* ocperf now supports wildcards for the EVENTMAP/EVENTMAP2/UNCORE/OFFCORE variables.
-* toplev now always marks critical bottlenecks in default output. Removed the --bottleneck argument
-* toplev updated to Ahmad Yasin's TMAM 3.2:
-	- Support for grouping output by related metrics
-	- New metrics for instruction mixes
-	- Breakdown of Branch_Resteers into different kinds
-	- New Branch_MispredictionCost metric
-	- Support L1/L2 cache fill bandwidth
-	- Revert ITLB_Misses change in 3.14
-	- Improved Branch_Resteers, Assists, ITLB_Misses, DTLB_Load/Store metrics
-	- Report Instructions
-	- Improve tuning hints
-	- toplev now prints full area for Metrics
-* toplev has a new --summary option to print the summary of the complete measurement session
-* ucevent now supports Broadwell EP (Xeon E5/E7 v4)
-* toplev updated to Ahmad Yasin's TMAM 3.1:
-	- This release is aimed at Skylake and Broadwell
-	- Support for Broadwell Server (DE and EP)
-	- Improved Mem Bound and Mem_Bandwidth/Latency to account for prefetches
-	- Fixes to Store_Latency metric to include L2_Hit Stores
-	- Account FB_hit in memory related metrics
-	- More accurate Branch_Resteers on Skylake
-	- Improved False Sharing / Congested Accesses
-	- Various other improvements
-	- Support for a new reduced profile with less multiplexing (enable with --redecued)
-* toplev now supports --sample-basename to specify the basename of the
-sample perf.data file
-* toplev now supports --sample-repeat to interleave measuring and sampling for
-longer workloads.
-* toplev now supports --sample-args to pass different arguments to the sample perf.
-The arguments need to be specified with + instead of - (--sample-args "+b")
-* toplev now automatically includes cycles with sampling
-* toplev now checks for event errata and automatically disables affected nodes, unless --ignore-errata is specified.
-* ucevent now supports Broadwell Xeon-D
-* jevents has now limited support for Uncore events
-* toplev updated to Ahmad Yasin's TopDown/TMAM 3.02:
-	- Tuned Memory_Bound vs Core_Bound threshold
-	- Vastly improved Tuning hints
-	- Fix Stores_Bound before Skylake
-	- Fix RS_Empty nodes
-	- Improve IFetch_Line_Utilization
-	- Uncore support is disabled for now
-* toplev now supports columnar output in CSV mode (-x, --column)
-* toplev can print the critical bottleneck with --bottleneck
-* The tools can now find event lists for the original user of sudo
-* jevents now has a perf stat like tool called jstat (renamed to jestat)
-* jevents can now list and automatically resolve perf style events and aliases
-* simple-pebs is a simple reference Linux PEBS driver
-* ocperf now supports uncore events on some systems (experimental)
-* libjevents now supports handling the perf ring buffer and reading performance counters from ring 3 in C programs, in addition to resolving symbolic event names. For more details see the [API reference](http://halobates.de/jevents.html) and the [jevents README](https://github.com/andikleen/pmu-tools/tree/master/jevents)
-* Support for Airmont and Broadwell with Iris CPUs
-* toplev updates to Ahmad Yasin's TopDown 3.0 (only Haswell and up for now):
-	- Support for Skylake CPUs
-	- Experimental uncore support (needs special event files)
-	- L3_Bound, L3_Latency, ITLB_Misses, Memory/Core_bound accuracy improved
-	- Enhanced sampling for Branch_Resteers, *_Port_Utilized
-	- Precise sampling for frontend issues on Skylake
-	- A range of bug fixes
-	- Support for Xeon-D (Broadwell-DE micro server)
-	- New nodes: Assists, L3_Bandwidth
-	- A range of new metrics
-	- GFLOPS excludes x87
-	- Workaround for UOPS_EXECUTED issue on Haswell
-	- Fix TLB related nodes on BDW
-	- 0_Ports_Utilized excludes divider cycles
-	- Fix for Frontend_Latency on SMT on Haswell
-* toplev has a new --nodes option to add and remove specific measurements.
-* toplev has a new --columns option to print results from different CPUs side-by-side.
-* toplev now has a (draft) [tutorial and manual](https://github.com/andikleen/pmu-tools/wiki/toplev-manual)
-* toplev now detects kernel counter scheduling problems based on the kernel version and automatically
-disables nodes with unsupported events. Can be overridden with --force-events.
-* toplev now defaults to measuring the whole system even on non SMT. The old mode
-  can be still enabled with --single-thread. It should be only used on single threads
-  and when the other thread is idle on SMT. In addition there is a new --core option
-  to select the CPUs to measure.
-* toplev can now automatically sample workloads with --run-sample
-* Added cputop utility to easily enable/disable hyper threading
-* toplev updated to TopDown 2.9:
-    - Many fixes to SMT support. SMT now supported on Haswell.
-    - Many bug fixes to metrics
-    - Initial Haswell Server support
-    - Add a Sandy Bridge EP model
-    - Lots of new metrics and nodes: e.g. Core IPC, MUX confidence,
-      BPTB (Branch per Taken Branch), SMT_2T utilization,
-      IFetch_Line_utilization
-    - Initial Broadwell model support
-    - Improve sample event support. Now enable them by default.
-    - --per-core and --per-socket support dropped with SMT
-* The new tl-serve.py tool displays toplev output in a web browser.
 
 # All features:
 
