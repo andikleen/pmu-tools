@@ -242,6 +242,12 @@ class Event:
         self.msr = 0
         self.msrval = 0
         self.desc = desc
+        self.pebs = 0
+        self.newextra = ""
+        self.overflow = None
+        self.errata = None
+        self.counter = ""
+        self.period = 0
 
     # XXX return with pmu to be consistent with Uncore and fix callers
     def output_newstyle(self, extra="", noname=False, period=False, name="", noexplode=False):
@@ -577,7 +583,6 @@ class EmapNativeJSON(object):
             d = d.strip()
             e = Event(name, val, d)
             counter = get('counter')
-            e.pname = "r%x" % (val,)
             e.newextra = ""
             if other & ((1<<16)|(1<<17)):
                 if other & (1<<16):
@@ -599,10 +604,6 @@ class EmapNativeJSON(object):
                     e.msr = msrnum
             if m['overflow'] in row:
                 e.overflow = get('overflow')
-                #if e.overflow == "0":
-                #    print("Warning: %s has no overflow value" % (name,))
-            else:
-                e.overflow = None
             e.pebs = get('pebs')
             if e.pebs and int(e.pebs):
                 if name.endswith("_ps") or int(e.pebs) == 2:
@@ -610,7 +611,6 @@ class EmapNativeJSON(object):
                     d += " (Uses PEBS)"
                 else:
                     d = d.replace("(Precise Event)","") + " (Supports PEBS)"
-            e.errata = None
             try:
                 if get('errata') != "null":
                     try:
