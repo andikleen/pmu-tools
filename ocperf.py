@@ -479,7 +479,7 @@ perf_qual = "kuhGHSD" # without pebs
 
 def extra_set(e):
     return set(map(lambda x: x[0],
-        re.findall(r"(p+|" + "|".join([x[0] for x in qual_map + qualval_map + uncore_map]) + "|[" + perf_qual + "])", e)))
+        re.findall(r"(" + "|".join([x[0] for x in qual_map + qualval_map + uncore_map]) + "|[" + perf_qual + "]|p+)", e)))
 
 def merge_extra(a, b):
     m = a | b
