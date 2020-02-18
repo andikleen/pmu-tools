@@ -162,7 +162,7 @@ class PerfFeatures:
         self.supports_power = (
                 not args.no_uncore
                 and not args.force_hypervisor
-                and works(perf + " list  | grep -q power/"))
+                and works(perf + " stat -e power/energy-cores/ -a true"))
         # guests don't support offcore response
         if event_nocheck:
             self.supports_ocr = True
