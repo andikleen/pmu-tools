@@ -150,6 +150,8 @@ class MSR:
 
 qual_map = (
     ("amt1", "any=1", EVENTSEL_ANY, ""),
+    ("percore", "percore=1", 0, ""),
+    ("perf_metrics", "", 0, ""),
     ("i1", "inv=1", EVENTSEL_INV, ""),
     ("e1", "edge=1", 0, ""),
     ("e0", "edge=0", 0, ""),
@@ -516,6 +518,7 @@ fixed_counters = {
     "inst_retired.any": (0xc0, 0, 0),
     "cpu_clk_unhalted.thread": (0x3c, 0, 0),
     "cpu_clk_unhalted.thread_any": (0x3c, 0, 1),
+    "topdown.slots": (0x00, 0x04, 0),
 }
 
 def update_ename(ev, name):
@@ -732,6 +735,8 @@ class EmapNativeJSON(object):
         if u'PublicDescription' not in data[0]:
             mapping['desc'] = u'BriefDescription'
         self.read_table(data, mapping)
+        if "topdown.slots" in self.events:
+            self.add_topdown()
 
     def add_offcore(self, name):
         """Read offcore table."""
@@ -780,6 +785,16 @@ class EmapNativeJSON(object):
                 self.uncore_events[name] = UncoreEvent(name, row)
             except UnicodeEncodeError:
                 pass
+
+    def add_topdown(self):
+        def td_event(name, umask, desc, counter):
+            e = Event(name, umask, desc)
+            e.counter = counter
+            self.add_event(e)
+        td_event("perf_metrics.retiring", 0x1000, "Number of slots the pipeline was frontend bound.", "32")
+        td_event("perf_metrics.bad_speculation", 0x1100, "Number of slots the pipeline was doing bad speculation.", "33")
+        td_event("perf_metrics.frontend_bound", 0x1200, "Number of slots the pipeline was frontend bound.", "34")
+        td_event("perf_metrics.backend_bound", 0x1300, "Number of slots the pipeline was backend bound.", "35")
 
 def handle_io_error(f, name, warn=False):
     try:
