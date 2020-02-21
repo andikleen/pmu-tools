@@ -798,6 +798,10 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     if smt_mode:
         printed_cores = set()
         printed_sockets = set()
+        for j in res.keys():
+            if j != "" and int(j) not in cpu.cputocore:
+                 warn_once("Warning: input cpu %s not in cpuinfo." % j)
+                 del res[j]
         for j in sorted(res.keys()):
             if j != "" and int(j) not in runner.allowed_threads:
                 continue
