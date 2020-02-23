@@ -102,7 +102,7 @@ warned = set()
 
 def warn_once(s):
     if s not in warned:
-        print >>sys.stderr, s
+        print(s, file=sys.stderr)
         warned.add(s)
 
 class PerfVersion:
@@ -116,7 +116,7 @@ class PerfVersion:
         except OSError:
             print("Cannot run", perf)
             version = ""
-        m = re.match(r"perf version (\d+)\.(\d+)\.", version)
+        m = re.match(r"perf version (\d+)\.(\d+)\.", version.decode('utf-8'))
         if m:
             major = m.group(1)
             minor = m.group(2)
@@ -562,10 +562,6 @@ class EmapNativeJSON(object):
             if d is None:
                 d = ''
             d = d.strip()
-            try:
-                d = d.encode('utf-8')
-            except UnicodeDecodeError:
-                pass
             e = Event(name, val, d)
             counter = get('counter')
             e.pname = "r%x" % (val,)
@@ -605,7 +601,8 @@ class EmapNativeJSON(object):
             try:
                 if get('errata') != "null":
                     try:
-                        d += " Errata: " + get('errata')
+                        d += " Errata: "
+                        d += get('errata')
                         e.errata = get('errata')
                     except UnicodeDecodeError:
                         pass
