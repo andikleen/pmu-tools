@@ -825,15 +825,17 @@ def verify_rev(rev, cpus):
 
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat = runner.stat
-    out.set_cpus(display_keys(runner, res.keys(), mode))
+    keys = sorted(res.keys())
+    out.set_cpus(display_keys(runner, keys, mode))
     if smt_mode:
         printed_cores = set()
         printed_sockets = set()
-        for j in list(res.keys()):
+        for j in list(keys):
             if j != "" and int(j) not in cpu.cputocore:
                  warn_once("Warning: input cpu %s not in cpuinfo." % j)
                  del res[j]
-        for j in sorted(res.keys()):
+        keys = sorted(res.keys())
+        for j in keys:
             if j != "" and int(j) not in runner.allowed_threads:
                 continue
 
@@ -847,11 +849,11 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             runner.reset_thresh()
 
             if mode == OUTPUT_GLOBAL:
-                cpus = list(res.keys())
+                cpus = keys
             elif mode == OUTPUT_SOCKET:
-                cpus = [x for x in res.keys() if key_to_socketid(x) == sid]
+                cpus = [x for x in keys if key_to_socketid(x) == sid]
             else:
-                cpus = [x for x in res.keys() if key_to_coreid(x) == core]
+                cpus = [x for x in keys if key_to_coreid(x) == core]
             combined_res = list(zip(*[res[x] for x in cpus]))
             combined_st = [deprecated_combine_valstat(z)
                   for z in zip(*[valstats[x] for x in cpus])]
@@ -906,14 +908,14 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             runner.print_res(out, interval, fmt, thread_node, bn)
     else:
         env['num_merged'] = 1
-        for j in sorted(res.keys()):
+        for j in keys:
             if j != "" and is_number(j) and int(j) not in runner.allowed_threads:
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
             runner.print_res(out, interval, j, not_package_node, bn)
     if mode == OUTPUT_GLOBAL:
-        cpus = [x for x in res.keys()
+        cpus = [x for x in keys
                 if (not is_number(j)) or int(j) in runner.allowed_threads]
         combined_res = [sum([res[j][i] for j in cpus])
                         for i in range(len(res[cpus[0]]))]
@@ -923,7 +925,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
         runner.print_res(out, interval, "", package_node, None)
     elif mode != OUTPUT_THREAD:
         packages = set()
-        for j in sorted(res.keys()):
+        for j in keys:
             if j == "":
                 continue
             if is_number(j):
@@ -1362,7 +1364,7 @@ def add_key(k, x, y):
 def dedup2(a, b):
     k = dict()
     list(map(lambda x, y: add_key(k, x, y), a, b))
-    return list(k.keys()), list(map(lambda x: k[x], k.keys()))
+    return list(sorted(k.keys())), list(map(lambda x: k[x], sorted(k.keys())))
 
 def update_res_map(evnum, objl, base):
     for obj in objl:
@@ -1972,7 +1974,7 @@ class Runner:
 
     def list_metric_groups(self):
         print("MetricGroups:")
-        pwrap(" ".join(self.metricgroups.keys()), indent="        ")
+        pwrap(" ".join(sorted(self.metricgroups.keys())), indent="        ")
 
     def list_nodes(self, title, filt):
         print("%s:" % title)
