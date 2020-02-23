@@ -1351,7 +1351,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
                 warn_once("warning: Partial CPU thread data from perf for %s" %
                         obj.name)
                 return 0
-    if st[index].stddev or st[index].multiplex:
+    if st[index].stddev or st[index].multiplex != 100.0:
         return make_uval(vv, sd=st[index].stddev, mux=st[index].multiplex)
     return vv
 
