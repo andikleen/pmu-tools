@@ -3,7 +3,7 @@
 # Can be collected without multiplexing
 # Please see http://ark.intel.com for more details on these CPUs.
 #
-
+from __future__ import print_function
 import metrics
 import node
 
@@ -123,7 +123,7 @@ Instructions Per Cycle"""
         try:
             self.val = IPC(EV, 0)
         except ZeroDivisionError:
-            print "IPC zero division"
+            print("IPC zero division")
             self.val = 0
 
 class Metric_TurboUtilization:
@@ -135,7 +135,7 @@ Average Frequency Utilization relative nominal frequency"""
         try:
             self.val = TurboUtilization(EV, 0)
         except ZeroDivisionError:
-            print "TurboUtilization zero division"
+            print("TurboUtilization zero division")
             self.val = 0
 
 class Metric_CLKS:
@@ -229,5 +229,5 @@ class Setup:
         nodes = sorted(nodes, key=lambda n: n.level)
 
         # Pass to runner
-        map(lambda n : runner.run(n), nodes)
-        map(lambda m : runner.metric(m), user_metrics)
+        list(map(lambda n : runner.run(n), nodes))
+        list(map(lambda m : runner.metric(m), user_metrics))

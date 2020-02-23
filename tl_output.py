@@ -12,6 +12,7 @@
 #
 # Output toplev results in various formats
 
+from __future__ import print_function
 import locale
 import csv
 import re
@@ -22,7 +23,7 @@ from tl_uval import UVal, combine_uval
 def open_logfile(name, typ):
     if name is None or name == "":
         return sys.stderr
-    if isinstance(name, file):
+    if 'write' in name.__class__.__dict__:
         return name
     if typ:
         if "." in name:
@@ -152,9 +153,9 @@ class OutputHuman(Output):
         if self.args.no_desc:
             return
         if desc:
-            print >>self.logf, "\t" + desc
+            print("\t" + desc, file=self.logf)
             if sample:
-                print >>self.logf, "\t" + "Sampling events: ", sample
+                print("\t" + "Sampling events: ", sample, file=self.logf)
 
     def print_timestamp(self, timestamp):
         if timestamp:
@@ -288,7 +289,7 @@ class OutputColumnsCSV(OutputColumns):
         OutputColumns.__init__(self, logfile, args, version, cpu)
         self.writer = dict()
         if self.logfiles:
-            for n, f in self.logfiles.iteritems():
+            for n, f in self.logfiles.items():
                 self.writer[n] = csv.writer(f, delimiter=sep)
         else:
             self.writer[''] = csv.writer(self.logf, delimiter=sep)
@@ -349,7 +350,7 @@ class OutputCSV(Output):
         Output.__init__(self, logfile, version, cpu, args)
         self.writer = dict()
         if self.logfiles:
-            for n, f in self.logfiles.iteritems():
+            for n, f in self.logfiles.items():
                 self.writer[n] = csv.writer(f, delimiter=sep)
         else:
             self.writer[''] = csv.writer(self.logf, delimiter=sep)

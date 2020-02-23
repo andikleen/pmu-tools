@@ -11,6 +11,7 @@
 # more details.
 #
 # Maintain error data on perf measurements
+from __future__ import print_function
 import sys
 import math
 from collections import namedtuple
@@ -52,19 +53,19 @@ class ComputeStat:
 
         # sanity check: did we reference all results?
         if len(res.keys()) > 0:
-            r = res[res.keys()[0]]
+            r = res[list(res.keys())[0]]
             if len(referenced) != len(r) and not self.quiet:
-                print >>sys.stderr, "warning: %d results not referenced:" % (len(r) - len(referenced)),
-                print >>sys.stderr, " ".join(["%d" % x for x in sorted(set(range(len(r))) - referenced)])
+                print("warning: %d results not referenced:" % (len(r) - len(referenced)), end='', file=sys.stderr)
+                print(" ".join(["%d" % x for x in sorted(set(range(len(r))) - referenced)]), file=sys.stderr)
 
     def compute_errors(self):
         if self.errcount > 0 and self.errors != self.prev_errors:
             if not self.quiet:
-                print >>sys.stderr, "warning: %d division by zero errors:" % (self.errcount),
-                print >>sys.stderr, " ".join(self.errors)
+                print("warning: %d division by zero errors:" % (self.errcount), end='', file=sys.stderr)
+                print(" ".join(self.errors), file=sys.stderr)
             self.errcount = 0
             self.prev_errors = self.errors
             self.errors = set()
         if self.mismeasured and self.mismeasured > self.prev_mismeasured and not self.quiet:
-            print "warning: Mismeasured:", " ".join(self.mismeasured)
+            print("warning: Mismeasured:", " ".join(self.mismeasured))
             self.prev_mismeasured = self.mismeasured

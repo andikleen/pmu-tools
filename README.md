@@ -5,6 +5,10 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev / event_download / ocperf have been ported to python3. They still work with python2,
+  which is so far the default and used by the standard #! shebangs. But on systems that
+  have no python2 they can be run with a python3 interpreter. This feature is still
+  experimental, please report any regressions.
 * toplev now supports --per-core / --per-socket output in SMT mode, and also a --global mode.
   This also works with reprocessed data (from --perf-output / --import), so it is possible
   to slice a single collection. It is also possible to specify them at the same time

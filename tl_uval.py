@@ -18,6 +18,7 @@ import operator
 log = logging.getLogger(__name__)
 TEMPVAL = 'anon'
 
+div_op = operator.div if 'div' in operator.__dict__ else None
 
 def combine_uval(ulist):
     """
@@ -139,6 +140,10 @@ class UVal:
         return UVal._calc(operator.div, self, other)
 
     @ensure_uval
+    def __truediv__(self, other):
+        return UVal._calc(operator.truediv, self, other)
+
+    @ensure_uval
     def __lt__(self, other):
         return self.value < other.value
 
@@ -182,6 +187,11 @@ class UVal:
         """other / self"""
         return UVal._calc(operator.div, other, self)
 
+    @ensure_uval
+    def __rtruediv__(self, other):
+        """other / self"""
+        return UVal._calc(operator.truediv, other, self)
+
     #########################
     # uncertainty propagator
     #########################
@@ -197,13 +207,13 @@ class UVal:
         f = op(float(A), B)
         if isinstance(f, float) and f.is_integer(): f = int(f)
         # uncertainty
-        if op in (operator.mul, operator.truediv, operator.div):
+        if op in (operator.mul, operator.truediv, div_op):
             sgn = 1 if op == operator.mul else -1
             if A != 0 and B != 0:
                 u = abs(f) * math.sqrt(pow(float(a)/A, 2) + pow(float(b)/B, 2) + sgn*2.*cov/(A*B))
             elif op == operator.mul:
                 u = 0.
-            elif op == operator.div:
+            elif op == div_op or op == operator.truediv:
                 u = 0.
                 if A != 0:
                     log.warning("Error prop failed because of DIV/0: {} {} {}".format(lhs, op, rhs))

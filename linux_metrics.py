@@ -4,7 +4,7 @@
 # for most of these it would be much nicer to measure durations, but
 # perf stat doesn't support that
 #
-
+from __future__ import print_function
 import os, sys
 
 class CS:
@@ -184,4 +184,4 @@ class Setup:
             r.metric(NetworkTX())
             r.metric(NetworkRX())
         elif sys.argv[0].find("toplev") >= 0:
-            print >>sys.stderr, "Need to be root for trace point Linux software metrics."
+            print("Need to be root for trace point Linux software metrics.", file=sys.stderr)

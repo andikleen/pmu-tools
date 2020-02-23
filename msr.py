@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # library and tool to access Intel MSRs (model specific registers)
 # Author: Andi Kleen
+from __future__ import print_function
 import glob
 import struct
 import os
@@ -58,7 +59,7 @@ if __name__ == '__main__':
     p.add_argument('--cpu', type=int, default=0, help='CPU to read on (writes always change all)')
     args = p.parse_args()
     if args.value is None and not args.setbit and not args.clearbit:
-        print "%x" % (readmsr(args.msr, args.cpu))
+        print("%x" % (readmsr(args.msr, args.cpu)))
     elif args.setbit:
         changebit(args.msr, args.setbit, 1)
     elif args.clearbit:
