@@ -22,7 +22,11 @@
 from __future__ import print_function
 import sys
 import re
-from urllib2 import urlopen, URLError
+try:
+    from urllib.request import urlopen
+    from urllib.error import URLError
+except ImportError:
+    from urllib2 import urlopen, URLError
 import os
 import string
 from fnmatch import fnmatch
