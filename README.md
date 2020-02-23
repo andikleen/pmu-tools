@@ -5,6 +5,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev can now generate a script with --gen-script to collect toplev data on a different
+  system. The generated data can be then imported with --import
 * toplev / event_download / ocperf have been ported to python3. They still work with python2,
   which is so far the default and used by the standard #! shebangs. But on systems that
   have no python2 they can be run with a python3 interpreter. This feature is still

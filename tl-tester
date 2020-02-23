@@ -174,6 +174,10 @@ EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --list-all
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --no-uncore $LOAD
 $WRAP ./toplev.py --force-hypervisor --force-cpu hsw $LOAD
 EVENTMAP=${cpus[hsw]} FORCECPU=hsw $WRAP ./toplev.py --metric-group +TopDownL1,TLB $LOAD
+$WRAP ./toplev.py -o log$$ --force-cpu skl --nodes IPC,Frontend_Bound,Backend_Bound -l3 $LOAD
+grep -v Retiring log$$
+checklog0
+rm log$$
 if python -c 'import matplotlib.pyplot' ; then
 $WRAP ./toplev.py --force-cpu snb --graph -o x.png --all $LOAD
 [ `stat -c %s x.png` -gt 1000 ]
@@ -217,6 +221,13 @@ EVENTMAP=${cpus[skl]} FORCEHT=1 FORCECPU=skl $WRAP ./toplev.py -o log$$ -l4 -I 1
 checklog0
 
 EVENTMAP=${cpus[hsx]} FORCECPU=hsx $WRAP ./toplev.py  -l4 true
+
+# test gen-script / import
+$WRAP ./toplev.py --all --gen-script > script$$
+chmod +x script$$
+OUT=tltest$$ ./script$$ $LOAD
+$WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
+rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 
 # check current platform
 $WRAP ./toplev.py -o /dev/null --no-desc -v --all --run-sample $LOAD

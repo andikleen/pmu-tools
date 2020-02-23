@@ -149,7 +149,8 @@ class CPU:
                 elif n[0] == "flags":
                     seen.add("flags")
                     self.has_tsx = "rtm" in n
-                    self.hypervisor = "hypervisor" in n
+                    if "hypervisor" in n:
+                        self.hypervisor = True
                 elif n[0] == "stepping":
                     seen.add("stepping")
                     self.step = int(n[2])
