@@ -5,6 +5,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev can now generate a script with --gen-script to collect toplev data on a different
+  system. The generated data can be then imported with --import
 * toplev now supports --per-core / --per-socket output in SMT mode, and also a --global mode.
   This also works with reprocessed data (from --perf-output / --import), so it is possible
   to slice a single collection. It is also possible to specify them at the same time
