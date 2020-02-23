@@ -535,12 +535,34 @@ def print_perf(r):
     print(" ".join(l))
     sys.stdout.flush()
 
+def gen_script(r):
+    print("#!/bin/sh")
+    print("# Generated from 'toplev " + " ".join(sys.argv) + " for CPU " + cpu.cpu)
+    print("# Show output with toplev.py " + " ".join([x for x in sys.argv if x != "--gen-script"]) + " --import toplev_perf.csv --force-cpuinfo toplev_cpuinfo --force-topology toplev_topology --force-cpu " + cpu.cpu)
+    print("# print until Ctrl-C or run with command on command line (e.g. sleep 10)")
+    print("# override output file names with OUT=... script (default toplev_...)")
+    print("OUT=${OUT:-toplev}")
+    print("find /sys/devices > ${OUT}_topology")
+    print("cat /proc/cpuinfo > ${OUT}_cpuinfo")
+    i = r.index('--log-fd')
+    r[i] = "-o"
+    r[i + 1] = "${OUT}_perf.csv"
+    i = r.index('-x;')
+    r[i] = '-x\\;'
+    i = r.index('-e')
+    r[i+1] = "'" + r[i+1] + "'"
+    print(" ".join(r + ['"$@"']))
+
 class PerfRun:
     """Control a perf subprocess."""
     def execute(self, r):
         if import_mode:
             self.perf = None
             return open(args._import, 'r')
+
+        if args.gen_script:
+            gen_script(r)
+            sys.exit(0)
 
         outp, inp = pty.openpty()
         if 'set_inheritable' in os.__dict__:
@@ -2131,6 +2153,9 @@ else:
 version = model.version
 model.print_error = pe
 model.Setup(runner)
+
+if args.gen_script:
+    args.quiet = True
 
 if "Errata_Whitelist" in model.__dict__:
     errata_whitelist += model.Errata_Whitelist.split(";")
