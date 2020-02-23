@@ -456,7 +456,12 @@ if args.graph:
     cmd = "PATH=$PATH:%s ; tl-barplot.py %s /dev/stdin" % (exe_dir(), extra)
     if not args.quiet:
         print(cmd)
-    args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
+    try:
+        # python 3
+        args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, text=True).stdin
+    except TypeError:
+        # python 2
+        args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
 
 if args.sample_repeat:
     args.run_sample = True
@@ -538,6 +543,8 @@ class PerfRun:
             return open(args._import, 'r')
 
         outp, inp = pty.openpty()
+        if 'set_inheritable' in os.__dict__:
+            os.set_inheritable(inp, 1)
         n = r.index("--log-fd")
         r[n + 1] = "%d" % (inp)
         print_perf(r)
