@@ -411,6 +411,9 @@ p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
 p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true')
 args, rest = p.parse_known_args()
 
+import_mode = args._import is not None
+event_nocheck = import_mode or args.no_check
+
 feat = PerfFeatures(args)
 emap = ocperf.find_emap()
 if not emap:
@@ -469,8 +472,6 @@ if args.sample_repeat:
 if args.handle_errata:
     args.ignore_errata = False
 
-import_mode = args._import is not None
-event_nocheck = import_mode or args.no_check
 print_all = args.verbose # or args.csv
 dont_hide = args.verbose
 csv_mode = args.csv
