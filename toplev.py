@@ -699,7 +699,7 @@ def print_account(ad):
                 print_not(a, a.errors[e], e, j)
             total[e] += 1
     if sum(total.values()) > 0 and not args.quiet:
-        print(", ".join(["%d events %s" % (num, e) for e, num in total.iteritems()]), file=sys.stderr)
+        print(", ".join(["%d events %s" % (num, e) for e, num in total.items()]), file=sys.stderr)
 
 class ValidEvents:
     def update(self):
@@ -787,9 +787,9 @@ def display_keys(runner, keys, mode):
                 threads = list(map(thread_fmt, runner.allowed_threads))
             else:
                 threads = []
-            all_cpus = list(set(map(core_fmt, cores) + threads))
+            all_cpus = list(set(map(core_fmt, cores))) + threads
     else:
-        all_cpus = keys
+        all_cpus = list(keys)
     if any(map(package_node, runner.olist)):
         all_cpus += ["S%d" % x for x in range(cpu.sockets)]
     return all_cpus
@@ -806,7 +806,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     if smt_mode:
         printed_cores = set()
         printed_sockets = set()
-        for j in res.keys():
+        for j in list(res.keys()):
             if j != "" and int(j) not in cpu.cputocore:
                  warn_once("Warning: input cpu %s not in cpuinfo." % j)
                  del res[j]
@@ -824,14 +824,14 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             runner.reset_thresh()
 
             if mode == OUTPUT_GLOBAL:
-                cpus = res.keys()
+                cpus = list(res.keys())
             elif mode == OUTPUT_SOCKET:
                 cpus = [x for x in res.keys() if key_to_socketid(x) == sid]
             else:
                 cpus = [x for x in res.keys() if key_to_coreid(x) == core]
-            combined_res = zip(*[res[x] for x in cpus])
+            combined_res = list(zip(*[res[x] for x in cpus]))
             combined_st = [deprecated_combine_valstat(z)
-                  for z in itertools.izip(*[valstats[x] for x in cpus])]
+                  for z in zip(*[valstats[x] for x in cpus])]
             env['num_merged'] = len(cpus)
 
             if mode in (OUTPUT_CORE,OUTPUT_SOCKET,OUTPUT_GLOBAL):
@@ -845,7 +845,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             # in case of mutual dependencies between SMT and non SMT
             # but don't loop forever (?)
             used_stat = stat
-            for _ in xrange(3):
+            for _ in range(3):
                 changed = runner.compute(merged_res, rev[j], merged_st, env, thread_node, used_stat)
                 if core not in printed_cores:
                     verify_rev(rev, cpus)
@@ -893,9 +893,9 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
         cpus = [x for x in res.keys()
                 if (not is_number(j)) or int(j) in runner.allowed_threads]
         combined_res = [sum([res[j][i] for j in cpus])
-                        for i in xrange(len(res[cpus[0]]))]
+                        for i in range(len(res[cpus[0]]))]
         combined_st = [deprecated_combine_valstat([valstats[j][i] for j in cpus])
-                       for i in xrange(len(valstats[cpus[0]]))]
+                       for i in range(len(valstats[cpus[0]]))]
         runner.compute(combined_res, rev[cpus[0]], combined_st, env, package_node, stat)
         runner.print_res(out, interval, "", package_node, None)
     elif mode != OUTPUT_THREAD:
@@ -1028,7 +1028,7 @@ def group_number(num, events):
         if all([x in outgroup_events for x in group]):
             idx = 0
         else:
-            idx = gnum.next()
+            idx = next(gnum)
         return [idx] * len(group)
 
     gnums = list(map(group_nums, events))
@@ -1288,7 +1288,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
         uv = None
         tmp = [ev(lambda ev, level:
                   lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
-                  for off in xrange(env['num_merged'])]
+                  for off in range(env['num_merged'])]
         if tmp:
             uv = tmp[0]
             for o in tmp[1:]:
@@ -1318,7 +1318,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
         warn_once("Not enough lines in perf output for res (%d vs %d for %s)" %
                 (index, len(res), obj.name))
         return make_uval(0)
-    if isinstance(vv, types.TupleType):
+    if type(vv) is tuple:
         if cpuoff == -1:
             vv = sum(vv)
         else:
@@ -1350,7 +1350,7 @@ def update_res_map(evnum, objl, base):
             if r in evnum:
                 obj.res_map[lev] = base + evnum.index(r)
 
-class BadEvent:
+class BadEvent(Exception):
     def __init__(self, name):
         self.event = name
 
@@ -1414,7 +1414,7 @@ def any_node(obj):
     return True
 
 def count(f, l):
-    return len(filter(f, l))
+    return len(list(filter(f, l)))
 
 def obj_domain(obj):
     return obj.domain.replace("Estimated", "est").replace("Calculated", "calc")
@@ -1881,7 +1881,7 @@ class Runner:
                 if obj.name not in stat.errors:
                     stat.errcount += obj.errcount
                 stat.errors.add(obj.name)
-                stat.referenced |= set(obj.res_map.itervalues())
+                stat.referenced |= set(obj.res_map.values())
 
         # step 2: propagate siblings
         changed += self.propagate_siblings()
@@ -1980,7 +1980,7 @@ def do_sample(sample_obj, rest, count):
     nsamp = [(remove_pp(x[0]), x[1])
              if unsup_event(x[0], unsup_pebs) else x
              for x in nsamp]
-    if cmp(nsamp, samples):
+    if nsamp != samples:
         missing = [x[0] for x in set(samples) - set(nsamp)]
         if not args.quiet:
             print("warning: update kernel to handle sample events:", file=sys.stderr)
