@@ -87,5 +87,5 @@ class Setup(object):
         nodes = sorted(nodes, key=lambda n: n.level)
 
         # Pass to runner
-        map(lambda n : runner.run(n), nodes)
-        map(lambda m : runner.metric(m), user_metrics)
+        list(map(lambda n : runner.run(n), nodes))
+        list(map(lambda m : runner.metric(m), user_metrics))
