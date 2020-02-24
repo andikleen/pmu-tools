@@ -303,56 +303,116 @@ Measure program running on core 0 with all nodes and metrics enables
 
 ## Options:
 
-    -h, --help            show this help message and exit
-    --verbose, -v         Print all results even when below threshold or
-                          exceeding boundaries. Note this can result in bogus
-                          values, as the TopDown methodology relies on
-                          thresholds to correctly characterize workloads.
-    --kernel              Only measure kernel code
-    --user                Only measure user code
-    --print-group, -g     Print event group assignments
-    --no-desc             Do not print event descriptions
-    --csv CSV, -x CSV     Enable CSV mode with specified delimeter
-    --interval INTERVAL, -I INTERVAL
-                          Enable interval mode with ms interval
-    --output OUTPUT, -o OUTPUT
-                          Set output file
-    --graph               Automatically graph interval output with tl-barplot.py
-    --graph-cpu GRAPH_CPU
-                          CPU to graph using --graph
-    --title TITLE         Set title of graph
-    --xkcd                Use xkcd plotting mode for graph
-    --level LEVEL, -l LEVEL
-                          Measure upto level N (max 5)
-    --metrics, -m         Print extra metrics
-    --raw                 Print raw values
-    --sw                  Measure perf Linux metrics
-    --no-util             Do not measure CPU utilization
-    --tsx                 Measure TSX metrics
-    --all                 Measure everything available
-    --frequency           Measure frequency
-    --no-group            Dont use groups
-    --no-multiplex        Do not multiplex, but run the workload multiple times
-                          as needed. Requires reproducible workloads.
-    --show-sample         Show command line to rerun workload with sampling
-    --run-sample          Automatically rerun workload with sampling
-    --valcsv VALCSV, -V VALCSV
-                          Write raw counter values into CSV file
-    --stats               Show statistics on what events counted
-    --power               Display power metrics
-    --core CORE           Limit output to cores. Comma list of Sx-Cx-Tx. All
-                          parts optional.
-    --single-thread, -S   Measure workload as single thread. Workload must run
-                          single threaded. In SMT mode other thread must be
-                          idle.
-    --long-desc           Print long descriptions instead of abbreviated ones.
-    --force-events        Assume kernel supports all events. May give wrong
-                          results.
-    --columns             Print CPU output in multiple columns
-    --nodes NODES         Include or exclude nodes (with + to add, ^ to remove,
-                          comma separated list, wildcards allowed)
-    --quiet               Avoid unnecessary status output
-    --bottleneck          Show critical bottleneck
+General operation:
+  --interval INTERVAL, -I INTERVAL
+                        Measure every ms instead of only once
+  --no-multiplex        Do not multiplex, but run the workload multiple times
+                        as needed. Requires reproducible workloads.
+  --single-thread, -S   Measure workload as single thread. Workload must run
+                        single threaded. In SMT mode other thread must be
+                        idle.
+  --fast, -F            Skip sanity checks to optimize CPU consumption
+  --import _IMPORT      Import specified perf stat output file instead of
+                        running perf. Must be for same cpu, same arguments,
+                        same /proc/cpuinfo, same topology, unless overriden
+  --gen-script          Generate script to collect perfmon information for
+                        --import later
+
+Measurement filtering:
+  --kernel              Only measure kernel code
+  --user                Only measure user code
+  --core CORE           Limit output to cores. Comma list of Sx-Cx-Tx. All
+                        parts optional.
+
+Select events:
+  --level LEVEL, -l LEVEL
+                        Measure upto level N (max 6)
+  --metrics, -m         Print extra metrics
+  --sw                  Measure perf Linux metrics
+  --no-util             Do not measure CPU utilization
+  --tsx                 Measure TSX metrics
+  --all                 Measure everything available
+  --frequency           Measure frequency
+  --power               Display power metrics
+  --nodes NODES         Include or exclude nodes (with + to add, -|^ to
+                        remove, comma separated list, wildcards allowed)
+  --reduced             Use reduced server subset of nodes/metrics
+  --metric-group METRIC_GROUP
+                        Add (+) or remove (-|^) metric groups of metrics,
+                        comma separated list from --list-metric-groups.
+
+Query nodes:
+  --list-metrics        List all metrics
+  --list-nodes          List all nodes
+  --list-metric-groups  List metric groups
+  --list-all            List every supported node/metric/metricgroup
+
+Workarounds:
+  --no-group            Dont use groups
+  --force-events        Assume kernel supports all events. May give wrong
+                        results.
+  --ignore-errata       Do not disable events with errata
+  --handle-errata       Disable events with errata
+
+Output:
+  --per-core            Aggregate output per core
+  --per-socket          Aggregate output per socket
+  --per-thread          Aggregate output per CPU thread
+  --global              Aggregate output for all CPUs
+  --no-desc             Do not print event descriptions
+  --desc                Force event descriptions
+  --verbose, -v         Print all results even when below threshold or
+                        exceeding boundaries. Note this can result in bogus
+                        values, as the TopDown methodology relies on
+                        thresholds to correctly characterize workloads.
+  --csv CSV, -x CSV     Enable CSV mode with specified delimeter
+  --output OUTPUT, -o OUTPUT
+                        Set output file
+  --split-output        Generate multiple output files, one for each specified
+                        aggregation option (with -o)
+  --graph               Automatically graph interval output with tl-barplot.py
+  --graph-cpu GRAPH_CPU
+                        CPU to graph using --graph
+  --title TITLE         Set title of graph
+  --quiet               Avoid unnecessary status output
+  --long-desc           Print long descriptions instead of abbreviated ones.
+  --columns             Print CPU output in multiple columns for each node
+  --summary             Print summary at the end. Only useful with -I
+  --no-area             Hide area column
+  --perf-output PERF_OUTPUT
+                        Save perf stat output in specified file
+
+Environment:
+  --force-cpu {snb,jkt,ivb,ivt,hsw,hsx,slm,bdw,bdx,skl,knl,skx,clx,icl}
+                        Force CPU type
+  --force-topology findsysoutput
+                        Use specified topology file (find /sys/devices)
+  --force-cpuinfo cpuinfo
+                        Use specified cpuinfo file (/proc/cpuinfo)
+  --force-hypervisor    Assume running under hypervisor (no uncore, no
+                        offcore, no PEBS)
+  --no-uncore           Disable uncore events
+  --no-check            Do not check that PMU units exist
+
+Additional information:
+  --print-group, -g     Print event group assignments
+  --raw                 Print raw values
+  --valcsv VALCSV, -V VALCSV
+                        Write raw counter values into CSV file
+  --stats               Show statistics on what events counted
+
+Sampling:
+  --show-sample         Show command line to rerun workload with sampling
+  --run-sample          Automatically rerun workload with sampling
+  --sample-args SAMPLE_ARGS
+                        Extra rguments to pass to perf record for sampling.
+                        Use + to specify -
+  --sample-repeat SAMPLE_REPEAT
+                        Repeat measurement and sampling N times. This
+                        interleaves counting and sampling. Useful for
+                        background collection with -a sleep X.
+  --sample-basename SAMPLE_BASENAME
+                        Base name of sample perf.data files
 
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplev can be used.
