@@ -44,6 +44,8 @@
 # topologyfile is a dump of the sysfs of another system (find /sys > file)
 # Needed for uncore units. This is useful to generate perf command lines for other systems.
 #
+# OCVERBOSE=1 print while files are opened
+#
 # Special arguments:
 # --no-period   Never add a period
 # --print       only print
@@ -69,6 +71,7 @@ import event_download
 force_download = False
 pebs_enable = "p"
 experimental = False
+ocverbose = os.getenv("OCVERBOSE") is not None
 
 exists_cache = dict()
 
@@ -728,6 +731,8 @@ class EmapNativeJSON(object):
         if name.find("JKT") >= 0 or name.find("Jaketown") >= 0:
             self.latego = True
         try:
+            if ocverbose:
+                print("open", name)
             data = json.load(open(name, 'rb'))
         except ValueError as e:
             print("Cannot open", name + ":", e.message, file=sys.stderr)
@@ -741,6 +746,8 @@ class EmapNativeJSON(object):
 
     def add_offcore(self, name):
         """Read offcore table."""
+        if ocverbose:
+            print("open", name)
         data = json.load(open(name, 'rb'))
         #   {
         #    "MATRIX_REQUEST": "DEMAND_DATA_RD",
@@ -779,6 +786,8 @@ class EmapNativeJSON(object):
             create_event(*(a + b))
 
     def add_uncore(self, name, force=False):
+        if ocverbose:
+            print("open", name)
         data = json.load(open(name, "rb"))
         for row in data:
             name = row['EventName'].lower()
