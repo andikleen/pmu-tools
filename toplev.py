@@ -27,6 +27,7 @@ from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
 import tl_cpu
 import tl_output
 import ocperf
+import event_download
 from tl_uval import UVal, combine_uval
 
 known_cpus = (
@@ -42,8 +43,8 @@ known_cpus = (
     ("simple", ()),
     ("skl", (94, 78, 142, 158, )),
     ("knl", (87, )),
-    ("skx", ((85, 4,) )),
-    ("clx", ((85, 5,) )),
+    ("skx", ((85, 4,), )),
+    ("clx", ((85, 5,), )),
     ("icl", (126, )),
 )
 
@@ -396,7 +397,7 @@ g.add_argument('--no-perf', help="Don't print perf command line", action='store_
 g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
 
 g = p.add_argument_group('Environment')
-g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus if not x[0] == "simple"])
+g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
 g.add_argument('--force-topology', metavar='findsysoutput', help='Use specified topology file (find /sys/devices)')
 g.add_argument('--force-cpuinfo', metavar='cpuinfo', help='Use specified cpuinfo file (/proc/cpuinfo)')
 g.add_argument('--force-hypervisor', help='Assume running under hypervisor (no uncore, no offcore, no PEBS)', action='store_true')
@@ -427,6 +428,36 @@ import_mode = args._import is not None
 event_nocheck = import_mode or args.no_check
 
 feat = PerfFeatures(args)
+
+def gen_cpu_name(cpu):
+    if cpu == "simple":
+        return event_download.get_cpustr()
+    for j in known_cpus:
+        if cpu == j[0]:
+            if isinstance(j[1][0], tuple):
+                return "GenuineIntel-6-%02X-%d" % j[1][0]
+            else:
+                return "GenuineIntel-6-%02X" % j[1][0]
+    assert False
+
+env = tl_cpu.Env()
+
+if args.force_cpu:
+    env.forcecpu = args.force_cpu
+    cpu = gen_cpu_name(args.force_cpu)
+    if not os.getenv("EVENTMAP"):
+        os.environ["EVENTMAP"] = cpu
+    if not os.getenv("UNCORE"):
+        os.environ["UNCORE"] = cpu
+if args.force_topology:
+    if not os.getenv("TOPOLOGY"):
+        os.environ["TOPOLOGY"] = args.force_topology
+        ocperf.topology = None # force reread
+if args.force_cpuinfo:
+    env.cpuinfo = args.force_cpuinfo
+if args.force_hypervisor:
+    env.hypervisor = True
+
 emap = ocperf.find_emap()
 if not emap:
     sys.exit("Unknown CPU or CPU event map not found.")
@@ -503,30 +534,6 @@ def check_ratio(l):
     if print_all:
         return True
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
-
-def gen_cpu_name(cpu):
-    for j in known_cpus:
-        if cpu == j[0]:
-            if isinstance(j[1][0], int):
-                if cpu == "skx":
-                    return "GenuineIntel-6-%02X-4" % j[1][0]
-                return "GenuineIntel-6-%02X" % j[1][0]
-            return "GenuineIntel-6-%02X-%02X" % j[1][0]
-    assert False
-
-env = tl_cpu.Env()
-
-if args.force_cpu:
-    env.forcecpu = args.force_cpu
-    if not os.getenv("EVENTMAP"):
-        os.putenv("EVENTMAP", gen_cpu_name(args.force_cpu))
-if args.force_topology:
-    if not os.getenv("TOPOLOGY"):
-        os.putenv("TOPOLOGY", args.force_topology)
-if args.force_cpuinfo:
-    env.cpuinfo = args.force_cpuinfo
-if args.force_hypervisor:
-    env.hypervisor = True
 
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
 
