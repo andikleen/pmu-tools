@@ -572,6 +572,8 @@ an easier answer to question Q2j in Vince Weaver's perf events FAQ.
 
 # Testing
 
+When modifying toplev please run tl-tester. For ocperf run tester.
+For jevents run jevents/tester. other-tester tests other random tools.
 The all-tester script runs all test suites.
 
 # Mailing list

@@ -837,9 +837,13 @@ def verify_rev(rev, cpus):
             assert o == rev[cpus[0]][ind]
         assert len(rev[k]) == len(rev[cpus[0]])
 
+# from https://stackoverflow.com/questions/4836710/does-python-have-a-built-in-function-for-string-natural-sort
+def num_key(s):
+    return [int(t) if t.isdigit() else t for t in re.split('(\d+)', s)]
+
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat = runner.stat
-    keys = sorted(res.keys())
+    keys = sorted(res.keys(), key=num_key)
     out.set_cpus(display_keys(runner, keys, mode))
     if smt_mode:
         printed_cores = set()
@@ -848,7 +852,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             if j != "" and int(j) not in cpu.cputocore:
                  warn_once("Warning: input cpu %s not in cpuinfo." % j)
                  del res[j]
-        keys = sorted(res.keys())
+        keys = sorted(res.keys(), key=num_key)
         for j in keys:
             if j != "" and int(j) not in runner.allowed_threads:
                 continue
