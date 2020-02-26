@@ -393,6 +393,7 @@ g.add_argument('--summary', help='Print summary at the end. Only useful with -I'
 g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file', type=argparse.FileType('w'))
 g.add_argument('--no-perf', help="Don't print perf command line", action='store_true')
+g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
 
 g = p.add_argument_group('Environment')
 g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus if not x[0] == "simple"])
@@ -582,6 +583,8 @@ class PerfRun:
         n = r.index("--log-fd")
         r[n + 1] = "%d" % (inp)
         print_perf(r)
+        if args.print:
+            sys.exit(0)
         self.perf = subprocess.Popen(r, close_fds=False)
         os.close(inp)
         return os.fdopen(outp, 'r')
