@@ -137,7 +137,8 @@ def download(match, key=None, link=True):
             matchfn = match
             if matchfn == "*":
                 matchfn = cpu
-            fn = "%s-%s.json" % (matchfn, sanitize(typ, allowed_chars))
+            if ".json" not in matchfn:
+                fn = "%s-%s.json" % (matchfn, sanitize(typ, allowed_chars))
             try:
                 os.remove(os.path.join(dir, fn))
             except OSError:
@@ -181,6 +182,8 @@ def eventlist_name(name=None, key="core"):
         name = get_cpustr()
     cache = getdir()
     fn = name
+    if os.path.exists(fn):
+        return fn
     if ".json" not in name:
         fn = "%s-%s.json" % (name, key)
     if "/" in fn:
