@@ -392,6 +392,7 @@ g.add_argument('--columns', help='Print CPU output in multiple columns for each 
 g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
 g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file', type=argparse.FileType('w'))
+g.add_argument('--no-perf', help="Don't print perf command line", action='store_true')
 
 g = p.add_argument_group('Environment')
 g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus if not x[0] == "simple"])
@@ -537,7 +538,7 @@ if cpu.hypervisor or args.no_uncore:
     feat.supports_power = False
 
 def print_perf(r):
-    if args.quiet:
+    if args.quiet or args.no_perf:
         return
     l = ["'" + x + "'" if x.find("{") >= 0 else x for x in r]
     l = [x.replace(";", "\;") for x in l]
