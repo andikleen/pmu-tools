@@ -8,6 +8,7 @@
 # %d will be replaced with the cpu number
 # format can be offline to offline the cpu or online to online
 # Author: Andi Kleen
+from __future__ import print_function
 import sys, os, re, argparse
 
 def numfile(fn):
@@ -18,9 +19,9 @@ def numfile(fn):
 
 def output(p, fmt):
     if fmt:
-        print fmt % (p,)
+        print(fmt % (p,))
     else:
-        print p
+        print(p)
 
 ap = argparse.ArgumentParser(description='''
 query cpu topology and print all matching cpu numbers
