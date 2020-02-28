@@ -16,57 +16,59 @@ for args in "" "-A" "--per-socket" "--per-core" "-r2" ; do
 
 # interval-normalize.py
 
-${PERF} stat -I100 $args -a -x, -o x.csv sleep 1
+${PERF} stat -I100 $args -a -x, -o x$$.csv sleep 1
 
-interval-normalize.py < x.csv
-interval-normalize.py < x.csv > y.csv
+$WRAP interval-normalize.py < x$$.csv
+$WRAP interval-normalize.py < x$$.csv > y$$.csv
 
-grep -vq PARSE-ERROR y.csv
+grep -vq PARSE-ERROR y$$.csv
 for i in branch-misses branches context-switches cycles instructions page-faults ; do
-	grep -q $i y.csv
+	grep -q $i y$$.csv
 done
 
+grep -vq PARSE-ERROR x$$.csv
+
 # plot-normalized.py
-plot-normalized.py -o x2.png y.csv
+$WRAP plot-normalized.py -o x$$-2.png y$$.csv
 
 # interval-plot.py
-interval-plot.py x.csv -o x.png
+$WRAP interval-plot.py x$$.csv -o x$$.png
 
 done
 
 for args in "-l2" "--all -v" "-l3 --single-thread" ; do
 
-EVENTMAP=${cpus[hsw]} FORCECPU=$DCPU toplev.py -I 100 $args -o x.csv -x, -a sleep 1
-interval-normalize.py < x.csv
-interval-normalize.py < x.csv > y.csv
+$WRAP toplev.py -v --force-cpu ${DCPU:-hsw} -I 100 $args -o x$$.csv -x, -a ./workloads/BC1s
+$WRAP interval-normalize.py < x$$.csv
+$WRAP interval-normalize.py < x$$.csv > y$$.csv
 
-grep -vq PARSE-ERROR y.csv
-grep Frontend y.csv
-interval-plot.py x.csv -o x.png
+grep -vq PARSE-ERROR y$$.csv
+grep Frontend y$$.csv
+$WRAP interval-plot.py x$$.csv -o x$$.png
 
 # plot-normalized.py
-plot-normalized.py -o x2.png y.csv
+$WRAP plot-normalized.py -o x$$-2.png y$$.csv
 
 
 done
 
 # cputop.py
 
-cputop.py "socket == 0"
-cputop.py "thread == 0 and socket == 0"
-cputop.py "thread == 1" offline
-cputop.py offline online
-[ $(cputop.py True | wc -l | cut -d ' ' -f 1) -eq $(getconf _NPROCESSORS_ONLN) ]
+$WRAP cputop.py "socket == 0"
+$WRAP cputop.py "thread == 0 and socket == 0"
+$WRAP cputop.py "thread == 1" offline
+$WRAP cputop.py offline online
+[ $($WRAP cputop.py True | wc -l | cut -d ' ' -f 1) -eq $(getconf _NPROCESSORS_ONLN) ]
 
-# list-events.py
+# ist-events.py
 
-EVENTMAP=${cpus[hsw]} list-events.py > x.lst
-[ $(wc -l x.lst | cut -d ' ' -f 1) -gt 20 ]
-grep -qi rtm_retired.aborted x.lst
-rm x.lst
+EVENTMAP=${cpus[hsw]} $WRAP list-events.py > x$$.lst
+[ $(wc -l x$$.lst | cut -d ' ' -f 1) -gt 20 ]
+grep -qi rtm_retired.aborted x$$.lst
+rm x$$.lst
 
 # event-translate.py
-EVENTMAP=${cpus[hsw]}  event-translate.py r4c9 | grep -q rtm_retired.aborted
+EVENTMAP=${cpus[hsw]} $WRAP event-translate.py r4c9 | grep -q rtm_retired.aborted
 
 # untested: counterdiff.py
 
@@ -77,6 +79,8 @@ EVENTMAP=${cpus[hsw]}  event-translate.py r4c9 | grep -q rtm_retired.aborted
 # untested: msr.py
 # untested: pci.py
 # untested: event-rmap.py
+
+rm -f x$$.csv x$$-2.png y$$.csv
 
 trap "" ERR 0
 
