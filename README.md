@@ -5,6 +5,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* New tool utilized.py to remove idle CPUs from toplev output
 * toplev --import can now directly decompress xz and gz files. -o / --valcsv / --perf-output
   can now directly compress files if their names are specified with .xz or .gz.
 * toplev update to Ahmad Yasin's/Anton Hanna's TMA 4.0:
