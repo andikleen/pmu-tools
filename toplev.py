@@ -29,6 +29,7 @@ import tl_output
 import ocperf
 import event_download
 from tl_uval import UVal, combine_uval
+from tl_io import flex_open_r, flex_open_w
 
 known_cpus = (
     ("snb", (42, )),
@@ -392,7 +393,7 @@ g.add_argument('--long-desc', help='Print long descriptions instead of abbreviat
 g.add_argument('--columns', help='Print CPU output in multiple columns for each node', action='store_true')
 g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
 g.add_argument('--no-area', help='Hide area column', action='store_true')
-g.add_argument('--perf-output', help='Save perf stat output in specified file', type=argparse.FileType('w'))
+g.add_argument('--perf-output', help='Save perf stat output in specified file')
 g.add_argument('--no-perf', help="Don't print perf command line", action='store_true')
 g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
 
@@ -408,7 +409,7 @@ g = p.add_argument_group('Additional information')
 g.add_argument('--print-group', '-g', help='Print event group assignments',
                action='store_true')
 g.add_argument('--raw', help="Print raw values", action='store_true')
-g.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file', type=argparse.FileType('w'))
+g.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file')
 g.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
 
 g = p.add_argument_group('Sampling')
@@ -474,6 +475,18 @@ if args.pid:
     rest = ["--pid", args.pid] + rest
 if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
+
+if args.valcsv:
+    try:
+        args.valcsv = flex_open_w(args.valcsv)
+    except IOError:
+        sys.exit("Cannot open valcsv file")
+
+if args.perf_output:
+    try:
+        args.perf_output = flex_open_w(args.perf_output)
+    except IOError:
+        sys.exit("Cannot open perf output file")
 
 if args.all:
     args.tsx = True
@@ -578,7 +591,7 @@ class PerfRun:
     def execute(self, r):
         if import_mode:
             self.perf = None
-            return open(args._import, 'r')
+            return flex_open_r(args._import)
 
         if args.gen_script:
             gen_script(r)

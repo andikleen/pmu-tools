@@ -19,6 +19,7 @@ import re
 import sys
 from tl_stat import isnan
 from tl_uval import UVal, combine_uval
+from tl_io import flex_open_w
 
 def open_logfile(name, typ):
     if name is None or name == "":
@@ -31,7 +32,7 @@ def open_logfile(name, typ):
         else:
             name += "-" + typ
     try:
-        return open(name, "w")
+        return flex_open_w(name)
     except IOError:
         sys.exit("Cannot open logfile %s" % name)
 
