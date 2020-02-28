@@ -157,7 +157,7 @@ checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/  'event=0xc4,umask=0x1,name=br_i
 checkp cpu/BR_INST_RETIRED.CONDITIONAL/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional/$'
 checkp cpu/br_inst_retired.conditional/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional/$'
 checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/p  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/p$'
-checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/ppu  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/ppu$'
+checkp 'cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/upp'  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/(ppu|upp)$'
 export EVENTMAP=${cpus[wsm-sp]}
 DIRECT_MSR=1 checkp l2_write.rfo.m_state:c4 'r4000827'
 unset DIRECT_MSR
