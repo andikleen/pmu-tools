@@ -77,7 +77,7 @@ def resolve(row, ind):
     return v
 
 keys = events.keys()
-writer.writerow(["Timestamp"] + (["CPU"] if cpu is not None else []) + keys)
+writer.writerow(["Timestamp"] + (["CPU"] if cpu is not None else []) + list(keys))
 for row, ts, cpunum in zip(out, times, cpus):
     writer.writerow([ts] +
                 ([cpunum] if cpu is not None else []) +

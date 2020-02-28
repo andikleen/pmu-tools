@@ -6,6 +6,7 @@
 # delimeter must be ,
 # this is for data that is not normalized
 # TODO: move legend somewhere else where it doesn't overlap?
+from __future__ import print_function
 import csv
 import sys
 import matplotlib.pyplot as plt
@@ -34,7 +35,7 @@ if args.style:
         from mpltools import style
         style.use(args.style)
     except ImportError:
-        print "Need mpltools for setting styles (pip install mpltools)"
+        print("Need mpltools for setting styles (pip install mpltools)")
 
 import gen_level
 
@@ -42,7 +43,7 @@ try:
     import brewer2mpl
     all_colors = brewer2mpl.get_map('Paired', 'Qualitative', 12).hex_colors
 except ImportError:
-    print "Install brewer2mpl for better colors (pip install brewer2mpl)"
+    print("Install brewer2mpl for better colors (pip install brewer2mpl)")
     all_colors = ('green','orange','red','blue',
               'black','olive','purple','#6960EC', '#F0FFFF',
               '#728C00', '#827B60', '#F87217', '#E55451', # 16
@@ -89,7 +90,7 @@ if args.xkcd:
     try:
         plt.xkcd()
     except NameError:
-        print "Please update matplotlib. Cannot enable xkcd mode."
+        print("Please update matplotlib. Cannot enable xkcd mode.")
 
 n = 1
 for l in levels:
@@ -98,7 +99,7 @@ for l in levels:
         ax.set_ylim(0, 100)
     t = []
     for j in assigned.keys():
-        print j, gen_level.get_level(j), l
+        print(j, gen_level.get_level(j), l)
         if gen_level.get_level(j) == l:
             t.append(j)
             if 'style' not in globals():

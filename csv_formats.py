@@ -1,4 +1,5 @@
 # distinguish the bewildering variety of perf/toplev CSV formats
+from __future__ import print_function
 import re
 from collections import namedtuple
 
@@ -96,5 +97,5 @@ def parse_csv_row(row):
             return r
     if row[0].startswith("#"):    # comment
         return None
-    print "PARSE-ERROR", row
+    print("PARSE-ERROR", row)
     return None
