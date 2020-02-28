@@ -1720,7 +1720,7 @@ class Runner:
         def want_node(obj):
             if args.reduced and has(obj, 'server') and not obj.server:
                 return False
-            if args.no_uncore and has(obj, 'domain') and obj.area == "Info.System":
+            if args.no_uncore and has(obj, 'area') and obj.area == "Info.System":
                 return False
             want = ((obj.metric and args.metrics) or obj.name in add_met or obj in parents) and not obj.name in remove_met
             if not obj.metric and obj.level <= self.max_level:
