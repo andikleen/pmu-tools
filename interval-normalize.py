@@ -36,7 +36,10 @@ rc = csv.reader(args.inputfile)
 res = []
 writer = csv.writer(args.output)
 lastcpu = None
+cpu = None
 for row in rc:
+    if len(row) > 0 and row[0] == "Timestamp":
+        continue
     r = csv_formats.parse_csv_row(row)
     if r is None:
         continue

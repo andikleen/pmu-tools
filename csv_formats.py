@@ -16,7 +16,7 @@ def is_event(n):
     return re.match(r'[a-zA-Z.-]+', n) is not None
 
 def is_number(n):
-    return re.match(r'[0-9]+', n) is not None
+    return re.match(r'\s*[0-9]+', n) is not None
 
 def is_ts(n):
     return re.match(r'\s*[0-9.]+', n) is not None
@@ -70,9 +70,7 @@ fmtmaps = {
 Row = namedtuple('Row', ['ts', 'cpu', 'ev', 'val', 'enabled', 'running'])
 
 def check_format(fmt, row):
-    if len(row) < len(fmt):
-       False
-    if all([x(n) for (x, n) in zip(fmt, row)]):
+    if all([x(n.strip()) for (x, n) in zip(fmt, row)]):
         vals = [None] * 6
         for i, j in enumerate(fmt):
             if j in fmtmaps:
