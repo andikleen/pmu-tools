@@ -1,23 +1,31 @@
 #!/bin/bash
 # one stop shop to test all pmu-tools test suites
+# to run it faster use parallel-tester
 
 set -e
 set -x
-PATH=$PATH:.
 
 # test ocperf
-tester
+./tester
+WRAP=python3 ./tester
 
 # test toplev
-tl-tester
+./tl-tester
+WRAP=python3 ./tl-tester
+MATCH="icl" DCPU="icl --no-group" NOGROUP=1 NORES=1 LOAD=./workloads/BC1s ./tl-tester
+MATCH=snb DCPU=snb ./tl-tester
+MATCH=hsw DCPU=hsw ./tl-tester
+MATCH=slm DCPU=slm NORES=1 NOGROUP=1 ./tl-tester
+MATCH=knl DCPU=knl NORES=1 NOGROUP=1 ./tl-tester
 
 # test other tools
-other-tester
+./other-tester
+WRAP=python3 ./other-tester
 
 # test jevents
 make -C jevents
 cd jevents
-tester
+./tester
 cd ..
 
 # test perf.data parser
