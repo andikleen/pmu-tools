@@ -120,19 +120,19 @@ checkmsr2 slm offcore_response.any_request.any_response "msr 1a6 = 18008"
 # parser checks
 checkp() 
 {
-	$WRAP ./ocperf.py --print stat $3 -e "$1" > tlog
-	grep "$2" tlog
+	$WRAP ./ocperf.py --print stat $3 -e "$1" > tlog$$
+	egrep "$2" tlog$$
 }
 
 checknotp()
 {
-	$WRAP ./ocperf.py --print stat $3 -e "$1" > tlog
-	grep -v "$2" tlog
+	$WRAP ./ocperf.py --print stat $3 -e "$1" > tlog$$
+	egrep -v "$2" tlog$$
 }
 
 checkp_record() {
-	$WRAP ./ocperf.py --print record -e "$1" > tlog
-	grep "$2" tlog
+	$WRAP ./ocperf.py --print record -e "$1" > tlog$$
+	egrep "$2" tlog$$
 }
 export EVENTMAP=${cpus[hsw]}
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL 'r1c4$'
@@ -170,12 +170,12 @@ checkp OFFCORE_RESPONSE:request=DEMAND_RFO:response=LLC_MISS.REMOTE_HITM  \
 
 checks()
 {
-	$WRAP ./ocperf.py stat -e "$1" true > tlog
+	$WRAP ./ocperf.py stat -e "$1" true > tlog$$
 }
 
 checkr()
 {
-	$WRAP ./ocperf.py record -e "$1" true > tlog
+	$WRAP ./ocperf.py record -e "$1" true > tlog$$
 }
 
 checks '{cycles,cpu_clk_unhalted.thread,instructions}'
@@ -188,30 +188,30 @@ checkr '{node-stores,instructions}:S'
 checkr '{cpu/cpu-cycles/,instructions}:S'
 checkr '{cpu/instructions,period=1000000/u,cpu_clk_unhalted.thread}:S'
 checkp 'cpu_clk_unhalted:period=123' 'period=123'
-cat >top2 <<EOL
+cat >top2$$ <<EOL
 /sys/devices/uncore_r2pcie
 /sys/devices/uncore_r2pcie/format/umask
 /sys/devices/uncore_r2pcie/format/cmask
 EOL
-TOPOLOGY=top2 UNCORE=Jaketown* checkp 'unc_r2_iio_credits_acquired.ncb:state=0x123' 'filter_state=0x123'
+TOPOLOGY=top2$$ UNCORE=Jaketown* checkp 'unc_r2_iio_credits_acquired.ncb:state=0x123' 'filter_state=0x123'
 
-cat >top2 <<EOL
+cat >top2$$ <<EOL
 /sys/devices/uncore_cbox_0
 /sys/devices/uncore_cbox_0/format/umask
 /sys/devices/uncore_cbox_1
 /sys/devices/uncore_cbox_1/format/umask
 EOL
-TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1'
-TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_0'
-TOPOLOGY=top2 UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_1'
-TOPOLOGY=top2 UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1' --noexplode
-TOPOLOGY=top2 UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox[^_]' --noexplode
+TOPOLOGY=top2$$ UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1'
+TOPOLOGY=top2$$ UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_0'
+TOPOLOGY=top2$$ UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_1'
+TOPOLOGY=top2$$ UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1' --noexplode
+TOPOLOGY=top2$$ UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox[^_]' --noexplode
 
-TOPOLOGY=top2 EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
+TOPOLOGY=top2$$ EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
 
 checkp_record '{cpu/cpu_clk_unhalted.thread/,cpu/br_inst_retired.all_branches/}:S'  \
 	'{cpu/event=0x3c,umask=0x0,name=cpu_clk_unhalted_thread,period=2000003/,cpu/event=0xc4,umask=0x0,name=br_inst_retired_all_branches/}:S'
 trap "" ERR 0
-rm -f tlog
+rm -f tlog$$ top2$$
 
 echo SUCCEEDED
