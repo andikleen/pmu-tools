@@ -1,0 +1,4 @@
+#!/bin/sh
+# run all test suites in parallel
+# requires GNU parallel
+exec parallel --halt now,fail=1 < all-tester
