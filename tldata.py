@@ -66,6 +66,9 @@ class TLData:
                 self.metrics.add(n)
             self.levels[n].add(name)
             prevts = ts
+        if len(val.keys()) > 0:
+            self.times.append(prevts)
+            self.vals.append(val)
 
 early_plots = ["TopLevel", "CPU utilization", "Power", "Frequency", "CPU-METRIC"]
 
