@@ -204,8 +204,9 @@ grep -v Retiring log$$
 checklog0
 rm log$$
 if python -c 'import matplotlib.pyplot' ; then
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --graph -o x.png --all $LOAD
-[ `stat -c %s x.png` -gt 1000 ]
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --graph -o x$$.png --all $LOAD
+sleep 1
+[ `stat -c %s x$$.png` -gt 1000 ]
 fi
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -l4 -I 100 sleep 1
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -m -l4 -I 100 $LOAD
@@ -232,7 +233,7 @@ rm perf.data.{1,2,3,4,5}
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -v -o log$$ --single-thread -r3 $LOAD
 if [ -z "$NORES" ] ; then
-	grep 'Backend_Bound.*[0-9][1-9]' log$$
+	grep 'Backend_Bound.*[0-9][0-9]' log$$
 fi
 
 rm log$$
