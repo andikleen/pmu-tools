@@ -1,0 +1,14 @@
+#!/bin/sh
+# clean up tl-tester logs after failures
+rm log[0-9]*
+rm val[0-9]*
+rm x*.png
+rm x*.csv
+rm y*.csv
+rm y*.out
+rm x*.csv.gz
+rm y*.out.gz
+rm x*.csv.xz
+rm out*-{core,global,socket}
+rm perf.data.*.old
+rm tlog[0-9]*
