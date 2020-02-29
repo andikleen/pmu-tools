@@ -12,18 +12,20 @@ import collections
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--min-util', default=10., type=float)
+ap.add_argument('file', nargs='?', type=argparse.FileType('r'), default=sys.stdin)
+ap.add_argument('--output', '-o', type=argparse.FileType('w'), default=sys.stdout)
 args = ap.parse_args()
 
 key = None
 
-c = csv.reader(sys.stdin)
-wr = csv.writer(sys.stdout)
+c = csv.reader(args.file)
+wr = csv.writer(args.output)
 
 fields = dict()
 util = collections.defaultdict(list)
 
 for t in c:
-    if t[0].startswith("#"):
+    if len(t) < 3 or t[0].startswith("#"):
         continue
     key = t[1] # XXX handle no -I
     if key in fields:
