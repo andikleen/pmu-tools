@@ -11,21 +11,35 @@
 # more details.
 import subprocess
 
+def popen_stdout(cmd):
+    try:
+        # python 3
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
+    except TypeError:
+        # python 2
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE)
+
+def popen_stdinout(cmd, f):
+    try:
+        return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=f, text=True)
+    except TypeError:
+        return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=f)
+
 def flex_open_r(fn):
     if fn.endswith(".xz"):
-        xz = subprocess.Popen(["xz", "-d", "--stdout", fn], stdout=subprocess.PIPE)
+        xz = popen_stdout(["xz", "-d", "--stdout", fn])
         return xz.stdout
     if fn.endswith(".gz"):
-        gzip = subprocess.Popen(["gzip", "-d", "-c", fn], stdout=subprocess.PIPE)
+        gzip = popen_stdout(["gzip", "-d", "-c", fn])
         return gzip.stdout
     return open(fn, 'r')
 
 def flex_open_w(fn):
     f = open(fn, "w")
     if fn.endswith(".xz"):
-        xz = subprocess.Popen(["xz", "-z", "--stdout"], stdin=subprocess.PIPE, stdout=f)
+        xz = popen_stdinout(["xz", "-z", "--stdout"], f)
         return xz.stdin
     if fn.endswith(".gz"):
-        gzip = subprocess.Popen(["gzip", "-c"], stdin=subprocess.PIPE, stdout=f)
+        gzip = popen_stdinout(["gzip", "-c"], f)
         return gzip.stdin
     return f
