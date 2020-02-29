@@ -1,6 +1,7 @@
 #!/bin/bash
 # one stop shop to test all pmu-tools test suites
 # to run it faster use parallel-tester
+# each line must be self contained!
 
 set -e
 set -x
@@ -23,10 +24,7 @@ MATCH=knl DCPU=knl NORES=1 NOGROUP=1 ./tl-tester
 WRAP=python3 ./other-tester
 
 # test jevents
-make -C jevents
-cd jevents
-./tester
-cd ..
+cd jevents ; make && ./tester ; cd ..
 
 # test perf.data parser
 # this requires construct and pandas and some other libraries
