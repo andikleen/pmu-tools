@@ -38,12 +38,16 @@ done
 
 for args in "-l2" "--all -v" "-l3 --single-thread" ; do
 
-$WRAP toplev.py -v --force-cpu ${DCPU:-hsw} -I 100 $args -o x$$.csv -x, -a ./workloads/BC1s
+$WRAP toplev.py -v --force-cpu ${DCPU:-hsw} --node +CPU_Utilization -I 100 $args -o x$$.csv -x, -a ./workloads/BC1s
 $WRAP interval-normalize.py < x$$.csv
 $WRAP interval-normalize.py < x$$.csv > y$$.csv
 
 grep -vq PARSE-ERROR y$$.csv
 grep Frontend y$$.csv
+
+$WRAP utilized.py x$$.csv -o y$$.csv
+grep Frontend y$$.csv
+
 $WRAP interval-plot.py x$$.csv -o x$$.png
 
 # plot-normalized.py

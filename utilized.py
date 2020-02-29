@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # extract utilized CPUs out of toplev CSV output
-# toplev ... -I 1000 -x, -o x.csv ...
+# toplev ... -I 1000 --node +CPU_Utilization -x, -o x.csv ...
 # utilized.py < x.csv
 # note it duplicates the core output
 from __future__ import print_function
@@ -27,6 +27,8 @@ util = collections.defaultdict(list)
 for t in c:
     if len(t) < 3 or t[0].startswith("#"):
         continue
+    if t[0] == "Timestamp":
+        wr.writerow(t)
     key = t[1] # XXX handle no -I
     if key in fields:
         fields[key].append(t)
@@ -35,7 +37,6 @@ for t in c:
     if t[2] == "CPU_Utilization":
         util[t[1]].append(float(t[3]))
 
-
 final = []
 skipped = []
 for j in sorted(fields.keys()):
@@ -43,7 +44,7 @@ for j in sorted(fields.keys()):
         if "S" in j:
             final.append(j)
         continue
-    core = re.sub(r'-T%d+', '', j)
+    core = re.sub(r'-T\d+', '', j)
     utilization = (sum(util[j]) / len(util[j])) * 100.
     if utilization >= float(args.min_util):
         for k in fields[core] + fields[j]:
