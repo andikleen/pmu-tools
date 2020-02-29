@@ -42,7 +42,7 @@ class TLData:
                 continue
             if r[0] == "Timestamp" or r[0] == "CPUs":
                 continue
-            if re.match(r'[CS]\d+.*', r[1]):
+            if re.match(r'[CS]?\d+.*', r[1]):
                 ts, cpu, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4], r[5]
             else:
                 ts, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4]
