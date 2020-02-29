@@ -16,8 +16,8 @@ WRAP=python3 ./tl-tester
 MATCH="icl" DCPU="icl --no-group" NOGROUP=1 NORES=1 LOAD=./workloads/BC1s ./tl-tester
 MATCH=snb DCPU=snb ./tl-tester
 MATCH=hsw DCPU=hsw ./tl-tester
-MATCH=slm DCPU=slm NORES=1 NOGROUP=1 ./tl-tester
-MATCH=knl DCPU=knl NORES=1 NOGROUP=1 ./tl-tester
+MATCH=slm DCPU=slm NORES=1 NOGROUP=1 LOAD=./workloads/BC1s ./tl-tester
+MATCH=knl DCPU=knl NORES=1 NOGROUP=1 LOAD=./workloads/BC1s ./tl-tester
 
 # test other tools
 ./other-tester
