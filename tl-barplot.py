@@ -2,6 +2,10 @@
 # plot toplev -I... -x, -o ...csv output as bar plot
 #
 from __future__ import print_function
+import os
+import matplotlib
+if os.getenv('DISPLAY') is None:
+    matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
 import math
