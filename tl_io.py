@@ -9,21 +9,19 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
 # more details.
+import sys
 import subprocess
 
+if sys.version_info.major == 3:
+    popentext = dict(text=True)
+else:
+    popentext = dict()
+
 def popen_stdout(cmd):
-    try:
-        # python 3
-        return subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
-    except TypeError:
-        # python 2
-        return subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    return subprocess.Popen(cmd, stdout=subprocess.PIPE, **popentext)
 
 def popen_stdinout(cmd, f):
-    try:
-        return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=f, text=True)
-    except TypeError:
-        return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=f)
+    return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=f, **popentext)
 
 def flex_open_r(fn):
     if fn.endswith(".xz"):

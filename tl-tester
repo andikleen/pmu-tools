@@ -205,7 +205,6 @@ checklog0
 rm log$$
 if python -c 'import matplotlib.pyplot' ; then
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --graph -o x$$.png --all $LOAD
-sleep 1
 [ `stat -c %s x$$.png` -gt 1000 ]
 fi
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -l4 -I 100 sleep 1

@@ -29,7 +29,7 @@ import tl_output
 import ocperf
 import event_download
 from tl_uval import UVal, combine_uval
-from tl_io import flex_open_r, flex_open_w
+from tl_io import flex_open_r, flex_open_w, popentext
 
 known_cpus = (
     ("snb", (42, )),
@@ -515,13 +515,8 @@ if args.graph:
     cmd = "PATH=$PATH:%s ; tl-barplot.py %s /dev/stdin" % (exe_dir(), extra)
     if not args.quiet:
         print(cmd)
-    try:
-        # python 3
-        args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, text=True).stdin
-    except TypeError:
-        # python 2
-        args.output = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE).stdin
-
+    graphp = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, **popentext)
+    args.output = graphp.stdin
 if args.sample_repeat:
     args.run_sample = True
 
@@ -2354,4 +2349,7 @@ else:
     ret = measure_and_sample(None)
 
 out.print_footer()
+if args.graph:
+    args.output.close()
+    graphp.wait()
 sys.exit(ret)
