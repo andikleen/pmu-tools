@@ -41,12 +41,16 @@ levels = data.levels
 timestamps = data.times
 ratios = defaultdict(list)
 # XXX plot multiple cpus instead
+cpu = None
 if args.cpu:
     cpu = args.cpu
+elif 'CLKS' in data.headers and len(data.vals) > 0:
+    # pick CPU with highest utilization. XXX look at all time series
+    util = sorted([(data.vals[0][x], x[1]) for x in data.vals[0].keys() if x[0] == 'CLKS'],
+                  reverse=True)
+    cpu = util[0][1]
 elif len(data.cpus) > 0:
     cpu = sorted(sorted(data.cpus), key=len, reverse=True)[0]
-else:
-    cpu = None
 
 def cpumatch(x, match, base):
     return x.startswith(cpu) or x == base
