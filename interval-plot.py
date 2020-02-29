@@ -7,8 +7,12 @@
 # this is for data that is not normalized
 # TODO: move legend somewhere else where it doesn't overlap?
 from __future__ import print_function
+import os
+import matplotlib
 import csv
 import sys
+if os.getenv("DISPLAY") is None:
+    matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import collections
 import argparse

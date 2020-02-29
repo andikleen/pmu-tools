@@ -2,6 +2,10 @@
 # plot already normalized data
 # first column is time stamp
 import csv
+import os
+import matplotlib
+if os.getenv("DISPLAY") is None:
+    matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import sys
 import argparse
