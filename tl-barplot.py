@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 # plot toplev -I... -x, -o ...csv output as bar plot
 #
+from __future__ import print_function
 import matplotlib.pyplot as plt
 import argparse
 import math
@@ -8,6 +9,7 @@ from collections import defaultdict
 import gen_level
 import tldata
 import re
+import sys
 
 def parse_args():
     p = argparse.ArgumentParser(usage='plot toplev -I...  -x, output as bar plot')
@@ -27,7 +29,7 @@ try:
     import brewer2mpl
 except ImportError:
     if not args.quiet:
-        print "pip install brewer2mpl for better colors"
+        print("pip install brewer2mpl for better colors")
 
 if args.xkcd:
     plt.xkcd()
@@ -55,7 +57,7 @@ if cpu:
     if m:
         base = m.group(0)
     aliases = [x for x in data.cpus if cpumatch(x, cpu, base)]
-    print "plotting cpus:", " ".join(sorted(aliases))
+    print("plotting cpus:", " ".join(sorted(aliases)))
 else:
     aliases = []
 if len(aliases) == 0:
