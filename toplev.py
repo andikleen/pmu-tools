@@ -983,7 +983,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat.compute_errors()
 
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
-    if args.per_core + args.per_thread + args.per_socket + args._global > 1:
+    if args.per_core + args.per_thread + args.per_socket + args._global >= 1:
         if args.per_thread:
             out.remark("Per thread")
             out.reset("thread")
@@ -1001,6 +1001,8 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
             out.reset("global")
             print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_GLOBAL)
     else:
+        if args.split_output:
+            sys.exit("--split-output needs --per-thread / --global / --per-socket / --per-core")
         mode = OUTPUT_CORE_THREAD
         if args.per_thread:
             mode = OUTPUT_THREAD
