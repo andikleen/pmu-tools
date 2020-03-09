@@ -1,7 +1,8 @@
 # build jevents first
-CFLAGS := -g -Wall -O2  -I .. -Wno-unused-result
+CFLAGS := -g -Wall -O2 -Wno-unused-result
 CXXFLAGS := -g -Wall  -O2  -fPIC
-LDFLAGS := -L ..
+override CFLAGS += -I ..
+override LDFLAGS += -L ..
 LDLIBS = -ljevents
 
 all: addr rtest rtest2 rtest3 jestat
