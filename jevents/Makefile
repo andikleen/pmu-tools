@@ -57,3 +57,6 @@ jeventstmp.man: $(DOCFILES)
 
 jevents.html: $(DOCFILES)
 	${KDOC} -html ${DOCFILES} > $@
+
+coverage:
+	${MAKE} CFLAGS="-g --coverage" LDFLAGS="-g --coverage"
