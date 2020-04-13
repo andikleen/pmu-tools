@@ -291,9 +291,9 @@ class OutputColumnsCSV(OutputColumns):
         self.writer = dict()
         if self.logfiles:
             for n, f in self.logfiles.items():
-                self.writer[n] = csv.writer(f, delimiter=sep)
+                self.writer[n] = csv.writer(f, delimiter=sep, lineterminator='\n')
         else:
-            self.writer[''] = csv.writer(self.logf, delimiter=sep)
+            self.writer[''] = csv.writer(self.logf, delimiter=sep, lineterminator='\n')
         self.printed_header = False
 
     # XXX implement bn
@@ -352,9 +352,9 @@ class OutputCSV(Output):
         self.writer = dict()
         if self.logfiles:
             for n, f in self.logfiles.items():
-                self.writer[n] = csv.writer(f, delimiter=sep)
+                self.writer[n] = csv.writer(f, delimiter=sep, lineterminator='\n')
         else:
-            self.writer[''] = csv.writer(self.logf, delimiter=sep)
+            self.writer[''] = csv.writer(self.logf, delimiter=sep, lineterminator='\n')
         self.args = args
         self.printed_headers = set()
 
