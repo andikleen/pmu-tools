@@ -1682,7 +1682,7 @@ class Runner:
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         if args.valcsv:
-            self.valcsv = csv.writer(args.valcsv)
+            self.valcsv = csv.writer(args.valcsv, lineterminator='\n')
             self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value",
                                   "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
         self.summary = None

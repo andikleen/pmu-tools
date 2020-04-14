@@ -249,7 +249,7 @@ def get_postfix(s):
 
 def gencsv(wfile, l, cpu):
     hdr = sorted(data.levels[l])
-    wr = csv.writer(wfile)
+    wr = csv.writer(wfile, lineterminator='\n')
     wr.writerow(["Timestamp"] + map(get_postfix, hdr))
     for val, ts in zip(data.vals, data.times):
         wr.writerow([ts] + [val[(x, cpu)] if (x, cpu) in val else "" for x in hdr])

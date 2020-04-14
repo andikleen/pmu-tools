@@ -34,7 +34,7 @@ times = []
 cpus = []
 rc = csv.reader(args.inputfile)
 res = []
-writer = csv.writer(args.output)
+writer = csv.writer(args.output, lineterminator='\n')
 lastcpu = None
 cpu = None
 for row in rc:
