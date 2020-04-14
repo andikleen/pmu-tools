@@ -55,8 +55,13 @@ $WRAP interval-plot.py x$$.csv -o x$$.png
 # plot-normalized.py
 $WRAP plot-normalized.py -o x$$-2.png y$$.csv
 
+# tl-serve.py
+
 $WRAP tl-serve.py --gen tls$$ x$$.csv
 rm -rf tls$$
+
+# tl-barplot.py
+$WRAP tl-barplot.py x$$.csv -o x$$.png
 
 done
 
