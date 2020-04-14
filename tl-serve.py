@@ -12,6 +12,8 @@ import re
 import os
 import itertools
 import tldata
+import signal
+import sys
 
 ap = argparse.ArgumentParser(usage="Serve toplev csv file as http or generate in directory")
 ap.add_argument('csvfile', help='toplev csv file to serve')
@@ -300,6 +302,10 @@ def copyfile(a, b):
         with open(b, "w") as bf:
             bf.write(af.read())
 
+def term(signal, frame):
+    print "sigterm"
+    sys.exit(0)
+
 if args.gen:
     if not os.path.isdir(args.gen):
         os.makedirs(args.gen)
@@ -314,6 +320,8 @@ if args.gen:
                 gencsv(f, l, cpu)
     print "Please browse", args.gen, "through a web server, not through file:"
 else:
+    signal.signal(signal.SIGTERM, term)
+
     httpd = BaseHTTPServer.HTTPServer((args.host, args.port), TLHandler)
 
     print "serving at",args.host,"port",args.port,"until Ctrl-C"

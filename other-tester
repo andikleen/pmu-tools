@@ -53,8 +53,18 @@ $WRAP interval-plot.py x$$.csv -o x$$.png
 # plot-normalized.py
 $WRAP plot-normalized.py -o x$$-2.png y$$.csv
 
+$WRAP tl-serve.py --gen tls$$ x$$.csv
+rm -rf tls$$
 
 done
+
+$WRAP tl-serve.py x$$.csv &
+sleep 1
+unset http_proxy
+curl http://localhost:9001 > /dev/null
+kill %1
+sleep 1
+wait %1
 
 # cputop.py
 
@@ -64,7 +74,7 @@ $WRAP cputop.py "thread == 1" offline
 $WRAP cputop.py offline online
 [ $($WRAP cputop.py True | wc -l | cut -d ' ' -f 1) -eq $(getconf _NPROCESSORS_ONLN) ]
 
-# ist-events.py
+# list-events.py
 
 EVENTMAP=${cpus[hsw]} $WRAP list-events.py > x$$.lst
 [ $(wc -l x$$.lst | cut -d ' ' -f 1) -gt 20 ]
