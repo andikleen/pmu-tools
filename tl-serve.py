@@ -2,10 +2,13 @@
 # serve toplev csv file as http using dygraph
 # toplev.py -I100 -o x.csv -v -x, ...
 # tl-serve.py x.csv [host [port]]
-
+from __future__ import print_function
 import string
 import argparse
-import BaseHTTPServer
+try:
+    import BaseHTTPServer
+except ModuleNotFoundError:
+    import http.server as BaseHTTPServer
 import csv
 import gen_level
 import re
@@ -183,7 +186,7 @@ help_$name = {
 """).substitute({"name": jsname(j)})
         for i in data.levels[j]:
             if i not in data.helptxt:
-                #print i,"not found in",data.helptxt.keys()
+                #print(i,"not found in",data.helptxt.keys())
                 continue
             graph += T("""
         "$name": "$help",
@@ -303,7 +306,7 @@ def copyfile(a, b):
             bf.write(af.read())
 
 def term(signal, frame):
-    print "sigterm"
+    print("sigterm")
     sys.exit(0)
 
 if args.gen:
@@ -318,13 +321,13 @@ if args.gen:
         for l in data.levels:
             with open(genfn(args.gen, cpu + "." + l + ".csv"), 'w') as f:
                 gencsv(f, l, cpu)
-    print "Please browse", args.gen, "through a web server, not through file:"
+    print("Please browse", args.gen, "through a web server, not through file:")
 else:
     signal.signal(signal.SIGTERM, term)
 
     httpd = BaseHTTPServer.HTTPServer((args.host, args.port), TLHandler)
 
-    print "serving at",args.host,"port",args.port,"until Ctrl-C"
+    print("serving at",args.host,"port",args.port,"until Ctrl-C")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
