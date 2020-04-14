@@ -1,5 +1,5 @@
 #!/bin/bash
-# simple regression tester for toplev
+# regression tester for toplev
 # this just tests if all events resolve etc, as it would need the individual CPUs.
 # should cover near all code in toplev, except for specific error paths.
 # for non root set kernel.perf_event_paranoid = -1
