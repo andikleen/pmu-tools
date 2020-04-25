@@ -69,12 +69,18 @@ void print_data_aggr(struct eventlist *el, double ts, bool print_ts)
 		if (merge && e->orig)
 			continue;
 
-		uint64_t v = 0,val[3] = {0,0,0};
+		uint64_t v = 0, val[3] = { 0, 0, 0 };
 		for (i = 0; i < el->num_cpus; i++) {
 			v += scaled_value(e, i);
 			// assumes all are scaled the same way
-			val[1] += e->efd[i].val[1];
-			val[2] += e->efd[i].val[2];
+			if (e->efd[i].val[2]) {
+				val[1] += e->efd[i].val[1];
+				val[2] += e->efd[i].val[2];
+			}
+		}
+		if (val[1] == 0 && el->num_cpus > 0) {
+			val[1] = e->efd[0].val[1];
+			val[2] = e->efd[0].val[2];
 		}
 
 		if (print_ts)
