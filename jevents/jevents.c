@@ -40,6 +40,11 @@
 #include "json.h"
 #include "jevents.h"
 
+char *getenv_copy(const char* name) {
+	const char* value = getenv(name);
+	return value ? strdup(value) : 0;
+}
+
 static const char *json_default_name(char *type)
 {
 	char *cache = NULL;
@@ -58,7 +63,9 @@ static const char *json_default_name(char *type)
 			goto out;
 	}
 
-	cache = getenv("XDG_CACHE_HOME");
+	cache = getenv_copy("JEVENTS_CACHEDIR");
+	if (!cache)
+		cache = getenv_copy("XDG_CACHE_HOME");
 	if (!cache) {
 		home = getenv("HOME");
 		if (!home || asprintf(&cache, "%s/.cache", home) < 0)
