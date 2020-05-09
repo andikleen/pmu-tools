@@ -215,7 +215,6 @@ int resolve_event_extra(const char *name, struct perf_event_attr *attr,
 			extra->decoded = buf;
 			if (ret) {
 				jevent_free_extra(extra);
-				free(buf);
 			}
 			return ret;
 		}
