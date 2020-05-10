@@ -164,9 +164,9 @@ void sigalarm(int sig)
 
 double gettime(void)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return (double)tv.tv_sec * 1e6 + tv.tv_usec;
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (double)ts.tv_sec + ts.tv_nsec/1e9;
 }
 
 bool cont_measure(int ret, struct eventlist *el)
@@ -174,7 +174,7 @@ bool cont_measure(int ret, struct eventlist *el)
 	if (ret < 0 && gotalarm) {
 		gotalarm = false;
 		read_all_events(el);
-		print_data(el, (gettime() - starttime) / 1e6, true);
+		print_data(el, gettime() - starttime, true);
 		return true;
 	}
 	return false;
@@ -310,7 +310,7 @@ int main(int ac, char **av)
 		while (cont_measure(ret, el));
 	}
 	read_all_events(el);
-	print_data(el, (gettime() - starttime)/1e6,
+	print_data(el, gettime() - starttime,
 			interval != 0 && starttime);
 	return 0;
 }
