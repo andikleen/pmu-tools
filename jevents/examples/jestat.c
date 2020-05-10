@@ -135,16 +135,16 @@ static struct option opts[] = {
 void usage(void)
 {
 	fprintf(stderr, "Usage: jstat [-a] [-e events] [-I interval] [-C cpus] [-A] program\n"
-			"--all -a	     Measure global system\n"
+			"--all -a            Measure global system\n"
 			"-e --events list    Comma separate list of events to measure. Use {} for groups\n"
 			"-I N --interval N   Print events every N ms\n"
 			"-C CPUS --cpu CPUS  Only measure on CPUs. List of numbers or ranges a-b\n"
 			"-A --no-aggr        Print values for individual CPUs\n"
 			"-v --verbose        Print perf_event_open arguments\n"
-			"-o file	     Output results to file\n"
-			"--append	     (with -o) Append results to file\n"
-			"-D N --delay N	     Wait N ms after starting program before measurement\n"
-			"--merge	     Sum multiple instances of uncore events\n"
+			"-o file             Output results to file\n"
+			"--append            (with -o) Append results to file\n"
+			"-D N --delay N      Wait N ms after starting program before measurement\n"
+			"--merge             Sum multiple instances of uncore events\n"
 			"Run event_download.py once first to use symbolic events\n"
 			"Run listevents to show available events\n");
 
