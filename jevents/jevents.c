@@ -40,7 +40,8 @@
 #include "json.h"
 #include "jevents.h"
 
-char *getenv_copy(const char* name) {
+char *getenv_copy(const char* name)
+{
 	const char* value = getenv(name);
 	return value ? strdup(value) : 0;
 }
