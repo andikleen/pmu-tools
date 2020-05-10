@@ -252,7 +252,7 @@ int main(int ac, char **av)
 	}
 	if (av[optind] == NULL && !measure_all) {
 		fprintf(stderr, "Specify command or -a\n");
-		exit(1);
+		usage();
 	}
 	if (events && parse_events(el, events) < 0)
 		exit(1);
