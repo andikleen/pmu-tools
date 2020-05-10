@@ -41,6 +41,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <locale.h>
+#include <time.h>
 #include <sys/wait.h>
 #include <sys/fcntl.h>
 #include <sys/time.h>
@@ -84,7 +85,7 @@ void print_data_aggr(struct eventlist *el, double ts, bool print_ts)
 		}
 
 		if (print_ts)
-			fprintf(outfh, "%08.4f\t", ts);
+			fprintf(outfh, "% 12.9f\t", ts);
 		fprintf(outfh, "%-30s %'15lu", e->extra.name ? e->extra.name : e->event, v);
 		print_runtime(val);
 		putc('\n', outfh);
@@ -105,7 +106,7 @@ void print_data_no_aggr(struct eventlist *el, double ts, bool print_ts)
 				continue;
 			v = scaled_value(e, i);
 			if (print_ts)
-				fprintf(outfh, "%08.4f\t", ts);
+				fprintf(outfh, "% 12.9f\t", ts);
 			fprintf(outfh, "%3d %-30s %'15lu", i,
 					e->extra.name ? e->extra.name : e->event, v);
 			print_runtime(e->efd[i].val);
