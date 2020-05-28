@@ -62,7 +62,7 @@ import copy
 import textwrap
 import pipes
 import itertools
-from pmudef import *
+from pmudef import EVENTSEL_ANY, EVENTSEL_INV, EVMASK, extra_flags
 
 import msr as msrmod
 import latego
@@ -177,7 +177,7 @@ uncore_map = (
     (r't=(\d+)', "thresh="),
     (r'[Mm]atch=(0x[0-9a-fA-F]+)', "filter_occ="),
     (r'filter1=(0x[0-9a-fA-F]+)', "config1=", 32),
-    ("nc=(\d+)", "filter_nc="),
+    (r"nc=(\d+)", "filter_nc="),
     (r'filter=(0x[0-9a-fA-F]+)', "config1="),
     (r'one_unit', '', ),
     (r"u(0x[0-9a-fA-F]+)", "umask="),
@@ -267,7 +267,7 @@ class Event:
                 e += ",name=" + name
             elif not noname:
                 e += ",name=%s" % (gen_name(self.name, "sup" in (self.extra + extra)))
-        if period and self.period and not ",period=" in e:
+        if period and self.period and ",period=" not in e:
             e += ",period=%d" % self.period
         return e
 
@@ -383,7 +383,7 @@ class UncoreEvent:
             e.unit = box_to_perf[e.unit]
         e.msr = None
         e.overflow = 0
-        e.counter = "1" # dummy for toplev
+        e.counter = "1"  # dummy for toplev
         e.newextra = ""
         if 'Errata' in row:
             e.errata = row['Errata']
@@ -465,8 +465,6 @@ class UncoreEvent:
             return False
 
         self.newextra = ",".join(filter(check_qual, convert_uncore(self.newextra, ()).split(",")))
-
-
     output = output_newstyle
 
 def ffs(flag):
@@ -478,7 +476,7 @@ def ffs(flag):
         j += 1
     return j
 
-perf_qual = "kuhGHSD" # without pebs
+perf_qual = "kuhGHSD"  # without pebs
 
 def extra_set(e):
     return set(map(lambda x: x[0],
@@ -553,7 +551,7 @@ class EmapNativeJSON(object):
 
     def add_event(self, e):
         self.events[e.name] = e
-        self.perf_events[e.name.replace('.', '_')] = e # workaround for perf-style naming
+        self.perf_events[e.name.replace('.', '_')] = e  # workaround for perf-style naming
         self.codes[e.val] = e
         self.desc[e.name] = e.desc
 
@@ -585,12 +583,11 @@ class EmapNativeJSON(object):
                 d = ''
             d = d.strip()
             e = Event(name, val, d)
-            counter = get('counter')
             e.newextra = ""
-            if other & ((1<<16)|(1<<17)):
+            if other & ((1 << 16)|(1 << 17)):
                 if other & (1<<16):
                     e.extra += "u"
-                if other & (1<<17):
+                if other & (1 << 17):
                     e.extra += "k"
             if (m['msr_index'] in row and get('msr_index') and get('msr_value')):
                 msrnum = gethex('msr_index')
@@ -874,7 +871,7 @@ def add_extra_env(emap, el):
     read_map("UNCORE2", "uncore", lambda r: emap.add_uncore(r))
 
 def canon_emapvar(el, typ):
-    if ("*" in el or "." in el or "_" in el) and not "/" in el and not file_exists(el):
+    if ("*" in el or "." in el or "_" in el) and "/" not in el and not file_exists(el):
         el = "%s/%s" % (event_download.getdir(), el)
     if '*' in el:
         import glob
@@ -1018,7 +1015,7 @@ def process_args():
         if sys.argv[i] == "--print":
             print_only = True
         elif sys.argv[i] == "--force-download":
-           pass
+            pass
         elif sys.argv[i] == "--experimental":
             pass
         elif sys.argv[i] == "--no-period":
