@@ -83,7 +83,7 @@ def cmp_level(a, b, data):
     ap, bp = sort_pos(a, data), sort_pos(b, data)
     if ap != bp:
         return ap - bp
-    return cmp(a, b)
+    return (a > b) - (a < b)
 
 def level_order(data):
     """Return plot order of all levels."""

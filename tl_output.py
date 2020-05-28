@@ -125,8 +125,8 @@ class Output:
 
     def print_footer_all(self):
         if self.logfiles:
-           for f in self.logfiles.values():
-               f.write("# %s\n" % self.version)
+            for f in self.logfiles.values():
+                f.write("# %s\n" % self.version)
         else:
             self.logf.write("# " + self.version + "\n")
 

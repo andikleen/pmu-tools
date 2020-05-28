@@ -101,7 +101,6 @@ class UVal:
         # calc weighted average
         n = self.samples + other.samples
         res = (1. / n) * (self.samples * self + other.samples * other)
-        strbefore = "{}".format(self)
         # apply 'res' to this
         self.samples = n
         self.value = res.value
@@ -224,8 +223,7 @@ class UVal:
 
         else:
             u = None
-            log.error("Unsupported operation for uncertainty propagator in {} {} {}".format\
-                      (lhs, op, rhs))
+            log.error("Unsupported operation for uncertainty propagator in {} {} {}".format(lhs, op, rhs))
         # --
         ret = UVal(TEMPVAL, value=f, stddev=u, mux=UVal._merge_mux(lhs, rhs), computed=True)
         log.debug("{} {} {} => {}".format(lhs, op, rhs, ret))

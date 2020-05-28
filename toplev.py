@@ -28,7 +28,7 @@ import tl_cpu
 import tl_output
 import ocperf
 import event_download
-from tl_uval import UVal, combine_uval
+from tl_uval import UVal
 from tl_io import flex_open_r, flex_open_w, popentext
 
 known_cpus = (
@@ -52,13 +52,13 @@ known_cpus = (
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl")
 
 fixed_to_num = {
-    "instructions" : 0,
-    "cycles" : 1,
+    "instructions": 0,
+    "cycles": 1,
     "cpu/event=0x3c,umask=0x00,any=1/": 1,
     "cpu/event=0x3c,umask=0x0,any=1/": 1,
-    "ref-cycles" : 2,
+    "ref-cycles": 2,
     "cpu/event=0x0,umask=0x3/": 2,
-    "cpu/event=0x0,umask=0x3,any=1/" : 2,
+    "cpu/event=0x0,umask=0x3,any=1/": 2,
     "slots": 3,
     "topdown-fe-bound": 100,
     "topdown-be-bound": 101,
@@ -190,7 +190,7 @@ def unsup_event(e, table, min_kernel=None):
         if min_kernel:
             min_kernel.append(v[1])
         return True
-    if v[2] and kv_to_key(kernel_version) >= kv_to_key(v[2]) :
+    if v[2] and kv_to_key(kernel_version) >= kv_to_key(v[2]):
         return False
     return False
 
@@ -329,11 +329,14 @@ g = p.add_argument_group('General operation')
 g.add_argument('--interval', '-I', help='Measure every ms instead of only once',
                type=int)
 g.add_argument('--no-multiplex',
-               help='Do not multiplex, but run the workload multiple times as needed. Requires reproducible workloads.',
+               help='Do not multiplex, but run the workload multiple times as needed. '
+               'Requires reproducible workloads.',
                action='store_true')
-g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. In SMT mode other thread must be idle.', action='store_true')
+g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. '
+               'In SMT mode other thread must be idle.', action='store_true')
 g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumption', action='store_true')
-g.add_argument('--import', help='Import specified perf stat output file instead of running perf. Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
+g.add_argument('--import', help='Import specified perf stat output file instead of running perf. '
+               'Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
                 dest='_import')
 g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later', action='store_true')
 
@@ -354,9 +357,11 @@ g.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
 g.add_argument('--all', help="Measure everything available", action='store_true')
 g.add_argument('--frequency', help="Measure frequency", action='store_true')
 g.add_argument('--power', help='Display power metrics', action='store_true')
-g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, comma separated list, wildcards allowed)')
+g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, '
+               'comma separated list, wildcards allowed)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
-g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, comma separated list from --list-metric-groups.', default=None)
+g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
+               'comma separated list from --list-metric-groups.', default=None)
 
 g = p.add_argument_group('Query nodes')
 g.add_argument('--list-metrics', help='List all metrics', action='store_true')
@@ -366,7 +371,8 @@ g.add_argument('--list-all', help='List every supported node/metric/metricgroup'
 
 g = p.add_argument_group('Workarounds')
 g.add_argument('--no-group', help='Dont use groups', action='store_true')
-g.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.', action='store_true')
+g.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.',
+               action='store_true')
 g.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true', default=True)
 g.add_argument('--handle-errata', help='Disable events with errata', action='store_true')
 
@@ -377,11 +383,14 @@ g.add_argument('--per-thread', help='Aggregate output per CPU thread', action='s
 g.add_argument('--global', help='Aggregate output for all CPUs', action='store_true', dest='_global')
 g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
 g.add_argument('--desc', help='Force event descriptions', action='store_true')
-g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. Note this can result in bogus values, as the TopDown methodology relies on thresholds to correctly characterize workloads.',
+g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. '
+               'Note this can result in bogus values, as the TopDown methodology relies on thresholds '
+               'to correctly characterize workloads.',
                action='store_true')
 g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
 g.add_argument('--output', '-o', help='Set output file')
-g.add_argument('--split-output', help='Generate multiple output files, one for each specified aggregation option (with -o)',
+g.add_argument('--split-output', help='Generate multiple output files, one for each specified '
+               'aggregation option (with -o)',
                action='store_true')
 g.add_argument('--graph', help='Automatically graph interval output with tl-barplot.py',
                action='store_true')
@@ -416,7 +425,8 @@ g = p.add_argument_group('Sampling')
 g.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
 g.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
 g.add_argument('--sample-args', help='Extra rguments to pass to perf record for sampling. Use + to specify -', default='-g')
-g.add_argument('--sample-repeat', help='Repeat measurement and sampling N times. This interleaves counting and sampling. Useful for background collection with -a sleep X.', type=int)
+g.add_argument('--sample-repeat', help='Repeat measurement and sampling N times. This interleaves counting and sampling. '
+               'Useful for background collection with -a sleep X.', type=int)
 g.add_argument('--sample-basename', help='Base name of sample perf.data files', default="perf.data")
 
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
@@ -557,7 +567,7 @@ def print_perf(r):
     if args.quiet or args.no_perf:
         return
     l = ["'" + x + "'" if x.find("{") >= 0 else x for x in r]
-    l = [x.replace(";", "\;") for x in l]
+    l = [x.replace(";", "\\;") for x in l]
     i = l.index('--log-fd')
     del l[i:i+2]
     print(" ".join(l))
@@ -566,7 +576,10 @@ def print_perf(r):
 def gen_script(r):
     print("#!/bin/sh")
     print("# Generated from 'toplev " + " ".join(sys.argv) + " for CPU " + cpu.cpu)
-    print("# Show output with toplev.py " + " ".join([x for x in sys.argv if x != "--gen-script"]) + " --import toplev_perf.csv --force-cpuinfo toplev_cpuinfo --force-topology toplev_topology --force-cpu " + cpu.cpu)
+    print("# Show output with toplev.py " +
+          " ".join([x for x in sys.argv if x != "--gen-script"]) +
+          " --import toplev_perf.csv --force-cpuinfo toplev_cpuinfo --force-topology toplev_topology --force-cpu " +
+          cpu.cpu)
     print("# print until Ctrl-C or run with command on command line (e.g. sleep 10)")
     print("# override output file names with OUT=... script (default toplev_...)")
     print("OUT=${OUT:-toplev}")
@@ -665,7 +678,6 @@ def raw_event(i, name="", period=False, nopebs=True):
                 notfound_cache.add(i)
                 print("%s not found" % i, file=sys.stderr)
             return "dummy"
-        oi = i
         if re.match("^[0-9]", name):
             name = "T" + name
         if args.filterquals:
@@ -741,8 +753,8 @@ class Stat:
         self.total = 0
         self.errors = Counter()
 
-def print_not(a, count , msg, j):
-     print(("%s %s %s %.2f%% in %d measurements"
+def print_not(a, count, msg, j):
+    print(("%s %s %s %.2f%% in %d measurements"
                 % (emap.getperf(j), j, msg, 100.0 * (float(count) / float(a.total)), a.total)), file=sys.stderr)
 
 # XXX need to get real ratios from perf
@@ -858,7 +870,7 @@ def verify_rev(rev, cpus):
 
 # from https://stackoverflow.com/questions/4836710/does-python-have-a-built-in-function-for-string-natural-sort
 def num_key(s):
-    return [int(t) if t.isdigit() else t for t in re.split('(\d+)', s)]
+    return [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', s)]
 
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat = runner.stat
@@ -869,8 +881,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
         printed_sockets = set()
         for j in list(keys):
             if j != "" and int(j) not in cpu.cputocore:
-                 warn_once("Warning: input cpu %s not in cpuinfo." % j)
-                 del res[j]
+                warn_once("Warning: input cpu %s not in cpuinfo." % j)
+                del res[j]
         keys = sorted(res.keys(), key=num_key)
         for j in keys:
             if j != "" and int(j) not in runner.allowed_threads:
@@ -955,10 +967,11 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
         cpus = [x for x in keys
                 if (not is_number(j)) or int(j) in runner.allowed_threads]
         combined_res = [sum([res[j][i] for j in cpus])
-                        for i in range(len(res[cpus[0]]))]
+                        for i in range(len(res[cpus[0]]))] if len(cpus) > 0 else []
         combined_st = [deprecated_combine_valstat([valstats[j][i] for j in cpus])
-                       for i in range(len(valstats[cpus[0]]))]
-        runner.compute(combined_res, rev[cpus[0]], combined_st, env, package_node, stat)
+                       for i in range(len(valstats[cpus[0]]))] if len(cpus) > 0 else []
+        runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
+                       combined_st, env, package_node, stat)
         runner.print_res(out, interval, "", package_node, None)
     elif mode != OUTPUT_THREAD:
         packages = set()
@@ -1016,7 +1029,7 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
 
 def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
     if runner.summary:
-        runner.summary.add(res, rev, valstats, env);
+        runner.summary.add(res, rev, valstats, env)
     print_and_split_keys(runner, res, rev, valstats, out, interval, env)
 
 def print_summary(runner, out):
@@ -1157,8 +1170,8 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
             if l.startswith("#") or len(l) == 0:
                 continue
         except OSError:
-             # handle pty EIO
-             break
+            # handle pty EIO
+            break
         except IOError:
             break
         except KeyboardInterrupt:
@@ -1272,7 +1285,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                      " ".join([o.name.replace(" ", "_") for o in runner.indexobj[len(res[title]) - 1]]))
     inf.close()
     if 'interval-s' not in env:
-            set_interval(env, time.time() - start)
+        set_interval(env, time.time() - start)
     ret = prun.wait()
     print_account(account)
     return ret, res, rev, interval, valstats
@@ -1442,7 +1455,7 @@ def sample_event(e):
 def sample_desc(s):
     try:
         return " ".join([sample_event(x) for x in s])
-    except BadEvent as e:
+    except BadEvent:
         #return "Unknown sample event %s" % (e.event)
         return ""
 
@@ -1683,7 +1696,7 @@ class Runner:
         self.metricgroups = defaultdict(list)
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv, lineterminator='\n')
-            self.valcsv.writerow(("Timestamp", "CPU" ,"Group", "Event", "Value",
+            self.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
                                   "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
         self.summary = None
         if args.summary:
@@ -1719,7 +1732,7 @@ class Runner:
                 return False
             if args.no_uncore and has(obj, 'area') and obj.area == "Info.System":
                 return False
-            want = ((obj.metric and args.metrics) or obj.name in add_met or obj in parents) and not obj.name in remove_met
+            want = ((obj.metric and args.metrics) or obj.name in add_met or obj in parents) and obj.name not in remove_met
             if not obj.metric and obj.level <= self.max_level:
                 want = True
             return node_filter(obj, want)
@@ -2076,7 +2089,7 @@ def do_sample(sample_obj, rest, count):
     perf_data = args.sample_basename
     if count:
         perf_data += ".%d" % count
-    sperf = [perf, "record" ] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
+    sperf = [perf, "record"] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
     print(" ".join(sperf))
     if args.run_sample:
         ret = os.system(" ".join(sperf))
@@ -2086,7 +2099,7 @@ def do_sample(sample_obj, rest, count):
         if not args.quiet:
             print("Run `" + perf + " report %s%s' to show the sampling results" % (
                 ("-i %s" % perf_data) if perf_data != "perf_data" else "",
-                " --no-branch-history"  if "-b" in extra_args else ""))
+                " --no-branch-history" if "-b" in extra_args else ""))
 
 def sysctl(name):
     try:
