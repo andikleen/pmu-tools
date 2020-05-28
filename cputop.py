@@ -54,7 +54,7 @@ args = ap.parse_args()
 special = {
     "offline": "echo 0 > /sys/devices/system/cpu/cpu%d/online",
     "online": "echo 1 > /sys/devices/system/cpu/cpu%d/online",
-}        
+}
 
 if args.fmt in special:
     args.fmt = special[args.fmt]
@@ -86,4 +86,3 @@ for j in sorted(p.keys()):
     socket, core, thread = j
     if eval(args.expr):
         output(p[j], args.fmt)
- 
