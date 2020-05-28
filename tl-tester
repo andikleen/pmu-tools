@@ -152,24 +152,20 @@ done
 
 # misc features
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --ignore-errata --stats --metrics --force-events --no-multiplex -l4 $LOAD
-if [ -z "$NORES" ] ; then
-grep Turbo_Utilization log$$
-fi
+[ -z "$NORES" ] && grep Turbo_Utilization log$$
 rm log$$
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all --no-perf --fast $LOAD
-if [ -z "$NORES" ] ; then
-grep Turbo_Utilization log$$
-fi
+[ -z "$NORES" ] && grep Turbo_Utilization log$$
 rm log$$
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --perf-output x$$.csv --all $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --import x$$.csv --all
 xz x$$.csv
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --import x$$.csv.xz --all -o y$$.out
-grep IPC y$$.out
+[ -z "$NORES" ] && grep IPC y$$.out
 xz -d x$$.csv.xz
 gzip x$$.csv
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --import x$$.csv.gz --all -o y$$.out.gz
-zgrep IPC y$$.out.gz
+[ -z "$NORES" ] && zgrep IPC y$$.out.gz
 rm x$$.csv.gz y$$.out.gz
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --no-multiplex --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu bdw --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns -l4 $LOAD
@@ -200,7 +196,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore $LOAD
 $WRAP ./toplev.py --force-hypervisor --force-cpu $DCPU $OPT $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --metric-group +TopDownL1,TLB $LOAD
 $WRAP ./toplev.py -o log$$ --force-cpu $DCPU $OPT --nodes IPC,Frontend_Bound,Backend_Bound -l3 $LOAD
-grep -v Retiring log$$
+[ -z "$NORES" ] && grep -v Retiring log$$
 checklog0
 rm log$$
 if python -c 'import matplotlib.pyplot' ; then
@@ -209,19 +205,21 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --graph -o x$$.png --all $LOAD
 fi
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -l4 -I 100 sleep 1
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -m -l4 -I 100 $LOAD
-grep IPC log$$
+[ -z "$NORES" ] && grep IPC log$$
 checklog0
 rm log$$
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -l4 -I 100 --columns sleep 1
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -l4 -I 100 --valcsv val$$.csv --columns -v -o out$$.gz -x, sleep 1
-zgrep Frontend out$$.gz
+[ -z "$NORES" ] && zgrep Frontend out$$.gz
 rm out$$.gz
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --valcsv val$$.csv.gz $LOAD | tee log$$
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --valcsv val$$.csv.xz --user $LOAD | tee log$$
+if [ -z "$NORES" ] ; then
 grep cpu_clk_unhalted val$$.csv
 grep Timestamp val$$.csv
 zgrep cpu_clk_unhalted val$$.csv.gz
 zgrep Timestamp val$$.csv.gz
+fi
 grep :u log$$
 grep /u log$$
 rm log$$
@@ -231,9 +229,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --sample-basename perf$$.data --s
 rm perf$$.data.{1,2,3,4,5}
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -v -o log$$ --single-thread -r3 $LOAD
-if [ -z "$NORES" ] ; then
-	grep 'Backend_Bound.*[0-9][0-9]' log$$
-fi
+[ -z "$NORES" ] && grep 'Backend_Bound.*[0-9][0-9]' log$$
 
 rm log$$
 
