@@ -13,7 +13,6 @@ from collections import defaultdict
 import gen_level
 import tldata
 import re
-import sys
 
 def parse_args():
     p = argparse.ArgumentParser(usage='plot toplev -I...  -x, output as bar plot')
@@ -24,7 +23,7 @@ def parse_args():
     p.add_argument('--xkcd', help='Enable XKCD mode (with new matplotlib). Please install Humor Sans.', action='store_true')
     p.add_argument('--title', help='Set title of plot', nargs='?')
     p.add_argument('--quiet', help='Be quiet', action='store_true')
-    p.add_argument('--cpu', help='CPU to plot (by default first)') # XXX
+    p.add_argument('--cpu', help='CPU to plot (by default first)')  # XXX
     return p.parse_args()
 
 args = parse_args()
@@ -96,14 +95,14 @@ def get_colors(non_null):
 
 def set_title(ax, t):
     try:
-        ax.set_title(t, { 'fontsize': 6 }, loc='right')
+        ax.set_title(t, {'fontsize': 6}, loc='right')
     except AttributeError:
         ax.set_title(t)
 
 def suffix(x):
     dot = x.rfind('.')
     if dot >= 0:
-        return x[dot+1:]
+        return x[dot + 1:]
     return x
 
 n = 0
@@ -116,7 +115,7 @@ legend_bbox = (0., 0., -0.07, -0.03)
 legend_loc = 2
 
 for l in tldata.level_order(data):
-    non_null = [x for x in  levels[l] if valid_row(ratios[x])]
+    non_null = [x for x in levels[l] if valid_row(ratios[x])]
     if not non_null:
         n += 1
         continue
@@ -136,7 +135,7 @@ for l in tldata.level_order(data):
         low = min([min(ratios[x]) for x in non_null])
         high = max([max(ratios[x]) for x in non_null])
         if not math.isnan(low) and not math.isnan(high):
-            ax.yaxis.set_ticks([low, math.trunc(((high - low)/2.0)/100.)*100., high])
+            ax.yaxis.set_ticks([low, math.trunc(((high - low) / 2.0) / 100.) * 100., high])
     else:
         stack = ax.stackplot(timestamps, *r, colors=all_colors)
         ax.set_ylim(0, 100)
