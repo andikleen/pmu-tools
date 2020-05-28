@@ -11,8 +11,6 @@
 # when the input has CPU generate separate lines for each CPU (may need post filtering)
 import sys
 import csv
-import re
-import copy
 import argparse
 import csv_formats
 import collections
