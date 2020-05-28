@@ -4,7 +4,7 @@ import re
 from collections import namedtuple
 
 def is_val(n):
-    return re.match(r'-?[0-9.]+%?|<.*>', n) != None
+    return re.match(r'-?[0-9.]+%?|<.*>', n) is not None
 
 def is_cpu(n):
     return re.match(r'(CPU)|(S\d+(-C\d+)?)|C\d+', n) is not None
@@ -63,8 +63,8 @@ fmtmaps = {
     is_cpu: 1,
     is_event: 2,
     is_val: 3,
-    is_enabled : 4,
-    is_running : 5
+    is_enabled: 4,
+    is_running: 5
 }
 
 Row = namedtuple('Row', ['ts', 'cpu', 'ev', 'val', 'enabled', 'running'])
@@ -76,7 +76,7 @@ def check_format(fmt, row):
             if j in fmtmaps:
                 vals[fmtmaps[j]] = row[i]
         r = Row._make(vals)
-        return r;
+        return r
     return False
 
 fmt_cache = formats[0]
