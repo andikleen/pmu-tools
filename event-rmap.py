@@ -6,12 +6,15 @@ from __future__ import print_function
 import sys
 import msr
 import ocperf
-from pmudef import *
+from pmudef import (MSR_PEBS_ENABLE, MSR_EVNTSEL, EVENTSEL_ENABLE, EVMASK,
+                    EVENTSEL_CMASK,
+                    EVENTSEL_EDGE, EVENTSEL_ANY, EVENTSEL_INV, EVENTSEL_PC,
+                    MSR_IA32_FIXED_CTR_CTRL)
 
 fixednames = (
-       "inst_retired.any",
-       "cpu_clk_unhalted.thread",
-       "cpu_clk_unhalted.ref_tsc"
+    "inst_retired.any",
+    "cpu_clk_unhalted.thread",
+    "cpu_clk_unhalted.ref_tsc"
 )
 
 cpu = 0
@@ -24,7 +27,7 @@ if not emap:
 found = 0
 try:
     pebs_enable = msr.readmsr(MSR_PEBS_ENABLE, cpu)
-except:
+except OSError:
     pebs_enable = 0
 for i in range(0, 8):
     try:

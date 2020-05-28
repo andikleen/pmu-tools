@@ -5,6 +5,7 @@ class Frequency:
     desc = " Frequency ratio"
     subplot = "Frequency"
     domain = "CoreMetric"
+
     def compute(self, EV):
         try:
             self.val = (EV("cycles", 1) / EV("CPU_CLK_UNHALTED.REF_TSC", 1)) * nominal_freq

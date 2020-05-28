@@ -5,7 +5,7 @@ from __future__ import print_function
 import re
 import sys
 import ocperf
-from pmudef import *
+from pmudef import EVMASK, EVENTSEL_EVENT, EVENTSEL_UMASK, extra_flags
 
 emap = ocperf.find_emap()
 if not emap:
