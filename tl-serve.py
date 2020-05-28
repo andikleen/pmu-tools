@@ -13,7 +13,6 @@ import csv
 import gen_level
 import re
 import os
-import itertools
 import tldata
 import signal
 import sys
@@ -190,7 +189,7 @@ help_$name = {
                 continue
             graph += T("""
         "$name": "$help",
-        """).substitute({"name": get_postfix(i), "help": data.helptxt[i] })
+        """).substitute({"name": get_postfix(i), "help": data.helptxt[i]})
         graph += """
 }
 </script>
