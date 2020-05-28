@@ -21,15 +21,15 @@ class MetricBase(object):
             setattr(self, k, v)
 
     def compute(self, EV):
-         try:
-             self.val = self._compute(EV)
-             self.thresh = self.val > 0
-         except ZeroDivisionError:
-             print_error("{0} zero division".format(self.__class__.__name__))
-             self.errcount += 1
-             self.val = 0
-             self.thresh = False
-         return self.val
+        try:
+            self.val = self._compute(EV)
+            self.thresh = self.val > 0
+        except ZeroDivisionError:
+            print_error("{0} zero division".format(self.__class__.__name__))
+            self.errcount += 1
+        self.val = 0
+        self.thresh = False
+        return self.val
 
     def _compute(self, EV):
         raise NotImplementedError()
