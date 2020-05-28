@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 # print histogram for perf.data
+from __future__ import print_function
 import perfpd
 import pfeat
 import argparse
 
 p = argparse.ArgumentParser(description='Print histogram for perf.data')
-p.add_argument('datafiles', nargs='*', 
+p.add_argument('datafiles', nargs='*',
                help='perf.data files (default perf.data)',
                default=['perf.data'])
-p.add_argument('--sort', help='field to sort on (symbol, line)', 
+p.add_argument('--sort', help='field to sort on (symbol, line)',
                default='symbol')
 p.add_argument('--min-percent', help='Minimum percent to print', default=1.0)
 args = p.parse_args()
@@ -37,4 +38,4 @@ for d in args.datafiles:
 
     cols = compute_cols(h.index)
     for s, v in zip(h.index, h.values):
-        print "%-*s %.2f%%" % (cols, s, v*100.0)
+        print("%-*s %.2f%%" % (cols, s, v * 100.0))

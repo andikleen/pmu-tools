@@ -12,8 +12,8 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
 # more details.
-
-from elftools.common.py3compat import maxint, bytes2str
+from __future__ import print_function
+from elftools.common.py3compat import bytes2str
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 import elftools.common.exceptions
@@ -35,14 +35,14 @@ def build_line_table(dwarfinfo):
             if entry.state is None or entry.state.end_sequence:
                 continue
             if prevstate:
-                lines.append((prevstate.address, 
+                lines.append((prevstate.address,
                               entry.state.address,
                               lp['file_entry'][prevstate.file - 1].name,
                               prevstate.line))
             prevstate = entry.state
     lines.sort()
     return lines
-                              
+
 def build_symtab(elffile):
     syms = []
     for section in elffile.iter_sections():
@@ -54,7 +54,7 @@ def build_symtab(elffile):
                 if sym.entry.st_info.type != 'STT_FUNC':
                     continue
                 end = sym['st_value'] + sym['st_size']
-                syms.append((sym['st_value'], end, 
+                syms.append((sym['st_value'], end,
                              bytes2str(sym.name)))
     syms.sort()
     return syms
@@ -73,7 +73,7 @@ def find_elf_file(fn):
             open_files[fn] = elffile
         except (IOError, elftools.common.exceptions.ELFError):
             if fn not in reported:
-                print "Cannot open", fn
+                print("Cannot open", fn)
             reported.add(fn)
             return None
 
@@ -90,7 +90,7 @@ def resolve_line(fn, ip):
     if resolve_line and fn in lines:
         pos = util.find_le(lines[fn], ip)
         if pos:
-            src = "%s:%d" % (pos[2], pos[3])    
+            src = "%s:%d" % (pos[2], pos[3])
     return src
 
 # global one hit cache
@@ -118,10 +118,10 @@ def resolve_sym(fn, ip):
             if sym:
                 loc, offset = sym[2], ip - sym[0]
     except elftools.common.exceptions.ELFError:
-        return  "?", 0
+        return "?", 0
 
     return loc, offset
-        
+
 def resolve_ip(filename, foffset, ip, need_line):
     sym, soffset, line = None, 0, None
     if filename and filename.startswith("/"):
@@ -136,5 +136,5 @@ def resolve_ip(filename, foffset, ip, need_line):
 
 if __name__ == '__main__':
     import sys
-    print resolve_addr(sys.argv[1], int(sys.argv[2], 16))
-    print resolve_line(sys.argv[1], int(sys.argv[2], 16))
+    print(resolve_ip(sys.argv[1], int(sys.argv[2], 16)))
+    print(resolve_line(sys.argv[1], int(sys.argv[2], 16)))

@@ -26,7 +26,7 @@ def lookup(m, ip):
         return None, 0
     else:
         mr = m[i - 1]
-    return mr, ip - mr[0] 
+    return mr, ip - mr[0]
 
 class MmapTracker:
     """Track mmap updates in a perf stream and allow lookup of symbols."""
@@ -35,7 +35,7 @@ class MmapTracker:
         self.maps = defaultdict(list)
         self.pnames = defaultdict(str)
         self.lookahead = 0
-        self.updates = []    
+        self.updates = []
 
     # look ahead for out of order mmap updates
     def lookahead_mmap(self, ev, n):
@@ -45,7 +45,7 @@ class MmapTracker:
                 j = ev[l]
                 # no time stamp: assume it's synthesized and kernel
                 if j.type in ('MMAP','MMAP2') and j.pid == -1 and j.tid == 0:
-                    bisect.insort(self.maps[j.pid], 
+                    bisect.insort(self.maps[j.pid],
                                   (j.addr, j.len, j.filename))
                 elif j.type in ('COMM','MMAP','MMAP2'):
                     bisect.insort(self.updates, (j.time2, j))

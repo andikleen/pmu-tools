@@ -21,8 +21,12 @@
 # tracing support
 # processor trace (aux) data and extra info headers
 #
-
-from construct import *
+from __future__ import print_function
+from construct import (If, Embedded, Struct, SNInt32, UNInt64, Flag, BitStruct,
+                       Padding, Enum, Array, Bytes, Anchor, UNInt32, GreedyRange,
+                       CString, PrefixedArray, TunnelAdapter, Magic, Pointer,
+                       BitField, UNInt16, HexDumpAdapter, String, Pass, Value,
+                       Switch)
 
 def sample_type(ctx):
     return ctx.attr.perf_event_attr.sample_type
@@ -33,7 +37,7 @@ def sample_id_size(ctx):
             st.identifier) * 8
 
 def sample_id():
-    return If(lambda ctx: True, # xxx check size
+    return If(lambda ctx: True,  # xxx check size
               Embedded(Struct("id_all",
                               If(lambda ctx: sample_type(ctx).tid,
                                  Embedded(Struct("pid2",
@@ -121,7 +125,7 @@ def event():
                                                  Flag("in_tx"),
                                                  Flag("predicted"),
                                                  Flag("mispred"),
-                                                 Padding(64 - 1*8)))))),
+                                                 Padding(64 - 1 * 8)))))),
                 If(lambda ctx: sample_type(ctx).regs_user,
                    Struct("regs_user",
                           Enum(UNInt64("abi"),
@@ -284,7 +288,7 @@ def perf_event():
                   Switch("data",
                            lambda ctx: ctx.type,
                            {
-                              "MMAP": mmap(),
+                              "MMAP": mmap(), # noqa E121
                               "MMAP2": mmap2(),
                               "LOST": Struct("lost",
                                               UNInt64("id"),
@@ -354,7 +358,7 @@ perf_event_attr = Struct("perf_event_attr",
                                    Flag("transaction"),
                                    Flag("identifier"),
 
-                                   Padding(64 - 3*8)),
+                                   Padding(64 - 3 * 8)),
                          BitStruct("read_format",
                                    Padding(4),
                                    Flag("group"),
@@ -607,5 +611,5 @@ if __name__ == '__main__':
 
     with open(p.file, "rb") as f:
         h = perf_file.parse_stream(f)
-        print h
-        #print get_events(h)
+        print(h)
+        #print(get_events(h))

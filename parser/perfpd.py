@@ -12,7 +12,7 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
 # more details.
-
+from __future__ import print_function
 import pandas as pd
 import numpy as np
 import perfdata
@@ -30,9 +30,9 @@ ignored = {'type', 'start', 'end', '__recursion_lock__', 'ext_reserved',
 bool_fields = {'kernel', 'hv', 'guest'}
 
 def resolve_list(j, ip, mm, need_line):
-     filename, _, foffset = mm.resolve(j.pid, ip)
-     sym, soffset, line = elf.resolve_ip(filename, foffset, ip, need_line)
-     return [filename, sym, soffset, line]
+    filename, _, foffset = mm.resolve(j.pid, ip)
+    sym, soffset, line = elf.resolve_ip(filename, foffset, ip, need_line)
+    return [filename, sym, soffset, line]
 
 def resolve_chain(cc, j, mm, need_line):
     if not cc:
@@ -183,7 +183,7 @@ if __name__ == '__main__':
     df, _, _ = read_samples(p.file)
     if p.repl:
         import code
-        print df
+        print(df)
         code.interact(banner='perf.data is in df', local=locals())
         sys.exit(0)
 
@@ -192,12 +192,12 @@ if __name__ == '__main__':
             from IPython.terminal.embed import InteractiveShellEmbed
         except NameError:
             sys.exit("Ipython not installed")
-        print df
+        print(df)
         ipshell = InteractiveShellEmbed(banner1="perf.data is in df")
         ipshell()
         sys.exit(0)
 
-    print df
-    print df['filename'].value_counts()
-    print df['symbol'].value_counts()
-    print df['line'].value_counts()
+    print(df)
+    print(df['filename'].value_counts())
+    print(df['symbol'].value_counts())
+    print(df['line'].value_counts())
