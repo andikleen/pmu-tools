@@ -1,5 +1,7 @@
 #!/bin/bash
 # tester for other programs in pmu-tools
+# PERF=... override perf binary
+# NORES=1 don't check measurement results
 
 . ./cpumap.sh
 set -e
@@ -22,9 +24,11 @@ $WRAP interval-normalize.py < x$$.csv
 $WRAP interval-normalize.py < x$$.csv > y$$.csv
 
 grep -vq PARSE-ERROR y$$.csv
+if [ -z "$NORES" ] ; then
 for i in branch-misses branches context-switches cycles instructions page-faults ; do
 	grep -q $i y$$.csv
 done
+fi
 
 grep -vq PARSE-ERROR x$$.csv
 
@@ -45,10 +49,10 @@ $WRAP interval-normalize.py < x$$.csv
 $WRAP interval-normalize.py < x$$.csv > y$$.csv
 
 grep -vq PARSE-ERROR y$$.csv
-grep Frontend y$$.csv
+[ -z "$NORES" ] && grep Frontend y$$.csv
 
 $WRAP utilized.py x$$.csv -o y$$.csv
-grep Frontend y$$.csv
+[ -z "$NORES" ] && grep Frontend y$$.csv
 
 $WRAP interval-plot.py x$$.csv -o x$$.png
 
@@ -90,6 +94,9 @@ rm x$$.lst
 
 # event-translate.py
 EVENTMAP=${cpus[hsw]} $WRAP event-translate.py r4c9 | grep -q rtm_retired.aborted
+
+$WRAP gen-dot.py simple > /dev/null
+$WRAP gen-dot.py ivb_client_ratios > /dev/null
 
 # untested: counterdiff.py
 
