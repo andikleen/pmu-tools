@@ -4,7 +4,6 @@
 from __future__ import print_function
 import glob
 import struct
-import os
 
 def writemsr(msr, val):
     n = glob.glob('/dev/cpu/[0-9]*/msr')
@@ -15,7 +14,7 @@ def writemsr(msr, val):
         os.close(f)
     if not n:
         raise OSError("msr module not loaded (run modprobe msr)")
-    
+
 def readmsr(msr, cpu = 0):
     f = os.open('/dev/cpu/%d/msr' % (cpu,), os.O_RDONLY)
     os.lseek(f, msr, os.SEEK_SET)
@@ -33,7 +32,7 @@ def changebit(msr, bit, val):
             v = v | (1 << bit)
         else:
             v = v & ~(1 << bit)
-        os.lseek(f, msr, os.SEEK_SET)            
+        os.lseek(f, msr, os.SEEK_SET)
         os.write(f, struct.pack('Q', v))
         os.close(f)
     if not n:
