@@ -16,6 +16,7 @@
 # events), but we need to recurse on () and for sub exprs
 # this does not require handling full operator precedence
 #
+from __future__ import print_function
 import re
 import inspect
 
@@ -79,7 +80,7 @@ def tokenize(eq, box, user_mode=False):
     eq = eq.replace("with:", "with: ")
     eq = eq.replace("(on Core)", "")
     eq = re.sub(r"([*={}(),/<>]|>=|==|<=)", r" \1 ", eq)
-    eq = re.sub(r"\.([a-z])", r" . \1", eq) 
+    eq = re.sub(r"\.([a-z])", r" . \1", eq)
     eq = re.sub(r"([=<>])  \1", r"\1\1", eq)
     eq = re.sub(r"([<>])  =", r"\1=", eq)
     return map(lambda x: fix_token(x, box, user_mode), eq.split())
@@ -122,7 +123,7 @@ def convert_qual(q, v):
     return (q, v)
 
 def is_ev(l):
-    return isinstance(l, basestring) and l.startswith("EV(")
+    return isinstance(l, str) and l.startswith("EV(")
 
 def apply_expr(o, fl, vl):
     if is_list(o):
@@ -151,7 +152,7 @@ def has_ev(l):
     return False
 
 def apply_list(o, fl, vl):
-    dbg("expr", "apply %s and %s to %s from %s" % 
+    dbg("expr", "apply %s and %s to %s from %s" %
                    (fl, vl, o, inspect.stack()[1][2:]))
     for j in fl:
         if is_list(j):
@@ -160,7 +161,7 @@ def apply_list(o, fl, vl):
                 o = apply_expr(o, [n[0]], [n[1]])
     fl = filter(lambda x: not is_list(x), fl)
     if len(fl) != len(vl):
-        print "MISMATCHED APPLY",fl,vl,o,inspect.stack()[1][2:]
+        print("MISMATCHED APPLY",fl,vl,o,inspect.stack()[1][2:])
         return o
     if not has_ev(o):
         evo = []
@@ -177,7 +178,7 @@ closener = { "{": "}", "(": ")" }
 # a
 # NUMBER
 # [...]           (???)
-# a { list } 
+# a { list }
 def parse_term(tl):
     name = tl[0]
     if not (is_id(name) or is_number(name) or name[0] == '['):
@@ -206,7 +207,7 @@ def parse_term(tl):
         name = apply_list(name, fl, vl)
     return name, None, tl
 
-# term { , term } 
+# term { , term }
 def parse_list(tl):
     ls = []
     nm = []
@@ -227,7 +228,7 @@ def parse_list(tl):
 # a . '{' list '}' = ( val_list )
 # a . x = NUMBER
 def parse_with(tl, orig):
-    #print "with",tl
+    #print("with",tl)
     if tl[0] == '{':
         ls, nm, tl = parse_list(tl[1:])
         vl = []
@@ -318,7 +319,7 @@ def expr_term(tl):
         tl = expect(tl, ')')
     else:
         out = [tl[0]]
-        tl = tl[1:]        
+        tl = tl[1:]
         if tl and tl[0] == '{':
             fl, vl, tl = parse_list(tl[1:])
             tl = expect(tl, '}')
@@ -372,7 +373,7 @@ def apply_user_qual(e, qual):
 def parse(s, box, quiet=False, user_mode=False, qual=None):
     try:
         if not quiet:
-            print "Expression", s
+            print("Expression", s)
         tl = tokenize(s, box, user_mode)
         dbg("tokenize", tl)
         e, tl = expr(tl)
@@ -387,11 +388,11 @@ def parse(s, box, quiet=False, user_mode=False, qual=None):
         dbg("expanded", tl)
         return res
     except ParseError as p:
-        print "PARSE-ERROR", p.msg
+        print("PARSE-ERROR", p.msg)
         return []
 
 if __name__ == '__main__':
     assert is_id("x")
-    print parse("a + b + c", "foo")
-    print parse("a with:x=1 + (b with:.{o}=(1) + c with:{edge}) with:{x=1,y=2} + d", "foo")
+    print(parse("a + b + c", "foo"))
+    print(parse("a with:x=1 + (b with:.{o}=(1) + c with:{edge}) with:{x=1,y=2} + d", "foo"))
 

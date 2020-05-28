@@ -21,6 +21,7 @@
 # e.g. ucevent event
 # no event => list
 # ucevent -h to show other arguments
+from __future__ import print_function
 import argparse
 import sys
 import textwrap
@@ -56,10 +57,10 @@ class CPU:
     """Query CPU information."""
     def cpumap(self):
         if (self.vendor == "GenuineIntel" and
-            self.family == 6 and
-            self.model in cpu_mapping):
+                self.family == 6 and
+                self.model in cpu_mapping):
             return cpu_mapping[self.model]
-        print >>sys.stderr, "Cannot identify CPU model %d" % (self.model)
+        print("Cannot identify CPU model %d" % (self.model))
         return None
 
     # assumes that physical ids, nodes are all in the same name space
@@ -99,29 +100,35 @@ if not cputype:
 if not cputype:
     sys.exit(1)
 
-code = """
-import CPU_uc
-events = CPU_uc.events
-aliases = CPU_uc.aliases
-derived = CPU_uc.derived
-categories = CPU_uc.categories
-import CPU_extra
-extra_derived = CPU_extra.extra_derived
-""".replace("CPU", cputype)
-try:
-    sys.path.append("nda")
-    exec code
-except ImportError:
-    print >>sys.stderr, "Unknown CPU", cputype
-    sys.exit(1)
+if cputype == "skx":
+    import skx_uc as uc
+    import skx_extra as extra
+elif cputype == "bdx":
+    import bdx_uc as uc
+    import bdx_extra as extra
+elif cputype == "bdxde":
+    import bdxde_uc as uc
+    import bdxde_extra as extra
+elif cputype == "hsx":
+    import hsx_uc as uc
+    import hsx_extra as extra
+elif cputype == "ivt":
+    import ivt_uc as uc
+    import ivt_extra as extra
+elif cputype == "jkt":
+    import jkt_uc as uc
+    import jkt_extra as extra
+else:
+    sys.exit("Unknown CPU " + cputype)
+
 import aux
 cpu_aux = aux.Aux()
 
 def lookup_event(name):
-    if name in events:
-        return events[name]
-    if name in derived:
-        return derived[name]
+    if name in uc.events:
+        return uc.events[name]
+    if name in uc.derived:
+        return uc.derived[name]
     return None
 
 def print_list(f, ls, c, description, equation, ehdr):
@@ -148,10 +155,10 @@ def print_list(f, ls, c, description, equation, ehdr):
             elif not args.unsupported:
                 continue
             if args.name_only:
-                print >>f, i
+                print(i, file=f)
                 continue
             ehdr.out()
-            print >>f, "  %-30s %-40s" % (i, desc + derived)
+            print("  %-30s %-40s" % (i, desc + derived), file=f)
             if description:
                 defn = ""
                 if "Defn" in ev:
@@ -161,7 +168,7 @@ def print_list(f, ls, c, description, equation, ehdr):
                 if "MaxIncCyc" in ev and ev["MaxIncCyc"] > 1:
                     defn += (" May increase upto %d units per cycle." %
                                 (ev["MaxIncCyc"]))
-                print >>f, wrap.fill(defn)
+                print(wrap.fill(defn), file=f)
                 if "Equation" in ev:
                     eql, equations = convert_equation(ev, dict(), True, True)
                     q = set()
@@ -171,12 +178,12 @@ def print_list(f, ls, c, description, equation, ehdr):
                 else:
                     q = get_qualifiers(format_box(ev))
                 if q:
-                    print >>f, wrap.fill("Qualifiers: " + " ".join(q))
+                    print(wrap.fill("Qualifiers: " + " ".join(q)), file=f)
                 if "Filter" in ev:
-                    print >>f, wrap.fill("Filter: " + show_filter(ev["Filter"]))
+                    print(wrap.fill("Filter: " + show_filter(ev["Filter"])), file=f)
             if equation:
                 if "Equation" in ev:
-                    print >>f, "     Equation: ", ev["Equation"]
+                    print("     Equation: ", ev["Equation"], file=f)
     return count
 
 def show_one_filter(f):
@@ -222,13 +229,15 @@ class EventsHeader:
     def out(self):
         if not self.printed and not args.name_only:
             n = expand_acronyms(self.name)
-            print >>self.f
-            print >>self.f, n
+            print(file=self.f)
+            print(n, file=self.f)
             self.printed = True
 
 def cmp_cat(a, b):
     # XXX move interesting ones first
-    return cmp(a.lower(), b.lower())
+    al = a.lower()
+    bl = b.lower()
+    return (al > bl) - (bl < al)
 
 def get_pager():
     if args.no_pager:
@@ -247,14 +256,14 @@ def print_events(cat, desc, equation):
     ecount = 0
     dcount = 0
     if (args.unsupported or args.broken) and not args.name_only:
-        print >>f, "\nNot all of these events have been tested and they may be broken"
-        print >>f, "USE AT YOUR OWN RISK!"
-    for c in sorted(categories, cmp_cat):
+        print("\nNot all of these events have been tested and they may be broken", file=f)
+        print("USE AT YOUR OWN RISK!", file=f)
+    for c in sorted(uc.categories, cmp_cat):
         if cat and expand_acronyms(c).lower().find(cat.lower()) < 0:
             continue
         ehdr = EventsHeader(c, f)
-        ecount += print_list(f, events, c, desc, equation, ehdr)
-        dcount += print_list(f, derived, c, desc, equation, ehdr)
+        ecount += print_list(f, uc.events, c, desc, equation, ehdr)
+        dcount += print_list(f, uc.derived, c, desc, equation, ehdr)
     if proc:
         f.close()
         proc.wait()
@@ -353,7 +362,7 @@ def sum_event(a, b):
     return get_box(a) == get_box(b)
 
 def is_str(x):
-    return isinstance(x, basestring)
+    return isinstance(x, str)
 
 def scale_val(val):
     if args.scale and not is_str(val):
@@ -434,7 +443,7 @@ class Output:
         for v, j in zip(self.vals, self.headers):
             l = self.fieldlen(j)
             l = max(len(self.format_field(v, j, l)), l)
-            print >>args.output, pre + j
+            print(pre + j, file=args.output)
             pre += "|" + " "*(l - 1)
             self.columns[j] = l
 
@@ -448,7 +457,7 @@ class Output:
             num = self.format_field(j, h, fieldlen)
             out += "%-*s" % (fieldlen, num)
             self.update_column(h, len(num))
-        print >>args.output, out
+        print(out, file=args.output)
         self.vals = []
         self.headers = []
         self.num_output += 1
@@ -462,9 +471,9 @@ class OutputCSV(Output):
 
     def flush(self):
         if self.num_output == 0:
-            print >>args.output, self.csv.join(["timestamp"] + self.headers)
+            print(self.csv.join(["timestamp"] + self.headers), file=args.output)
         scaled_vals = map(scale_val, [self.timestamp] + self.vals)
-        print >>args.output, self.csv.join(map(str, scaled_vals))
+        print(self.csv.join(map(str, scaled_vals)), file=args.output)
         self.vals = []
         self.headers = []
         self.num_output += 1
@@ -489,17 +498,17 @@ class PerfRun:
                 i = i.replace("{","").replace("}","")
                 o = "%s,%s" % (num, i)
                 to = "%d," % (t)
-                print >>f,to + "S0,1,"+o
-                print >>f,to + "S1,1,"+o
+                print(to + "S0,1,"+o, file=f)
+                print(to + "S1,1,"+o, file=f)
                 num += 10000
         f.close()
 
     def execute(self, s, logfile, evl):
         if not args.quiet:
-            l = map(lambda x: "'" + x + "'" if x.find("{") >= 0 else x,  s)
+            l = map(lambda x: "'" + x + "'" if x.find("{") >= 0 else x, s)
             i = l.index('--log-fd')
             del l[i:i+2]
-            print >>args.output, " ".join(l)
+            print(" ".join(l), file=args.output)
         if args.mock:
             self.mock(logfile, evl)
             self.perf = None
@@ -553,15 +562,15 @@ def count_box(box):
 
 # run a equation
 def evaluate(eq, EV):
-    SAMPLE_INTERVAL = float(args.interval)*1000000
-    ROUND = lambda x: round(x)
-    KB = 1024
-    MB = 1024*KB
-    GB = 1024*MB
-    KILO = 1000
-    MEGA = 1000*KILO
-    GIGA = 1000*MEGA
-    NUM_R3QPI = count_box("r3qpi") # XXX add generic function
+    SAMPLE_INTERVAL = float(args.interval)*1000000 # noqa F841
+    ROUND = lambda x: round(x) # noqa F841
+    KB = 1024 # noqa F841
+    MB = 1024*KB # noqa F841
+    GB = 1024*MB # noqa F841
+    KILO = 1000  # noqa F841
+    MEGA = 1000*KILO # noqa F841
+    GIGA = 1000*MEGA # noqa F841
+    NUM_R3QPI = count_box("r3qpi") # noqa F841 XXX add generic function
     dbg("evaluate", eq)
     try:
         return eval(eq)
@@ -595,7 +604,7 @@ def gen_res(evl, res, evp, equations, evnames, timestamp):
                 if '/' in equations[0]:
                     EV = lambda x, n: float(eq_events[x])
                 else:
-                    EV = lambda x, n: long(eq_events[x])
+                    EV = lambda x, n: int(eq_events[x])
                 r = evaluate(equations[0], EV)
                 dbg("result", r)
             out.out(evnames[0], r, timestamp)
@@ -639,11 +648,11 @@ def gen_events(evl):
             match = [prev in groupings, j in groupings]
             if match == [True, True] or match == [False, False]:
                 sep = ","
-            if prev in ['[', '{'] and match[1] == False:
+            if prev in ['[', '{'] and match[1] is False:
                 sep = ""
             if prev in [']', '}']:
                 sep = ","
-            if match[0] == False and j in ['[', '{']:
+            if match[0] is False and j in ['[', '{']:
                 sep = ","
         e += sep + j
         prev = j
@@ -681,7 +690,7 @@ perf_errors = {
 def measure(evl, argl, equations, evnames):
     warned = False
     all_events = gen_events(evl)
-    ## use a pty because perf doesn't do enough fflush() otherwise
+    # use a pty because perf doesn't do enough fflush() otherwise
     outp, inp = pty.openpty()
     logfile = "ulog.%d" % (os.getpid())
     run = PerfRun()
@@ -714,7 +723,7 @@ def measure(evl, argl, equations, evnames):
             # uncore// contains commas!
             m = re.match(r"([0-9.]+),([0-9]+|<.*>),?,(.*)$", l)
             if not m:
-                print "PERF-UNREADABLE", l,
+                print("PERF-UNREADABLE", l, end=" ")
                 continue
             timestamp = m.group(1)
             if timestamp != prev_timestamp:
@@ -745,7 +754,7 @@ def measure(evl, argl, equations, evnames):
             os.remove(logfile)
     except exceptions.IOError:
         # ptys always seem to end with EIO
-        #print "Error talking to perf", e
+        #print("Error talking to perf", e)
         pass
     if evp:
         num = len(res)
@@ -795,7 +804,7 @@ def convert_equation(ev, qual, in_group, quiet=False):
         # run equation to collect events
         r = evaluate(p, lambda x, n: ev_append(ovl, x, nl, n))
         if is_error(r) and not args.quiet:
-            print >>sys.stderr, "Cannot evaluate equation", ev["Equation"]
+            print("Cannot evaluate equation", ev["Equation"], file=sys.stderr)
         nnl.append(nl)
         evl.append(ovl)
         equations.append(p)
@@ -810,7 +819,7 @@ standard_events = ("cycles", "ref-cycles", "instructions")
 def convert_one(evn, evl, evnames, equations, qual, in_group):
     ev = lookup_event(evn)
     if not ev:
-        print >>sys.stderr, "unknown event", evn
+        print("unknown event", evn, file=sys.stderr)
         sys.exit(1)
     if "Equation" in ev:
         nvl, neql = convert_equation(ev, qual, in_group)
@@ -880,7 +889,7 @@ def convert_events(arg_events):
             evn = n[0]
             qual = n[1]
         if re.search(r"[[*?]", evn):
-            for me in sorted(events.keys() + derived.keys()):
+            for me in sorted(uc.events.keys() + uc.derived.keys()):
                 if fnmatch.fnmatch(me, evn):
                     evl, evnames, equations = convert_one(me, evl, evnames,
                                                           equations, qual, in_group)
@@ -889,7 +898,7 @@ def convert_events(arg_events):
                                                   qual, in_group)
         j += 1
     if not args.quiet:
-        print >>args.output, "Events:", " ".join(print_events)
+        print("Events:", " ".join(print_events), file=args.output)
     return evl, equations, evnames, args.events[j:]
 
 def fix_field(nev, key, old, num):
@@ -919,12 +928,12 @@ def maybe_expand_ev(table, name, max_node):
 # XXX should do this at generation time
 def expand_events():
     max_node = cpu.max_node() + 1
-    for j in derived.keys():
-        maybe_expand_ev(derived, j, max_node)
-    for j in events.keys():
-        maybe_expand_ev(events, j, max_node)
-    for j in extra_derived:
-        derived[j] = extra_derived[j]
+    for j in uc.derived.keys():
+        maybe_expand_ev(uc.derived, j, max_node)
+    for j in uc.events.keys():
+        maybe_expand_ev(uc.events, j, max_node)
+    for j in extra.extra_derived:
+        uc.derived[j] = extra.extra_derived[j]
 
 def get_counter(c):
     m = re.match(r"(\d+)-(\d+)", c)
@@ -945,11 +954,11 @@ def complicated_counters(ev):
 
 def check_events():
     ae = dict()
-    for j in sorted(events.keys()):
-        ev = events[j]
+    for j in sorted(uc.events.keys()):
+        ev = uc.events[j]
         box = j[:j.index(".")]
         if "EvSel" not in ev:
-            print j,"has no evsel"
+            print(j,"has no evsel")
         umask = ""
         extsel = 0
         if "Umask" in ev:
@@ -960,11 +969,11 @@ def check_events():
                 extsel = 0
         key = box, ev['EvSel'], extsel, umask
         if key in ae:
-            print ae[key],"duplicated with",j,key
+            print(ae[key],"duplicated with",j,key)
         else:
             ae[key] = j
         if complicated_counters(ev):
-            print "event %s has complicated counters:  %s" % (j, ev["Counters"])
+            print("event %s has complicated counters:  %s" % (j, ev["Counters"]))
 
 def check_multiplex():
     if args.quiet:
@@ -985,19 +994,19 @@ def event_dummy(e, n):
 def parse_all():
     errors = 0
     empty = 0
-    for name in derived.keys():
-        print "---",name,": "
-        el = format_event(derived[name])
+    for name in uc.derived.keys():
+        print("---",name,": ")
+        el = format_event(uc.derived[name])
         for e in el:
-            print e
+            print(e)
             r = evaluate(e, event_dummy)
-            print "result:", r
+            print("result:", r)
             if is_error(r):
                 errors += 1
         if not el:
-            print "empty list"
+            print("empty list")
             empty += 1
-    print "%d errors, %d empties" % (errors, empty)
+    print("%d errors, %d empties" % (errors, empty))
 
 perf = os.getenv("PERF")
 if not perf:
@@ -1101,14 +1110,12 @@ or use that CPU for the (very few) events that use core events''', type=int)
         if len(rest) == 0:
             rest = ["sleep", "999999"]
         if len(evl) == 0:
-            print >>sys.stderr, "no events to measure"
-            sys.exit(1)
+            sys.exit("no events to measure")
         if args.resolve:
             for ev, evname in zip(evl, evnames):
-                print evname,"\t",ev
+                print(evname,"\t",ev)
             sys.exit(0)
         try:
             measure(evl, argl + rest, equations, evnames)
         except OSError as e:
-            print "perf failed to run:", e
-            sys.exit(1)
+            sys.exit("perf failed to run: " + e)

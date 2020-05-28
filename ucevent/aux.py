@@ -86,8 +86,8 @@ class Aux:
     }
 
     clockticks = (
-        "uncore_(cbox|ha|pcu)_?\d*/event=0x0/",
-        ".*/clockticks/", 
-        "uncore_(r2pcie|r3qpi)_?\d*/event=0x1/",
-        "uncore_qpi(_\d+)?/event=0x14/"
+        r"uncore_(cbox|ha|pcu)_?\d*/event=0x0/",
+        r".*/clockticks/",
+        r"uncore_(r2pcie|r3qpi)_?\d*/event=0x1/",
+        r"uncore_qpi(_\d+)?/event=0x14/"
     )

@@ -1,7 +1,8 @@
 #!/usr/bin/env python2
 # sanity check an event
-# percent between 0 and 100% 
+# percent between 0 and 100%
 # nothing negative
+from __future__ import print_function
 import sys
 import os
 import pipes
@@ -9,10 +10,10 @@ import pipes
 logfile = "slog.%d" % (os.getpid())
 
 s = "./ucevent.py 2>&1 -x, -o " + logfile + " " + " ".join(map(pipes.quote, sys.argv[1:]))
-print s
+print(s)
 r = os.system(s)
 if r != 0:
-    print "ucevent failed", r
+    print("ucevent failed", r)
     sys.exit(1)
 
 f = open(logfile, "r")
@@ -25,13 +26,12 @@ for l in f:
         try:
             num = float(v)
         except ValueError:
-            print h,v
+            print(h,v)
             continue
         if num < 0:
-            print h,"negative value",v
+            print(h,"negative value",v)
         if h.find("_PCT") >= 0 or h.find("PCT_") >= 0:
             if num < 0 or num > 1.01:
-                print h,"percent out of bound", v
-
+                print(h,"percent out of bound", v)
 
 os.remove(logfile)
