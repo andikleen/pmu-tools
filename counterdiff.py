@@ -2,10 +2,11 @@
 # counterdiff.py < plog program ..      (or general perf arguments)
 # verify plog.* output from toplev by running event one by one
 # this can be used to estimate multiplexing measurement errors
+from __future__ import print_function
 import sys, os
 
 def run(x):
-    print x
+    print(x)
     os.system(x)
 
 for l in sys.stdin:
@@ -25,5 +26,5 @@ for l in sys.stdin:
         delta = (float(j[0]) - float(n[0])) / float(n[0])
     else:
         delta = 0
-    print n[1], j[0], n[0], "%.2f" % (delta * 100.0)
+    print(n[1], j[0], n[0], "%.2f" % (delta * 100.0))
 
