@@ -15,7 +15,7 @@ busses = (0x3f, 0x7f, 0xbf, 0xff)
 def local_direct2core(val):
     c = 0
     for b in busses:
-        if pci.probe(b, 14, 0):        
+        if pci.probe(b, 14, 0):
             pci.changebit(b, 14, 0, 0x84, 1, val)
             c += 1
     if c == 0:
