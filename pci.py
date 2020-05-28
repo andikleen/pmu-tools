@@ -7,7 +7,7 @@ import struct
 
 def probe(bus, dev, func):
     fn = "/sys/devices/pci0000:%02x/0000:%02x:%02x.%01x/config" % (bus, bus, dev, func)
-    return os.path.isfile(fn)    
+    return os.path.isfile(fn)
 
 def openpci(bus, dev, func, offset, mode):
     fn = "/sys/devices/pci0000:%02x/0000:%02x:%02x.%01x/config" % (bus, bus, dev, func)
@@ -38,4 +38,3 @@ def changebit(bus, device, func, offset, bit, val):
     os.lseek(f, offset, os.SEEK_SET)
     os.write(f, struct.pack('I', v))
     os.close(f)
-    
