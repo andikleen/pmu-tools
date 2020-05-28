@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # plot interval CSV output from perf/toplev
 # perf stat -I1000 -x, -o file ...
-# toplev -I1000 -x, -o file ... 
+# toplev -I1000 -x, -o file ...
 # interval-plot.py file (or stdin)
 # delimeter must be ,
 # this is for data that is not normalized
@@ -18,19 +18,20 @@ import collections
 import argparse
 import re
 import csv_formats
+import gen_level
 
 p = argparse.ArgumentParser(
         usage='plot interval CSV output from perf stat/toplev',
         description='''
 perf stat -I1000 -x, -o file ...
-toplev -I1000 -x, -o file ... 
+toplev -I1000 -x, -o file ...
 interval-plot.py file (or stdin)
 delimeter must be ,
 this is for data that is not normalized.''')
 p.add_argument('--xkcd', action='store_true', help='enable xkcd mode')
 p.add_argument('--style', help='set mpltools style (e.g. ggplot)')
 p.add_argument('file', help='CSV file to plot (or stdin)', nargs='?')
-p.add_argument('--output', '-o', help='Output to file. Otherwise show.', 
+p.add_argument('--output', '-o', help='Output to file. Otherwise show.',
                nargs='?')
 args = p.parse_args()
 
@@ -41,8 +42,6 @@ if args.style:
     except ImportError:
         print("Need mpltools for setting styles (pip install mpltools)")
 
-import gen_level
-
 try:
     import brewer2mpl
     all_colors = brewer2mpl.get_map('Paired', 'Qualitative', 12).hex_colors
@@ -50,8 +49,8 @@ except ImportError:
     print("Install brewer2mpl for better colors (pip install brewer2mpl)")
     all_colors = ('green','orange','red','blue',
               'black','olive','purple','#6960EC', '#F0FFFF',
-              '#728C00', '#827B60', '#F87217', '#E55451', # 16
-              '#F88017', '#C11B17', '#17BFC2', '#C48793') # 20
+              '#728C00', '#827B60', '#F87217', '#E55451',  # 16
+              '#F88017', '#C11B17', '#17BFC2', '#C48793')  # 20
 
 cur_colors = collections.defaultdict(lambda: all_colors)
 assigned = dict()
