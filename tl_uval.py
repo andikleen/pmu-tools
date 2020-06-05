@@ -52,7 +52,8 @@ class UVal:
         return "{} [{} +- {}]*{}".format(self.name, self.value, self.stddev, self.samples)
 
     def format_value(self):
-        if self.value is None: return ""
+        if self.value is None:
+            return ""
         if self.is_ratio:
             return "{:>16.2f}".format(self.value * 100.)
         elif self.value > 1000:
@@ -61,7 +62,8 @@ class UVal:
             return "{:16.2f}".format(self.value)
 
     def format_value_raw(self):
-        if self.value is None: return ""
+        if self.value is None:
+            return ""
         if self.is_ratio:
             return "{:>13.2f}".format(self.value * 100.)
         else:
@@ -204,7 +206,8 @@ class UVal:
         b = rhs.stddev
         # new value
         f = op(float(A), B)
-        if isinstance(f, float) and f.is_integer(): f = int(f)
+        if isinstance(f, float) and f.is_integer():
+            f = int(f)
         # uncertainty
         if op in (operator.mul, operator.truediv, div_op):
             sgn = 1 if op == operator.mul else -1
