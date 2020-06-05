@@ -30,6 +30,7 @@
 #define _GNU_SOURCE 1
 #include <stdio.h>
 #include <stdlib.h>
+#include <cpuid.h>
 #include "jevents.h"
 
 /**
@@ -52,37 +53,29 @@ char *get_cpu_str(void)
  */
 char *get_cpu_str_type(char *type, char **idstr_step)
 {
-	char *line = NULL;
-	size_t llen = 0;
-	int found = 0, n;
-	char vendor[30];
-	int model = 0, fam = 0, step = 0;
-	char *res = NULL;
-	FILE *f = fopen("/proc/cpuinfo", "r");
+	char *res;
+	union {
+		unsigned b, c, d;
+		char str[12];
+	} vendor;
+	unsigned a, b, c, d;
+	unsigned stepping, family, model;
+	int n;
 
-	if (!f)
-		return NULL;
-	while (getline(&line, &llen, f) > 0) {
-		if (sscanf(line, "vendor_id : %29s", vendor) == 1)
-			found++;
-		else if (sscanf(line, "model : %d", &model) == 1)
-			found++;
-		else if (sscanf(line, "cpu family : %d", &fam) == 1)
-			found++;
-		else if (sscanf(line, "stepping : %d", &step) == 1)
-			found++;
-		if (found == 4) {
-			if (idstr_step)
-				asprintf(idstr_step, "%s-%d-%X-%X%s", vendor, fam,
-						model, step, type);
-			n = asprintf(&res, "%s-%d-%X%s", vendor, fam, model,
-					type);
-			if (n < 0)
-				res = NULL;
-			break;
-		}
-	}
-	free(line);
-	fclose(f);
+	__cpuid(0, a, vendor.b, vendor.c, vendor.d);
+	__cpuid(1, a, b, c, d);
+	stepping = a & 0xf;
+	model = (a >> 4) & 0xf;
+	family = (a >> 8) & 0xf;
+	if (family == 0xf)
+		family += (a >> 20) & 0xff;
+	if (family == 6 || family == 0xf)
+		model += ((a >> 16) & 0xf) << 4;
+	if (idstr_step)
+		asprintf(idstr_step, "%s-%d-%X-%X%s", vendor.str, family,
+				model, stepping, type);
+	n = asprintf(&res, "%s-%d-%X%s", vendor.str, family, model, type);
+	if (n < 0)
+		res = NULL;
 	return res;
 }
