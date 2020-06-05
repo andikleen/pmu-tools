@@ -5,6 +5,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* pmu-tools is now generally python3 clean (but still runs with python2 by default). One exception
+  is parser which would need to be ported to the python3 construct.
 * New tool utilized.py to remove idle CPUs from toplev output
 * toplev --import can now directly decompress xz and gz files. -o / --valcsv / --perf-output
   can now directly compress files if their names are specified with .xz or .gz.
