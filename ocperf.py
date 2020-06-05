@@ -883,7 +883,8 @@ def canon_emapvar(el, typ):
         if l:
             if len(l) > 1:
                 l = [x for x in l if x.find(typ) >= 0]
-            el = l[0]
+            if l:
+                el = l[0]
     return el
 
 def find_emap():
