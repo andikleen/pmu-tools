@@ -198,7 +198,15 @@ def perf_event_header():
                                 ID_INDEX        = 69,
                                 AUXTRACE_INFO   = 70,
                                 AUXTRACE        = 71,
-                                AUXTRACE_ERROR  = 72),
+                                AUXTRACE_ERROR  = 72,
+                                THREAD_MAP      = 73,
+                                CPU_MAP         = 74,
+                                STAT_CONFIG     = 75,
+                                STAT            = 76,
+                                STAT_ROUND      = 77,
+                                EVENT_UPDATE    = 78,
+                                TIME_CONV       = 79,
+                                COMPRESSED      = 80),
                            Embedded(BitStruct(None,
                                               Padding(1),
                                               Enum(BitField("cpumode", 7),
@@ -280,6 +288,12 @@ def read_format():
                              If(lambda ctx: read_flags(ctx).id,
                                 UNInt64("id2")))))
 
+def time_conv():
+    return Struct("time_conv",
+                  UNInt64("time_shift"),
+                  UNInt64("time_mult"),
+                  UNInt64("time_zero"))
+
 def perf_event():
     return Struct("perf_event",
                   Anchor("start"),
@@ -309,7 +323,9 @@ def perf_event():
                                                       SNInt32("tid"),
                                                       read_format(),
                                                       sample_id())),
-                              "SAMPLE": event()
+                              "SAMPLE": event(),
+                              # some missing cases
+                              "TIME_CONV": time_conv(),
                            }),
                         Anchor("end"),
                         Padding(lambda ctx:
