@@ -573,6 +573,8 @@ def evaluate(eq, EV):
     dbg("evaluate", eq)
     try:
         return eval(eq)
+    except SyntaxError:
+        return "#EVAL"
     except NameError:
         return "#EVAL"
     except ZeroDivisionError:
