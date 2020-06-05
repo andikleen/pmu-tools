@@ -42,7 +42,7 @@ jobs:
       run: |
         pip install matplotlib
         WRAP=python PERF=./fake-perf.py NORES=1 ./other-tester
-    - name: Run ucevent tests:
+    - name: Run ucevent tests
         #yum install parallel
         #cd ucevent
         #WRAP=python MOCK=1 NORES=1 ./RUN-ALL
