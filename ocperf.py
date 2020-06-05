@@ -732,7 +732,10 @@ class EmapNativeJSON(object):
         try:
             if ocverbose:
                 print("open", name)
-            data = json.load(open(name, 'r'))
+            d = open(name, 'r').read()
+            if not isinstance(d, str):
+                d = d.encode('utf-8')
+            data = json.loads(d)
         except ValueError as e:
             print("Cannot open", name + ":", e.message, file=sys.stderr)
             self.error = True
