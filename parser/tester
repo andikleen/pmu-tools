@@ -2,6 +2,7 @@
 # test different variants of the perf format
 
 PERF=${PERF:-perf}
+WRAP=${WRAP:-python}
 
 failed() {
 	echo FAILED
@@ -29,8 +30,8 @@ check() {
 	if [ $(stat -c %s $FN) == 0 ] ; then
 		return
 	fi
-	python perfdata.py $FN > pdata.txt
-	python perfpd.py $FN > ppd.txt
+	$WRAP perfdata.py $FN > pdata.txt
+	$WRAP perfpd.py $FN > ppd.txt
 
 	# XXX check more fields
 	AS=$(grep -c SAMPLE pdata.txt)
