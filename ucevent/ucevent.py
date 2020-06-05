@@ -673,7 +673,7 @@ def gennames(names, sockets):
     return x
 
 def check_per_socket(s, warned):
-    if (not warned and
+    if (not warned and not args.mock and
             sorted(map(lambda x: int(x[1:]), s)) != range(0, len(s))):
         ucmsg.warning("perf --per-socket appears broken. Please update perf.")
         ucmsg.warning("Data on socket > 0 will be likely incorrect.")
