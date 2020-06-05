@@ -95,5 +95,7 @@ def parse_csv_row(row):
             return r
     if row[0].startswith("#"):    # comment
         return None
+    if ".csv" in row[0]:          # fake-perf output
+        return None
     print("PARSE-ERROR", row)
     return None
