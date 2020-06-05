@@ -537,6 +537,14 @@ def update_ename(ev, name):
         ev.name = name
     return ev
 
+def json_open(name):
+    if ocverbose:
+        print("open", name)
+    d = open(name, "rb").read()
+    if not isinstance(d, str):
+        d = d.decode('utf-8')
+    return json.loads(d)
+
 class EmapNativeJSON(object):
     """Read an event table."""
 
@@ -730,12 +738,7 @@ class EmapNativeJSON(object):
         if name.find("JKT") >= 0 or name.find("Jaketown") >= 0:
             self.latego = True
         try:
-            if ocverbose:
-                print("open", name)
-            d = open(name, 'r').read()
-            if not isinstance(d, str):
-                d = d.encode('utf-8')
-            data = json.loads(d)
+            data = json_open(name)
         except ValueError as e:
             print("Cannot open", name + ":", e.message, file=sys.stderr)
             self.error = True
@@ -748,9 +751,7 @@ class EmapNativeJSON(object):
 
     def add_offcore(self, name):
         """Read offcore table."""
-        if ocverbose:
-            print("open", name)
-        data = json.load(open(name, 'rb'))
+        data = json_open(name)
         #   {
         #    "MATRIX_REQUEST": "DEMAND_DATA_RD",
         #    "MATRIX_RESPONSE": "NULL",
@@ -788,9 +789,7 @@ class EmapNativeJSON(object):
             create_event(*(a + b))
 
     def add_uncore(self, name, force=False):
-        if ocverbose:
-            print("open", name)
-        data = json.load(open(name, "rb"))
+        data = json_open(name)
         for row in data:
             name = row['EventName'].lower()
             try:
