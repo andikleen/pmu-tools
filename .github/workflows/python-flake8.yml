@@ -37,6 +37,7 @@ jobs:
         WRAP=python PERF=./fake-perf.py NORES=1 ./tl-tester
     - name: Run ocperf tests
       run: |
+        python ./event_download.py -a
         WRAP=python PERF=./fake-perf.py NORES=1 ./tester
     - name: Run other tests
       run: |
