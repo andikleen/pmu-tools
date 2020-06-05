@@ -49,7 +49,7 @@ extra_derived = {
           "Desc": "Average LLC data read (demand+prefetch) miss latency (core clocks)",
           "Equation": "(TOR_OCCUPANCY.MISS_OPCODE / TOR_INSERTS.MISS_OPCODE) with:Cn_MSR_PMON_BOX_FILTER.opc=0x182"
      },
-     
+
 # PCU
     "PCU.PCT_FREQ_BAND0": {
         "Box": "PCU",
