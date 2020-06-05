@@ -278,7 +278,7 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/":
             self.header("text/html")
-            self.wfile.write(gen_html())
+            self.wfile.write(gen_html().encode())
         elif self.path == "/dygraph-combined.js":
             self.serve_file("dygraph-combined.js", "text/javascript")
         elif self.path == "/toplev.ico":
@@ -300,8 +300,8 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.bad()
 
 def copyfile(a, b):
-    with open(a, "r") as af:
-        with open(b, "w") as bf:
+    with open(a, "rb") as af:
+        with open(b, "wb") as bf:
             bf.write(af.read())
 
 def term(signal, frame):
@@ -312,8 +312,8 @@ if args.gen:
     if not os.path.isdir(args.gen):
         os.makedirs(args.gen)
     genfn = os.path.join
-    with open(genfn(args.gen, "index.html"), 'w') as f:
-        f.write(gen_html())
+    with open(genfn(args.gen, "index.html"), 'wb') as f:
+        f.write(gen_html().encode())
     copyfile('dygraph-combined.js', genfn(args.gen, 'dygraph-combined.js'))
     copyfile('toplev.ico', genfn(args.gen, 'favicon.ico'))
     for cpu in data.cpus:
