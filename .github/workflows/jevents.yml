@@ -14,7 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: make
-      run: cd jevents ; make
+      run: |
+        cd jevents ; make
     - name: tester
-      run: #cd jevents ; ./tester disabled for now, need more mocking for the github env
+      run: |
+        #cd jevents ; ./tester disabled for now, need more mocking for the github env
   
