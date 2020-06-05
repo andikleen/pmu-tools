@@ -119,7 +119,9 @@ class PerfVersion:
         except OSError:
             print("Cannot run", perf)
             version = ""
-        m = re.match(r"perf version (\d+)\.(\d+)\.", version.decode('utf-8'))
+        if not isinstance(version, str):
+            version = version.decode('utf-8')
+        m = re.match(r"perf version (\d+)\.(\d+)\.", version)
         if m:
             major = m.group(1)
             minor = m.group(2)
