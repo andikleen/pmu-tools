@@ -4,9 +4,9 @@
 name: Python linting and testing
 on:
   push:
-    branches: [ master, test ]
+    branches: [ master, test* ]
   pull_request:
-    branches: [ master, test ]
+    branches: [ master, test* ]
 
 jobs:
   build:
@@ -37,6 +37,7 @@ jobs:
         WRAP=python PERF=./fake-perf.py NORES=1 ./tl-tester
     - name: Run ocperf tests
       run: |
+        python ./event_download.py -a
         WRAP=python PERF=./fake-perf.py NORES=1 ./tester
     - name: Run other tests
       run: |
@@ -44,7 +45,8 @@ jobs:
         WRAP=python PERF=./fake-perf.py NORES=1 ./other-tester
     - name: Run ucevent tests
       run: |
+        set -e
         cd ucevent
-        WRAP=python MOCK=1 NORES=1 ./uctester
+        for i in jkt ivt hsx bdxde bdx skx ; do FORCECPU=$i WRAP=python MOCK=1 NORES=1 ./uctester ; done
         # XXX WRAP=python MOCK=1 NORES=1 ./RUN-ALL # need to avoid GNU parallel
          

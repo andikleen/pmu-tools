@@ -388,7 +388,7 @@ def parse(s, box, quiet=False, user_mode=False, qual=None):
         dbg("expanded", tl)
         return res
     except ParseError as p:
-        print("PARSE-ERROR", p.msg)
+        print("PARSE-ERROR", p.msg, s)
         return []
 
 if __name__ == '__main__':

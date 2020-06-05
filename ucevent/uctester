@@ -19,13 +19,14 @@ fi
 
 $WRAP ./sanity-run.py $EXTRA --cpu 0 "PCU.*" sleep 3
 
-$WRAP ./sanity-run.py $EXTRA --no-sum "CBO.RING_THRU_*_BYTES" sleep 3
+# not valid on SKX
+#$WRAP ./sanity-run.py $EXTRA --no-sum "CBO.RING_THRU_*_BYTES" sleep 3
 
-$WRAP ./sanity-run.py $EXTRA '{' PCU.CLOCKTICKS iMC.MEM_BW_READS '}' iMC.PCT_CYCLES_DLOFF sleep 3
+$WRAP ./sanity-run.py $EXTRA '{' PCU.CLOCKTICKS iMC.MEM_BW_READS '}' iMC.CAS_COUNT sleep 3
 
 set +e # XXX
-$WRAP ./ucevent.py $EXTRA --parse-all | grep -qi error
-$WRAP ./ucevent.py --mock --parse-all | egrep -qi '#EVAL|#DIVZ|error'
+$WRAP ./ucevent.py $EXTRA --parse-all | grep -i error
+$WRAP ./ucevent.py --mock --parse-all | egrep -i '#EVAL|#DIVZ|error'
 
 #./ucevent.py --check-events
 

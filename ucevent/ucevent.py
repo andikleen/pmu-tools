@@ -573,6 +573,8 @@ def evaluate(eq, EV):
     dbg("evaluate", eq)
     try:
         return eval(eq)
+    except SyntaxError:
+        return "#EVAL"
     except NameError:
         return "#EVAL"
     except ZeroDivisionError:
@@ -999,7 +1001,7 @@ def parse_all():
         for e in el:
             print(e)
             r = evaluate(e, event_dummy)
-            print("result:", r)
+            print("result:", r, cputype, name)
             if is_error(r):
                 errors += 1
         if not el:
