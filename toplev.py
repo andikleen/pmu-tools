@@ -221,12 +221,36 @@ def limit4_overflow(evlist):
 def ismetric(x):
     return re.match(r"cpu/event=0x0,umask=0x(1[0123]|4)/", x) is not None
 
+resources = ("frontend=", "offcore_rsp=", "ldlat=", "in_tx_cp=")
+
+def event_to_resource(ev):
+    for j in resources:
+        if j in ev:
+            return j
+    return ""
+
+def resource_split(evlist):
+    r = Counter(map(event_to_resource, evlist))
+    for j in r.keys():
+        if j == "":
+            continue
+        if j == "offcore_rsp=":
+            if r[j] > 2:
+                return True
+        elif r[j] > 1:
+            return True
+    return False
+
 def needed_counters(evlist, nolimit=False):
     evlist = list(set(evlist)) # remove duplicates first
     evlist = list(map(remove_qual, evlist))
     evlist = [x for x in evlist if not ismetric(x)] # XXX fixme ignore metrics for now
     evset = set(evlist)
     num = len(evset - ingroup_events)
+
+    # split if any resource is oversubscribed
+    if resource_split(evlist):
+        return 100
 
     # force split if we overflow fixed or limit4
     # some fixed could be promoted to generic, but that doesn't work
