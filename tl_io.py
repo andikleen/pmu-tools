@@ -12,7 +12,7 @@
 import sys
 import subprocess
 
-if sys.version_info.major == 3:
+if sys.version_info.major == 3 and sys.version_info.minor != 5:
     popentext = dict(text=True)
 else:
     popentext = dict()
