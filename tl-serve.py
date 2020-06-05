@@ -7,7 +7,7 @@ import string
 import argparse
 try:
     import BaseHTTPServer
-except ModuleNotFoundError:
+except ImportError:
     import http.server as BaseHTTPServer
 import csv
 import gen_level
