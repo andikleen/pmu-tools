@@ -1,0 +1,20 @@
+name: jevents test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: make
+      run: cd jevents ; make
+    - name: tester
+      run: cd jevents ; ./tester
+  
