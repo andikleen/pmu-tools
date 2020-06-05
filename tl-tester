@@ -54,6 +54,7 @@ fi
 
 
 checklog0() {
+	echo >> log$$
 	grep -v unparseable log$$
 }
 
@@ -103,6 +104,7 @@ badschedules=0
 badschedlist=""
 
 checklog() {
+	echo >> $1
 	grep -v unparseable $1
 	if grep "not supported 100.00%" $1 ; then
 		echo "WARNING unsupported schedule in $1"
@@ -196,6 +198,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore $LOAD
 $WRAP ./toplev.py --force-hypervisor --force-cpu $DCPU $OPT $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --metric-group +TopDownL1,TLB $LOAD
 $WRAP ./toplev.py -o log$$ --force-cpu $DCPU $OPT --nodes IPC,Frontend_Bound,Backend_Bound -l3 $LOAD
+echo >> log$$
 [ -z "$NORES" ] && grep -v Retiring log$$
 checklog0
 rm log$$
@@ -270,8 +273,8 @@ cat log$$
 # need to ignore errors for now to allow testing on laptop for uncore events
 notfound $cpu
 if ! grep -q hypervisor /proc/cpuinfo ; then
-[ "$cpu" != knl ] && grep /p log$$
-[ "$cpu" = hsw -o "$cpu" = bdw -o "$cpu" = skl ] && grep /pp log$$
+[ "$cpu" != knl ] && grep [/:]p log$$
+[ "$cpu" = hsw -o "$cpu" = bdw -o "$cpu" = skl ] && grep [:/]pp log$$
 fi
 done
 for cpu in $NOSMTCPUS ; do
