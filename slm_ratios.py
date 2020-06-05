@@ -41,9 +41,6 @@ def CLKS(EV, level):
 def CPI(EV, level):
     return 1 / IPC(EV, level)
 
-def slots(ev, level):
-    return PIPELINE_WIDTH * core_clks(ev, level)
-
 def icache_line_fetch_cost(ev, level):
     return ev("FETCH_STALL.ICACHE_FILL_PENDING_CYCLES", level) / \
            CLKS(ev, level)
