@@ -30,7 +30,7 @@ class ParseError(Exception):
         self.msg = msg
 
 def is_id(t):
-    return re.match(r"[a-zA-Z][[\]:a-zA-Z0.9.]*", t)
+    return re.match(r'[a-zA-Z][\[\]:a-zA-Z0.9.]*', t)
 
 def is_number(t):
     return re.match(r"(0x)?[0-9]+", t)
