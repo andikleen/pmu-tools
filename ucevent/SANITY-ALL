@@ -1,5 +1,7 @@
 #!/bin/sh
 # run all events for 2 seconds each
 # requires GNU parallel (http://ftp.gnu.org/gnu/parallel/)
+EXTRA=""
+[ -n "$MOCK" ] && EXTRA=--mock
 ./ucevent.py --unsupported --broken --name-only > all-events
-parallel "$@" -n 1 -k < all-events sh -c "echo "EVENT" {} ; ./sanity-run.py -v {} sleep 2.2 2>&1" >res-sanity
+parallel --no-notice --halt 1 "$@" -n 1 -k < all-events sh -c "echo "EVENT" {} ; $WRAP ./sanity-run.py $EXTRA -v {} sleep 2.2"

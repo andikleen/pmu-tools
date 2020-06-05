@@ -9,7 +9,11 @@ import pipes
 
 logfile = "slog.%d" % (os.getpid())
 
-s = "./ucevent.py 2>&1 -x, -o " + logfile + " " + " ".join(map(pipes.quote, sys.argv[1:]))
+
+s = "./ucevent.py -x, -o " + logfile + " " + " ".join(map(pipes.quote, sys.argv[1:]))
+w = os.getenv("WRAP")
+if w:
+    s = w + " " + s
 print(s)
 r = os.system(s)
 if r != 0:

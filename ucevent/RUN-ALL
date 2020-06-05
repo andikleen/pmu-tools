@@ -1,18 +1,26 @@
 #!/bin/sh
+# MOCK=1 don't run perf
+# WRAP=... python wrapper
+
+set -e
 
 CPULIST="${CPULIST:-jkt ivt hsx bdxde bdx skx}"
 
 for cpu in $CPULIST ; do
 
 export FORCECPU=$cpu
+echo $cpu
 
-for i in CHECK-* SANITY-ALL MOCK-ALL ; do 
+EXTRA=""
+[ -z "$MOCK" ] && EXTRA=CHECK-*
+
+for i in $EXTRA SANITY-ALL MOCK-ALL ; do
 	echo $i 
 	./$i
 	echo STATUS $?
 done
 
-./uctester | tee res-tester
+./uctester
 
 
 done
