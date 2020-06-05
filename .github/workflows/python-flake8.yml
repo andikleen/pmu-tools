@@ -4,9 +4,9 @@
 name: Python linting and testing
 on:
   push:
-    branches: [ master, test ]
+    branches: [ master, test* ]
   pull_request:
-    branches: [ master, test ]
+    branches: [ master, test* ]
 
 jobs:
   build:
