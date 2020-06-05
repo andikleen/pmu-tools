@@ -99,7 +99,7 @@ def getfile(url, dir, fn):
             print("retrying download")
             continue
         break
-    o = open(os.path.join(dir, fn), "w")
+    o = open(os.path.join(dir, fn), "wb")
     o.write(data)
     o.close()
     f.close()
