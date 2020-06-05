@@ -19,7 +19,8 @@ fi
 
 $WRAP ./sanity-run.py $EXTRA --cpu 0 "PCU.*" sleep 3
 
-$WRAP ./sanity-run.py $EXTRA --no-sum "CBO.RING_THRU_*_BYTES" sleep 3
+# not valid on SKX
+#$WRAP ./sanity-run.py $EXTRA --no-sum "CBO.RING_THRU_*_BYTES" sleep 3
 
 $WRAP ./sanity-run.py $EXTRA '{' PCU.CLOCKTICKS iMC.MEM_BW_READS '}' iMC.CAS_COUNT sleep 3
 
