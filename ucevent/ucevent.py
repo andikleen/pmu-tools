@@ -30,7 +30,6 @@ import re
 import subprocess
 import pty
 import locale
-import exceptions
 import copy
 import fnmatch
 import glob
@@ -433,7 +432,7 @@ class Output:
         else:
             fmt = "%d"
             j = scale_val(j)
-        num = locale.format(fmt, j, grouping=True)
+        num = locale.format_string(fmt, j, grouping=True)
         if len(num) >= fieldlen:
             num += " "
         return num
@@ -505,7 +504,7 @@ class PerfRun:
 
     def execute(self, s, logfile, evl):
         if not args.quiet:
-            l = map(lambda x: "'" + x + "'" if x.find("{") >= 0 else x, s)
+            l = list(map(lambda x: "'" + x + "'" if x.find("{") >= 0 else x, s))
             i = l.index('--log-fd')
             del l[i:i+2]
             print(" ".join(l), file=args.output)
@@ -711,7 +710,7 @@ def measure(evl, argl, equations, evnames):
                 l = f.readline()
                 if not l:
                     break
-            except (KeyboardInterrupt, exceptions.IOError):
+            except (KeyboardInterrupt, IOError):
                 break
             l = l.strip()
             dbg("perf", l)
@@ -752,7 +751,7 @@ def measure(evl, argl, equations, evnames):
         f.close()
         if args.mock:
             os.remove(logfile)
-    except exceptions.IOError:
+    except IOError:
         # ptys always seem to end with EIO
         #print("Error talking to perf", e)
         pass
@@ -888,8 +887,8 @@ def convert_events(arg_events):
         if len(n) > 1:
             evn = n[0]
             qual = n[1]
-        if re.search(r"[[*?]", evn):
-            for me in sorted(uc.events.keys() + uc.derived.keys()):
+        if re.search(r"[\[*?]", evn):
+            for me in sorted(list(uc.events.keys()) + list(uc.derived.keys())):
                 if fnmatch.fnmatch(me, evn):
                     evl, evnames, equations = convert_one(me, evl, evnames,
                                                           equations, qual, in_group)
@@ -928,9 +927,9 @@ def maybe_expand_ev(table, name, max_node):
 # XXX should do this at generation time
 def expand_events():
     max_node = cpu.max_node() + 1
-    for j in uc.derived.keys():
+    for j in list(uc.derived.keys()):
         maybe_expand_ev(uc.derived, j, max_node)
-    for j in uc.events.keys():
+    for j in list(uc.events.keys()):
         maybe_expand_ev(uc.events, j, max_node)
     for j in extra.extra_derived:
         uc.derived[j] = extra.extra_derived[j]

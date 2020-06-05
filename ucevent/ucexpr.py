@@ -83,7 +83,7 @@ def tokenize(eq, box, user_mode=False):
     eq = re.sub(r"\.([a-z])", r" . \1", eq)
     eq = re.sub(r"([=<>])  \1", r"\1\1", eq)
     eq = re.sub(r"([<>])  =", r"\1=", eq)
-    return map(lambda x: fix_token(x, box, user_mode), eq.split())
+    return list(map(lambda x: fix_token(x, box, user_mode), eq.split()))
 
 # expand event lists to multiple boxes after parsing
 # this avoids having to pass this all around the parser
@@ -127,7 +127,7 @@ def is_ev(l):
 
 def apply_expr(o, fl, vl):
     if is_list(o):
-        return map(lambda x: apply_expr(x, fl, vl), o)
+        return list(map(lambda x: apply_expr(x, fl, vl), o))
     if is_ev(o):
         for f, v in zip(fl, vl):
             nn, nv = convert_qual(f, v)
@@ -159,7 +159,7 @@ def apply_list(o, fl, vl):
             for k in j:
                 n = k.split('=')
                 o = apply_expr(o, [n[0]], [n[1]])
-    fl = filter(lambda x: not is_list(x), fl)
+    fl = list(filter(lambda x: not is_list(x), fl))
     if len(fl) != len(vl):
         print("MISMATCHED APPLY",fl,vl,o,inspect.stack()[1][2:])
         return o
@@ -368,7 +368,7 @@ def apply_one_user_qual(x, qual):
     return x.replace("/'", "," + qual + "/'")
 
 def apply_user_qual(e, qual):
-    return map(lambda x: apply_one_user_qual(x, qual), e)
+    return list(map(lambda x: apply_one_user_qual(x, qual), e))
 
 def parse(s, box, quiet=False, user_mode=False, qual=None):
     try:
