@@ -1,4 +1,4 @@
-name: jevents test
+name: jevents build
 
 on:
   push:
