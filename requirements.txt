@@ -1,4 +1,3 @@
 matplotlib
 brewer2mpl
 pandas
-elftools
