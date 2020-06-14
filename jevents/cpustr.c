@@ -55,14 +55,17 @@ char *get_cpu_str_type(char *type, char **idstr_step)
 {
 	char *res;
 	union {
-		unsigned b, c, d;
-		char str[12];
+		struct {
+			unsigned b, c, d;
+		} f;
+		char str[13];
 	} vendor;
 	unsigned a, b, c, d;
 	unsigned stepping, family, model;
 	int n;
 
-	__cpuid(0, a, vendor.b, vendor.c, vendor.d);
+	vendor.str[12] = 0;
+	__cpuid(0, a, vendor.f.b, vendor.f.d, vendor.f.c);
 	__cpuid(1, a, b, c, d);
 	stepping = a & 0xf;
 	model = (a >> 4) & 0xf;
