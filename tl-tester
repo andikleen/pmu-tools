@@ -289,9 +289,10 @@ trap "" ERR 0
 set +x +e
 echo
 echo "$badschedules bad schedules: $badschedlist"
-echo "SUCCEEDED"
 for i in $ALLCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$cpu" ] && continue
 	rm log$$.$i ;
 done
 [ -f nflog$$ ] && ( sort nflog$$ | uniq ) && rm nflog$$
+echo
+echo "SUCCEEDED"
