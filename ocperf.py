@@ -840,11 +840,11 @@ def add_extra_env(emap, el):
             emap.add_offcore(oc)
         else:
             oc = event_download.eventlist_name(el, "offcore")
-            if os.path.exists(oc):
+            if os.path.exists(oc) and el != oc:
                 emap.add_offcore(oc)
             if experimental:
                 oc = event_download.eventlist_name(el, "offcore experimental")
-                if os.path.exists(oc):
+                if os.path.exists(oc) and oc != el:
                     emap.add_offcore(oc)
     except IOError:
         print("Cannot open", oc, file=sys.stderr)
@@ -856,11 +856,11 @@ def add_extra_env(emap, el):
             emap.add_uncore(uc)
         else:
             uc = event_download.eventlist_name(el, "uncore")
-            if os.path.exists(uc):
+            if os.path.exists(uc) and uc != el:
                 emap.add_uncore(uc)
             if experimental:
                 uc = event_download.eventlist_name(el, "uncore experimental")
-                if os.path.exists(uc):
+                if os.path.exists(uc) and uc != el:
                     emap.add_uncore(uc)
     except IOError:
         print("Cannot open", uc, file=sys.stderr)
