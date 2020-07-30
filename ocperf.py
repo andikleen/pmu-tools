@@ -572,8 +572,11 @@ class EmapNativeJSON(object):
             getdec = lambda x: int(get(x), 10)
 
             name = get('name').lower().rstrip()
-            code = gethex('code')
-            umask = gethex('umask')
+            try:
+                code = gethex('code')
+                umask = gethex('umask')
+            except ValueError:
+                continue
             anyf = 0
             if name in fixed_counters:
                 code, umask, anyf = fixed_counters[name]
