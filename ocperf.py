@@ -1057,11 +1057,16 @@ Specify the -e events before -c default or event has no overflow field.""", file
         sys.exit(0)
     return cmd
 
+if sys.version_info.major == 3:
+    popentext = dict(text=True)
+else:
+    popentext = dict()
+
 def get_pager():
     f = sys.stdout
     if f.isatty():
         try:
-            sp = subprocess.Popen(["less", "-F"], stdin=subprocess.PIPE)
+            sp = subprocess.Popen(["less", "-F"], stdin=subprocess.PIPE, **popentext)
             return sp.stdin, sp
         except OSError:
             f = sys.stdout
