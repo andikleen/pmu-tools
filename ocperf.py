@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright (c) 2011-2015, Intel Corporation
 # Author: Andi Kleen
 #
