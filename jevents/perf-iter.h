@@ -2,6 +2,7 @@
 #define _PERF_ITER_H 1
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +27,10 @@ struct perf_fd {
 	int buf_size_shift;
 };
 
+struct perf_aux_map {
+	void *aux_map;
+};
+
 int perf_fd_open(struct perf_fd *p, struct perf_event_attr *attr, int buf_size_shift);
 int perf_fd_open_other(struct perf_fd *p, struct perf_event_attr *attr, int buf_size_shift,
 		       int pid, int cpu);
@@ -35,6 +40,11 @@ struct perf_event_header *perf_buffer_read(struct perf_iter *iter, void *buffer,
 void perf_iter_init(struct perf_iter *iter, struct perf_fd *pfd);
 int perf_enable(struct perf_fd *p);
 int perf_disable(struct perf_fd *p);
+
+unsigned perf_mmap_size(int buf_size_shift);
+
+int perf_aux_map(struct perf_fd *pfd, struct perf_aux_map *aux, int size, bool snapshot);
+void perf_aux_unmap(struct perf_fd *pfd, struct perf_aux_map *aux);
 
 static inline int perf_iter_finished(struct perf_iter *iter)
 {
