@@ -5,7 +5,7 @@ override CFLAGS += -I ..
 override LDFLAGS += -L ..
 LDLIBS = -ljevents
 
-all: addr rtest rtest2 rtest3 jestat
+all: addr rtest rtest2 rtest3 jestat ptself
 
 # no deps on the includes
 
@@ -14,6 +14,8 @@ ADDR_OBJ := addr.o hist.o cpu.o
 addr: ${ADDR_OBJ} ../libjevents.a
 
 addr: LDLIBS += -lstdc++ -ldl
+
+ptself: LDLIBS += -lm
 
 rtest2: LDLIBS += -lm
 
