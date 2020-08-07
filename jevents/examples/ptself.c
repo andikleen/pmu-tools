@@ -39,8 +39,6 @@ static char psb[16] = {
 	0x02, 0x82, 0x02, 0x82, 0x02, 0x82, 0x02, 0x82
 };
 
-#define LEFT(x) ((end - p) >= (x))
-
 void dump_pt(char *map, int len)
 {
 	char *p;
