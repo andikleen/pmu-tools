@@ -15,8 +15,6 @@ addr: ${ADDR_OBJ} ../libjevents.a
 
 addr: LDLIBS += -lstdc++ -ldl
 
-ptself: LDLIBS += -lm
-
 rtest2: LDLIBS += -lm
 
 rtest: rtest.o ../libjevents.a
