@@ -205,6 +205,7 @@ int main(int ac, char **av)
 		printf("cannot parse %s\n", ptconfig);
 		exit(1);
 	}
+	ptattr.disabled = 1;
 	if (perf_fd_open(&ptfd, &ptattr, BUF_SIZE_SHIFT) < 0)
 		err("perf event init for PT");
 
