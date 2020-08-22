@@ -57,7 +57,7 @@ class Output:
         self.version = version
         self.unitlen = 12
         self.belowlen = 0
-        self.version = "%s on %s" % (version, cpu.name)
+        self.version = "%s on %s [%s]" % (version, cpu.name, cpu.cpu)
         self.curname = ""
         self.curname_nologf = ""
         self.printedversion = set()
