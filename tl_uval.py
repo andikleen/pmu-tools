@@ -55,19 +55,19 @@ class UVal:
         if self.value is None:
             return ""
         if self.is_ratio:
-            return "{:>16.2f}".format(self.value * 100.)
+            return "{:>16.1f}".format(self.value * 100.)
         elif self.value > 1000:
-            return "{:16,.2f}".format(self.value)
+            return "{:16,.1f}".format(self.value)
         else:
-            return "{:16.2f}".format(self.value)
+            return "{:16.1f}".format(self.value)
 
     def format_value_raw(self):
         if self.value is None:
             return ""
         if self.is_ratio:
-            return "{:>13.2f}".format(self.value * 100.)
+            return "{:>13.1f}".format(self.value * 100.)
         else:
-            return "{:13.2f}".format(self.value)
+            return "{:13.1f}".format(self.value)
 
     def format_uncertainty(self):
         """string representation of measurement uncertainty"""
@@ -81,9 +81,9 @@ class UVal:
                     v = self.stddev * 100.
                 else:
                     v = 0.
-                vs += "{:.2f}".format(v)
+                vs += "{:.1f}".format(v)
             else:
-                vs += "{:6,.2f}".format(self.stddev)
+                vs += "{:6,.1f}".format(self.stddev)
         return vs
 
     def format_mux(self):
