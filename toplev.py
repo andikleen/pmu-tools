@@ -463,6 +463,7 @@ import_mode = args._import is not None
 event_nocheck = import_mode or args.no_check
 
 feat = PerfFeatures(args)
+pversion = ocperf.PerfVersion()
 
 def gen_cpu_name(cpu):
     if cpu == "simple":
@@ -583,6 +584,10 @@ if cpu.hypervisor:
     feat.max_precise = 0
     feat.has_max_precise = True
     feat.supports_ocr = False
+
+if not pversion.has_uncore_expansion:
+    # XXX reenable power
+    args.no_uncore = True
 
 if cpu.hypervisor or args.no_uncore:
     feat.supports_power = False
