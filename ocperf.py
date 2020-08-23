@@ -122,18 +122,17 @@ class PerfVersion:
         if not isinstance(version, str):
             version = version.decode('utf-8')
         m = re.match(r"perf version (\d+)\.(\d+)\.", version)
+        version = 0
         if m:
-            major = m.group(1)
-            minor = m.group(2)
-            if re.match("[0-9]+", minor):
-                minor = int(minor, 10)
-            if re.match("[0-9]+", major) and int(major) > 3:
-                minor = 100 # infinity
+            major = int(m.group(1))
+            minor = int(m.group(2))
+            version = major * 100 + minor
 
-        self.direct = os.getenv("DIRECT_MSR") or minor < 4
+        self.direct = os.getenv("DIRECT_MSR") or version < 400
         self.offcore = has_format("offcore_rsp") and not self.direct
         self.ldlat = has_format("ldlat") and not self.direct
-        self.has_name = minor >= 4
+        self.has_name = version >= 304
+        self.has_uncore_expansion = version >= 412
 
 version = PerfVersion()
 
