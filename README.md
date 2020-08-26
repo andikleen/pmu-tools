@@ -9,7 +9,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 # Recent new features:
 
 * toplev now gives suggestions on how to get better sampling events, and also got better
-  at selecting them in the first place.
+  at selecting them in the first place. In addition it can now suggest how to get more
+  details on the bottleneck by enabling its children nodes.
 * toplev can now add whole sub trees with --nodes 'nodename*'. Useful to drill down in specific
   areas while still keeping multiplexing overhead under control.
 * pmu-tools is now generally python3 clean (but still runs with python2 by default). One exception

@@ -1747,6 +1747,7 @@ class Runner:
         self.missed = 0
         self.sample_obj = set()
         self.stat = ComputeStat(args.quiet)
+        self.bottlenecks = set()
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         if args.valcsv:
@@ -1801,6 +1802,11 @@ class Runner:
         # now keep what is both in fmatch and sibmatch
         self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or obj in sibmatch]
 
+    def setup_children(self):
+        for obj in self.olist:
+            if not obj.metric and 'parent' in obj.__dict__ and obj.parent:
+                obj.parent.children.append(obj)
+
     # check nodes argument for typos
     def check_nodes(self, nodesarg):
         onames = set([obj.name for obj in self.olist])
@@ -1821,6 +1827,7 @@ class Runner:
     def run(self, obj):
         obj.thresh = False
         obj.metric = False
+        obj.children = []
         self.do_run(obj)
 
     def metric(self, obj):
@@ -2036,6 +2043,9 @@ class Runner:
         return changed
 
     def print_res(self, out, timestamp, title, match, bn):
+        if bn:
+            self.bottlenecks.add(bn)
+
         if has(out, 'logf') and out.logf == sys.stderr:
             out.logf.flush()
 
@@ -2338,6 +2348,7 @@ def check_root():
 
 if args.nodes:
     runner.check_nodes(args.nodes)
+runner.setup_children()
 runner.filter_nodes()
 
 if not args.no_util:
@@ -2441,6 +2452,16 @@ if args.sample_repeat:
             break
 else:
     ret = measure_and_sample(None)
+
+BOTTLENECK_LEVEL_INC = 1
+
+if args.level < 6 and runner.bottlenecks:
+    children = ["+%s*/%d" % (o.name, args.level + BOTTLENECK_LEVEL_INC)
+                    for o in runner.bottlenecks
+                    if o.children]
+    if children:
+        print("Consider adding --nodes '%s' to get more details on the bottlenecks" %
+                ",".join(children))
 
 out.print_footer()
 if args.graph:

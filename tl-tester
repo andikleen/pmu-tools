@@ -203,6 +203,10 @@ echo >> log$$
 [ -z "$NORES" ] && grep IPC log$$
 checklog0
 rm log$$
+$WRAP ./toplev.py > log$$ true
+# assumes that true is backend_bound. If not would need some parsing
+[ -z "$NORES" ] && grep "Consider adding --nodes.*Backend" log$$
+rm log$$
 $WRAP ./toplev.py  -v --nodes Backend*/3 -o log$$ true
 echo >> log$$
 [ -z "$NORES" ] && grep Backend_Bound.Memory_Bound.L3_Bound log$$
