@@ -1761,6 +1761,8 @@ class Runner:
 
     # remove unwanted nodes after their parent relation ship has been set up
     def filter_nodes(self):
+        self.full_olist = list(self.olist)
+
         add_met, remove_met = parse_metric_group(args.metric_group, self.metricgroups)
 
         add_obj = set([self.odict[x] for x in add_met])
@@ -2109,9 +2111,26 @@ def remove_pp(s):
 def clean_event(e):
     return remove_pp(e).replace(".", "_").replace(":", "_").replace('=','')
 
-def do_sample(sample_obj, rest, count):
+SAMPLE_EXTEND = 2 # how deep to look into children for additional sample events
+
+def do_sample(sample_obj, rest, count, full_olist):
     samples = [("cycles:pp", "Precise cycles", )]
+
+    def sample_list(obj):
+        return [(s, obj.name) for s in obj.sample]
+
     for obj in sample_obj:
+        if len(obj.sample) == 0:
+            m = full_name(obj) + "*"
+            csamples = flatten([sample_list(o)
+                                    for o in full_olist
+                                    if fnmatch.fnmatch(full_name(o), m) and o.level <= obj.level + SAMPLE_EXTEND])
+            if len(csamples) > 2:
+                # XXX should print recipe that only extends nodes by SAMPLE_EXTEND levels
+                print("Many possible sample events in deeper nodes.")
+                print("Consider remeasuring with --nodes '+%s*' to narrow down" % obj.name)
+            samples += csamples
+            continue
         for s in obj.sample:
             samples.append((s, obj.name))
     nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
@@ -2404,7 +2423,7 @@ def measure_and_sample(count):
     print_summary(runner, out)
     runner.stat.compute_errors()
     if args.show_sample or args.run_sample:
-        do_sample(runner.sample_obj, rest, count)
+        do_sample(runner.sample_obj, rest, count, runner.full_olist)
     return ret
 
 if args.sample_repeat:
