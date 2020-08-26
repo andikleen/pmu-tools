@@ -20,7 +20,8 @@
 
 from __future__ import print_function
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import argparse, time, types, fnmatch, csv, copy
+import argparse, time, types, csv, copy
+from fnmatch import fnmatch
 from collections import defaultdict, Counter
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -181,7 +182,7 @@ def unsup_event(e, table, min_kernel=None):
     if ":" in e:
         e = e[:e.find(":")]
     for j in table:
-        if fnmatch.fnmatch(e, j[0]) and cpu.realcpu in j[1][0]:
+        if fnmatch(e, j[0]) and cpu.realcpu in j[1][0]:
             break
     else:
         return False
@@ -214,7 +215,7 @@ def limit_overflow(evlist):
 def limit4_overflow(evlist):
     # hardcoded for ICL (XXX)
     if cpu.cpu == "icl":
-        limit4 = [x for x in evlist if fnmatch.fnmatch(x, "cpu/event=0xd[0123],*")]
+        limit4 = [x for x in evlist if fnmatch(x, "cpu/event=0xd[0123],*")]
         return len(limit4)
     return 0
 
@@ -1584,9 +1585,9 @@ def node_filter(obj, default, sibmatch):
         name = obj.name
 
         def _match(m):
-            return (fnmatch.fnmatch(name, m) or
-                    fnmatch.fnmatch(fname, m) or
-                    fnmatch.fnmatch(fname, "*" + m))
+            return (fnmatch(name, m) or
+                    fnmatch(fname, m) or
+                    fnmatch(fname, "*" + m))
 
         def match(m):
             r = re.match("(.*)/([0-9]+)", m)
@@ -1821,7 +1822,7 @@ class Runner:
             if s in self.odict:
                 return True
             for k in self.olist:
-                if fnmatch.fnmatch(k.name, s) or fnmatch.fnmatch(full_name(k), s):
+                if fnmatch(k.name, s) or fnmatch(full_name(k), s):
                     return True
             return False
         valid = map(valid_node, options)
@@ -2151,7 +2152,7 @@ def do_sample(sample_obj, rest, count, full_olist):
             m = full_name(obj) + "*"
             csamples = flatten([sample_list(o)
                                     for o in full_olist
-                                    if fnmatch.fnmatch(full_name(o), m) and o.level <= obj.level + SAMPLE_EXTEND])
+                                    if fnmatch(full_name(o), m) and o.level <= obj.level + SAMPLE_EXTEND])
             if len(csamples) > 2:
                 print("Many possible sample events in deeper nodes.")
                 print("Consider remeasuring with --nodes '+%s*/%d' to narrow down" %
