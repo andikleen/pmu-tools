@@ -382,7 +382,7 @@ g.add_argument('--all', help="Measure everything available", action='store_true'
 g.add_argument('--frequency', help="Measure frequency", action='store_true')
 g.add_argument('--power', help='Display power metrics', action='store_true')
 g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, '
-               'comma separated list, wildcards allowed)')
+               'comma separated list, wildcards allowed, add * to include all children/siblings)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
                'comma separated list from --list-metric-groups.', default=None)
@@ -1563,13 +1563,28 @@ Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
     return desc
 
-def node_filter(obj, default):
+def include_siblings(obj):
+    # O(n*m), could memorize
+    for k in olist:
+        if obj in smap[k]:
+            print("adding sibling", k.name)
+            return True
+    return False
+
+def node_filter(obj, default, sibmatch):
     if args.nodes:
         fname = full_name(obj)
         name = obj.name
 
         def match(m):
-            return fnmatch.fnmatch(name, m) or fnmatch.fnmatch(fname, m)
+            return fnmatch.fnmatch(name, m) or fnmatch.fnmatch(fname, m) or fnmatch.fnmatch(fname, "*" + m)
+
+        def all_siblings(sib, visited):
+            for k in sib:
+                if k not in visited:
+                    visited.add(k)
+                    if has(k, 'sibling') and k.sibling is not None:
+                        all_siblings(k.sibling, visited)
 
         for j in args.nodes.split(","):
             i = 0
@@ -1580,6 +1595,10 @@ def node_filter(obj, default):
             elif j[0] == '+':
                 i += 1
             if match(j[i:]):
+                if j.endswith("*") and has(obj, 'sibling') and obj.sibling:
+                    siblings = set()
+                    all_siblings(obj.sibling, siblings)
+                    sibmatch |= siblings
                 return True
     return default
 
@@ -1756,6 +1775,8 @@ class Runner:
                     parents.append(s)
                     parents += get_parents(s)
 
+        sibmatch = set()
+
         def want_node(obj):
             if args.reduced and has(obj, 'server') and not obj.server:
                 return False
@@ -1764,9 +1785,12 @@ class Runner:
             want = ((obj.metric and args.metrics) or obj.name in add_met or obj in parents) and obj.name not in remove_met
             if not obj.metric and obj.level <= self.max_level:
                 want = True
-            return node_filter(obj, want)
+            return node_filter(obj, want, sibmatch)
 
-        self.olist = list(filter(want_node, self.olist))
+        # this updates sibmatch
+        fmatch = list(map(want_node, self.olist))
+        # now keep what is both in fmatch and sibmatch
+        self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or obj in sibmatch]
 
     # check nodes argument for typos
     def check_nodes(self, nodesarg):
@@ -1775,7 +1799,7 @@ class Runner:
             if s[0] in ('+', '^', '-'):
                 return s[1:]
             return s
-        options = set([remove_prefix(s) for s in nodesarg.split(",")])
+        options = set([remove_prefix(s) for s in nodesarg.split(",") if '*' not in s])
         d = options - onames
         if d:
             sys.exit("Unknown node(s) in --nodes: " + " ".join(d))

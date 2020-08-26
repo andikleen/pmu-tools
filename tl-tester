@@ -197,9 +197,10 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --print
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore $LOAD
 $WRAP ./toplev.py --force-hypervisor --force-cpu $DCPU $OPT $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --metric-group +TopDownL1,TLB $LOAD
-$WRAP ./toplev.py -o log$$ --force-cpu $DCPU $OPT --nodes IPC,Frontend_Bound,Backend_Bound -l3 $LOAD
+$WRAP ./toplev.py -o log$$ --force-cpu $DCPU $OPT -v --nodes IPC,Frontend_Bound,Backend_Bound* -l3 $LOAD
 echo >> log$$
-[ -z "$NORES" ] && grep -v Retiring log$$
+[ -z "$NORES" ] && grep MS_Switches log$$
+[ -z "$NORES" ] && grep IPC log$$
 checklog0
 rm log$$
 if python -c 'import matplotlib.pyplot' ; then
