@@ -432,7 +432,7 @@ g.add_argument('--perf-output', help='Save perf stat output in specified file')
 g.add_argument('--no-perf', help="Don't print perf command line", action='store_true')
 g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
 g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5% of busiest if not CSV, specify percent)",
-               default=None)
+               default=None, type=float)
 
 g = p.add_argument_group('Environment')
 g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
