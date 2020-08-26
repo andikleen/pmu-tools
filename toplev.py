@@ -759,7 +759,7 @@ def has(obj, name):
     return name in obj.__class__.__dict__
 
 def flatten(x):
-    return itertools.chain(*x)
+    return list(itertools.chain(*x))
 
 def print_header(work):
     evnames = set(flatten([obj.evlist for obj in work]))
@@ -1139,8 +1139,8 @@ def group_number(num, events):
             idx = next(gnum)
         return [idx] * len(group)
 
-    gnums = list(map(group_nums, events))
-    return list(flatten(gnums))[num]
+    gnums = map(group_nums, events)
+    return flatten(gnums)[num]
 
 def dump_raw(interval, title, event, val, index, events, stddev, multiplex, nodes):
     if event in fixed_to_name:
