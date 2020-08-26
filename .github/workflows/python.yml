@@ -49,4 +49,10 @@ jobs:
         cd ucevent
         for i in jkt ivt hsx bdxde bdx skx ; do FORCECPU=$i WRAP=python MOCK=1 NORES=1 ./uctester ; done
         # XXX WRAP=python MOCK=1 NORES=1 ./RUN-ALL # need to avoid GNU parallel
+        #
+    - name: Run parser tests
+      run: |
+        cd parser
+        ./tester
+
          
