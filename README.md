@@ -12,7 +12,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
   at selecting them in the first place. In addition it can now suggest how to get more
   details on the bottleneck by enabling its children nodes.
 * toplev can now add whole sub trees with --nodes 'nodename*'. Useful to drill down in specific
-  areas while still keeping multiplexing overhead under control.
+  areas while still keeping multiplexing overhead under control. With /NUM it is possible to
+  to specify the max level nodes to add.
 * pmu-tools is now generally python3 clean (but still runs with python2 by default). One exception
   is parser which would need to be ported to the python3 construct.
 * New tool utilized.py to remove idle CPUs from toplev output
