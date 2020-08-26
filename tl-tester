@@ -203,6 +203,11 @@ echo >> log$$
 [ -z "$NORES" ] && grep IPC log$$
 checklog0
 rm log$$
+$WRAP ./toplev.py  -v --nodes Backend*/3 -o log$$ true
+echo >> log$$
+[ -z "$NORES" ] && grep Backend_Bound.Memory_Bound.L3_Bound log$$
+[ -z "$NORES" ] && grep -v Backend_Bound.Core_Bound.Ports_Utilization.Ports_Utilized_0 log$$
+rm log$$
 if python -c 'import matplotlib.pyplot' ; then
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --graph -o x$$.png --all $LOAD
 [ `stat -c %s x$$.png` -gt 1000 ]

@@ -382,7 +382,8 @@ g.add_argument('--all', help="Measure everything available", action='store_true'
 g.add_argument('--frequency', help="Measure frequency", action='store_true')
 g.add_argument('--power', help='Display power metrics', action='store_true')
 g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, '
-               'comma separated list, wildcards allowed, add * to include all children/siblings)')
+               'comma separated list, wildcards allowed, add * to include all children/siblings, '
+               'add /level to specify highest level node to match)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
                'comma separated list from --list-metric-groups.', default=None)
@@ -1582,10 +1583,17 @@ def node_filter(obj, default, sibmatch):
         fname = full_name(obj)
         name = obj.name
 
-        def match(m):
+        def _match(m):
             return (fnmatch.fnmatch(name, m) or
                     fnmatch.fnmatch(fname, m) or
                     fnmatch.fnmatch(fname, "*" + m))
+
+        def match(m):
+            r = re.match("(.*)/([0-9]+)", m)
+            if r:
+                m = r.group(1)
+                return _match(r.group(1)) and obj.level <= int(r.group(2))
+            return _match(m)
 
         for j in args.nodes.split(","):
             i = 0
