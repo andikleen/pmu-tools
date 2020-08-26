@@ -2162,6 +2162,17 @@ def do_sample(sample_obj, rest, count, full_olist):
             continue
         for s in obj.sample:
             samples.append((s, obj.name))
+
+    # first dedup
+    samples = [k for k, g in itertools.groupby(sorted(samples))]
+
+    # now merge objects with the same sample event into one
+    def sample_event(x):
+        return x[0]
+    samples = sorted(samples, key=sample_event)
+    samples = [(k, "_".join([x[1] for x in g])) for k, g in itertools.groupby(samples, key=sample_event)]
+
+    # find unsupported events
     nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
     nsamp = [(remove_pp(x[0]), x[1])
              if unsup_event(x[0], unsup_pebs) else x
