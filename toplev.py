@@ -431,6 +431,8 @@ g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file')
 g.add_argument('--no-perf', help="Don't print perf command line", action='store_true')
 g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
+g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5% of busiest if not CSV, specify percent)",
+               default=None)
 
 g = p.add_argument_group('Environment')
 g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
@@ -462,6 +464,13 @@ p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
 p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true')
 args, rest = p.parse_known_args()
+
+if args.idle_threshold:
+    idle_threshold = args.idle_threshold / 100.
+elif args.csv:
+    idle_threshold = 0  # avoid breaking programs that rely on the CSV output
+else:
+    idle_threshold = 0.05
 
 import_mode = args._import is not None
 event_nocheck = import_mode or args.no_check
@@ -901,11 +910,22 @@ def verify_rev(rev, cpus):
             assert o == rev[cpus[0]][ind]
         assert len(rev[k]) == len(rev[cpus[0]])
 
+def find_idle_keys(res, rev, idle_thresh):
+    cycles = { k: max([0] + [val for val, ev in zip(res[k], rev[k])
+                    if ev == "cycles" or ev == "cpu/event=0x3c,umask=0x0,any=1/"])
+               for k in res.keys() }
+    if not cycles:
+        return set()
+    max_cycles = max(cycles.values())
+    return set([k for k in cycles.keys() if cycles[k] < max_cycles * idle_thresh])
+
 # from https://stackoverflow.com/questions/4836710/does-python-have-a-built-in-function-for-string-natural-sort
 def num_key(s):
     return [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', s)]
 
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
+    idle_keys = find_idle_keys(res, rev, runner.idle_threshold)
+    hidden_keys = set()
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
     out.set_cpus(display_keys(runner, keys, mode))
@@ -926,6 +946,9 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             if mode == OUTPUT_CORE and core in printed_cores:
                 continue
             if mode == OUTPUT_SOCKET and sid in printed_sockets:
+                continue
+            if j in idle_keys:
+                hidden_keys.add(j)
                 continue
 
             runner.reset_thresh()
@@ -993,6 +1016,9 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
         for j in keys:
             if j != "" and is_number(j) and int(j) not in runner.allowed_threads:
                 continue
+            if j in idle_keys:
+                hidden_keys.add(j)
+                continue
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
             runner.print_res(out, interval, j, not_package_node, bn)
@@ -1021,12 +1047,16 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 jname = "S%d" % p_id
             else:
                 jname = j
+            if j in idle_keys:
+                hidden_keys.add(j)
+                continue
             runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
             runner.print_res(out, interval, jname, package_node, None)
     # no bottlenecks from package nodes for now
     out.flush()
     stat.referenced_check(res)
     stat.compute_errors()
+    runner.idle_keys |= hidden_keys
 
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
     if args.per_core + args.per_thread + args.per_socket + args._global > 1:
@@ -1738,7 +1768,7 @@ def get_parents(obj):
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
-    def __init__(self, max_level):
+    def __init__(self, max_level, idle_threshold):
         self.evnum = [] # flat global list
         self.evgroups = list()
         self.evbases = list()
@@ -1749,6 +1779,7 @@ class Runner:
         self.sample_obj = set()
         self.stat = ComputeStat(args.quiet)
         self.bottlenecks = set()
+        self.idle_keys = set()
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         if args.valcsv:
@@ -1759,6 +1790,7 @@ class Runner:
         if args.summary:
             self.summary = Summary()
         self.indexobj = None
+        self.idle_threshold = idle_threshold
 
     def do_run(self, obj):
         obj.res = None
@@ -2250,7 +2282,7 @@ def ht_warning():
         print("WARNING: HT enabled", file=sys.stderr)
         print("Measuring multiple processes/threads on the same core may is not reliable.", file=sys.stderr)
 
-runner = Runner(args.level)
+runner = Runner(args.level, idle_threshold)
 
 pe = lambda x: None
 if args.debug:
@@ -2487,6 +2519,9 @@ else:
     ret = measure_and_sample(None)
 
 BOTTLENECK_LEVEL_INC = 1
+
+if runner.idle_keys and not args.quiet:
+    print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" % (",".join(runner.idle_keys)))
 
 if args.level < 6 and runner.bottlenecks and not args.quiet:
     suggest_bottlenecks(runner)
