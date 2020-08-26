@@ -453,6 +453,8 @@ g.add_argument('--sample-repeat', help='Repeat measurement and sampling N times.
                'Useful for background collection with -a sleep X.', type=int)
 g.add_argument('--sample-basename', help='Base name of sample perf.data files', default="perf.data")
 
+g.add_argument('-d', help=argparse.SUPPRESS, action='help') # prevent passing this to perf
+
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
