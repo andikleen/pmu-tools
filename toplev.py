@@ -1604,7 +1604,7 @@ def node_filter(obj, default, sibmatch):
             elif j[0] == '+':
                 i += 1
             if match(j[i:]):
-                if j.endswith("*") and has(obj, 'sibling') and obj.sibling:
+                if re.match(r'.*\*(/[0-9]+)?', j) and has(obj, 'sibling') and obj.sibling:
                     sibmatch |= all_siblings(obj.sibling)
                 return True
     return default
