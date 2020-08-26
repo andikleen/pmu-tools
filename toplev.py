@@ -1810,13 +1810,14 @@ class Runner:
 
     # check nodes argument for typos
     def check_nodes(self, nodesarg):
-        onames = set([obj.name for obj in self.olist])
+
         def opt_obj_name(s):
             if s[0] in ('+', '^', '-'):
                 s = s[1:]
             if "/" in s:
                 s = s[:s.index("/")]
             return s
+
         options = [opt_obj_name(s) for s in nodesarg.split(",")]
         def valid_node(s):
             if s in self.odict:
