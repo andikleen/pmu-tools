@@ -8,12 +8,17 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now hides idle CPUs by default, unless the output is CSV. This 
+  is configurable using the new --idle-threshold argument. The default is hiding if less
+  than 5% busy.
 * toplev now gives suggestions on how to get better sampling events, and also got better
   at selecting them in the first place. In addition it can now suggest how to get more
   details on the bottleneck by enabling its children nodes.
 * toplev can now add whole sub trees with --nodes 'nodename*'. Useful to drill down in specific
   areas while still keeping multiplexing overhead under control. With /NUM it is possible to
   to specify the max level nodes to add.
+* With -v, toplev now indicates nodes that are below threshold with < not ? to avoid confusion.
+  Note this is a potentially breaking change for CSV output users.
 * pmu-tools is now generally python3 clean (but still runs with python2 by default). One exception
   is parser which would need to be ported to the python3 construct.
 * New tool utilized.py to remove idle CPUs from toplev output
