@@ -61,7 +61,7 @@ class ComputeStat:
     def compute_errors(self):
         if self.errcount > 0 and self.errors != self.prev_errors:
             if not self.quiet:
-                print("warning: %d division by zero errors:" % (self.errcount), end='', file=sys.stderr)
+                print("%d nodes had zero counts: " % (self.errcount), end='', file=sys.stderr)
                 print(" ".join(self.errors), file=sys.stderr)
             self.errcount = 0
             self.prev_errors = self.errors
