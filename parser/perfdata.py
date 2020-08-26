@@ -20,7 +20,6 @@
 # check size in all cases (or use optional+tunnel)
 # tracing support
 # processor trace (aux) data and extra info headers
-# sample_id is not handled correctly in all cases
 #
 from __future__ import print_function
 from construct import (If, Embedded, Struct, SNInt32, UNInt64, Flag, BitStruct,
@@ -65,17 +64,6 @@ def fork_exit(name):
                   SNInt32("ptid"),
                   UNInt64("time"),
                   sample_id())
-
-def thread_map():
-    return Struct("thread_map",
-                  UNInt64("nr"),
-                  Array(lambda ctx: ctx.nr,
-                        Struct("thread_map_entry",
-                                       UNInt64("pid"),
-                                       String("comm", 16))))
-
-def ignore():
-    return Bytes("data", lambda ctx: ctx.size - 8)
 
 def throttle(name):
     return Struct(name,
@@ -195,7 +183,6 @@ def lookup_event_attr(ctx):
 def perf_event_header():
     return Embedded(Struct(None,
                            Enum(UNInt32("type"),
-                                DEFAULT         = 0,
                                 MMAP            = 1,
                                 LOST            = 2,
                                 COMM            = 3,
@@ -206,33 +193,12 @@ def perf_event_header():
                                 READ            = 8,
                                 SAMPLE          = 9,
                                 MMAP2           = 10,
-                                RECORD_AUX      = 11,
-                                ITRACE_START    = 12,
-                                LOST_SAMPLES    = 13,
-                                SWITCH          = 14,
-                                SWITCH_CPU_WIDE = 15,
-                                NAMESPACES      = 16,
-                                KSYMBOL         = 17,
-                                BPF_EVENT       = 18,
-                                CGROUP          = 19,
-                                HEADER_ATTR     = 64,
-                                HEADER_EVENT_TYPE = 65,
                                 TRACING_DATA    = 66,
-                                HEADER_BUILD_ID = 67,
                                 FINISHED_ROUND  = 68,
                                 ID_INDEX        = 69,
                                 AUXTRACE_INFO   = 70,
                                 AUXTRACE        = 71,
-                                AUXTRACE_ERROR  = 72,
-                                THREAD_MAP      = 73,
-                                CPU_MAP         = 74,
-                                STAT_CONFIG     = 75,
-                                STAT            = 76,
-                                STAT_ROUND      = 77,
-                                EVENT_UPDATE    = 78,
-                                TIME_CONV       = 79,
-                                HEADER_FEATURE  = 80,
-                                COMPRESSED      = 81),
+                                AUXTRACE_ERROR  = 72),
                            Embedded(BitStruct(None,
                                               Padding(1),
                                               Enum(BitField("cpumode", 7),
@@ -314,12 +280,6 @@ def read_format():
                              If(lambda ctx: read_flags(ctx).id,
                                 UNInt64("id2")))))
 
-def time_conv():
-    return Struct("time_conv",
-                  UNInt64("time_shift"),
-                  UNInt64("time_mult"),
-                  UNInt64("time_zero"))
-
 def perf_event():
     return Struct("perf_event",
                   Anchor("start"),
@@ -349,39 +309,8 @@ def perf_event():
                                                       SNInt32("tid"),
                                                       read_format(),
                                                       sample_id())),
-                              "SAMPLE": event(),
-                              "TIME_CONV": time_conv(),
-
-                              0: ignore(),
-
-                              # below are the so far not handled ones. Dump their
-                              # raw data only
-                              #"RECORD_AUX": ignore(),
-                              #"AUX": ignore(),
-                              #"ITRACE_START": ignore(),
-                              #"LOST_SAMPLES": ignore(),
-                              #"SWITCH": ignore(),
-                              #"SWITCH_CPU_WIDE": ignore(),
-                              #"NAMESPACES": ignore(),
-                              #"KSYMBOL": ignore(),
-                              #"BPF_EVENT": ignore(),
-                              #"CGROUP": ignore(),
-                              #"HEADER_ATTR": ignore(),
-                              #"HEADER_EVENT_TYPE": ignore(),
-                              #"TRACING_DATA": ignore(),
-                              #"HEADER_BUILD_ID": ignore(),
-                              #"ID_INDEX": ignore(),
-                              #"AUXTRACE_INFO": ignore(),
-                              #"AUXTRACE": ignore(),
-                              #"AUXTRACE_ERROR": ignore(),
-                              #"THREAD_MAP": ignore(),
-                              #"CPU_MAP": ignore(),
-                              #"STAT": ignore(),
-                              #"STAT_ROUND": ignore(),
-                              #"EVENT_UPDATE": ignore(),
-                              #"HEADER_FEATURE": ignore(),
-                              #"COMPRESSED": ignore(),
-                           }, 0),
+                              "SAMPLE": event()
+                           }),
                         Anchor("end"),
                         Padding(lambda ctx:
                                     ctx.size - (ctx.end - ctx.start)))
