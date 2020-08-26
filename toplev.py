@@ -1565,13 +1565,17 @@ Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
     return desc
 
-def include_siblings(obj):
-    # O(n*m), could memorize
-    for k in olist:
-        if obj in smap[k]:
-            print("adding sibling", k.name)
-            return True
-    return False
+def _all_siblings(sib, visited):
+    for k in sib:
+        if k not in visited:
+            visited.add(k)
+            if has(k, 'sibling') and k.sibling is not None:
+                _all_siblings(k.sibling, visited)
+
+def all_siblings(sib):
+    siblings = set()
+    _all_siblings(sib, siblings)
+    return siblings
 
 def node_filter(obj, default, sibmatch):
     if args.nodes:
@@ -1579,14 +1583,9 @@ def node_filter(obj, default, sibmatch):
         name = obj.name
 
         def match(m):
-            return fnmatch.fnmatch(name, m) or fnmatch.fnmatch(fname, m) or fnmatch.fnmatch(fname, "*" + m)
-
-        def all_siblings(sib, visited):
-            for k in sib:
-                if k not in visited:
-                    visited.add(k)
-                    if has(k, 'sibling') and k.sibling is not None:
-                        all_siblings(k.sibling, visited)
+            return (fnmatch.fnmatch(name, m) or
+                    fnmatch.fnmatch(fname, m) or
+                    fnmatch.fnmatch(fname, "*" + m))
 
         for j in args.nodes.split(","):
             i = 0
@@ -1598,9 +1597,7 @@ def node_filter(obj, default, sibmatch):
                 i += 1
             if match(j[i:]):
                 if j.endswith("*") and has(obj, 'sibling') and obj.sibling:
-                    siblings = set()
-                    all_siblings(obj.sibling, siblings)
-                    sibmatch |= siblings
+                    sibmatch |= all_siblings(obj.sibling)
                 return True
     return default
 
