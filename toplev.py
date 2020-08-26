@@ -2154,7 +2154,7 @@ def do_sample(sample_obj, rest, count, full_olist):
             csamples = flatten([sample_list(o)
                                     for o in full_olist
                                     if fnmatch(full_name(o), m) and o.level <= obj.level + SAMPLE_EXTEND])
-            if len(csamples) > 2:
+            if len(csamples) > 2 and not args.quiet:
                 print("Many possible sample events in deeper nodes.")
                 print("Consider remeasuring with --nodes '+%s*/%d' to narrow down" %
                         (obj.name, obj.level + SAMPLE_EXTEND))
@@ -2488,7 +2488,7 @@ else:
 
 BOTTLENECK_LEVEL_INC = 1
 
-if args.level < 6 and runner.bottlenecks:
+if args.level < 6 and runner.bottlenecks and not args.quiet:
     suggest_bottlenecks(runner)
 
 out.print_footer()
