@@ -20,6 +20,7 @@
 # check size in all cases (or use optional+tunnel)
 # tracing support
 # processor trace (aux) data and extra info headers
+# sample_id is not handled correctly in all cases
 #
 from __future__ import print_function
 from construct import (If, Embedded, Struct, SNInt32, UNInt64, Flag, BitStruct,

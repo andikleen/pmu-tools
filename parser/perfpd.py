@@ -113,12 +113,16 @@ def samples_to_df(h, need_line):
     used = Counter()
     mm = mmap.MmapTracker()
 
+    numsample = 0
     for n in range(0, len(ev)):
         mm.lookahead_mmap(ev, n)
 
         j = ev[n]
+        print(j)
         if j.type != "SAMPLE":
             continue
+
+        numsample += 1
 
         mm.update_sample(j)
         def add(k, i):
@@ -156,8 +160,9 @@ def samples_to_df(h, need_line):
         if used[j] == 0:
             del data[j]
     df = pd.DataFrame(data, index=index, dtype=np.uint64)
-    for i in bool_fields:
-        df[i] = df[i].astype('bool')
+    if numsample > 0:
+        for i in bool_fields:
+            df[i] = df[i].astype('bool')
     df.branch_aux = branches
     df.callchain_aux = callchains
     return df
@@ -198,6 +203,9 @@ if __name__ == '__main__':
         sys.exit(0)
 
     print(df)
-    print(df['filename'].value_counts())
-    print(df['symbol'].value_counts())
-    print(df['line'].value_counts())
+    if 'filename' in df:
+        print(df['filename'].value_counts())
+    if 'symbol' in df:
+        print(df['symbol'].value_counts())
+    if 'line' in df:
+        print(df['line'].value_counts())
