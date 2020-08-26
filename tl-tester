@@ -255,7 +255,7 @@ FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -l4 -I 1000 -a --per
 checklog0
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -l4 -I 1000 -a --per-socket --filterquals sleep 1
 checklog0
-FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --no-desc -l4 -I 1000 -a -A sleep 1
+FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --no-desc -l4 -I 1000 -a -A --idle-threshold 20 sleep 1
 checklog0
 FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --summary --no-desc --no-area -l4 -I 1000 -a -A sleep 1
 checklog0
