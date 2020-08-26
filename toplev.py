@@ -1810,14 +1810,23 @@ class Runner:
     # check nodes argument for typos
     def check_nodes(self, nodesarg):
         onames = set([obj.name for obj in self.olist])
-        def remove_prefix(s):
+        def opt_obj_name(s):
             if s[0] in ('+', '^', '-'):
-                return s[1:]
+                s = s[1:]
+            if "/" in s:
+                s = s[:s.index("/")]
             return s
-        options = set([remove_prefix(s) for s in nodesarg.split(",") if '*' not in s])
-        d = options - onames
-        if d:
-            sys.exit("Unknown node(s) in --nodes: " + " ".join(d))
+        options = [opt_obj_name(s) for s in nodesarg.split(",")]
+        def valid_node(s):
+            if s in self.odict:
+                return True
+            for k in self.olist:
+                if fnmatch.fnmatch(k.name, s) or fnmatch.fnmatch(full_name(k), s):
+                    return True
+            return False
+        valid = map(valid_node, options)
+        if not all(valid):
+            sys.exit("Unknown node(s) in --nodes: " + " ".join([o for o, v in zip(options, valid) if not v]))
 
     def reset_thresh(self):
         for obj in self.olist:
