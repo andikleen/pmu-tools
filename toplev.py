@@ -2144,9 +2144,9 @@ def do_sample(sample_obj, rest, count, full_olist):
                                     for o in full_olist
                                     if fnmatch.fnmatch(full_name(o), m) and o.level <= obj.level + SAMPLE_EXTEND])
             if len(csamples) > 2:
-                # XXX should print recipe that only extends nodes by SAMPLE_EXTEND levels
                 print("Many possible sample events in deeper nodes.")
-                print("Consider remeasuring with --nodes '+%s*' to narrow down" % obj.name)
+                print("Consider remeasuring with --nodes '+%s*/%d' to narrow down" %
+                        (obj.name, obj.level + SAMPLE_EXTEND))
             samples += csamples
             continue
         for s in obj.sample:
