@@ -205,7 +205,7 @@ checklog0
 rm log$$
 $WRAP ./toplev.py > log$$ true
 # assumes that true is backend_bound. If not would need some parsing
-[ -z "$NORES" ] && grep "Consider adding --nodes.*Backend" log$$
+[ -z "$NORES" ] && grep "Add --nodes.*Backend" log$$
 rm log$$
 $WRAP ./toplev.py  -v --nodes Backend*/3 -o log$$ true
 echo >> log$$

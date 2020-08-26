@@ -2199,6 +2199,17 @@ def do_sample(sample_obj, rest, count, full_olist):
                 ("-i %s" % perf_data) if perf_data != "perf_data" else "",
                 " --no-branch-history" if "-b" in extra_args else ""))
 
+def suggest_bottlenecks(runner):
+    children = ["+%s*/%d" % (o.name, o.level + BOTTLENECK_LEVEL_INC)
+                    for o in runner.bottlenecks
+                    if o.children]
+    if children and args.nodes:
+        children = [x for x in children if x[:-1] not in args.nodes]
+    if children:
+        print("Add --nodes '%s' for breakdown on the bottleneck%s." % (
+                ",".join(children),
+                "s" if len(children) > 1 else ""))
+
 def sysctl(name):
     try:
         with open("/proc/sys/" + name.replace(".","/"), "r") as f:
@@ -2465,12 +2476,7 @@ else:
 BOTTLENECK_LEVEL_INC = 1
 
 if args.level < 6 and runner.bottlenecks:
-    children = ["+%s*/%d" % (o.name, args.level + BOTTLENECK_LEVEL_INC)
-                    for o in runner.bottlenecks
-                    if o.children]
-    if children:
-        print("Consider adding --nodes '%s' to get more details on the bottlenecks" %
-                ",".join(children))
+    suggest_bottlenecks(runner)
 
 out.print_footer()
 if args.graph:
