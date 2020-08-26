@@ -132,7 +132,7 @@ class Output:
 
 def fmt_below(below):
     if below:
-        return "?"
+        return "<"
     return ""
 
 class OutputHuman(Output):
