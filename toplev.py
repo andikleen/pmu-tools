@@ -2526,6 +2526,9 @@ if runner.idle_keys and not args.quiet:
 if args.level < 6 and runner.bottlenecks and not args.quiet:
     suggest_bottlenecks(runner)
 
+if notfound_cache and not args.quiet:
+    print("Some events not found. Consider running event_download.py to update event lists")
+
 out.print_footer()
 if args.graph:
     args.output.close()
