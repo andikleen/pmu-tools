@@ -50,7 +50,7 @@ DOCFILES := cache.c jevents.c cpustr.c rawevent.c interrupts.c measure.c rdpmc.c
 html: jevents.html
 
 man: jeventstmp.man
-	perl -ne 's/Kernel Hacker.s Manual/jevents/; open(F,">" . $$1 . ".man") if /^\.TH "(.*?)"/; print F $$_' jevents.man
+	perl -ne 's/Kernel Hacker.s Manual/jevents/; open(F,">" . $$1 . ".man") if /^\.TH "(.*?)"/; print F $$_' jeventstmp.man
 
 jeventstmp.man: $(DOCFILES)
 	${KDOC} -man ${DOCFILES} > $@
