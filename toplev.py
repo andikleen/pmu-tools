@@ -431,7 +431,7 @@ g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file')
 g.add_argument('--no-perf', help="Don't print perf command line", action='store_true')
 g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
-g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5% of busiest if not CSV, specify percent)",
+g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5%% of busiest if not CSV, specify percent)",
                default=None, type=float)
 
 g = p.add_argument_group('Environment')
