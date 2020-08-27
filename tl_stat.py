@@ -55,7 +55,7 @@ class ComputeStat:
         if len(res.keys()) > 0:
             r = res[list(res.keys())[0]]
             if len(referenced) != len(r) and not self.quiet:
-                print("warning: %d results not referenced:" % (len(r) - len(referenced)), end='', file=sys.stderr)
+                print("%d results not referenced:" % (len(r) - len(referenced)), end='', file=sys.stderr)
                 print(" ".join(["%d" % x for x in sorted(set(range(len(r))) - referenced)]), file=sys.stderr)
 
     def compute_errors(self):
@@ -67,5 +67,5 @@ class ComputeStat:
             self.prev_errors = self.errors
             self.errors = set()
         if self.mismeasured and self.mismeasured > self.prev_mismeasured and not self.quiet:
-            print("warning: Mismeasured:", " ".join(self.mismeasured))
+            print("Mismeasured (out of bound values):", " ".join(self.mismeasured))
             self.prev_mismeasured = self.mismeasured
