@@ -2240,6 +2240,8 @@ def do_sample(sample_obj, rest, count, full_olist):
                 ("-i %s" % perf_data) if perf_data != "perf_data" else "",
                 " --no-branch-history" if "-b" in extra_args else ""))
 
+BOTTLENECK_LEVEL_INC = 1
+
 def suggest_bottlenecks(runner):
     children = ["+%s*/%d" % (o.name, o.level + BOTTLENECK_LEVEL_INC)
                     for o in runner.bottlenecks
@@ -2514,7 +2516,6 @@ if args.sample_repeat:
 else:
     ret = measure_and_sample(None)
 
-BOTTLENECK_LEVEL_INC = 1
 
 if runner.idle_keys and not args.quiet:
     print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" % (",".join(runner.idle_keys)))
