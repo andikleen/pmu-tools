@@ -1092,7 +1092,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             runner.print_res(out, interval, jname, package_node, None)
     # no bottlenecks from package nodes for now
     out.flush()
-    stat.referenced_check(res)
+    stat.referenced_check(res, runner.evnum)
     stat.compute_errors()
     runner.idle_keys |= hidden_keys
 
@@ -1903,6 +1903,14 @@ class Runner:
             if not obj.metric:
                 obj.thresh = False
 
+    # replace unreferenced events with dummy. Should remove instead
+    def unreferenced_dummy(self):
+        for g, base in zip(self.evgroups, self.evbases):
+            for ind, j in enumerate(g):
+                if not self.indexobj[base + ind]:
+                    g[ind] = "dummy"
+                    self.evnum[base + ind] = "dummy"
+
     def run(self, obj):
         obj.thresh = False
         obj.metric = False
@@ -2070,6 +2078,8 @@ class Runner:
             curlev = newlev
         if curobj:
             self.add(curobj, curev, curlev)
+        self.gen_indexobj()
+        self.unreferenced_dummy()
         if print_group:
             num_groups = len([x for x in self.evgroups if needed_counters(x) <= cpu.counters])
             print("%d groups, %d non-groups with %d events total (%d unique) for %d objects, missed %d merges" % (
@@ -2079,8 +2089,6 @@ class Runner:
                 len(set(self.evnum)),
                 len(self.olist),
                 self.missed))
-        if args.valcsv or args.raw:
-            self.gen_indexobj()
 
     def propagate_siblings(self):
         changed = [0]
