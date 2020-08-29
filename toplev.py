@@ -2099,16 +2099,17 @@ class Runner:
             out.logf.flush()
 
         # determine all objects to print
-        olist = []
-        for obj in self.olist:
+        def should_print_obj(obj):
             if obj.thresh or print_all:
                 if not match(obj):
                     pass
                 elif obj.metric:
                     if print_all or obj.val != 0:
-                        olist.append(obj)
+                        return True
                 elif check_ratio(obj.val):
-                    olist.append(obj)
+                    return True
+            return False
+        olist = filter(should_print_obj, self.olist)
 
         # sort by metric group
         olist = olist_by_metricgroup(olist, self.metricgroups)
