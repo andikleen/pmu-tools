@@ -2309,6 +2309,50 @@ def suggest_bottlenecks(runner):
             return True
     return False
 
+def do_xlsx(runner):
+    cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s'" % (
+        sys.executable,
+        exe_dir(),
+        args.valcsv.name,
+        args.perf_output.name,
+        env.cpuinfo if env.cpuinfo else "/proc/cpuinfo")
+    if args.single_thread:
+        names = ["program"]
+        files = [out.logf.name]
+    else:
+        names = ["socket", "global", "core", "thread"]
+        files = [tl_output.output_name(args.output, p) for p in names]
+
+    extrafiles = []
+    extranames = []
+    if args.xnormalize:
+         for j, n in zip(files, names):
+            nname = j.replace(".csv", "-norm.csv")
+            ncmd = "%s %s/interval-normalize.py --error-exit < '%s' > '%s'" % (
+                    sys.executable,
+                    exe_dir(),
+                    j,
+                    nname)
+            if not args.quiet:
+                print(ncmd)
+            ret = os.system(ncmd)
+            if ret:
+                print("interval-normalize failed", file=sys.stderr)
+                return ret
+            extrafiles.append(nname)
+            extranames.append("n" + n)
+
+    def gen_arg(n, f):
+        return " --%s '%s'" % (n, f)
+    cmd += " ".join([" --%s '%s'" % (n, f) for n, f in zip(names, files)])
+    cmd += " ".join([" --add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
+    cmd += " '%s'" % args.xlsx
+    if not args.quiet:
+        print(cmd)
+    ret = os.system(cmd)
+    # XXX delete temp files
+    return ret
+
 def sysctl(name):
     try:
         with open("/proc/sys/" + name.replace(".","/"), "r") as f:
@@ -2602,46 +2646,7 @@ out.print_footer()
 out.flushfiles()
 
 if args.xlsx and ret == 0:
-    cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s'" % (
-        sys.executable,
-        exe_dir(),
-        args.valcsv.name,
-        args.perf_output.name,
-        env.cpuinfo if env.cpuinfo else "/proc/cpuinfo")
-    if args.single_thread:
-        names = ["program"]
-        files = [out.logf.name]
-    else:
-        names = ["socket", "global", "core", "thread"]
-        files = [tl_output.output_name(args.output, p) for p in names]
-
-    extrafiles = []
-    extranames = []
-    if args.xnormalize:
-         for j, n in zip(files, names):
-            nname = j.replace(".csv", "-norm.csv")
-            ncmd = "%s %s/interval-normalize.py --error-exit < '%s' > '%s'" % (
-                    sys.executable,
-                    exe_dir(),
-                    j,
-                    nname)
-            if not args.quiet:
-                print(ncmd)
-            ret = os.system(ncmd)
-            if ret:
-                sys.exit("interval-normalize failed")
-            extrafiles.append(nname)
-            extranames.append("n" + n)
-
-    def gen_arg(n, f):
-        return " --%s '%s'" % (n, f)
-    cmd += " ".join([" --%s '%s'" % (n, f) for n, f in zip(names, files)])
-    cmd += " ".join([" --add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
-    cmd += " '%s'" % args.xlsx
-    if not args.quiet:
-        print(cmd)
-    ret = os.system(cmd)
-    # XXX delete temp files
+    ret = do_xlsx(runner)
 
 if runner.idle_keys and not args.quiet:
     print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" % (",".join(runner.idle_keys)))
