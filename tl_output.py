@@ -391,7 +391,7 @@ class OutputCSV(Output):
         if timestamp:
             l.append(convert_ts(timestamp))
         if title:
-            l.append(title)
+            l.append("CPU" + title if re.match(r'[0-9]+', title) else title)
         stddev = val.format_uncertainty().strip()
         multiplex = val.multiplex if not isnan(val.multiplex) else ""
         self.writer[self.curname].writerow(l + [hdr, val.format_value_raw().strip(),
