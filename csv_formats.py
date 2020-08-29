@@ -7,7 +7,7 @@ def is_val(n):
     return re.match(r'-?[0-9.]+%?|<.*>', n) is not None
 
 def is_cpu(n):
-    return re.match(r'(CPU)|(S\d+(-C\d+)?)|C\d+', n) is not None
+    return re.match(r'(CPU)|(S\d+(-C\d+)?)|C\d+|all', n) is not None
 
 def is_socket(n):
     return re.match(r'S\d+', n) is not None
@@ -19,7 +19,7 @@ def is_number(n):
     return re.match(r'\s*[0-9]+', n) is not None
 
 def is_ts(n):
-    return re.match(r'\s*[0-9.]+', n) is not None
+    return re.match(r'\s*[0-9.]+', n) is not None or n == "SUMMARY"
 
 def is_unit(n):
     return re.match(r'[a-zA-Z]*', n) is not None
