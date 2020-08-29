@@ -421,6 +421,7 @@ g.add_argument('--output', '-o', help='Set output file')
 g.add_argument('--xlsx', help='Generate xlsx spreadsheet output with data for '
                'socket/global/thread/core/summary/raw views with 1s interval.'
                'Add --single-thread to only get program output, or add --pid/--cgroup filters')
+g.add_argument('--xnormalize', help='Normalize output in xlsx files', action='store_true')
 g.add_argument('--split-output', help='Generate multiple output files, one for each specified '
                'aggregation option (with -o)',
                action='store_true')
@@ -2607,13 +2608,34 @@ if args.xlsx and ret == 0:
         args.perf_output.name,
         env.cpuinfo if env.cpuinfo else "/proc/cpuinfo")
     if args.single_thread:
-        cmd += " --program '%s'" % out.logf.name
+        names = ["program"]
+        files = [out.logf.name]
     else:
-        cmd += " --socket '%s' --global '%s' --core '%s' --thread '%s'" % (
-            tl_output.output_name(args.output, "socket"),
-            tl_output.output_name(args.output, "global"),
-            tl_output.output_name(args.output, "core"),
-            tl_output.output_name(args.output, "thread"))
+        names = ["socket", "global", "core", "thread"]
+        files = [tl_output.output_name(args.output, p) for p in names]
+
+    extrafiles = []
+    extranames = []
+    if args.xnormalize:
+         for j, n in zip(files, names):
+            nname = j.replace(".csv", "-norm.csv")
+            ncmd = "%s %s/interval-normalize.py --error-exit < '%s' > '%s'" % (
+                    sys.executable,
+                    exe_dir(),
+                    j,
+                    nname)
+            if not args.quiet:
+                print(ncmd)
+            ret = os.system(ncmd)
+            if ret:
+                sys.exit("interval-normalize failed")
+            extrafiles.append(nname)
+            extranames.append("n" + n)
+
+    def gen_arg(n, f):
+        return " --%s '%s'" % (n, f)
+    cmd += " ".join([" --%s '%s'" % (n, f) for n, f in zip(names, files)])
+    cmd += " ".join([" --add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
     cmd += " '%s'" % args.xlsx
     if not args.quiet:
         print(cmd)

@@ -31,15 +31,17 @@ except ImportError:
 import sys
 import csv
 import re
+import collections
 
 ap = argparse.ArgumentParser(description="Convert toplev CSV files to xlsx")
 ap.add_argument('xlsxfile', help="xlsx output name")
-ap.add_argument('--valcsv', type=argparse.FileType('r'), help="toplev valcsv input file")
-ap.add_argument('--socket', type=argparse.FileType('r'), help="toplev socket csv file")
-ap.add_argument('--global', type=argparse.FileType('r'), help="toplev global csv file", dest='_global')
-ap.add_argument('--core', type=argparse.FileType('r'), help="toplev core csv file")
-ap.add_argument('--program', type=argparse.FileType('r'), help="toplev program csv file")
-ap.add_argument('--thread', type=argparse.FileType('r'), help="toplev thread csv file")
+ap.add_argument('--socket', type=argparse.FileType('r'), help="toplev socket csv file", metavar="csvfile")
+ap.add_argument('--global', type=argparse.FileType('r'), help="toplev global csv file", dest='_global', metavar="csvfile")
+ap.add_argument('--core', type=argparse.FileType('r'), help="toplev core csv file", metavar="csvfile")
+ap.add_argument('--program', type=argparse.FileType('r'), help="toplev program csv file", metavar="csvfile")
+ap.add_argument('--thread', type=argparse.FileType('r'), help="toplev thread csv file", metavar="csvfile")
+ap.add_argument('--add', nargs=2, help="toplev thread generic csv file. Specify csvfile and sheet name", metavar="name")
+ap.add_argument('--valcsv', type=argparse.FileType('r'), help="toplev valcsv input file", metavar="csvfile")
 ap.add_argument('--perf', type=argparse.FileType('r'), help="toplev perf values csv file")
 ap.add_argument('--cpuinfo', type=argparse.FileType('r'), help="cpuinfo file")
 args = ap.parse_args()
@@ -129,6 +131,8 @@ if args.thread:
     version = create_sheet("thread", args.thread, version=version)
 if args.program:
     version = create_sheet("prog", args.program, version=version)
+if args.add:
+    version = create_sheet(args.add[1], open(args.add[0]), version=version)
 if args.valcsv:
     create_sheet("event values", args.valcsv)
 if args.perf:
