@@ -2586,7 +2586,7 @@ def measure_and_sample(count):
             runner.filter_nodes()
             runner.collect()
             runner.schedule()
-        if not repeat:
+        else:
             break
     return ret
 
