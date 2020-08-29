@@ -2274,9 +2274,10 @@ def do_sample(sample_obj, rest, count, full_olist):
     if count:
         perf_data += ".%d" % count
     sperf = [perf, "record"] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
-    print(" ".join(sperf))
+    cmd = " ".join(sperf)
+    print(cmd)
     if args.run_sample:
-        ret = os.system(" ".join(sperf))
+        ret = os.system(cmd)
         if ret:
             print("Sampling failed")
             sys.exit(1)
