@@ -17,4 +17,4 @@ class SetupCPU:
         global nominal_freq
         if cpu.freq:
             nominal_freq = cpu.freq
-        r.metric(Frequency())
+        r.force_metric(Frequency())

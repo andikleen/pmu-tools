@@ -171,17 +171,17 @@ class NetworkRX:
 
 class Setup:
     def __init__(self, r):
-        r.metric(CS())
-        r.metric(MinorFaults())
-        r.metric(MajorFaults())
-        r.metric(Migrations())
+        r.force_metric(CS())
+        r.force_metric(MinorFaults())
+        r.force_metric(MajorFaults())
+        r.force_metric(Migrations())
         if os.path.exists("/sys/kernel/debug/tracing/events"):
-            r.metric(Syscalls())
-            r.metric(Interrupts())
-            r.metric(IPIs())
-            r.metric(Workqueues())
-            r.metric(BlockIOs())
-            r.metric(NetworkTX())
-            r.metric(NetworkRX())
+            r.force_metric(Syscalls())
+            r.force_metric(Interrupts())
+            r.force_metric(IPIs())
+            r.force_metric(Workqueues())
+            r.force_metric(BlockIOs())
+            r.force_metric(NetworkTX())
+            r.force_metric(NetworkRX())
         elif sys.argv[0].find("toplev") >= 0:
             print("Need to be root for trace point Linux software metrics.", file=sys.stderr)
