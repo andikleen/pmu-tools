@@ -70,7 +70,7 @@ def get_worksheet(name):
     return worksheet
 
 def create_sheet(name, infh, delimiter=',', version=None):
-    lengths = [0] * 30
+    lengths = collections.defaultdict(lambda: 0)
     worksheet = get_worksheet(name)
     cf = csv.reader(infh, delimiter=delimiter)
     row = 0
