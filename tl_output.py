@@ -21,16 +21,20 @@ from tl_stat import isnan
 from tl_uval import UVal, combine_uval
 from tl_io import flex_open_w
 
-def open_logfile(name, typ):
-    if name is None or name == "":
-        return sys.stderr
-    if 'write' in name.__class__.__dict__:
-        return name
+def output_name(name, typ):
     if typ:
         if "." in name:
             name = re.sub(r'(.*)\.', r'\1-%s.' % typ, name)
         else:
             name += "-" + typ
+    return name
+
+def open_logfile(name, typ):
+    if name is None or name == "":
+        return sys.stderr
+    if 'write' in name.__class__.__dict__:
+        return name
+    name = output_name(name, typ)
     try:
         return flex_open_w(name)
     except IOError:

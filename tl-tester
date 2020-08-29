@@ -170,9 +170,15 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --import x$$.csv.gz --all -
 [ -z "$NORES" ] && zgrep IPC y$$.out.gz
 rm x$$.csv.gz y$$.out.gz
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --no-multiplex --columns -l4 $LOAD
+$WRAP ./toplev.py --excel x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOAD
+rm x$$.xlsx
 $WRAP ./toplev.py --force-cpu bdw --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --all $LOAD
+rm x$$.xlsx # must exist
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -l6 --metrics --single-thread $LOAD
+rm x$$.xlsx # must exist
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread -x, --columns -l4 $LOAD
 FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
@@ -240,6 +246,9 @@ rm val$$.csv.xz val$$.csv.gz val$$.csv
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --sample-basename perf$$.data --sample-repeat 5 --filterqual -a sleep 0.1  | tee log
 # do all perf.data exist?
 rm perf$$.data.{1,2,3,4,5}
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --sample-basename perf$$.data --xlsx x$$.xlsx --sample-repeat 3 --filterqual -a $LOAD | tee log
+rm perf$$.data.{1,2,3}
+rm x$$.xlsx
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -v -o log$$ --single-thread -r3 $LOAD
 [ -z "$NORES" ] && grep 'Backend_Bound.*[0-9][0-9]' log$$
@@ -270,6 +279,14 @@ chmod +x script$$
 OUT=tltest$$ ./script$$ $LOAD
 $WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
+
+$WRAP ./toplev.py --xlsx dummy.xlsx --all --gen-script > script$$
+chmod +x script$$
+OUT=tltest$$ ./script$$ $LOAD
+$WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology --xlsx x$$.xlsx
+rm x$$.xlsx
+rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
+
 
 # check current platform
 $WRAP ./toplev.py -o /dev/null --no-desc -v --all --run-sample $LOAD

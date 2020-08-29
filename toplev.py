@@ -417,6 +417,9 @@ g.add_argument('--verbose', '-v', help='Print all results even when below thresh
                action='store_true')
 g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
 g.add_argument('--output', '-o', help='Set output file')
+g.add_argument('--xlsx', help='Generate xlsx spreadsheet output with data for '
+               'socket/global/thread/core/summary/raw views with 1s interval.'
+               'Add --single-thread to only get program output, or add --pid/--cgroup filters')
 g.add_argument('--split-output', help='Generate multiple output files, one for each specified '
                'aggregation option (with -o)',
                action='store_true')
@@ -523,10 +526,38 @@ if args.cpu:
     rest = ["--cpu", args.cpu] + rest
 if args.pid:
     rest = ["--pid", args.pid] + rest
-if args.no_aggr:
-    rest = ["-A"] + rest
 if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
+
+if args.xlsx:
+    if args.output:
+        sys.exit("-o / --output not allowed with --xlsx")
+    if args.valcsv:
+        sys.exit("--valcsv not allowed with --xlsx")
+    if args.perf_output:
+        sys.exit("--perf-output not allowed with --xlsx")
+    if args.csv:
+        sys.exit("-c / --csv not allowed with --xlsx")
+    if not args.xlsx.endswith(".xlsx"):
+        sys.exit("--xlsx must end in .xlsx")
+    if not args.interval:
+        args.interval = 1000
+    args.csv = ','
+    xlsx_base = args.xlsx.replace(".xlsx", ".csv")
+    args.valcsv = xlsx_base.replace(".", "-valcsv.")
+    args.output = xlsx_base
+    args.summary = True
+    args.perf_output = xlsx_base.replace(".", "-perf.")
+    if not args.single_thread:
+        args.per_thread = True
+        args.split_output = True
+        args.per_socket = True
+        args.per_core = True
+        args.no_aggr = True
+        args._global = True
+
+if args.no_aggr:
+    rest = ["-A"] + rest
 
 if args.valcsv:
     try:
@@ -1036,7 +1067,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                        for i in range(len(valstats[cpus[0]]))] if len(cpus) > 0 else []
         runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
                        combined_st, env, package_node, stat)
-        runner.print_res(out, interval, "", package_node, None)
+        runner.print_res(out, interval, "all", package_node, None)
     elif mode != OUTPUT_THREAD:
         packages = set()
         for j in keys:
@@ -2423,6 +2454,8 @@ if args.power and feat.supports_power:
     setup_with_metrics(power_metrics, runner)
     if not args.quiet and not import_mode:
         print("Running with --power. Will measure complete system.")
+    if args.single_thread:
+        print("--single-thread conflicts with --power")
     check_root()
     if "-a" not in rest:
         rest = ["-a"] + rest
@@ -2446,8 +2479,13 @@ if args.per_socket and not smt_mode and not "-A" in rest:
     rest = ["--per-socket"] + rest
 if args.per_core and not smt_mode and not "-A" in rest:
     rest = ["--per-core"] + rest
-if (args._global or args.per_socket or args.per_core) and not smt_mode:
-    rest = ["-a"] + rest
+if args.per_thread and not smt_mode and not "-A" in rest:
+    rest = ["-A"] + rest
+if ((args._global or args.per_socket or args.per_core or args.per_thread)
+        and not smt_mode
+        and not args.single_thread):
+    if "-a" not in rest:
+        rest = ["-a"] + rest
 
 full_system = False
 if not args.single_thread and cpu.ht:
@@ -2472,7 +2510,9 @@ if args.perf_output:
     if args.interval:
         ph.append("Timestamp")
     if full_system:
-        ph += ["Location", "Num-CPUs"]
+        ph.append("Location")
+        if ("--per-socket" in rest or "--per-core" in rest) and not "-A" in rest:
+            ph.append("Num-CPUs")
     ph += ["Value", "Unit", "Event", "Run-Time", "Enabled"]
     args.perf_output.write(";".join(ph) + "\n")
 
@@ -2528,6 +2568,26 @@ if args.sample_repeat:
 else:
     ret = measure_and_sample(None)
 
+if args.xlsx and ret == 0:
+    cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s'" % (
+        sys.executable,
+        exe_dir(),
+        args.valcsv.name,
+        args.perf_output.name,
+        env.cpuinfo if env.cpuinfo else "/proc/cpuinfo")
+    if args.single_thread:
+        cmd += " --program '%s'" % out.logf.name
+    else:
+        cmd += " --socket '%s' --global '%s' --core '%s' --thread '%s'" % (
+            tl_output.output_name(args.output, "socket"),
+            tl_output.output_name(args.output, "global"),
+            tl_output.output_name(args.output, "core"),
+            tl_output.output_name(args.output, "thread"))
+    cmd += " '%s'" % args.xlsx
+    if not args.quiet:
+        print(cmd)
+    ret = os.system(cmd)
+    # XXX delete temp files
 
 if runner.idle_keys and not args.quiet:
     print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" % (",".join(runner.idle_keys)))
