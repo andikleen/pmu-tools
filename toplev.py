@@ -2326,7 +2326,7 @@ def do_xlsx(runner):
     extrafiles = []
     extranames = []
     if args.xnormalize:
-         for j, n in zip(files, names):
+        for j, n in zip(files, names):
             nname = j.replace(".csv", "-norm.csv")
             ncmd = "%s %s/interval-normalize.py --error-exit < '%s' > '%s'" % (
                     sys.executable,
