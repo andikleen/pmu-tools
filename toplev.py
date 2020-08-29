@@ -365,6 +365,7 @@ g.add_argument('--import', help='Import specified perf stat output file instead 
                'Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
                 dest='_import')
 g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later', action='store_true')
+g.add_argument('--drilldown', help='Automatically rerun to get more details on bottleneck', action='store_true')
 
 g = p.add_argument_group('Measurement filtering')
 g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
@@ -1794,29 +1795,33 @@ def get_parents(obj):
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
-    def __init__(self, max_level, idle_threshold):
+    def reset(self):
         self.evnum = [] # flat global list
         self.evgroups = list()
         self.evbases = list()
-        self.olist = []
-        self.odict = dict()
-        self.max_level = max_level
         self.missed = 0
-        self.sample_obj = set()
         self.stat = ComputeStat(args.quiet)
+        self.sample_obj = set()
+        self.olist = []
         self.bottlenecks = set()
         self.idle_keys = set()
+        self.summary = None
+        if args.summary:
+            self.summary = Summary()
+        self.indexobj = None
+        self.idle_threshold = idle_threshold
+
+    def __init__(self, max_level, idle_threshold):
+        self.reset()
+        self.odict = dict()
+        self.max_level = max_level
+        self.max_node_level = 0
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv, lineterminator='\n')
             self.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
                                   "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
-        self.summary = None
-        if args.summary:
-            self.summary = Summary()
-        self.indexobj = None
-        self.idle_threshold = idle_threshold
 
     def do_run(self, obj):
         obj.res = None
@@ -1826,8 +1831,9 @@ class Runner:
         if has(obj, 'metricgroup'):
             for j in obj.metricgroup:
                 self.metricgroups[j].append(obj)
+        self.max_node_level = max(self.max_node_level, obj.level)
 
-    # remove unwanted nodes after their parent relation ship has been set up
+    # remove unwanted nodes after their parent relationship has been set up
     def filter_nodes(self):
         self.full_olist = list(self.olist)
 
@@ -2280,9 +2286,19 @@ def suggest_bottlenecks(runner):
     if children and args.nodes:
         children = [x for x in children if x[:-1] not in args.nodes]
     if children:
-        print("Add --nodes '%s' for breakdown on the bottleneck%s." % (
-                ",".join(children),
-                "s" if len(children) > 1 else ""))
+        if not args.quiet:
+            print("Add%s --nodes '%s' for breakdown on the bottleneck%s." % (
+                    "ing" if args.drilldown else "",
+                    ",".join(children),
+                    "s" if len(children) > 1 else ""))
+        if args.drilldown:
+            if args.nodes:
+                args.nodes += ","
+            else:
+                args.nodes = ""
+            args.nodes += ",".join(children)
+            return True
+    return False
 
 def sysctl(name):
     try:
@@ -2547,17 +2563,31 @@ else:
 runner.schedule()
 
 def measure_and_sample(count):
-    try:
-        if args.no_multiplex:
-            ret = execute_no_multiplex(runner, out, rest)
-        else:
-            ret = execute(runner, out, rest)
-    except KeyboardInterrupt:
-        ret = 1
-    print_summary(runner, out)
-    runner.stat.compute_errors()
-    if (args.show_sample or args.run_sample) and ret == 0:
-        do_sample(runner.sample_obj, rest, count, runner.full_olist)
+    while True:
+        try:
+            if args.no_multiplex:
+                ret = execute_no_multiplex(runner, out, rest)
+            else:
+                ret = execute(runner, out, rest)
+        except KeyboardInterrupt:
+            ret = 1
+        print_summary(runner, out)
+        runner.stat.compute_errors()
+        if ret:
+            break
+        repeat = False
+        if args.level < runner.max_node_level and runner.bottlenecks:
+            repeat = suggest_bottlenecks(runner)
+        if (args.show_sample or args.run_sample) and ret == 0:
+            do_sample(runner.sample_obj, rest, count, runner.full_olist)
+        if repeat:
+            runner.reset()
+            runner.olist = runner.full_olist
+            runner.filter_nodes()
+            runner.collect()
+            runner.schedule()
+        if not repeat:
+            break
     return ret
 
 if args.sample_repeat:
@@ -2567,6 +2597,8 @@ if args.sample_repeat:
             break
 else:
     ret = measure_and_sample(None)
+
+out.print_footer()
 
 if args.xlsx and ret == 0:
     cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s'" % (
@@ -2592,13 +2624,9 @@ if args.xlsx and ret == 0:
 if runner.idle_keys and not args.quiet:
     print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" % (",".join(runner.idle_keys)))
 
-if args.level < 6 and runner.bottlenecks and not args.quiet:
-    suggest_bottlenecks(runner)
-
 if notfound_cache and not args.quiet:
     print("Some events not found. Consider running event_download.py to update event lists")
 
-out.print_footer()
 if args.graph:
     args.output.close()
     graphp.wait()

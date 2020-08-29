@@ -8,9 +8,11 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now supports an experimental --drilldown option to automatically rerun
+  with the nodes needed to analyze the bottleneck further.
 * toplev can now output combined output xlsx files with the --xlsx option. This 
   requires installing the xlsxwriter library using 'pip install xlsxwriter' for the
-  correct python version.
+  correct python version. This is still an experimental feature.
 * toplev now hides idle CPUs by default, unless the output is CSV. This 
   is configurable using the new --idle-threshold argument. The default is hiding if less
   than 5% busy.

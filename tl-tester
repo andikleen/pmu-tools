@@ -97,6 +97,7 @@ grep BDE70 log
 onegroup() {
 	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
 	if [ -n "$NOGROUP" ] ; then return ; fi
+	case "$OPT" in *--drilldown*) return ;; esac
 	grep perf $1 | tr -cd '{}' | awk ' { if ($1 != "{}") { print "more than one group for L1" ; exit(1); } } '
 }
 
@@ -170,11 +171,12 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --import x$$.csv.gz --all -
 [ -z "$NORES" ] && zgrep IPC y$$.out.gz
 rm x$$.csv.gz y$$.out.gz
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --no-multiplex --columns -l4 $LOAD
-$WRAP ./toplev.py --excel x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOAD
+$WRAP ./toplev.py --xlsx x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOAD
 rm x$$.xlsx
 $WRAP ./toplev.py --force-cpu bdw --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --all $LOAD
 rm x$$.xlsx # must exist
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -l6 --metrics --single-thread $LOAD
