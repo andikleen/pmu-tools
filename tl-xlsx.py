@@ -40,7 +40,8 @@ ap.add_argument('--global', type=argparse.FileType('r'), help="toplev global csv
 ap.add_argument('--core', type=argparse.FileType('r'), help="toplev core csv file", metavar="csvfile")
 ap.add_argument('--program', type=argparse.FileType('r'), help="toplev program csv file", metavar="csvfile")
 ap.add_argument('--thread', type=argparse.FileType('r'), help="toplev thread csv file", metavar="csvfile")
-ap.add_argument('--add', nargs=2, help="toplev thread generic csv file. Specify csvfile and sheet name", metavar="name")
+ap.add_argument('--add', nargs=2, help="toplev thread generic csv file. Specify csvfile and sheet name",
+            metavar="name", action="append")
 ap.add_argument('--valcsv', type=argparse.FileType('r'), help="toplev valcsv input file", metavar="csvfile")
 ap.add_argument('--perf', type=argparse.FileType('r'), help="toplev perf values csv file")
 ap.add_argument('--cpuinfo', type=argparse.FileType('r'), help="cpuinfo file")
@@ -132,7 +133,8 @@ if args.thread:
 if args.program:
     version = create_sheet("prog", args.program, version=version)
 if args.add:
-    version = create_sheet(args.add[1], open(args.add[0]), version=version)
+    for fn, name in args.add:
+        version = create_sheet(name, open(fn), version=version)
 if args.valcsv:
     create_sheet("event values", args.valcsv)
 if args.perf:

@@ -2352,8 +2352,8 @@ def do_xlsx(runner):
 
     def gen_arg(n, f):
         return " --%s '%s'" % (n, f)
-    cmd += " ".join([" --%s '%s'" % (n, f) for n, f in zip(names, files)])
-    cmd += " ".join([" --add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
+    cmd += " ".join(["--%s '%s'" % (n, f) for n, f in zip(names, files)])
+    cmd += " ".join(["--add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
     cmd += " '%s'" % args.xlsx
     if not args.quiet:
         print(cmd)
