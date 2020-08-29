@@ -2513,11 +2513,10 @@ def measure_and_sample(count):
         else:
             ret = execute(runner, out, rest)
     except KeyboardInterrupt:
-        print_summary(runner, out)
-        sys.exit(1)
+        ret = 1
     print_summary(runner, out)
     runner.stat.compute_errors()
-    if args.show_sample or args.run_sample:
+    if (args.show_sample or args.run_sample) and ret == 0:
         do_sample(runner.sample_obj, rest, count, runner.full_olist)
     return ret
 
