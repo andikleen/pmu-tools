@@ -2597,6 +2597,7 @@ else:
     ret = measure_and_sample(None)
 
 out.print_footer()
+out.flushfiles()
 
 if args.xlsx and ret == 0:
     cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s'" % (
