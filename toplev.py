@@ -371,6 +371,7 @@ g.add_argument('--user', help='Only measure user code', action='store_true')
 g.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 g.add_argument('--pid', '-p', help=argparse.SUPPRESS)
 g.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
+g.add_argument('--no-aggr', '-A', help='Measure every CPU', action='store_true')
 
 g = p.add_argument_group('Select events')
 g.add_argument('--level', '-l', help='Measure upto level N (max 6)',
@@ -521,6 +522,8 @@ if args.cpu:
     rest = ["--cpu", args.cpu] + rest
 if args.pid:
     rest = ["--pid", args.pid] + rest
+if args.no_aggr:
+    rest = ["-A"] + rest
 if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
 
