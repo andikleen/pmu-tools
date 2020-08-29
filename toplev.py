@@ -564,11 +564,12 @@ if args.graph:
     if args.graph_cpu:
         extra += "--cpu " + args.graph_cpu + " "
     args.csv = ','
-    cmd = "PATH=$PATH:%s ; %s tl-barplot.py %s /dev/stdin" % (exe_dir(), sys.executable, extra)
+    cmd = "%s %s/tl-barplot.py %s /dev/stdin" % (sys.executable, exe_dir(), extra)
     if not args.quiet:
         print(cmd)
     graphp = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, **popentext)
     args.output = graphp.stdin
+
 if args.sample_repeat:
     args.run_sample = True
 
