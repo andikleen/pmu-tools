@@ -1602,18 +1602,6 @@ Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
     return desc
 
-def _all_siblings(sib, visited):
-    for k in sib:
-        if k not in visited:
-            visited.add(k)
-            if has(k, 'sibling') and k.sibling is not None:
-                _all_siblings(k.sibling, visited)
-
-def all_siblings(sib):
-    siblings = set()
-    _all_siblings(sib, siblings)
-    return siblings
-
 def node_filter(obj, default, sibmatch):
     if args.nodes:
         fname = full_name(obj)
@@ -1624,11 +1612,12 @@ def node_filter(obj, default, sibmatch):
                     fnmatch(fname, m) or
                     fnmatch(fname, "*" + m))
 
-        def match(m):
+        def match(m, level=True):
             r = re.match("(.*)/([0-9]+)", m)
             if r:
                 m = r.group(1)
-                return _match(r.group(1)) and obj.level <= int(r.group(2))
+                level = int(r.group(2)) if level else obj.level
+                return _match(r.group(1)) and obj.level <= level
             return _match(m)
 
         for j in args.nodes.split(","):
@@ -1639,9 +1628,10 @@ def node_filter(obj, default, sibmatch):
                 continue
             elif j[0] == '+':
                 i += 1
-            if match(j[i:]):
+            # siblings only for direct matches
+            if match(j[i:], False):
                 if re.match(r'.*\*(/[0-9]+)?', j) and has(obj, 'sibling') and obj.sibling:
-                    sibmatch |= all_siblings(obj.sibling)
+                    sibmatch |= set(obj.sibling)
                 return True
     return default
 
