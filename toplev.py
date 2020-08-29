@@ -1857,7 +1857,10 @@ class Runner:
                 return False
             if args.no_uncore and has(obj, 'area') and obj.area == "Info.System":
                 return False
-            want = ((obj.metric and args.metrics) or obj.name in add_met or obj in parents) and obj.name not in remove_met
+            want = ((obj.metric and args.metrics) or
+                    (('force_metric' in obj.__dict__) and obj.force_metric) or
+                    obj.name in add_met or
+                    obj in parents) and obj.name not in remove_met
             if not obj.metric and obj.level <= self.max_level:
                 want = True
             return node_filter(obj, want, sibmatch)
@@ -1911,6 +1914,10 @@ class Runner:
         obj.level = 0
         obj.sibling = None
         self.do_run(obj)
+
+    def force_metric(self, obj):
+        obj.force_metric = True
+        self.metric(obj)
 
     def split_groups(self, objl, evlev):
         levels = set(get_levels(evlev))
@@ -2446,28 +2453,17 @@ if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_
         print("Other arguments ignored", file=sys.stderr)
     sys.exit(0)
 
-def setup_with_metrics(p, runner):
-    old_metrics = args.metrics
-    args.metrics = True
-    p.Setup(runner)
-    args.metrics = old_metrics
-
 def check_root():
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1) and not args.quiet:
         print("Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid", file=sys.stderr)
 
-if args.nodes:
-    runner.check_nodes(args.nodes)
-runner.setup_children()
-runner.filter_nodes()
-
 if not args.no_util:
     import perf_metrics
-    setup_with_metrics(perf_metrics, runner)
+    perf_metrics.Setup(runner)
 
 if args.power and feat.supports_power:
     import power_metrics
-    setup_with_metrics(power_metrics, runner)
+    power_metrics.Setup(runner)
     if not args.quiet and not import_mode:
         print("Running with --power. Will measure complete system.")
     if args.single_thread:
@@ -2478,18 +2474,20 @@ if args.power and feat.supports_power:
 
 if args.sw:
     import linux_metrics
-    setup_with_metrics(linux_metrics, runner)
+    linux_metrics.Setup(runner)
 
 if args.tsx and cpu.has_tsx and cpu.cpu in tsx_cpus:
     import tsx_metrics
-    setup_with_metrics(tsx_metrics, runner)
+    tsx_metrics.Setup(runner)
 
 if args.frequency:
     import frequency
-    old_metrics = args.metrics
-    args.metrics = True
     frequency.SetupCPU(runner, cpu)
-    args.metrics = old_metrics
+
+if args.nodes:
+    runner.check_nodes(args.nodes)
+runner.setup_children()
+runner.filter_nodes()
 
 if args.per_socket and not smt_mode and "-A" not in rest:
     rest = ["--per-socket"] + rest
