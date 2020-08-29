@@ -2188,17 +2188,6 @@ def do_sample(sample_obj, rest, count, full_olist):
         return [(s, obj.name) for s in obj.sample]
 
     for obj in sample_obj:
-        if len(obj.sample) == 0:
-            m = full_name(obj) + "*"
-            csamples = flatten([sample_list(o)
-                                    for o in full_olist
-                                    if fnmatch(full_name(o), m) and o.level <= obj.level + SAMPLE_EXTEND])
-            if len(csamples) > 2 and not args.quiet:
-                print("Many possible sample events in deeper nodes.")
-                print("Consider remeasuring with --nodes '+%s*/%d' to narrow down" %
-                        (obj.name, obj.level + SAMPLE_EXTEND))
-            samples += csamples
-            continue
         for s in obj.sample:
             samples.append((s, obj.name))
 
