@@ -23,6 +23,7 @@ import sys, os, re, itertools, textwrap, platform, pty, subprocess
 import argparse, time, types, csv, copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
+from itertools import compress
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
 import tl_cpu
@@ -746,7 +747,7 @@ def raw_event(i, name="", period=False, nopebs=True):
                 errata_events[orig_i] = e.errata
             else:
                 errata_warn_events[orig_i] = e.errata
-    if not i.startswith("cpu"):
+    if not i.startswith("cpu/") and not re.match(r'r[0-9a-f]+', i):
         if not i.startswith("uncore"):
             valid_events.add_event(i)
         outgroup_events.add(i)
@@ -1998,12 +1999,23 @@ class Runner:
         # try to fit each objects events into groups
         # that fit into the available CPU counters
         for obj in solist:
-            if not (set(obj.evnum) - outgroup_events):
-                self.add([obj], obj.evnum, obj.evlevels)
-                continue
+            evnum = obj.evnum
+            evlevels = obj.evlevels
+            oe = [e in outgroup_events for e in obj.evnum]
+            if any(oe):
+                # add events outside group separately
+                self.add([obj], list(compress(obj.evnum, oe)), list(compress(obj.evlevels, oe)))
+                if sum(oe) == len(obj.evnum):
+                    continue
+                evlevels = list(compress(obj.evlevels, [not x for x in oe]))
+                evnum = list(compress(obj.evnum, [not x for x in oe]))
+                evnum, evlevels = dedup2(evnum, evlevels)
+                if self.add_duplicate(evnum, [obj]):
+                    continue
+
             # try adding another object to the current group
-            newev = curev + obj.evnum
-            newlev = curlev + obj.evlevels
+            newev = curev + evnum
+            newlev = curlev + evlevels
             needed = needed_counters(newev)
             # when the current group doesn't have enough free slots
             # or is already too large
