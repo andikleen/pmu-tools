@@ -2491,11 +2491,11 @@ if args.frequency:
     frequency.SetupCPU(runner, cpu)
     args.metrics = old_metrics
 
-if args.per_socket and not smt_mode and not "-A" in rest:
+if args.per_socket and not smt_mode and "-A" not in rest:
     rest = ["--per-socket"] + rest
-if args.per_core and not smt_mode and not "-A" in rest:
+if args.per_core and not smt_mode and "-A" not in rest:
     rest = ["--per-core"] + rest
-if args.per_thread and not smt_mode and not "-A" in rest:
+if args.per_thread and not smt_mode and "-A" not in rest:
     rest = ["-A"] + rest
 if ((args._global or args.per_socket or args.per_core or args.per_thread)
         and not smt_mode
@@ -2527,7 +2527,7 @@ if args.perf_output:
         ph.append("Timestamp")
     if full_system:
         ph.append("Location")
-        if ("--per-socket" in rest or "--per-core" in rest) and not "-A" in rest:
+        if ("--per-socket" in rest or "--per-core" in rest) and "-A" not in rest:
             ph.append("Num-CPUs")
     ph += ["Value", "Unit", "Event", "Run-Time", "Enabled"]
     args.perf_output.write(";".join(ph) + "\n")
