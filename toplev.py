@@ -2442,9 +2442,9 @@ if args.frequency:
     frequency.SetupCPU(runner, cpu)
     args.metrics = old_metrics
 
-if args.per_socket and not smt_mode:
+if args.per_socket and not smt_mode and not "-A" in rest:
     rest = ["--per-socket"] + rest
-if args.per_core and not smt_mode:
+if args.per_core and not smt_mode and not "-A" in rest:
     rest = ["--per-core"] + rest
 if (args._global or args.per_socket or args.per_core) and not smt_mode:
     rest = ["-a"] + rest
