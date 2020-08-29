@@ -2449,6 +2449,7 @@ if args.per_core and not smt_mode and not "-A" in rest:
 if (args._global or args.per_socket or args.per_core) and not smt_mode:
     rest = ["-a"] + rest
 
+full_system = False
 if not args.single_thread and cpu.ht:
     if not args.quiet and not import_mode:
         print("Will measure complete system.")
@@ -2462,6 +2463,18 @@ if not args.single_thread and cpu.ht:
         rest = ["-a"] + rest
     if "-A" not in rest:
         rest = ["-A"] + rest
+    full_system = True
+else:
+    full_system = "-A" in rest or "--per-core" in rest or "--per-socket" in rest
+
+if args.perf_output:
+    ph = []
+    if args.interval:
+        ph.append("Timestamp")
+    if full_system:
+        ph += ["Location", "Num-CPUs"]
+    ph += ["Value", "Unit", "Event", "Run-Time", "Enabled"]
+    args.perf_output.write(";".join(ph) + "\n")
 
 if args.core:
     runner.allowed_threads = [x for x in cpu.allcpus if display_core(x, False)]
