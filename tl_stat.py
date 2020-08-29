@@ -59,7 +59,7 @@ class ComputeStat:
                 dummies = set([i for i, d in enumerate(evnum) if d == "dummy"])
                 notr = set(range(len(r))) - referenced - dummies
                 print("%d results not referenced: " % (len(notr)),
-                      " ".join(["%d[%s]" % (x, evnum[x]) for x in sorted(notr)]),
+                      " ".join(["%d" % x for x in sorted(notr)]),
                       file=sys.stderr)
 
     def compute_errors(self):
