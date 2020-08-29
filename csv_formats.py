@@ -1,5 +1,6 @@
 # distinguish the bewildering variety of perf/toplev CSV formats
 from __future__ import print_function
+import sys
 import re
 from collections import namedtuple
 
@@ -81,7 +82,7 @@ def check_format(fmt, row):
 
 fmt_cache = formats[0]
 
-def parse_csv_row(row):
+def parse_csv_row(row, error_exit=False):
     if len(row) == 0:
         return None
     global fmt_cache
@@ -97,5 +98,7 @@ def parse_csv_row(row):
         return None
     if ".csv" in row[0]:          # fake-perf output
         return None
-    print("PARSE-ERROR", row)
+    print("PARSE-ERROR", row, file=sys.stderr)
+    if error_exit:
+        sys.exit(1)
     return None

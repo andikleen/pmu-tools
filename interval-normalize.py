@@ -21,6 +21,7 @@ ap.add_argument('inputfile', type=argparse.FileType('r'), default=sys.stdin, nar
 ap.add_argument('--output', '-o', type=argparse.FileType('w'), default=sys.stdout, nargs='?')
 ap.add_argument('--cpu', nargs='?', help='Only output for this cpu')
 ap.add_argument('--na', nargs='?', help='Value to use if data is not available', default="")
+ap.add_argument('--error-exit', action='store_true', help='Force error exit on parse error')
 args = ap.parse_args()
 
 printed_header = False
@@ -38,7 +39,7 @@ cpu = None
 for row in rc:
     if len(row) > 0 and row[0] == "Timestamp":
         continue
-    r = csv_formats.parse_csv_row(row)
+    r = csv_formats.parse_csv_row(row, error_exit=args.error_exit)
     if r is None:
         continue
     ts, cpu, ev, val = r.ts, r.cpu, r.ev, r.val
