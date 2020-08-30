@@ -2318,7 +2318,7 @@ def suggest_bottlenecks(runner):
     return False
 
 def do_xlsx(runner):
-    cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s'" % (
+    cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s' " % (
         sys.executable,
         exe_dir(),
         args.valcsv.name,
