@@ -1129,6 +1129,8 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
         print_keys(runner, res, rev, valstats, out, interval, env, mode)
 
 def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
+    if args.interval and interval is None:
+        interval = float('nan')
     if runner.summary:
         runner.summary.add(res, rev, valstats, env)
     print_and_split_keys(runner, res, rev, valstats, out, interval, env)
