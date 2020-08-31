@@ -1423,6 +1423,8 @@ def do_event_rmap(e):
         n = fixes[n.upper()].lower()
         if n:
             return n
+    if args.debug:
+        print("rmap: cannot find %s, using dummy" % e, file=sys.stderr)
     return "dummy"
 
 rmap_cache = dict()
@@ -1907,6 +1909,9 @@ class Runner:
         for g, base in zip(self.evgroups, self.evbases):
             for ind, j in enumerate(g):
                 if not self.indexobj[base + ind]:
+                    if args.debug:
+                        print("replacing unreferenced %d %s with dummy" %
+                                ((base + ind), g[ind]))
                     g[ind] = "dummy"
                     self.evnum[base + ind] = "dummy"
 
