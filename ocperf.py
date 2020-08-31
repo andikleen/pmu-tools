@@ -816,7 +816,7 @@ def handle_io_error(f, name, warn=False):
         if warn:
             print("Cannot open", name, file=sys.stderr)
 
-def json_with_extra(el):
+def json_with_extra(el, eventmap_is_file):
     name = event_download.eventlist_name(el, "core")
     emap = EmapNativeJSON(name)
     if not emap or emap.error:
@@ -827,17 +827,17 @@ def json_with_extra(el):
             emap.read_events(event_download.eventlist_name(el, "core experimental"))
         except IOError:
             pass
-    add_extra_env(emap, el)
+    add_extra_env(emap, el, eventmap_is_file)
     return emap
 
-def add_extra_env(emap, el):
+def add_extra_env(emap, el, eventmap_is_file):
     try:
         oc = os.getenv("OFFCORE")
         if oc:
             oc = canon_emapvar(oc, "matrix")
             oc = event_download.eventlist_name(el, "offcore")
             emap.add_offcore(oc)
-        else:
+        elif not eventmap_is_file:
             oc = event_download.eventlist_name(el, "offcore")
             if os.path.exists(oc) and el != oc:
                 emap.add_offcore(oc)
@@ -853,7 +853,7 @@ def add_extra_env(emap, el):
             uc = canon_emapvar(uc, "uncore")
             uc = event_download.eventlist_name(uc, "uncore")
             emap.add_uncore(uc)
-        else:
+        elif not eventmap_is_file:
             uc = event_download.eventlist_name(el, "uncore")
             if os.path.exists(uc) and uc != el:
                 emap.add_uncore(uc)
@@ -900,23 +900,23 @@ def find_emap():
        or None if nothing is found or the current CPU is unknown."""
     el = os.getenv("EVENTMAP")
     if not el:
+        eventmap_is_file = False
         el = event_download.get_cpustr()
+    else:
+        eventmap_is_file = "/" in el
     el = canon_emapvar(el, "core")
     if "/" in el:
         try:
             emap = EmapNativeJSON(el)
             if not emap or emap.error:
                 return None
-            add_extra_env(emap, el)
+            add_extra_env(emap, el, eventmap_is_file)
             return emap
         except IOError:
             return None
     try:
         if not force_download:
-            emap = json_with_extra(el)
-            if emap:
-                add_extra_env(emap, el)
-                return emap
+            return json_with_extra(el, eventmap_is_file)
     except IOError:
         pass
     try:
@@ -928,10 +928,7 @@ def find_emap():
         if experimental:
             toget += [x + " experimental" for x in toget]
         event_download.download(el, toget)
-        emap = json_with_extra(el)
-        if emap:
-            add_extra_env(emap, el)
-            return emap
+        return json_with_extra(el)
     except IOError:
         pass
     return None
