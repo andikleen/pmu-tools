@@ -81,7 +81,7 @@ def create_sheet(name, infh, delimiter=',', version=None):
     titlerow = []
     summary = False
     for c in cf:
-        if len(c) > 0 and c[0][0] == "#":
+        if len(c) > 0 and len(c[0]) > 0 and c[0][0] == "#":
             version = c
             continue
         if row == 0:
