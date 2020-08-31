@@ -2484,6 +2484,7 @@ else:
 
 version = model.version
 model.print_error = pe
+model.check_event = lambda ev: emap.getevent(ev) is not None
 model.Setup(runner)
 
 if args.gen_script:
