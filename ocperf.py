@@ -928,7 +928,7 @@ def find_emap():
         if experimental:
             toget += [x + " experimental" for x in toget]
         event_download.download(el, toget)
-        return json_with_extra(el)
+        return json_with_extra(el, eventmap_is_file)
     except IOError:
         pass
     return None
