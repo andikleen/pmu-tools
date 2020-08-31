@@ -55,6 +55,7 @@ checklist slm 100
 checklist bdw-de 100
 checklist bdw 100
 checklist skl 100
+checklist icl 100
 
 O=$(EVENTMAP=${cpus[skl]} $WRAP ./ocperf.py list | wc -l)
 E=$(EVENTMAP=${cpus[skl]} $WRAP ./ocperf.py list --experimental  | wc -l)
