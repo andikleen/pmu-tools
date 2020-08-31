@@ -123,10 +123,7 @@ outgroup_events = set(["dummy"])
 
 nonperf_events = set(["interval-ns", "interval-s", "interval-ms", "mux"])
 
-# workaround for broken event files for now
 event_fixes = {
-    "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC",
-    "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC"
 }
 
 core_domains = set(["Slots", "CoreClocks", "CoreMetric"])
