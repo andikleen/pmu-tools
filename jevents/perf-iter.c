@@ -115,7 +115,7 @@ void perf_iter_continue(struct perf_iter *iter)
 	mb();
 }
 
-static unsigned perf_mmap_size(int buf_size_shift)
+unsigned perf_mmap_size(int buf_size_shift)
 {
 	return ((1U << buf_size_shift) + 1) * sysconf(_SC_PAGESIZE);
 }

@@ -75,8 +75,8 @@ When low consider increasing the size of the critical sections to lower overhead
 
 class Setup:
     def __init__(self, r):
-        r.metric(TransactionalCycles())
-        r.metric(AbortedCycles())
-        r.metric(AverageRTM())
-        r.metric(AverageHLE())
+        r.force_metric(TransactionalCycles())
+        r.force_metric(AbortedCycles())
+        r.force_metric(AverageRTM())
+        r.force_metric(AverageHLE())
 

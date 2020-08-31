@@ -5,7 +5,7 @@ override CFLAGS += -I ..
 override LDFLAGS += -L ..
 LDLIBS = -ljevents
 
-all: addr rtest rtest2 rtest3 jestat
+all: addr rtest rtest2 rtest3 jestat ptself
 
 # no deps on the includes
 

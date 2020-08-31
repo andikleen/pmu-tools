@@ -21,16 +21,20 @@ from tl_stat import isnan
 from tl_uval import UVal, combine_uval
 from tl_io import flex_open_w
 
-def open_logfile(name, typ):
-    if name is None or name == "":
-        return sys.stderr
-    if 'write' in name.__class__.__dict__:
-        return name
+def output_name(name, typ):
     if typ:
         if "." in name:
             name = re.sub(r'(.*)\.', r'\1-%s.' % typ, name)
         else:
             name += "-" + typ
+    return name
+
+def open_logfile(name, typ):
+    if name is None or name == "":
+        return sys.stderr
+    if 'write' in name.__class__.__dict__:
+        return name
+    name = output_name(name, typ)
     try:
         return flex_open_w(name)
     except IOError:
@@ -57,10 +61,17 @@ class Output:
         self.version = version
         self.unitlen = 12
         self.belowlen = 0
-        self.version = "%s on %s" % (version, cpu.name)
+        self.version = "%s on %s [%s]" % (version, cpu.name, cpu.cpu)
         self.curname = ""
         self.curname_nologf = ""
         self.printedversion = set()
+
+    def flushfiles(self):
+        if self.logfiles:
+            for j in self.logfiles.values():
+                j.flush()
+        elif self.logf != sys.stderr and self.logf != sys.stdout:
+            self.logf.flush()
 
     # pass all possible hdrs in advance to compute suitable padding
     def set_hdr(self, hdr, area):
@@ -132,7 +143,7 @@ class Output:
 
 def fmt_below(below):
     if below:
-        return "?"
+        return "<"
     return ""
 
 class OutputHuman(Output):
@@ -380,7 +391,7 @@ class OutputCSV(Output):
         if timestamp:
             l.append(convert_ts(timestamp))
         if title:
-            l.append(title)
+            l.append("CPU" + title if re.match(r'[0-9]+', title) else title)
         stddev = val.format_uncertainty().strip()
         multiplex = val.multiplex if not isnan(val.multiplex) else ""
         self.writer[self.curname].writerow(l + [hdr, val.format_value_raw().strip(),

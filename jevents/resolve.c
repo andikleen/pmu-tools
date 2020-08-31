@@ -252,8 +252,8 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 
 static int try_pmu_type(char **type, char *fmt, char *pmu)
 {
-	char newpmu[30];
-	snprintf(newpmu, 30, fmt, pmu);
+	char newpmu[50];
+	snprintf(newpmu, 50, fmt, pmu);
 	int ret = read_file(type, "/sys/devices/%s/type", newpmu);
 	if (ret >= 0)
 		strcpy(pmu, newpmu);

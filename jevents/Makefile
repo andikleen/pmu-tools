@@ -6,7 +6,7 @@ INCLUDE=$(PREFIX)/include
 CFLAGS := -g -fPIC -Wall -O2 -Wno-unused-result
 OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o \
        perf-iter.o interrupts.o rdpmc.o measure.o perf_event_open.o \
-       session.o
+       session.o perf-aux.o
 KDOC = /usr/src/linux/scripts/kernel-doc
 
 all: libjevents.a showevent listevents event-rmap all-examples
@@ -23,7 +23,7 @@ install: libjevents.a listevents showevent event-rmap
 	install -d ${INCLUDE}
 	install -m 755 listevents showevent event-rmap ${BIN}
 	install -m 644 libjevents.a ${LIB}
-	install -m 644 rdpmc.h jevents.h measure.h perf-iter.h jsession.h ${INCLUDE}
+	install -m 644 rdpmc.h jevents.h measure.h perf-iter.h jsession.h perf-record.h ${INCLUDE}
 	# xxx install man page
 
 libjevents.a: ${OBJ}
@@ -45,12 +45,12 @@ listevents: listevents.o libjevents.a
 event-rmap: event-rmap.o libjevents.a
 
 DOCFILES := cache.c jevents.c cpustr.c rawevent.c interrupts.c measure.c rdpmc.c \
-	    session.c
+	    session.c perf-aux.c
 
 html: jevents.html
 
 man: jeventstmp.man
-	perl -ne 's/Kernel Hacker.s Manual/jevents/; open(F,">" . $$1 . ".man") if /^\.TH "(.*?)"/; print F $$_' jevents.man
+	perl -ne 's/Kernel Hacker.s Manual/jevents/; open(F,">" . $$1 . ".man") if /^\.TH "(.*?)"/; print F $$_' jeventstmp.man
 
 jeventstmp.man: $(DOCFILES)
 	${KDOC} -man ${DOCFILES} > $@

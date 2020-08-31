@@ -20,8 +20,10 @@
 
 from __future__ import print_function
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
-import argparse, time, types, fnmatch, csv, copy
+import argparse, time, types, csv, copy
+from fnmatch import fnmatch
 from collections import defaultdict, Counter
+from itertools import compress
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
 import tl_cpu
@@ -181,7 +183,7 @@ def unsup_event(e, table, min_kernel=None):
     if ":" in e:
         e = e[:e.find(":")]
     for j in table:
-        if fnmatch.fnmatch(e, j[0]) and cpu.realcpu in j[1][0]:
+        if fnmatch(e, j[0]) and cpu.realcpu in j[1][0]:
             break
     else:
         return False
@@ -214,7 +216,7 @@ def limit_overflow(evlist):
 def limit4_overflow(evlist):
     # hardcoded for ICL (XXX)
     if cpu.cpu == "icl":
-        limit4 = [x for x in evlist if fnmatch.fnmatch(x, "cpu/event=0xd[0123],*")]
+        limit4 = [x for x in evlist if fnmatch(x, "cpu/event=0xd[0123],*")]
         return len(limit4)
     return 0
 
@@ -363,6 +365,7 @@ g.add_argument('--import', help='Import specified perf stat output file instead 
                'Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
                 dest='_import')
 g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later', action='store_true')
+g.add_argument('--drilldown', help='Automatically rerun to get more details on bottleneck', action='store_true')
 
 g = p.add_argument_group('Measurement filtering')
 g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
@@ -370,6 +373,7 @@ g.add_argument('--user', help='Only measure user code', action='store_true')
 g.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 g.add_argument('--pid', '-p', help=argparse.SUPPRESS)
 g.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
+g.add_argument('--no-aggr', '-A', help='Measure every CPU', action='store_true')
 
 g = p.add_argument_group('Select events')
 g.add_argument('--level', '-l', help='Measure upto level N (max 6)',
@@ -382,7 +386,8 @@ g.add_argument('--all', help="Measure everything available", action='store_true'
 g.add_argument('--frequency', help="Measure frequency", action='store_true')
 g.add_argument('--power', help='Display power metrics', action='store_true')
 g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, '
-               'comma separated list, wildcards allowed)')
+               'comma separated list, wildcards allowed, add * to include all children/siblings, '
+               'add /level to specify highest level node to match)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
                'comma separated list from --list-metric-groups.', default=None)
@@ -413,6 +418,10 @@ g.add_argument('--verbose', '-v', help='Print all results even when below thresh
                action='store_true')
 g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
 g.add_argument('--output', '-o', help='Set output file')
+g.add_argument('--xlsx', help='Generate xlsx spreadsheet output with data for '
+               'socket/global/thread/core/summary/raw views with 1s interval.'
+               'Add --single-thread to only get program output, or add --pid/--cgroup filters')
+g.add_argument('--xnormalize', help='Normalize output in xlsx files', action='store_true')
 g.add_argument('--split-output', help='Generate multiple output files, one for each specified '
                'aggregation option (with -o)',
                action='store_true')
@@ -429,6 +438,8 @@ g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file')
 g.add_argument('--no-perf', help="Don't print perf command line", action='store_true')
 g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
+g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5%% of busiest if not CSV, specify percent)",
+               default=None, type=float)
 
 g = p.add_argument_group('Environment')
 g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
@@ -453,16 +464,26 @@ g.add_argument('--sample-repeat', help='Repeat measurement and sampling N times.
                'Useful for background collection with -a sleep X.', type=int)
 g.add_argument('--sample-basename', help='Base name of sample perf.data files', default="perf.data")
 
+g.add_argument('-d', help=argparse.SUPPRESS, action='help') # prevent passing this to perf
+
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
 p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true')
 args, rest = p.parse_known_args()
 
+if args.idle_threshold:
+    idle_threshold = args.idle_threshold / 100.
+elif args.csv:
+    idle_threshold = 0  # avoid breaking programs that rely on the CSV output
+else:
+    idle_threshold = 0.05
+
 import_mode = args._import is not None
 event_nocheck = import_mode or args.no_check
 
 feat = PerfFeatures(args)
+pversion = ocperf.PerfVersion()
 
 def gen_cpu_name(cpu):
     if cpu == "simple":
@@ -510,6 +531,36 @@ if args.pid:
 if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
 
+if args.xlsx:
+    if args.output:
+        sys.exit("-o / --output not allowed with --xlsx")
+    if args.valcsv:
+        sys.exit("--valcsv not allowed with --xlsx")
+    if args.perf_output:
+        sys.exit("--perf-output not allowed with --xlsx")
+    if args.csv:
+        sys.exit("-c / --csv not allowed with --xlsx")
+    if not args.xlsx.endswith(".xlsx"):
+        sys.exit("--xlsx must end in .xlsx")
+    if not args.interval:
+        args.interval = 1000
+    args.csv = ','
+    xlsx_base = args.xlsx.replace(".xlsx", ".csv")
+    args.valcsv = xlsx_base.replace(".", "-valcsv.")
+    args.output = xlsx_base
+    args.summary = True
+    args.perf_output = xlsx_base.replace(".", "-perf.")
+    if not args.single_thread:
+        args.per_thread = True
+        args.split_output = True
+        args.per_socket = True
+        args.per_core = True
+        args.no_aggr = True
+        args._global = True
+
+if args.no_aggr:
+    rest = ["-A"] + rest
+
 if args.valcsv:
     try:
         args.valcsv = flex_open_w(args.valcsv)
@@ -546,11 +597,12 @@ if args.graph:
     if args.graph_cpu:
         extra += "--cpu " + args.graph_cpu + " "
     args.csv = ','
-    cmd = "PATH=$PATH:%s ; %s tl-barplot.py %s /dev/stdin" % (exe_dir(), sys.executable, extra)
+    cmd = "%s %s/tl-barplot.py %s /dev/stdin" % (sys.executable, exe_dir(), extra)
     if not args.quiet:
         print(cmd)
     graphp = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, **popentext)
     args.output = graphp.stdin
+
 if args.sample_repeat:
     args.run_sample = True
 
@@ -583,6 +635,10 @@ if cpu.hypervisor:
     feat.max_precise = 0
     feat.has_max_precise = True
     feat.supports_ocr = False
+
+if not pversion.has_uncore_expansion:
+    # XXX reenable power
+    args.no_uncore = True
 
 if cpu.hypervisor or args.no_uncore:
     feat.supports_power = False
@@ -725,7 +781,7 @@ def raw_event(i, name="", period=False, nopebs=True):
                 errata_events[orig_i] = e.errata
             else:
                 errata_warn_events[orig_i] = e.errata
-    if not i.startswith("cpu"):
+    if not i.startswith("cpu/") and not re.match(r'r[0-9a-f]+', i):
         if not i.startswith("uncore"):
             valid_events.add_event(i)
         outgroup_events.add(i)
@@ -752,7 +808,7 @@ def has(obj, name):
     return name in obj.__class__.__dict__
 
 def flatten(x):
-    return itertools.chain(*x)
+    return list(itertools.chain(*x))
 
 def print_header(work):
     evnames = set(flatten([obj.evlist for obj in work]))
@@ -892,11 +948,22 @@ def verify_rev(rev, cpus):
             assert o == rev[cpus[0]][ind]
         assert len(rev[k]) == len(rev[cpus[0]])
 
+def find_idle_keys(res, rev, idle_thresh):
+    cycles = { k: max([0] + [val for val, ev in zip(res[k], rev[k])
+                    if ev == "cycles" or ev == "cpu/event=0x3c,umask=0x0,any=1/"])
+               for k in res.keys() }
+    if not cycles:
+        return set()
+    max_cycles = max(cycles.values())
+    return set([k for k in cycles.keys() if cycles[k] < max_cycles * idle_thresh])
+
 # from https://stackoverflow.com/questions/4836710/does-python-have-a-built-in-function-for-string-natural-sort
 def num_key(s):
     return [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', s)]
 
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
+    idle_keys = find_idle_keys(res, rev, runner.idle_threshold)
+    hidden_keys = set()
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
     out.set_cpus(display_keys(runner, keys, mode))
@@ -917,6 +984,9 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             if mode == OUTPUT_CORE and core in printed_cores:
                 continue
             if mode == OUTPUT_SOCKET and sid in printed_sockets:
+                continue
+            if j in idle_keys:
+                hidden_keys.add(j)
                 continue
 
             runner.reset_thresh()
@@ -984,6 +1054,9 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
         for j in keys:
             if j != "" and is_number(j) and int(j) not in runner.allowed_threads:
                 continue
+            if j in idle_keys:
+                hidden_keys.add(j)
+                continue
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
             runner.print_res(out, interval, j, not_package_node, bn)
@@ -996,7 +1069,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                        for i in range(len(valstats[cpus[0]]))] if len(cpus) > 0 else []
         runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
                        combined_st, env, package_node, stat)
-        runner.print_res(out, interval, "", package_node, None)
+        runner.print_res(out, interval, "all", package_node, None)
     elif mode != OUTPUT_THREAD:
         packages = set()
         for j in keys:
@@ -1012,12 +1085,16 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 jname = "S%d" % p_id
             else:
                 jname = j
+            if j in idle_keys:
+                hidden_keys.add(j)
+                continue
             runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
             runner.print_res(out, interval, jname, package_node, None)
     # no bottlenecks from package nodes for now
     out.flush()
-    stat.referenced_check(res)
+    stat.referenced_check(res, runner.evnum)
     stat.compute_errors()
+    runner.idle_keys |= hidden_keys
 
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
     if args.per_core + args.per_thread + args.per_socket + args._global > 1:
@@ -1052,6 +1129,8 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
         print_keys(runner, res, rev, valstats, out, interval, env, mode)
 
 def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
+    if args.interval and interval is None:
+        interval = float('nan')
     if runner.summary:
         runner.summary.add(res, rev, valstats, env)
     print_and_split_keys(runner, res, rev, valstats, out, interval, env)
@@ -1132,8 +1211,8 @@ def group_number(num, events):
             idx = next(gnum)
         return [idx] * len(group)
 
-    gnums = list(map(group_nums, events))
-    return list(flatten(gnums))[num]
+    gnums = map(group_nums, events)
+    return flatten(gnums)[num]
 
 def dump_raw(interval, title, event, val, index, events, stddev, multiplex, nodes):
     if event in fixed_to_name:
@@ -1558,13 +1637,23 @@ Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
     return desc
 
-def node_filter(obj, default):
+def node_filter(obj, default, sibmatch):
     if args.nodes:
         fname = full_name(obj)
         name = obj.name
 
-        def match(m):
-            return fnmatch.fnmatch(name, m) or fnmatch.fnmatch(fname, m)
+        def _match(m):
+            return (fnmatch(name, m) or
+                    fnmatch(fname, m) or
+                    fnmatch(fname, "*" + m))
+
+        def match(m, level=True):
+            r = re.match("(.*)/([0-9]+)", m)
+            if r:
+                m = r.group(1)
+                level = int(r.group(2)) if level else obj.level
+                return _match(r.group(1)) and obj.level <= level
+            return _match(m)
 
         for j in args.nodes.split(","):
             i = 0
@@ -1574,7 +1663,10 @@ def node_filter(obj, default):
                 continue
             elif j[0] == '+':
                 i += 1
-            if match(j[i:]):
+            # siblings only for direct matches
+            if match(j[i:], False):
+                if re.match(r'.*\*(/[0-9]+)?', j) and has(obj, 'sibling') and obj.sibling:
+                    sibmatch |= set(obj.sibling)
                 return True
     return default
 
@@ -1706,26 +1798,33 @@ def get_parents(obj):
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
-    def __init__(self, max_level):
+    def reset(self):
         self.evnum = [] # flat global list
         self.evgroups = list()
         self.evbases = list()
+        self.missed = 0
+        self.stat = ComputeStat(args.quiet)
+        self.sample_obj = set()
         self.olist = []
+        self.bottlenecks = set()
+        self.idle_keys = set()
+        self.summary = None
+        if args.summary:
+            self.summary = Summary()
+        self.indexobj = None
+        self.idle_threshold = idle_threshold
+
+    def __init__(self, max_level, idle_threshold):
+        self.reset()
         self.odict = dict()
         self.max_level = max_level
-        self.missed = 0
-        self.sample_obj = set()
-        self.stat = ComputeStat(args.quiet)
+        self.max_node_level = 0
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv, lineterminator='\n')
             self.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
                                   "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
-        self.summary = None
-        if args.summary:
-            self.summary = Summary()
-        self.indexobj = None
 
     def do_run(self, obj):
         obj.res = None
@@ -1735,9 +1834,12 @@ class Runner:
         if has(obj, 'metricgroup'):
             for j in obj.metricgroup:
                 self.metricgroups[j].append(obj)
+        self.max_node_level = max(self.max_node_level, obj.level)
 
-    # remove unwanted nodes after their parent relation ship has been set up
+    # remove unwanted nodes after their parent relationship has been set up
     def filter_nodes(self):
+        self.full_olist = list(self.olist)
+
         add_met, remove_met = parse_metric_group(args.metric_group, self.metricgroups)
 
         add_obj = set([self.odict[x] for x in add_met])
@@ -1751,38 +1853,70 @@ class Runner:
                     parents.append(s)
                     parents += get_parents(s)
 
+        sibmatch = set()
+
         def want_node(obj):
             if args.reduced and has(obj, 'server') and not obj.server:
                 return False
             if args.no_uncore and has(obj, 'area') and obj.area == "Info.System":
                 return False
-            want = ((obj.metric and args.metrics) or obj.name in add_met or obj in parents) and obj.name not in remove_met
+            want = ((obj.metric and args.metrics) or
+                    (('force_metric' in obj.__dict__) and obj.force_metric) or
+                    obj.name in add_met or
+                    obj in parents) and obj.name not in remove_met
             if not obj.metric and obj.level <= self.max_level:
                 want = True
-            return node_filter(obj, want)
+            return node_filter(obj, want, sibmatch)
 
-        self.olist = list(filter(want_node, self.olist))
+        # this updates sibmatch
+        fmatch = list(map(want_node, self.olist))
+        # now keep what is both in fmatch and sibmatch
+        self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or obj in sibmatch]
+
+    def setup_children(self):
+        for obj in self.olist:
+            if not obj.metric and 'parent' in obj.__dict__ and obj.parent:
+                obj.parent.children.append(obj)
 
     # check nodes argument for typos
     def check_nodes(self, nodesarg):
-        onames = set([obj.name for obj in self.olist])
-        def remove_prefix(s):
+
+        def opt_obj_name(s):
             if s[0] in ('+', '^', '-'):
-                return s[1:]
+                s = s[1:]
+            if "/" in s:
+                s = s[:s.index("/")]
             return s
-        options = set([remove_prefix(s) for s in nodesarg.split(",")])
-        d = options - onames
-        if d:
-            sys.exit("Unknown node(s) in --nodes: " + " ".join(d))
+
+        options = [opt_obj_name(s) for s in nodesarg.split(",")]
+        def valid_node(s):
+            if s in self.odict:
+                return True
+            for k in self.olist:
+                if fnmatch(k.name, s) or fnmatch(full_name(k), s):
+                    return True
+            return False
+        valid = map(valid_node, options)
+        if not all(valid):
+            sys.exit("Unknown node(s) in --nodes: " + " ".join([o for o, v in zip(options, valid) if not v]))
 
     def reset_thresh(self):
         for obj in self.olist:
             if not obj.metric:
                 obj.thresh = False
 
+    # replace unreferenced events with dummy. Should remove instead
+    def unreferenced_dummy(self):
+        for g, base in zip(self.evgroups, self.evbases):
+            for ind, j in enumerate(g):
+                if not self.indexobj[base + ind]:
+                    g[ind] = "dummy"
+                    self.evnum[base + ind] = "dummy"
+
     def run(self, obj):
         obj.thresh = False
         obj.metric = False
+        obj.children = []
         self.do_run(obj)
 
     def metric(self, obj):
@@ -1791,6 +1925,10 @@ class Runner:
         obj.level = 0
         obj.sibling = None
         self.do_run(obj)
+
+    def force_metric(self, obj):
+        obj.force_metric = True
+        self.metric(obj)
 
     def split_groups(self, objl, evlev):
         levels = set(get_levels(evlev))
@@ -1907,12 +2045,23 @@ class Runner:
         # try to fit each objects events into groups
         # that fit into the available CPU counters
         for obj in solist:
-            if not (set(obj.evnum) - outgroup_events):
-                self.add([obj], obj.evnum, obj.evlevels)
-                continue
+            evnum = obj.evnum
+            evlevels = obj.evlevels
+            oe = [e in outgroup_events for e in obj.evnum]
+            if any(oe):
+                # add events outside group separately
+                self.add([obj], list(compress(obj.evnum, oe)), list(compress(obj.evlevels, oe)))
+                if sum(oe) == len(obj.evnum):
+                    continue
+                evlevels = list(compress(obj.evlevels, [not x for x in oe]))
+                evnum = list(compress(obj.evnum, [not x for x in oe]))
+                evnum, evlevels = dedup2(evnum, evlevels)
+                if self.add_duplicate(evnum, [obj]):
+                    continue
+
             # try adding another object to the current group
-            newev = curev + obj.evnum
-            newlev = curlev + obj.evlevels
+            newev = curev + evnum
+            newlev = curlev + evlevels
             needed = needed_counters(newev)
             # when the current group doesn't have enough free slots
             # or is already too large
@@ -1931,6 +2080,8 @@ class Runner:
             curlev = newlev
         if curobj:
             self.add(curobj, curev, curlev)
+        self.gen_indexobj()
+        self.unreferenced_dummy()
         if print_group:
             num_groups = len([x for x in self.evgroups if needed_counters(x) <= cpu.counters])
             print("%d groups, %d non-groups with %d events total (%d unique) for %d objects, missed %d merges" % (
@@ -1940,8 +2091,6 @@ class Runner:
                 len(set(self.evnum)),
                 len(self.olist),
                 self.missed))
-        if args.valcsv or args.raw:
-            self.gen_indexobj()
 
     def propagate_siblings(self):
         changed = [0]
@@ -1998,20 +2147,24 @@ class Runner:
         return changed
 
     def print_res(self, out, timestamp, title, match, bn):
+        if bn:
+            self.bottlenecks.add(bn)
+
         if has(out, 'logf') and out.logf == sys.stderr:
             out.logf.flush()
 
         # determine all objects to print
-        olist = []
-        for obj in self.olist:
+        def should_print_obj(obj):
             if obj.thresh or print_all:
                 if not match(obj):
                     pass
                 elif obj.metric:
                     if print_all or obj.val != 0:
-                        olist.append(obj)
+                        return True
                 elif check_ratio(obj.val):
-                    olist.append(obj)
+                    return True
+            return False
+        olist = filter(should_print_obj, self.olist)
 
         # sort by metric group
         olist = olist_by_metricgroup(olist, self.metricgroups)
@@ -2081,11 +2234,28 @@ def remove_pp(s):
 def clean_event(e):
     return remove_pp(e).replace(".", "_").replace(":", "_").replace('=','')
 
-def do_sample(sample_obj, rest, count):
+SAMPLE_EXTEND = 2 # how deep to look into children for additional sample events
+
+def do_sample(sample_obj, rest, count, full_olist):
     samples = [("cycles:pp", "Precise cycles", )]
+
+    def sample_list(obj):
+        return [(s, obj.name) for s in obj.sample]
+
     for obj in sample_obj:
         for s in obj.sample:
             samples.append((s, obj.name))
+
+    # first dedup
+    samples = [k for k, g in itertools.groupby(sorted(samples))]
+
+    # now merge objects with the same sample event into one
+    def sample_event(x):
+        return x[0]
+    samples = sorted(samples, key=sample_event)
+    samples = [(k, "_".join([x[1] for x in g])) for k, g in itertools.groupby(samples, key=sample_event)]
+
+    # find unsupported events
     nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
     nsamp = [(remove_pp(x[0]), x[1])
              if unsup_event(x[0], unsup_pebs) else x
@@ -2114,9 +2284,10 @@ def do_sample(sample_obj, rest, count):
     if count:
         perf_data += ".%d" % count
     sperf = [perf, "record"] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
-    print(" ".join(sperf))
+    cmd = " ".join(sperf)
+    print(cmd)
     if args.run_sample:
-        ret = os.system(" ".join(sperf))
+        ret = os.system(cmd)
         if ret:
             print("Sampling failed")
             sys.exit(1)
@@ -2124,6 +2295,73 @@ def do_sample(sample_obj, rest, count):
             print("Run `" + perf + " report %s%s' to show the sampling results" % (
                 ("-i %s" % perf_data) if perf_data != "perf_data" else "",
                 " --no-branch-history" if "-b" in extra_args else ""))
+
+BOTTLENECK_LEVEL_INC = 1
+
+def suggest_bottlenecks(runner):
+    children = ["+%s*/%d" % (o.name, o.level + BOTTLENECK_LEVEL_INC)
+                    for o in runner.bottlenecks
+                    if o.children]
+    if children and args.nodes:
+        children = [x for x in children if x[:-1] not in args.nodes]
+    if children:
+        if not args.quiet:
+            print("Add%s --nodes '%s' for breakdown on the bottleneck%s." % (
+                    "ing" if args.drilldown else "",
+                    ",".join(children),
+                    "s" if len(children) > 1 else ""))
+        if args.drilldown:
+            if args.nodes:
+                args.nodes += ","
+            else:
+                args.nodes = ""
+            args.nodes += ",".join(children)
+            return True
+    return False
+
+def do_xlsx(runner):
+    cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s' " % (
+        sys.executable,
+        exe_dir(),
+        args.valcsv.name,
+        args.perf_output.name,
+        env.cpuinfo if env.cpuinfo else "/proc/cpuinfo")
+    if args.single_thread:
+        names = ["program"]
+        files = [out.logf.name]
+    else:
+        names = ["socket", "global", "core", "thread"]
+        files = [tl_output.output_name(args.output, p) for p in names]
+
+    extrafiles = []
+    extranames = []
+    if args.xnormalize:
+        for j, n in zip(files, names):
+            nname = j.replace(".csv", "-norm.csv")
+            ncmd = "%s %s/interval-normalize.py --error-exit < '%s' > '%s'" % (
+                    sys.executable,
+                    exe_dir(),
+                    j,
+                    nname)
+            if not args.quiet:
+                print(ncmd)
+            ret = os.system(ncmd)
+            if ret:
+                print("interval-normalize failed", file=sys.stderr)
+                return ret
+            extrafiles.append(nname)
+            extranames.append("n" + n)
+
+    def gen_arg(n, f):
+        return " --%s '%s'" % (n, f)
+    cmd += " ".join(["--%s '%s'" % (n, f) for n, f in zip(names, files)])
+    cmd += " " + " ".join(["--add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
+    cmd += " '%s'" % args.xlsx
+    if not args.quiet:
+        print(cmd)
+    ret = os.system(cmd)
+    # XXX delete temp files
+    return ret
 
 def sysctl(name):
     try:
@@ -2152,7 +2390,7 @@ def ht_warning():
         print("WARNING: HT enabled", file=sys.stderr)
         print("Measuring multiple processes/threads on the same core may is not reliable.", file=sys.stderr)
 
-runner = Runner(args.level)
+runner = Runner(args.level, idle_threshold)
 
 pe = lambda x: None
 if args.debug:
@@ -2271,55 +2509,55 @@ if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_
         print("Other arguments ignored", file=sys.stderr)
     sys.exit(0)
 
-def setup_with_metrics(p, runner):
-    old_metrics = args.metrics
-    args.metrics = True
-    p.Setup(runner)
-    args.metrics = old_metrics
-
 def check_root():
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1) and not args.quiet:
         print("Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid", file=sys.stderr)
 
-if args.nodes:
-    runner.check_nodes(args.nodes)
-runner.filter_nodes()
-
 if not args.no_util:
     import perf_metrics
-    setup_with_metrics(perf_metrics, runner)
+    perf_metrics.Setup(runner)
 
 if args.power and feat.supports_power:
     import power_metrics
-    setup_with_metrics(power_metrics, runner)
+    power_metrics.Setup(runner)
     if not args.quiet and not import_mode:
         print("Running with --power. Will measure complete system.")
+    if args.single_thread:
+        print("--single-thread conflicts with --power")
     check_root()
     if "-a" not in rest:
         rest = ["-a"] + rest
 
 if args.sw:
     import linux_metrics
-    setup_with_metrics(linux_metrics, runner)
+    linux_metrics.Setup(runner)
 
 if args.tsx and cpu.has_tsx and cpu.cpu in tsx_cpus:
     import tsx_metrics
-    setup_with_metrics(tsx_metrics, runner)
+    tsx_metrics.Setup(runner)
 
 if args.frequency:
     import frequency
-    old_metrics = args.metrics
-    args.metrics = True
     frequency.SetupCPU(runner, cpu)
-    args.metrics = old_metrics
 
-if args.per_socket and not smt_mode:
+if args.nodes:
+    runner.check_nodes(args.nodes)
+runner.setup_children()
+runner.filter_nodes()
+
+if args.per_socket and not smt_mode and "-A" not in rest:
     rest = ["--per-socket"] + rest
-if args.per_core and not smt_mode:
+if args.per_core and not smt_mode and "-A" not in rest:
     rest = ["--per-core"] + rest
-if (args._global or args.per_socket or args.per_core) and not smt_mode:
-    rest = ["-a"] + rest
+if args.per_thread and not smt_mode and "-A" not in rest:
+    rest = ["-A"] + rest
+if ((args._global or args.per_socket or args.per_core or args.per_thread)
+        and not smt_mode
+        and not args.single_thread):
+    if "-a" not in rest:
+        rest = ["-a"] + rest
 
+full_system = False
 if not args.single_thread and cpu.ht:
     if not args.quiet and not import_mode:
         print("Will measure complete system.")
@@ -2333,6 +2571,20 @@ if not args.single_thread and cpu.ht:
         rest = ["-a"] + rest
     if "-A" not in rest:
         rest = ["-A"] + rest
+    full_system = True
+else:
+    full_system = "-A" in rest or "--per-core" in rest or "--per-socket" in rest
+
+if args.perf_output:
+    ph = []
+    if args.interval:
+        ph.append("Timestamp")
+    if full_system:
+        ph.append("Location")
+        if ("--per-socket" in rest or "--per-core" in rest) and "-A" not in rest:
+            ph.append("Num-CPUs")
+    ph += ["Value", "Unit", "Event", "Run-Time", "Enabled"]
+    args.perf_output.write(";".join(ph) + "\n")
 
 if args.core:
     runner.allowed_threads = [x for x in cpu.allcpus if display_core(x, False)]
@@ -2365,18 +2617,31 @@ else:
 runner.schedule()
 
 def measure_and_sample(count):
-    try:
-        if args.no_multiplex:
-            ret = execute_no_multiplex(runner, out, rest)
-        else:
-            ret = execute(runner, out, rest)
-    except KeyboardInterrupt:
+    while True:
+        try:
+            if args.no_multiplex:
+                ret = execute_no_multiplex(runner, out, rest)
+            else:
+                ret = execute(runner, out, rest)
+        except KeyboardInterrupt:
+            ret = 1
         print_summary(runner, out)
-        sys.exit(1)
-    print_summary(runner, out)
-    runner.stat.compute_errors()
-    if args.show_sample or args.run_sample:
-        do_sample(runner.sample_obj, rest, count)
+        runner.stat.compute_errors()
+        if ret:
+            break
+        repeat = False
+        if args.level < runner.max_node_level and runner.bottlenecks:
+            repeat = suggest_bottlenecks(runner)
+        if (args.show_sample or args.run_sample) and ret == 0:
+            do_sample(runner.sample_obj, rest, count, runner.full_olist)
+        if repeat:
+            runner.reset()
+            runner.olist = runner.full_olist
+            runner.filter_nodes()
+            runner.collect()
+            runner.schedule()
+        else:
+            break
     return ret
 
 if args.sample_repeat:
@@ -2388,6 +2653,17 @@ else:
     ret = measure_and_sample(None)
 
 out.print_footer()
+out.flushfiles()
+
+if args.xlsx and ret == 0:
+    ret = do_xlsx(runner)
+
+if runner.idle_keys and not args.quiet:
+    print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" % (",".join(runner.idle_keys)))
+
+if notfound_cache and not args.quiet:
+    print("Some events not found. Consider running event_download.py to update event lists")
+
 if args.graph:
     args.output.close()
     graphp.wait()

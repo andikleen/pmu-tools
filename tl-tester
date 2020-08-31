@@ -97,6 +97,7 @@ grep BDE70 log
 onegroup() {
 	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
 	if [ -n "$NOGROUP" ] ; then return ; fi
+	case "$OPT" in *--drilldown*) return ;; esac
 	grep perf $1 | tr -cd '{}' | awk ' { if ($1 != "{}") { print "more than one group for L1" ; exit(1); } } '
 }
 
@@ -173,6 +174,17 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --no-multiplex --colu
 $WRAP ./toplev.py --force-cpu bdw --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD
+if python -c 'import xlsxwriter' ; then
+$WRAP ./toplev.py --xlsx x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOAD
+rm x$$.xlsx
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --all $LOAD
+rm x$$.xlsx # must exist
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -l6 --metrics --single-thread $LOAD
+rm x$$.xlsx # must exist
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --xnormalize --all $LOAD
+rm x$$.xlsx # must exist
+fi
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread -x, --columns -l4 $LOAD
 FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
@@ -197,10 +209,20 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --print
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore $LOAD
 $WRAP ./toplev.py --force-hypervisor --force-cpu $DCPU $OPT $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --metric-group +TopDownL1,TLB $LOAD
-$WRAP ./toplev.py -o log$$ --force-cpu $DCPU $OPT --nodes IPC,Frontend_Bound,Backend_Bound -l3 $LOAD
+$WRAP ./toplev.py -o log$$ --force-cpu $DCPU $OPT -v --nodes IPC,Frontend_Bound,Backend_Bound* -l3 $LOAD
 echo >> log$$
-[ -z "$NORES" ] && grep -v Retiring log$$
+[ -z "$NORES" ] && grep MS_Switches log$$
+[ -z "$NORES" ] && grep IPC log$$
 checklog0
+rm log$$
+$WRAP ./toplev.py > log$$ true
+# assumes that true is backend_bound. If not would need some parsing
+[ -z "$NORES" ] && grep "Add --nodes.*Backend" log$$
+rm log$$
+$WRAP ./toplev.py  -v --nodes Backend*/3 -o log$$ true
+echo >> log$$
+[ -z "$NORES" ] && grep Backend_Bound.Memory_Bound.L3_Bound log$$
+[ -z "$NORES" ] && grep -v Backend_Bound.Core_Bound.Ports_Utilization.Ports_Utilized_0 log$$
 rm log$$
 if python -c 'import matplotlib.pyplot' ; then
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --graph -o x$$.png --all $LOAD
@@ -230,6 +252,11 @@ rm val$$.csv.xz val$$.csv.gz val$$.csv
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --sample-basename perf$$.data --sample-repeat 5 --filterqual -a sleep 0.1  | tee log
 # do all perf.data exist?
 rm perf$$.data.{1,2,3,4,5}
+if python -c 'import xlsxwriter' ; then
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --sample-basename perf$$.data --xlsx x$$.xlsx --sample-repeat 3 --filterqual -a $LOAD | tee log
+rm perf$$.data.{1,2,3}
+rm x$$.xlsx
+fi
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -v -o log$$ --single-thread -r3 $LOAD
 [ -z "$NORES" ] && grep 'Backend_Bound.*[0-9][0-9]' log$$
@@ -245,7 +272,7 @@ FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -l4 -I 1000 -a --per
 checklog0
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -l4 -I 1000 -a --per-socket --filterquals sleep 1
 checklog0
-FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --no-desc -l4 -I 1000 -a -A sleep 1
+FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --no-desc -l4 -I 1000 -a -A --idle-threshold 20 sleep 1
 checklog0
 FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --summary --no-desc --no-area -l4 -I 1000 -a -A sleep 1
 checklog0
@@ -260,6 +287,16 @@ chmod +x script$$
 OUT=tltest$$ ./script$$ $LOAD
 $WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
+
+if python -c 'import xlsxwriter' ; then
+$WRAP ./toplev.py --xlsx dummy.xlsx --all --gen-script > script$$
+chmod +x script$$
+OUT=tltest$$ ./script$$ $LOAD
+$WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology --xlsx x$$.xlsx
+rm x$$.xlsx
+rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
+fi
+
 
 # check current platform
 $WRAP ./toplev.py -o /dev/null --no-desc -v --all --run-sample $LOAD

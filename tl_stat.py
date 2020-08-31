@@ -44,7 +44,7 @@ class ComputeStat:
         self.prev_mismeasured = set()
         self.quiet = quiet
 
-    def referenced_check(self, res):
+    def referenced_check(self, res, evnum):
         referenced = self.referenced
         referenced = referenced - self.already_warned
         if not referenced:
@@ -54,18 +54,22 @@ class ComputeStat:
         # sanity check: did we reference all results?
         if len(res.keys()) > 0:
             r = res[list(res.keys())[0]]
+            assert len(r) == len(evnum)
             if len(referenced) != len(r) and not self.quiet:
-                print("warning: %d results not referenced:" % (len(r) - len(referenced)), end='', file=sys.stderr)
-                print(" ".join(["%d" % x for x in sorted(set(range(len(r))) - referenced)]), file=sys.stderr)
+                dummies = set([i for i, d in enumerate(evnum) if d == "dummy"])
+                notr = set(range(len(r))) - referenced - dummies
+                print("%d results not referenced: " % (len(notr)),
+                      " ".join(["%d" % x for x in sorted(notr)]),
+                      file=sys.stderr)
 
     def compute_errors(self):
         if self.errcount > 0 and self.errors != self.prev_errors:
             if not self.quiet:
-                print("warning: %d division by zero errors:" % (self.errcount), end='', file=sys.stderr)
+                print("%d nodes had zero counts: " % (self.errcount), end='', file=sys.stderr)
                 print(" ".join(self.errors), file=sys.stderr)
             self.errcount = 0
             self.prev_errors = self.errors
             self.errors = set()
         if self.mismeasured and self.mismeasured > self.prev_mismeasured and not self.quiet:
-            print("warning: Mismeasured:", " ".join(self.mismeasured))
+            print("Mismeasured (out of bound values):", " ".join(self.mismeasured))
             self.prev_mismeasured = self.mismeasured

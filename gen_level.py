@@ -20,6 +20,8 @@ class Runner:
     def metric(self, n):
         metric[n.name] = n
 
+    force_metric = metric
+
 def clean_name(name):
     name = name.strip()
     dot = name.rfind(".")

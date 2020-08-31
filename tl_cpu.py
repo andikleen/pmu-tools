@@ -89,7 +89,6 @@ class CPU:
             self.hypervisor = True
             self.force_hypervisor = True
         self.freq = 0.0
-        self.siblings = {}
         self.threads = 0
         forced_cpu = self.force_cpu(known_cpus)
         forced_ht = self.force_ht()
