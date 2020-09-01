@@ -4,6 +4,7 @@
 
 print_error = lambda msg: False
 version = "1.0"
+check_event = lambda: False
 
 # Constants
 

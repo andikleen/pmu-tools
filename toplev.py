@@ -949,6 +949,8 @@ def verify_rev(rev, cpus):
             assert o == rev[cpus[0]][ind]
         assert len(rev[k]) == len(rev[cpus[0]])
 
+IDLE_MARKER_THRESHOLD = 0.05
+
 def find_idle_keys(res, rev, idle_thresh):
     cycles = { k: max([0] + [val for val, ev in zip(res[k], rev[k])
                     if ev == "cycles" or ev == "cpu/event=0x3c,umask=0x0,any=1/"])
@@ -958,12 +960,22 @@ def find_idle_keys(res, rev, idle_thresh):
     max_cycles = max(cycles.values())
     return set([k for k in cycles.keys() if cycles[k] < max_cycles * idle_thresh])
 
+def is_idle(cpus, idle_keys):
+    return all([("%d" % c) in idle_keys for c in cpus])
+
+def idle_core(core, idle_keys):
+    return is_idle(cpu.coreids[core], idle_keys)
+
+def idle_socket(socket, idle_keys):
+    return is_idle(cpu.sockettocpus[socket], idle_keys)
+
 # from https://stackoverflow.com/questions/4836710/does-python-have-a-built-in-function-for-string-natural-sort
 def num_key(s):
     return [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', s)]
 
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     idle_keys = find_idle_keys(res, rev, runner.idle_threshold)
+    idle_mark_keys = find_idle_keys(res, rev, IDLE_MARKER_THRESHOLD)
     hidden_keys = set()
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
@@ -1030,26 +1042,30 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 runner.print_res(out, interval, "", not_package_node, bn)
                 break
             if mode == OUTPUT_SOCKET:
-                runner.print_res(out, interval, socket_fmt(int(j)), not_package_node, bn)
+                runner.print_res(out, interval, socket_fmt(int(j)), not_package_node, bn,
+                                 idle_socket(sid, idle_mark_keys))
                 printed_sockets.add(sid)
                 continue
             if mode == OUTPUT_THREAD:
-                runner.print_res(out, interval, thread_fmt(int(j)), any_node, bn)
+                runner.print_res(out, interval, thread_fmt(int(j)), any_node, bn, j in idle_mark_keys)
                 continue
 
             # per core or mixed core/thread mode
 
             # print the SMT aware nodes
             if core not in printed_cores:
-                runner.print_res(out, interval, core_fmt(core), core_node, bn)
+                runner.print_res(out, interval, core_fmt(core), core_node, bn,
+                        idle_core(core, idle_mark_keys))
                 printed_cores.add(core)
 
             # print the non SMT nodes
             if mode == OUTPUT_CORE:
                 fmt = core_fmt(core)
+                idle = idle_core(core, idle_mark_keys)
             else:
                 fmt = thread_fmt(int(j))
-            runner.print_res(out, interval, fmt, thread_node, bn)
+                idle = j in idle_mark_keys
+            runner.print_res(out, interval, fmt, thread_node, bn, idle)
     else:
         env['num_merged'] = 1
         for j in keys:
@@ -1060,7 +1076,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
-            runner.print_res(out, interval, j, not_package_node, bn)
+            runner.print_res(out, interval, j, not_package_node, bn, j in idle_mark_keys)
     if mode == OUTPUT_GLOBAL:
         cpus = [x for x in keys
                 if (not is_number(j)) or int(j) in runner.allowed_threads]
@@ -1070,7 +1086,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                        for i in range(len(valstats[cpus[0]]))] if len(cpus) > 0 else []
         runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
                        combined_st, env, package_node, stat)
-        runner.print_res(out, interval, "all", package_node, None)
+        runner.print_res(out, interval, "all", package_node, None, False)
     elif mode != OUTPUT_THREAD:
         packages = set()
         for j in keys:
@@ -1090,7 +1106,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 hidden_keys.add(j)
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
-            runner.print_res(out, interval, jname, package_node, None)
+            runner.print_res(out, interval, jname, package_node, None, j in idle_mark_keys)
     # no bottlenecks from package nodes for now
     out.flush()
     stat.referenced_check(res, runner.evnum)
@@ -2152,7 +2168,7 @@ class Runner:
         changed += self.propagate_siblings()
         return changed
 
-    def print_res(self, out, timestamp, title, match, bn):
+    def print_res(self, out, timestamp, title, match, bn, idlemark=False):
         if bn:
             self.bottlenecks.add(bn)
 
@@ -2197,7 +2213,8 @@ class Runner:
                 out.metric(obj_area(obj), obj.name, val, timestamp,
                         desc,
                         title,
-                        metric_unit(obj))
+                        metric_unit(obj),
+                        idlemark)
             else:
                 out.ratio(obj_area(obj),
                         full_name(obj), val, timestamp,
@@ -2206,7 +2223,8 @@ class Runner:
                         title,
                         sample_desc(obj.sample) if has(obj, 'sample') else None,
                         "<==" if obj == bn else "",
-                        node_below(obj))
+                        node_below(obj),
+                        idlemark)
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
 
