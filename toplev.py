@@ -249,12 +249,16 @@ def needed_counters(evlist, nolimit=False):
 
     # split if any resource is oversubscribed
     if resource_split(evlist):
+        if args.debug:
+            print("resource split", evlist, file=sys.stderr)
         return 100
 
     # force split if we overflow fixed or limit4
     # some fixed could be promoted to generic, but that doesn't work
     # with ref-cycles.
     if not nolimit and (fixed_overflow(evlist) or limit4_overflow(evlist) > 4):
+        if args.debug:
+            print("fixed or limit4 overflow", evlist, file=sys.stderr)
         return 100
 
     # account events that only schedule on one of the generic counters
