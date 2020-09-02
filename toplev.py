@@ -1297,7 +1297,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
         except KeyboardInterrupt:
             continue
         if interval_mode:
-            m = re.match(r"\s*([0-9.]+);(.*)", l)
+            m = re.match(r"\s*([0-9.]{9,});(.*)", l)
             if m:
                 interval = float(m.group(1))
                 l = m.group(2)
@@ -1309,6 +1309,10 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                         rev = defaultdict(list)
                         valstats = defaultdict(list)
                     prev_interval = interval
+            else:
+                # these are likely summary lines printed by v5.8 perf stat
+                # just ignore
+                continue
 
         n = l.split(";")
 
