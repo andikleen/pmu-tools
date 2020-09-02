@@ -2274,7 +2274,7 @@ def clean_event(e):
 
 SAMPLE_EXTEND = 2 # how deep to look into children for additional sample events
 
-def do_sample(sample_obj, rest, count, full_olist):
+def do_sample(sample_obj, rest, count, full_olist, ret):
     samples = [("cycles:pp", "Precise cycles", )]
 
     def sample_list(obj):
@@ -2324,7 +2324,7 @@ def do_sample(sample_obj, rest, count, full_olist):
     sperf = [perf, "record"] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
     cmd = " ".join(sperf)
     print(cmd)
-    if args.run_sample:
+    if args.run_sample and ret == 0:
         ret = os.system(cmd)
         if ret:
             print("Sampling failed")
@@ -2668,13 +2668,13 @@ def measure_and_sample(count):
             ret = 1
         print_summary(runner, out)
         runner.stat.compute_errors()
-        if ret:
-            break
         repeat = False
         if args.level < runner.max_node_level and runner.bottlenecks:
             repeat = suggest_bottlenecks(runner)
         if (args.show_sample or args.run_sample) and ret == 0:
-            do_sample(runner.sample_obj, rest, count, runner.full_olist)
+            do_sample(runner.sample_obj, rest, count, runner.full_olist, ret)
+        if ret:
+            break
         if repeat:
             runner.reset()
             runner.olist = runner.full_olist
