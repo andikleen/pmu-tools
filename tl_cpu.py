@@ -159,8 +159,8 @@ class CPU:
                     if not forced_cpu:
                         self.cpu = i[0]
                     break
+        self.standard_counters = ("0,1,2,3",)
         if self.counters == 0:
-            self.standard_counters = ("0,1,2,3",)
             if self.cpu == "slm":
                 self.counters = 2
                 self.standard_counters = ("0,1",)
