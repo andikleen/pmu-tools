@@ -42,7 +42,8 @@ done
 
 DYGRAPHS=""
 
-if [ ! -r dygraph-combined.js ] && wget http://dygraphs.com/1.0.1/dygraph-combined.js ; then
+# original url http://dygraphs.com/1.0.1/dygraph-combined.js disappeared
+if [ ! -r dygraph-combined.js ] && wget https://cdnjs.cloudflare.com/ajax/libs/dygraph/1.0.1/dygraph-combined.js ; then
 DYGRAPHS=1
 fi
 
