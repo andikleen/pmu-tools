@@ -65,7 +65,7 @@ $WRAP plot-normalized.py -o x$$-2.png y$$.csv
 
 # tl-serve.py
 if [ -n "$DYGRAPHS" ] ; then
-	$$WRAP tl-serve.py --gen tls$$ x$$.csv
+	$WRAP tl-serve.py --gen tls$$ x$$.csv
 	rm -rf tls$$
 fi
 
