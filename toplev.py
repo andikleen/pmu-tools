@@ -388,7 +388,8 @@ g.add_argument('--frequency', help="Measure frequency", action='store_true')
 g.add_argument('--power', help='Display power metrics', action='store_true')
 g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, '
                'comma separated list, wildcards allowed, add * to include all children/siblings, '
-               'add /level to specify highest level node to match)')
+               'add /level to specify highest level node to match, '
+               'start with ! to only include specified nodes)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
                'comma separated list from --list-metric-groups.', default=None)
@@ -1678,7 +1679,12 @@ def node_filter(obj, default, sibmatch):
                 return _match(r.group(1)) and obj.level <= level
             return _match(m)
 
-        for j in args.nodes.split(","):
+        nodes = args.nodes
+        if nodes[0] == '!':
+            default = False
+            nodes = nodes[1:]
+
+        for j in nodes.split(","):
             i = 0
             if j[0] == '^' or j[0] == '-':
                 if match(j[1:]):
@@ -1895,6 +1901,8 @@ class Runner:
         fmatch = list(map(want_node, self.olist))
         # now keep what is both in fmatch and sibmatch
         self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or obj in sibmatch]
+        if len(self.olist) == 0:
+            sys.exit("All nodes disabled")
 
     def setup_children(self):
         for obj in self.olist:
@@ -1905,12 +1913,14 @@ class Runner:
     def check_nodes(self, nodesarg):
 
         def opt_obj_name(s):
-            if s[0] in ('+', '^', '-'):
+            if s[:1] in ('+', '^', '-'):
                 s = s[1:]
             if "/" in s:
                 s = s[:s.index("/")]
             return s
 
+        if nodesarg[:1] == "!":
+            nodesarg = nodesarg[1:]
         options = [opt_obj_name(s) for s in nodesarg.split(",")]
         def valid_node(s):
             if s in self.odict:
@@ -2334,7 +2344,7 @@ def suggest_bottlenecks(runner):
         children = [x for x in children if x[:-1] not in args.nodes]
     if children:
         if not args.quiet:
-            print("Add%s --nodes '%s' for breakdown on the bottleneck%s." % (
+            print("Add%s --nodes '!%s' for breakdown on the bottleneck%s." % (
                     "ing" if args.drilldown else "",
                     ",".join(children),
                     "s" if len(children) > 1 else ""))
@@ -2343,6 +2353,8 @@ def suggest_bottlenecks(runner):
                 args.nodes += ","
             else:
                 args.nodes = ""
+            if args.nodes == "" or args.nodes[0] != '!':
+                args.nodes = "!" + args.nodes
             args.nodes += ",".join(children)
             return True
     return False
