@@ -45,7 +45,6 @@ class Env:
         self.forceht = os.getenv("FORCEHT")
         self.hypervisor = os.getenv("HYPERVISOR")
         self.cpuinfo = os.getenv("CPUINFO")
-        self.tlcounters = os.getenv("TLCOUNTERS")
 
 class CPU:
     """Detect the CPU."""
@@ -177,10 +176,6 @@ class CPU:
                 self.counters = 8
             if not nocheck and reduced_counters():
                 self.counters -= 1
-            # chicken bit to override if we get it wrong
-            counters = self.env.tlcounters
-            if counters:
-                self.counters = int(counters)
         self.sockets = len(sockets.keys())
         self.modelid = None
         mid = (self.model,)
