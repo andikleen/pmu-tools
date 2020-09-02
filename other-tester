@@ -40,7 +40,11 @@ $WRAP interval-plot.py x$$.csv -o x$$.png
 
 done
 
-[ ! -r dygraph-combined.js ] && wget http://dygraphs.com/1.0.1/dygraph-combined.js
+DYGRAPHS=""
+
+if [ ! -r dygraph-combined.js ] && wget http://dygraphs.com/1.0.1/dygraph-combined.js ; then
+DYGRAPHS=1
+fi
 
 for args in "-l2" "--all -v" "-l3 --single-thread" ; do
 
@@ -60,9 +64,10 @@ $WRAP interval-plot.py x$$.csv -o x$$.png
 $WRAP plot-normalized.py -o x$$-2.png y$$.csv
 
 # tl-serve.py
-
-$WRAP tl-serve.py --gen tls$$ x$$.csv
-rm -rf tls$$
+if [ -n "$DYGRAPHS" ] ; then
+	$$WRAP tl-serve.py --gen tls$$ x$$.csv
+	rm -rf tls$$
+fi
 
 # tl-barplot.py
 $WRAP tl-barplot.py x$$.csv -o x$$.png
