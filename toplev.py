@@ -2319,7 +2319,7 @@ def do_sample(sample_obj, rest, count, full_olist, ret):
     print("Sampling:")
     extra_args = args.sample_args.replace("+", "-").split()
     perf_data = args.sample_basename
-    if count:
+    if count is not None:
         perf_data += ".%d" % count
     sperf = [perf, "record"] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
     cmd = " ".join(sperf)
@@ -2330,8 +2330,8 @@ def do_sample(sample_obj, rest, count, full_olist, ret):
             print("Sampling failed")
             sys.exit(1)
         if not args.quiet:
-            print("Run `" + perf + " report %s%s' to show the sampling results" % (
-                ("-i %s" % perf_data) if perf_data != "perf_data" else "",
+            print("Run `" + perf + " report%s%s' to show the sampling results" % (
+                (" -i %s" % perf_data) if perf_data != "perf.data" else "",
                 " --no-branch-history" if "-b" in extra_args else ""))
 
 BOTTLENECK_LEVEL_INC = 1
@@ -2673,8 +2673,10 @@ def measure_and_sample(count):
             repeat = suggest_bottlenecks(runner)
         if (args.show_sample or args.run_sample) and ret == 0:
             do_sample(runner.sample_obj, rest, count, runner.full_olist, ret)
-        if ret:
+        if ret >= 100 and ret <= 200 and repeat:
+            print("perf appears to have failed %d. not drilling down" % ret)
             break
+        count += 1
         if repeat:
             runner.reset()
             runner.olist = runner.full_olist
@@ -2683,15 +2685,16 @@ def measure_and_sample(count):
             runner.schedule()
         else:
             break
-    return ret
+    return ret, count
 
 if args.sample_repeat:
+    count = 0
     for j in range(args.sample_repeat):
-        ret = measure_and_sample(j + 1)
+        ret, count = measure_and_sample(count)
         if ret:
             break
 else:
-    ret = measure_and_sample(None)
+    ret, count = measure_and_sample(0 if args.drilldown else None)
 
 out.print_footer()
 out.flushfiles()
