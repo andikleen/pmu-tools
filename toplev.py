@@ -1186,7 +1186,7 @@ def execute_no_multiplex(runner, out, rest):
     valstats = defaultdict(list)
     env = dict()
     groups = [x for x in runner.evgroups if len(x) > 0]
-    num_runs = len(groups) - count(is_outgroup, groups)
+    num_runs = len(groups) - len(filter(is_outgroup, groups))
     outg = []
     n = 0
     ctx = SaveContext()
@@ -1625,9 +1625,6 @@ def thread_node(obj):
 
 def any_node(obj):
     return True
-
-def count(f, l):
-    return len(list(filter(f, l)))
 
 def obj_domain(obj):
     return obj.domain.replace("Estimated", "est").replace("Calculated", "calc")
@@ -2676,7 +2673,8 @@ def measure_and_sample(count):
         if ret >= 100 and ret <= 200 and repeat:
             print("perf appears to have failed %d. not drilling down" % ret)
             break
-        count += 1
+        if count is not None:
+            count += 1
         if repeat:
             runner.reset()
             runner.olist = runner.full_olist
@@ -2688,7 +2686,7 @@ def measure_and_sample(count):
     return ret, count
 
 if args.sample_repeat:
-    cnt = 0
+    cnt = 1
     for j in range(args.sample_repeat):
         ret, cnt = measure_and_sample(cnt)
         if ret:
