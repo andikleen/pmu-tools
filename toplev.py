@@ -2688,9 +2688,9 @@ def measure_and_sample(count):
     return ret, count
 
 if args.sample_repeat:
-    count = 0
+    cnt = 0
     for j in range(args.sample_repeat):
-        ret, count = measure_and_sample(count)
+        ret, cnt = measure_and_sample(cnt)
         if ret:
             break
 else:
