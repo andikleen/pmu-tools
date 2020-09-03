@@ -309,17 +309,22 @@ void jevent_free_extra(struct jevent_extra *extra)
  * @dst: Destination
  * @src: Source
  *
- * Does not copy the pmu list, but everything else.
  * Result needs to be freed with jevent_free_extra().
  */
 
 void jevent_copy_extra(struct jevent_extra *dst, struct jevent_extra *src)
 {
+	int len;
+
 	memset(dst, 0, sizeof(struct jevent_extra));
 	if (src->name)
 		dst->name = strdup(src->name);
 	if (src->decoded)
 		dst->decoded = strdup(src->decoded);
+	dst->pmus.gl_pathc = src->pmus.gl_pathc;
+	len = sizeof(char *) * src->pmus.gl_pathc;
+	dst->pmus.gl_pathv = malloc(len);
+	memcpy(dst->pmus.gl_pathv, src->pmus.gl_pathv, len);
 }
 
 /**
