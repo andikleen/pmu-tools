@@ -425,6 +425,8 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 		goto err_free;
 	if (qual_off != -1 && jevents_update_qual(str + qual_off, attr, str) < 0)
 		goto err_free;
+	if (extra == &dummy)
+		jevent_free_extra(extra);
 	return 0;
 
 err_free:
