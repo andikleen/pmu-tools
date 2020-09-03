@@ -461,6 +461,8 @@ void free_eventlist(struct eventlist *el)
 void print_event_list_attr(struct eventlist *el, FILE *f)
 {
 	struct event *e;
+	int num, next;
+	char *name;
 
 	for (e = el->eventlist; e; e = e->next) {
 		fprintf(f, "%s:\n", e->event);
@@ -469,6 +471,8 @@ void print_event_list_attr(struct eventlist *el, FILE *f)
 		if (e->extra.decoded)
 			fprintf(f, "perf: %s\n", e->extra.decoded);
 		jevent_print_attr(f, &e->attr);
+		for (num = 0; (name = jevent_pmu_name(&e->extra, num, &next)) != NULL; num = next)
+			printf("pmu%d: %s\n", num, name);
 		fprintf(f, "\n");
 	}
 }
