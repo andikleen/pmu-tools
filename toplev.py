@@ -1186,7 +1186,7 @@ def execute_no_multiplex(runner, out, rest):
     valstats = defaultdict(list)
     env = dict()
     groups = [x for x in runner.evgroups if len(x) > 0]
-    num_runs = len(groups) - len(filter(is_outgroup, groups))
+    num_runs = len(groups) - len(list(filter(is_outgroup, groups)))
     outg = []
     n = 0
     ctx = SaveContext()
