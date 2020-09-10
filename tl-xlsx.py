@@ -11,12 +11,6 @@
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
 # more details.
 #
-# Measure a workload using the topdown performance model:
-# estimate on which part of the CPU pipeline it bottlenecks.
-#
-# Must find ocperf in python module path.
-# Handles a variety of perf and kernel versions, but older ones have various
-# limitations.
 
 # convert toplev output to xlsx files using xlsxwriter
 # toplev.py --all --valcsv xv.log --perf-output xp.log -A -a --split-output --per-socket --global --summary --per-core --per-thread -x, -o x.log -I 1000 sleep 10
