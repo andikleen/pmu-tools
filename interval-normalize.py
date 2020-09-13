@@ -22,6 +22,7 @@ ap.add_argument('--output', '-o', type=argparse.FileType('w'), default=sys.stdou
 ap.add_argument('--cpu', nargs='?', help='Only output for this cpu')
 ap.add_argument('--na', nargs='?', help='Value to use if data is not available', default="")
 ap.add_argument('--error-exit', action='store_true', help='Force error exit on parse error')
+ap.add_argument('--normalize-cpu', action='store_true', help='Normalize CPUs into unique columns too')
 args = ap.parse_args()
 
 printed_header = False
@@ -44,7 +45,7 @@ for row in rc:
         continue
     ts, cpu, ev, val = r.ts, r.cpu, r.ev, r.val
 
-    if ts != timestamp or cpu != lastcpu:
+    if ts != timestamp or (cpu != lastcpu and not args.normalize_cpu):
         if timestamp:
             if args.cpu and cpu != args.cpu:
                 continue
@@ -57,6 +58,9 @@ for row in rc:
             res = []
         timestamp = ts
         lastcpu = cpu
+
+    if cpu is not None and args.normalize_cpu:
+        ev = cpu + " " + ev
 
     # use a list for row storage to keep memory requirements down
     if ev not in events:
@@ -78,10 +82,17 @@ def resolve(row, ind):
         return args.na
     return v
 
+def cpulist(keys):
+    if args.normalize_cpu:
+        return []
+    if cpu is not None:
+        return ["CPU"]
+    return []
+
 keys = events.keys()
-writer.writerow(["Timestamp"] + (["CPU"] if cpu is not None else []) + list(keys))
+writer.writerow(["Timestamp"] + cpulist(keys) + list(keys))
 for row, ts, cpunum in zip(out, times, cpus):
     writer.writerow([ts] +
-                ([cpunum] if cpu is not None else []) +
+                ([cpunum] if (cpu is not None and not args.normalize_cpu) else []) +
                 ([resolve(row, events[x]) for x in keys]))
 
