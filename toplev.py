@@ -416,14 +416,10 @@ g.add_argument('--no-desc', help='Do not print event descriptions', action='stor
 g.add_argument('--desc', help='Force event descriptions', action='store_true')
 g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. '
                'Note this can result in bogus values, as the TopDown methodology relies on thresholds '
-               'to correctly characterize workloads.',
+               'to correctly characterize workloads. Values not crossing threshold are marked with <.',
                action='store_true')
 g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
 g.add_argument('--output', '-o', help='Set output file')
-g.add_argument('--xlsx', help='Generate xlsx spreadsheet output with data for '
-               'socket/global/thread/core/summary/raw views with 1s interval.'
-               'Add --single-thread to only get program output, or add --pid/--cgroup filters')
-g.add_argument('--xnormalize', help='Normalize output in xlsx files', action='store_true')
 g.add_argument('--split-output', help='Generate multiple output files, one for each specified '
                'aggregation option (with -o)',
                action='store_true')
@@ -457,6 +453,14 @@ g.add_argument('--print-group', '-g', help='Print event group assignments',
 g.add_argument('--raw', help="Print raw values", action='store_true')
 g.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file')
 g.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
+
+g = p.add_argument_group('xlsx output')
+g.add_argument('--xlsx', help='Generate xlsx spreadsheet output with data for '
+               'socket/global/thread/core/summary/raw views with 1s interval. '
+               'Add --single-thread to only get program output.')
+g.add_argument('--xnormalize', help='Add extra sheets with normalized data in xlsx files', action='store_true')
+g.add_argument('--xchart', help='Chart data in xlsx files', action='store_true')
+g.add_argument('--xkeep', help='Keep temporary CSV files', action='store_true')
 
 g = p.add_argument_group('Sampling')
 g.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
@@ -533,6 +537,10 @@ if args.pid:
 if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
 
+forced_per_socket = False
+if args.xchart:
+    args.xnormalize = True
+    args.verbose = True
 if args.xlsx:
     if args.output:
         sys.exit("-o / --output not allowed with --xlsx")
@@ -2372,10 +2380,11 @@ def do_xlsx(runner):
 
     extrafiles = []
     extranames = []
+    charts = []
     if args.xnormalize:
         for j, n in zip(files, names):
             nname = j.replace(".csv", "-norm.csv")
-            ncmd = "%s %s/interval-normalize.py --error-exit < '%s' > '%s'" % (
+            ncmd = "%s %s/interval-normalize.py --normalize-cpu --error-exit < '%s' > '%s'" % (
                     sys.executable,
                     exe_dir(),
                     j,
@@ -2388,11 +2397,14 @@ def do_xlsx(runner):
                 return ret
             extrafiles.append(nname)
             extranames.append("n" + n)
+            if args.xchart:
+                charts.append("n" + n)
 
     def gen_arg(n, f):
         return " --%s '%s'" % (n, f)
     cmd += " ".join(["--%s '%s'" % (n, f) for n, f in zip(names, files)])
     cmd += " " + " ".join(["--add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
+    cmd += " " + " ".join(["--chart '%s'" % f for f in charts])
     cmd += " '%s'" % args.xlsx
     if not args.quiet:
         print(cmd)

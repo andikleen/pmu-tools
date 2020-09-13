@@ -26,6 +26,7 @@ import sys
 import csv
 import re
 import collections
+import gen_level
 
 ap = argparse.ArgumentParser(description="Convert toplev CSV files to xlsx")
 ap.add_argument('xlsxfile', help="xlsx output name")
@@ -39,6 +40,8 @@ ap.add_argument('--add', nargs=2, help="toplev thread generic csv file. Specify 
 ap.add_argument('--valcsv', type=argparse.FileType('r'), help="toplev valcsv input file", metavar="csvfile")
 ap.add_argument('--perf', type=argparse.FileType('r'), help="toplev perf values csv file")
 ap.add_argument('--cpuinfo', type=argparse.FileType('r'), help="cpuinfo file")
+ap.add_argument('--chart', help="add sheet with plots of normalized sheet. argument is normalied sheet name",
+                action="append")
 args = ap.parse_args()
 
 workbook = xlsxwriter.Workbook(args.xlsxfile, {'constant_memory': True})
@@ -57,6 +60,7 @@ def set_columns(worksheet, c, lengths):
 
 worksheets = dict()
 rows = dict()
+headers = dict()
 
 def get_worksheet(name):
     if name in worksheets:
@@ -79,8 +83,11 @@ def create_sheet(name, infh, delimiter=',', version=None):
             version = c
             continue
         if row == 0:
-            title = { k: i for i, k in enumerate(c) }
+            title = collections.OrderedDict()
+            for i, k in enumerate(c):
+                title[k] = i
             titlerow = c
+            headers[name] = title
         if row < 10:
             set_columns(worksheet, c, lengths)
         if not summary and len(c) > 0 and c[0] == "SUMMARY":
@@ -89,6 +96,7 @@ def create_sheet(name, infh, delimiter=',', version=None):
             worksheet = get_worksheet(sname)
             set_columns(worksheet, c, lengths)
             worksheet.write_row(0, 0, titlerow)
+            headers[sname] = titlerow
             row = rows[sname]
             summary = True
         elif summary and len(c) > 0 and c[0] != "SUMMARY" and c[0][0] != "#":
@@ -115,6 +123,58 @@ def create_sheet(name, infh, delimiter=',', version=None):
         row += 1
     return version
 
+ROW_SCALE = 40
+MIN_ROWS = 30
+
+def gen_chart(source):
+    if source not in headers:
+        print("source %s for chart not found" % source, file=sys.stderr)
+        return
+
+    worksheet = get_worksheet(source + " chart")
+    charts = collections.OrderedDict()
+
+    for n, ind in headers[source].items():
+        if n == "Timestamp":
+            continue
+        ns = n.split()
+        if len(ns) > 1:
+            prefix = ns[0] + " "
+            nn = " ".join(ns[1:])
+        else:
+            prefix = ''
+            nn = n
+
+        if gen_level.is_metric(nn):
+            chart = workbook.add_chart({'type': 'line'})
+            charts[n] = chart
+            chart.set_title({'name': n})
+        else:
+            key = n[:n.rindex('.')] if '.' in n else prefix
+            if key not in charts:
+                charts[key] = workbook.add_chart(
+                        {'type': 'area', 'subtype': 'percent_stacked' })
+            chart = charts[key]
+            chart.set_title({
+                'name': '%s Level %d %s' % (prefix, n.count('.') + 1,
+                                            key[key.index(' '):] if ' ' in key else key) })
+            chart.set_x_axis({'name': 'Timestamp'})
+        chart.add_series({
+            'name':        [source, 0, ind],
+            'categories':  [source, 1, 0,   rows[source], 0],
+            'values':      [source, 1, ind, rows[source], ind]
+        })
+        chart.set_size({'width': (rows[source] + MIN_ROWS ) * ROW_SCALE})
+        chart.set_legend({
+            'overlay': True,
+            'layout': { 'x': 0.05, 'y': 0.05, 'width': 0.12, 'height': 0.12 },
+            'fill': { 'none': True, 'transparency': True }
+        })
+    row = 1
+    for j in charts.keys():
+        worksheet.insert_chart('A%d' % row, charts[j])
+        row += 15
+
 version = None
 if args._global:
     version = create_sheet("global", args._global, version=version)
@@ -129,6 +189,9 @@ if args.program:
 if args.add:
     for fn, name in args.add:
         version = create_sheet(name, open(fn), version=version)
+if args.chart:
+    for cname in args.chart:
+        gen_chart(cname)
 if args.valcsv:
     create_sheet("event values", args.valcsv)
 if args.perf:

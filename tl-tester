@@ -184,6 +184,9 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -l6 --metrics --single-
 rm x$$.xlsx # must exist
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --xnormalize --all $LOAD
 rm x$$.xlsx # must exist
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -I100 --xchart --all $LOAD
+rm x$$.xlsx # must exist
+
 fi
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread -x, --columns -l4 $LOAD
 FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
