@@ -13,7 +13,8 @@
 #
 
 # convert toplev output to xlsx files using xlsxwriter
-# toplev.py --all --valcsv xv.log --perf-output xp.log -A -a --split-output --per-socket --global --summary --per-core --per-thread -x, -o x.log -I 1000 sleep 10
+# toplev.py --all --valcsv xv.log --perf-output xp.log -A -a --split-output --per-socket --global --summary \
+# --per-core --per-thread -x, -o x.log -I 1000 sleep 10
 # tl_xlsx.py --valcsv xv.log --perf xp.log --socket x-socket.log --global x-global.log --core x-core.log --thread x-thread.log x.xlsx
 from __future__ import print_function
 import sys
@@ -35,7 +36,7 @@ ap.add_argument('--global', type=argparse.FileType('r'), help="toplev global csv
 ap.add_argument('--core', type=argparse.FileType('r'), help="toplev core csv file", metavar="csvfile")
 ap.add_argument('--program', type=argparse.FileType('r'), help="toplev program csv file", metavar="csvfile")
 ap.add_argument('--thread', type=argparse.FileType('r'), help="toplev thread csv file", metavar="csvfile")
-ap.add_argument('--add', nargs=2, help="toplev thread generic csv file. Specify csvfile and sheet name",
+ap.add_argument('--add', nargs=2, help="toplev thread generic csv file. Specify csvfile and sheet name as two arguments",
             metavar="name", action="append")
 ap.add_argument('--valcsv', type=argparse.FileType('r'), help="toplev valcsv input file", metavar="csvfile")
 ap.add_argument('--perf', type=argparse.FileType('r'), help="toplev perf values csv file")
