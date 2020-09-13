@@ -40,7 +40,7 @@ for t in c:
 final = []
 skipped = []
 for j in fields.keys():
-    if "-T" not in j:
+    if "-T" not in j and not j.startswith("CPU"):
         if "S" in j:
             final.append(j)
         continue
