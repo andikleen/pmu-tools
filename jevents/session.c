@@ -115,14 +115,34 @@ int parse_events(struct eventlist *el, char *events)
 	while ((s = grab_event(next, &next)) != NULL) {
 		bool group_leader = false, end_group = false;
 		int len;
+		char *p;
 
 		if (s[0] == '{') {
 			s++;
 			group_leader = true;
 			ingroup = true;
-		} else if (len = strlen(s), len > 0 && s[len - 1] == '}') {
-			s[len - 1] = 0;
-			end_group = true;
+		} else if ((p = strchr(s, '}')) != NULL) {
+			*p = 0;
+#if 0
+			if (p[1])
+				parse_group_qual(p + 1);
+
+				if (p[1] == ':') {
+					while (*++p) {
+						switch (*p) {
+						case 'S':
+
+							break;
+						default:
+							fprintf(stderr, "
+
+					}
+					++p;
+					if (*p == 'S')
+						leader = ;
+				}
+			}
+#endif
 		}
 
 		struct event *e = new_event(el, s);
@@ -160,6 +180,11 @@ int parse_events(struct eventlist *el, char *events)
 		if (end_group)
 			ingroup = false;
 	}
+	if (ingroup) {
+		fprintf(stderr, "Group not terminated with }\n");
+		goto err;
+	}
+
 	free(events);
 	return 0;
 
