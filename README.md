@@ -8,6 +8,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev can now generate charts in xlsx files with the --xchart option.
 * interval-normalize has a new --normalize-cpu option to normalize multi CPU
   CSV files from toplev or perf
 * toplev now supports an experimental --drilldown option to automatically rerun
