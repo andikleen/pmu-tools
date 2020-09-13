@@ -480,7 +480,7 @@ args, rest = p.parse_known_args()
 
 if args.idle_threshold:
     idle_threshold = args.idle_threshold / 100.
-elif args.csv:
+elif args.csv or args.xlsx: # not for args.graph
     idle_threshold = 0  # avoid breaking programs that rely on the CSV output
 else:
     idle_threshold = 0.05
@@ -563,6 +563,8 @@ if args.xlsx:
     if not args.single_thread:
         args.per_thread = True
         args.split_output = True
+        if args.per_socket:
+            forced_per_socket = True
         args.per_socket = True
         args.per_core = True
         args.no_aggr = True
@@ -640,6 +642,9 @@ def check_ratio(l):
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
+
+if args.xlsx and not forced_per_socket and cpu.sockets == 1:
+    args.per_socket = False
 
 if cpu.hypervisor:
     feat.max_precise = 0
@@ -2375,7 +2380,7 @@ def do_xlsx(runner):
         names = ["program"]
         files = [out.logf.name]
     else:
-        names = ["socket", "global", "core", "thread"]
+        names = (["socket"] if args.per_socket else []) + ["global", "core", "thread"]
         files = [tl_output.output_name(args.output, p) for p in names]
 
     extrafiles = []
@@ -2393,15 +2398,13 @@ def do_xlsx(runner):
                 print(ncmd)
             ret = os.system(ncmd)
             if ret:
-                print("interval-normalize failed", file=sys.stderr)
+                print("interval-normalize failed: %d" % ret, file=sys.stderr)
                 return ret
             extrafiles.append(nname)
             extranames.append("n" + n)
             if args.xchart:
                 charts.append("n" + n)
 
-    def gen_arg(n, f):
-        return " --%s '%s'" % (n, f)
     cmd += " ".join(["--%s '%s'" % (n, f) for n, f in zip(names, files)])
     cmd += " " + " ".join(["--add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
     cmd += " " + " ".join(["--chart '%s'" % f for f in charts])
@@ -2409,7 +2412,9 @@ def do_xlsx(runner):
     if not args.quiet:
         print(cmd)
     ret = os.system(cmd)
-    # XXX delete temp files
+    if not args.xkeep:
+        for fn in files + extrafiles:
+            os.remove(fn)
     return ret
 
 def sysctl(name):
