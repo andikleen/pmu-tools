@@ -161,9 +161,9 @@ def gen_chart(source):
                                             key[key.index(' '):] if ' ' in key else key) })
             chart.set_x_axis({'name': 'Timestamp'})
         chart.add_series({
-            'name':         [source, 0, ind],
-            'categories':   [source, 1, 0,   rows[source], 0],
-            'values':       [source, 1, ind, rows[source], ind]
+            'name':        [source, 0, ind],
+            'categories':  [source, 1, 0,   rows[source], 0],
+            'values':      [source, 1, ind, rows[source], ind]
         })
         chart.set_size({'width': (rows[source] + MIN_ROWS ) * ROW_SCALE})
         chart.set_legend({
