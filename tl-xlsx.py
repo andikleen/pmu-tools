@@ -133,8 +133,9 @@ def create_sheet(name, infh, delimiter=',', version=None):
         row += 1
     return version
 
-ROW_SCALE = 40
-MIN_ROWS = 30
+ROW_SCALE = 18
+MIN_ROWS = 15
+GRAPH_ROWS = 15
 
 def gen_chart(source):
     if source not in headers:
@@ -177,13 +178,13 @@ def gen_chart(source):
         chart.set_size({'width': (rows[source] + MIN_ROWS ) * ROW_SCALE})
         chart.set_legend({
             'overlay': True,
-            'layout': { 'x': 0.05, 'y': 0.05, 'width': 0.12, 'height': 0.12 },
+            'layout': { 'x': 0.01, 'y': 0.01, 'width': 0.12, 'height': 0.12 },
             'fill': { 'none': True, 'transparency': True }
         })
     row = 1
     for j in charts.keys():
         worksheet.insert_chart('A%d' % row, charts[j])
-        row += 15
+        row += GRAPH_ROWS
 
 version = None
 if args._global:
