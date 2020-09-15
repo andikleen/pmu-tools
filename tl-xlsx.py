@@ -72,6 +72,11 @@ def get_worksheet(name):
     rows[name] = 1
     return worksheet
 
+def to_float(n):
+    if re.match(r'-?[.0-9]+', n):
+        n = float(n)
+    return n
+
 def create_sheet(name, infh, delimiter=',', version=None):
     lengths = collections.defaultdict(lambda: 0)
     worksheet = get_worksheet(name)
@@ -108,6 +113,7 @@ def create_sheet(name, infh, delimiter=',', version=None):
             summary = False
             rows[sname] = row
             row = rows[name]
+        c = map(to_float, c)
         worksheet.write_row(row, 0, c)
         if "Bottleneck" in title:
             bn = title["Bottleneck"]
