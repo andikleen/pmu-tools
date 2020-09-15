@@ -1681,12 +1681,13 @@ def node_filter(obj, default, sibmatch):
                     fnmatch(fname, m) or
                     fnmatch(fname, "*" + m))
 
-        def match(m, level=True):
+        def match(m, checklevel=True):
             r = re.match("(.*)/([0-9]+)", m)
             if r:
+                level = int(r.group(2))
+                if checklevel and obj.level > level:
+                    return False
                 m = r.group(1)
-                level = int(r.group(2)) if level else obj.level
-                return _match(r.group(1)) and obj.level <= level
             return _match(m)
 
         nodes = args.nodes
