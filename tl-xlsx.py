@@ -73,7 +73,7 @@ def get_worksheet(name):
     return worksheet
 
 def to_float(n):
-    if re.match(r'-?[.0-9]+', n):
+    if re.match(r'-?[,.0-9]+$', n):
         n = float(n)
     return n
 
@@ -121,8 +121,8 @@ def create_sheet(name, infh, delimiter=',', version=None):
                 worksheet.write(row, title["Area"], c[title["Area"]], bold)
                 worksheet.write(row, title["Value"], c[title["Value"]], bold)
                 worksheet.write(row, bn, c[bn], bold)
-        if "Value" in title and len(c) > title["Value"] and re.match(r'[0-9.]+', c[title["Value"]]):
-            worksheet.write_number(row, title["Value"], float(c[title["Value"]]), valueformat)
+        if "Value" in title and len(c) > title["Value"] and isinstance(c[title["Value"]], float):
+            worksheet.write_number(row, title["Value"], c[title["Value"]], valueformat)
         elif "0" in title:
             num = 0
             while num in title:
