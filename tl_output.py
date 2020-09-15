@@ -89,7 +89,7 @@ class Output:
     def set_cpus(self, cpus):
         pass
 
-    def item(self, area, name, uval, timestamp, unit, desc, title, sample, bn, below):
+    def item(self, area, name, uval, timestamp, unit, desc, title, sample, bn, below, idle):
         assert isinstance(uval, UVal)
         # --
         if desc in self.printed_descs:
@@ -98,15 +98,15 @@ class Output:
             self.printed_descs.add(desc)
         if not area:
             area = ""
-        self.show(timestamp, title, area, name, uval, unit, desc, sample, bn, below)
+        self.show(timestamp, title, area, name, uval, unit, desc, sample, bn, below, idle)
 
-    def ratio(self, area, name, uval, timestamp, unit, desc, title, sample, bn, below):
+    def ratio(self, area, name, uval, timestamp, unit, desc, title, sample, bn, below, idle):
         uval.is_ratio = True
-        self.item(area, name, uval, timestamp, unit, desc, title, sample, bn, below)
+        self.item(area, name, uval, timestamp, unit, desc, title, sample, bn, below, idle)
 
-    def metric(self, area, name, uval, timestamp, desc, title, unit):
+    def metric(self, area, name, uval, timestamp, desc, title, unit, idle):
         uval.is_metric = True
-        self.item(area, name, uval, timestamp, unit, desc, title, None, "", "")
+        self.item(area, name, uval, timestamp, unit, desc, title, None, "", "", idle)
 
     def flush(self):
         pass
@@ -192,9 +192,10 @@ class OutputHuman(Output):
     # vs        Statistics object
     # bn        marker for bottleneck
     # below     True if below
+    # idle      Idle marker (ignored for Human)
     # Example:
     # C0    BE      Backend_Bound:                                62.00 %
-    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
+    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below, idle):
         self.print_header()
         self.print_timestamp(timestamp)
         write = self.logf.write
@@ -214,9 +215,9 @@ class OutputHuman(Output):
         write(vals + "\n")
         self.print_desc(desc, sample)
 
-    def metric(self, area, name, l, timestamp, desc, title, unit):
+    def metric(self, area, name, l, timestamp, desc, title, unit, idle):
         l.is_metric = True
-        self.item(area, name, l, timestamp, unit, desc, title, None, "", "")
+        self.item(area, name, l, timestamp, unit, desc, title, None, "", "", False)
 
 def convert_ts(ts):
     if isnan(ts):
@@ -235,9 +236,9 @@ class OutputColumns(OutputHuman):
     def set_cpus(self, cpus):
         self.cpunames = cpus
 
-    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
+    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below, idle):
         if self.args.single_thread:
-            OutputHuman.show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below)
+            OutputHuman.show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below, idle)
             return
         self.print_header()
         self.timestamp = timestamp
@@ -245,7 +246,7 @@ class OutputColumns(OutputHuman):
         if key not in self.nodes:
             self.nodes[key] = dict()
         assert title not in self.nodes[key]
-        self.nodes[key][title] = (val, unit, desc, sample, bn, below)
+        self.nodes[key][title] = (val, unit, desc, sample, bn, below, idle)
 
     def flush(self):
         VALCOL_LEN = 16
@@ -275,7 +276,7 @@ class OutputColumns(OutputHuman):
             for cpuname in cpunames:
                 if cpuname in node:
                     cpu = node[cpuname]
-                    uval, unit, desc, sample, bn, below = cpu
+                    uval, unit, desc, sample, bn, below, idle = cpu
                     v = uval.format_value()
                     vlist.append(uval)
                     write("%*s%s " % (VALCOL_LEN, v, "?" if below else "*" if bn else " "))
@@ -307,8 +308,8 @@ class OutputColumnsCSV(OutputColumns):
             self.writer[''] = csv.writer(self.logf, delimiter=sep, lineterminator='\n')
         self.printed_header = False
 
-    # XXX implement bn
-    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
+    # XXX implement bn and idle
+    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below, idle):
         self.print_header()
         self.timestamp = timestamp
         key = (area, hdr)
@@ -379,10 +380,10 @@ class OutputCSV(Output):
                 l.append("CPUs")
             self.writer[self.curname].writerow(l +
                 ['Area', 'Value', 'Unit', 'Description',
-                 'Sample', 'Stddev', 'Multiplex', 'Bottleneck'])
+                 'Sample', 'Stddev', 'Multiplex', 'Bottleneck', 'Idle'])
             self.printed_headers.add(self.curname_nologf)
 
-    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below):
+    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below, idle):
         self.print_header(timestamp, title)
         if self.args.no_desc:
             desc = ""
@@ -396,6 +397,6 @@ class OutputCSV(Output):
         multiplex = val.multiplex if not isnan(val.multiplex) else ""
         self.writer[self.curname].writerow(l + [hdr, val.format_value_raw().strip(),
                                   (unit + " " + fmt_below(below)).strip(),
-                                  desc, sample, stddev, multiplex, bn])
+                                  desc, sample, stddev, multiplex, bn, "Y" if idle else ""])
 
     print_footer = Output.print_footer_all

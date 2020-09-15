@@ -161,36 +161,43 @@ qual_map = (
     ("e0", "edge=0", 0, ""),
     ("tx", "in_tx=1", 0, ""),
     ("sup", "", 0, "k"),
-    ("SUP", "", 0, "k"),
     ("usr=yes", "", 0, "u"),
     ("usr=no", "", 0, "k"),
+    ("os=yes", "", 0, "k"),
+    ("os=no", "", 0, "u"),
     ("anythr=yes", "any=1", 0, ""),
+    ("anythr=no", "any=0", 0, ""),
+    ("pdir", "", 0, "ppp"),
+    ("precise=yes", "", 0, "pp"),
     ("cp", "in_tx_cp=1", 0, ""))
 
+number = "(0x[0-9a-fA-F]+|[0-9]+)"
+
 qualval_map = (
-    (r"u(0x[0-9a-f]+)", "umask=%#x", 0),
-    (r"c(?:mask=)?(0x[0-9a-f]+|[0-9]+)", "cmask=%d", 24),
-    (r"e(?:dge=)?(0x[0-9a-f]+|[0-9]+)", "edge=%d", 18),
-    (r"(?:sa|sample-after|period)=([0-9]+)", "period=%d", 0))
+    (r"event_select=" + number, "event=%#x", 0),
+    (r"u" + number, "umask=%#x", 0),
+    (r"c(?:mask=)?" + number, "cmask=%d", 24),
+    (r"e(?:dge=)?" + number, "edge=%d", 18),
+    (r"(?:sa|sample-after|period)=" + number, "period=%d", 0))
 
 uncore_map = (
     (r'e(\d)', 'edge='),
     (r't=(\d+)', "thresh="),
-    (r'[Mm]atch=(0x[0-9a-fA-F]+)', "filter_occ="),
+    (r'match=(0x[0-9a-fA-F]+)', "filter_occ="),
     (r'filter1=(0x[0-9a-fA-F]+)', "config1=", 32),
     (r"nc=(\d+)", "filter_nc="),
     (r'filter=(0x[0-9a-fA-F]+)', "config1="),
     (r'one_unit', '', ),
-    (r"u(0x[0-9a-fA-F]+)", "umask="),
-    (r"opc=?(0x[0-9a-fA-F]+)", "filter_opc="),
-    (r"tid=?(0x[0-9a-fA-F]+)", "filter_tid="),
-    (r"state=?(0x[0-9a-fA-F]+)", "filter_state="))
+    (r"u" + number, "umask="),
+    (r"opc=?" + number, "filter_opc="),
+    (r"tid=?" + number, "filter_tid="),
+    (r"state=?" + number, "filter_state="))
 
 uncore_map_thresh = (
-    (r"c(?:mask=)?([0-9a-fA-Fx]+)", "thresh="),)
+    (r"c(?:mask=)?" + number, "thresh="),)
 
 uncore_map_cmask = (
-    (r"c(?:mask=)?(0x[0-9a-fA-F]+|[0-9]+)", "cmask="),)
+    (r"c(?:mask=)?" + number, "cmask="),)
 
 # newe gets modified
 def convert_extra(extra, val, newe):
@@ -201,7 +208,7 @@ def convert_extra(extra, val, newe):
             continue
         found = False
         for j in qualval_map:
-            m = re.match(j[0], extra)
+            m = re.match(j[0], extra, re.I)
             if m:
                 if j[2]:
                     val |= int(m.group(1), 0) << j[2]
@@ -213,7 +220,7 @@ def convert_extra(extra, val, newe):
             continue
         found = False
         for j in qual_map:
-            if extra.startswith(j[0]):
+            if extra.lower().startswith(j[0]):
                 val |= j[2]
                 newe.append(j[1])
                 extra = extra[len(j[0]):]
@@ -335,7 +342,7 @@ def convert_uncore(flags, extra_map):
             if flags[0] == ",":
                 flags = flags[1:]
             match, repl = j[0], j[1]
-            m = re.match(match, flags)
+            m = re.match(match, flags, re.I)
             if m:
                 if repl == "":
                     pass
@@ -928,7 +935,7 @@ def find_emap():
         if experimental:
             toget += [x + " experimental" for x in toget]
         event_download.download(el, toget)
-        return json_with_extra(el)
+        return json_with_extra(el, eventmap_is_file)
     except IOError:
         pass
     return None

@@ -20,8 +20,8 @@ for args in "" "-A" "--per-socket" "--per-core" "-r2" ; do
 
 ${PERF} stat -I100 $args -a -x, -o x$$.csv sleep 1
 
-$WRAP interval-normalize.py < x$$.csv
-$WRAP interval-normalize.py < x$$.csv > y$$.csv
+$WRAP interval-normalize.py --error-exit < x$$.csv
+$WRAP interval-normalize.py --error-exit < x$$.csv > y$$.csv
 
 grep -vq PARSE-ERROR y$$.csv
 if [ -z "$NORES" ] ; then
@@ -40,19 +40,42 @@ $WRAP interval-plot.py x$$.csv -o x$$.png
 
 done
 
-[ ! -r dygraph-combined.js ] && wget http://dygraphs.com/1.0.1/dygraph-combined.js
+DYGRAPHS=""
 
-for args in "-l2" "--all -v" "-l3 --single-thread" ; do
+# original url http://dygraphs.com/1.0.1/dygraph-combined.js disappeared
+if [ ! -r dygraph-combined.js ] && wget https://cdnjs.cloudflare.com/ajax/libs/dygraph/1.0.1/dygraph-combined.js ; then
+DYGRAPHS=1
+fi
 
-FORCEHT=1 $WRAP toplev.py -v --force-cpu ${DCPU:-hsw} --node +CPU_Utilization -I 100 $args -o x$$.csv -x, -a ./workloads/BC1s
-$WRAP interval-normalize.py < x$$.csv
-$WRAP interval-normalize.py < x$$.csv > y$$.csv
+for args in "-l2" "--all -v" "-l3 --single-thread" "--all -a -A"; do
+
+FORCEHT=1 $WRAP toplev.py -v --force-cpu ${DCPU:-hsw} --node +CPU_Utilization -I 100 $args -o x$$.csv -x, ./workloads/BC1s
+$WRAP toplev.py -v --force-cpu ${DCPU:-hsw} --node +CPU_Utilization -I 100 $args -o xn$$.csv -x, ./workloads/BC1s
+$WRAP interval-normalize.py --error-exit < x$$.csv
+$WRAP interval-normalize.py --error-exit < x$$.csv > y$$.csv
 
 grep -vq PARSE-ERROR y$$.csv
 [ -z "$NORES" ] && grep Frontend y$$.csv
 
+$WRAP interval-normalize.py --normalize-cpu --error-exit < x$$.csv > yc$$.csv
+[ -z "$NORES" ] && grep Frontend yc$$.csv
+
+$WRAP interval-normalize.py --normalize-cpu --error-exit < xn$$.csv > yc$$.csv
+[ -z "$NORES" ] && grep Frontend yc$$.csv
+
+if grep -q CPUs x$$.csv ; then
+
 $WRAP utilized.py x$$.csv -o y$$.csv
 [ -z "$NORES" ] && grep Frontend y$$.csv
+
+fi
+
+if grep -q CPUs xn$$.csv ; then
+
+$WRAP utilized.py xn$$.csv -o y$$.csv
+[ -z "$NORES" ] && grep Frontend y$$.csv
+
+fi
 
 $WRAP interval-plot.py x$$.csv -o x$$.png
 
@@ -60,12 +83,15 @@ $WRAP interval-plot.py x$$.csv -o x$$.png
 $WRAP plot-normalized.py -o x$$-2.png y$$.csv
 
 # tl-serve.py
-
-$WRAP tl-serve.py --gen tls$$ x$$.csv
-rm -rf tls$$
+if [ -n "$DYGRAPHS" ] ; then
+	$WRAP tl-serve.py --gen tls$$ x$$.csv
+	rm -rf tls$$
+fi
 
 # tl-barplot.py
 $WRAP tl-barplot.py x$$.csv -o x$$.png
+
+rm x$$.png x$$-2.png
 
 done
 
@@ -76,6 +102,8 @@ curl http://localhost:9001 > /dev/null
 kill %1
 sleep 1
 wait %1
+
+rm x$$.csv xn$$.csv
 
 # cputop.py
 
@@ -107,8 +135,6 @@ $WRAP gen-dot.py ivb_client_ratios > /dev/null
 # untested: msr.py
 # untested: pci.py
 # untested: event-rmap.py
-
-rm -f x$$.csv x$$-2.png y$$.csv
 
 trap "" ERR 0
 

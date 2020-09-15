@@ -226,7 +226,7 @@ int resolve_event_extra(const char *name, struct perf_event_attr *attr,
 		return 0;
 	}
 	asprintf(&buf, "cpu/%s/", name);
-	ret = jevent_name_to_attr(buf, attr);
+	ret = jevent_name_to_attr_extra(buf, attr, extra);
 	extra->decoded = buf;
 	if (extra == &extras || ret) {
 		free(buf);

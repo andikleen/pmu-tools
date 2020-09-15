@@ -45,7 +45,6 @@ class Env:
         self.forceht = os.getenv("FORCEHT")
         self.hypervisor = os.getenv("HYPERVISOR")
         self.cpuinfo = os.getenv("CPUINFO")
-        self.tlcounters = os.getenv("TLCOUNTERS")
 
 class CPU:
     """Detect the CPU."""
@@ -89,7 +88,6 @@ class CPU:
             self.hypervisor = True
             self.force_hypervisor = True
         self.freq = 0.0
-        self.siblings = {}
         self.threads = 0
         forced_cpu = self.force_cpu(known_cpus)
         forced_ht = self.force_ht()
@@ -161,27 +159,23 @@ class CPU:
                     if not forced_cpu:
                         self.cpu = i[0]
                     break
+        self.standard_counters = ("0,1,2,3",)
         if self.counters == 0:
-            self.standard_counters = "0,1,2,3"
             if self.cpu == "slm":
                 self.counters = 2
-                self.standard_counters = "0,1"
+                self.standard_counters = ("0,1",)
             # when running in a hypervisor always assume worst case HT in on
             # also when CPUs are offline assume SMT is on
             elif self.ht or self.hypervisor or (num_offline_cpus() > 0 and not nocheck):
-                if self.cpu == "icl":
+                if self.cpu == "icl" or (self.cpu == "simple" and self.realcpu == "icl"):
                     self.counters = 4 # XXX fixme to 8, but 4 works for now
-                    self.standard_counters = "0,1,2,3,4,5,6,7"
+                    self.standard_counters = ("0,1,2,3,4,5,6,7", "0,1,2,3", )
                 else:
                     self.counters = 4
             else:
                 self.counters = 8
             if not nocheck and reduced_counters():
                 self.counters -= 1
-            # chicken bit to override if we get it wrong
-            counters = self.env.tlcounters
-            if counters:
-                self.counters = int(counters)
         self.sockets = len(sockets.keys())
         self.modelid = None
         mid = (self.model,)

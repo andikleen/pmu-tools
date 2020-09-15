@@ -250,14 +250,56 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 	return 0;
 }
 
-static int try_pmu_type(char **type, char *fmt, char *pmu)
+static int try_pmu_type(char **type, char *fmt, char *pmu, struct jevent_extra *extra)
 {
 	char newpmu[50];
 	snprintf(newpmu, 50, fmt, pmu);
 	int ret = read_file(type, "/sys/devices/%s/type", newpmu);
-	if (ret >= 0)
+	if (ret >= 0) {
 		strcpy(pmu, newpmu);
+		if (extra && extra->pmus.gl_pathc == 0) {
+			char *fn;
+			asprintf(&fn, "/sys/devices/%s", newpmu);
+			/* Fill in pmus so that the pmu name is available to users */
+			ret = glob(fn, 0, NULL, &extra->pmus);
+			free(fn);
+		}
+	}
 	return ret;
+}
+
+/**
+ * jevent_pmu_name - return pmu names for resolved jevent_extra
+ * @extra: resolved jevent_extra
+ * @num: number of PMU to return might be returned earlier in next_pmu
+ * @next_pmu: pointer to integer. next pmu number that can be passed to next call of jevent_pmu_name.
+ * Return:
+ * Name of PMU. String will be valid until the extra argument is freed.
+ *
+ * Iterate through jevent_pmu_name to get all PMUs, setting num to next_num, until it returns NULL.
+ * int num, next;
+ * char *name;
+ * for (num = 0; (name = jevent_pmu_name(&extra, num; &next)) != NULL; num = next) {
+ *     ...
+ * }
+ *
+ */
+char *jevent_pmu_name(struct jevent_extra *extra, int num, int *next_num)
+{
+	char *s = NULL;
+
+	if (num < 0) {
+		if (next_num)
+			*next_num = -1;
+		return NULL;
+	}
+	if (num < extra->pmus.gl_pathc)
+		s = extra->pmus.gl_pathv[num] ?
+		    strrchr(extra->pmus.gl_pathv[num], '/') + 1 :
+		    NULL;
+	if (next_num)
+		*next_num = num + 1;
+	return s;
 }
 
 /**
@@ -300,8 +342,7 @@ void jevent_free_extra(struct jevent_extra *extra)
 {
 	free(extra->name);
 	free(extra->decoded);
-	if (extra->multi_pmu)
-		globfree(&extra->pmus);
+	globfree(&extra->pmus);
 }
 
 /**
@@ -309,17 +350,22 @@ void jevent_free_extra(struct jevent_extra *extra)
  * @dst: Destination
  * @src: Source
  *
- * Does not copy the pmu list, but everything else.
  * Result needs to be freed with jevent_free_extra().
  */
 
 void jevent_copy_extra(struct jevent_extra *dst, struct jevent_extra *src)
 {
+	int len;
+
 	memset(dst, 0, sizeof(struct jevent_extra));
 	if (src->name)
 		dst->name = strdup(src->name);
 	if (src->decoded)
 		dst->decoded = strdup(src->decoded);
+	dst->pmus.gl_pathc = src->pmus.gl_pathc;
+	len = sizeof(char *) * src->pmus.gl_pathc;
+	dst->pmus.gl_pathv = malloc(len);
+	memcpy(dst->pmus.gl_pathv, src->pmus.gl_pathv, len);
 }
 
 /**
@@ -340,7 +386,7 @@ int jevent_next_pmu(struct jevent_extra *extra,
 		char *type = NULL;
 		if (try_pmu_type(&type,
 				 strrchr(extra->pmus.gl_pathv[n], '/'),
-				 pmu) < 0)
+				 pmu, NULL) < 0)
 			return -1;
 		attr->type = atoi(type);
 		free(type);
@@ -389,6 +435,7 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 
 	if (sscanf(str, "r%llx%n", &attr->config, &qual_off) == 1) {
 		assert(qual_off != -1);
+		glob("/sys/devices/cpu", 0, NULL, &extra->pmus);
 		if (str[qual_off] == 0)
 			return 0;
 		if (str[qual_off] == ':' && jevents_update_qual(str + qual_off + 1, attr, str) == 0)
@@ -398,8 +445,8 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 	if (sscanf(str, "%30[^/]/%200[^/]/%n", pmu, config, &qual_off) < 2)
 		return -1;
 	char *type = NULL;
-	if (try_pmu_type(&type, "%s", pmu) < 0) {
-		if (try_pmu_type(&type, "uncore_%s", pmu) < 0) {
+	if (try_pmu_type(&type, "%s", pmu, extra) < 0) {
+		if (try_pmu_type(&type, "uncore_%s", pmu, extra) < 0) {
 			char *gs;
 			int ret;
 
@@ -408,7 +455,7 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 			free(gs);
 			if (ret)
 				return -1;
-			if (try_pmu_type(&type, strrchr(extra->pmus.gl_pathv[0], '/'), pmu) < 0)
+			if (try_pmu_type(&type, strrchr(extra->pmus.gl_pathv[0], '/'), pmu, NULL) < 0)
 				goto err_free;
 			extra->next_pmu = 1;
 			extra->multi_pmu = true;
@@ -420,6 +467,8 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 		goto err_free;
 	if (qual_off != -1 && jevents_update_qual(str + qual_off, attr, str) < 0)
 		goto err_free;
+	if (extra == &dummy)
+		jevent_free_extra(extra);
 	return 0;
 
 err_free:

@@ -123,10 +123,7 @@ outgroup_events = set(["dummy"])
 
 nonperf_events = set(["interval-ns", "interval-s", "interval-ms", "mux"])
 
-# workaround for broken event files for now
 event_fixes = {
-    "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC",
-    "UOPS_EXECUTED.CYCLES_GE_1_UOP_EXEC": "UOPS_EXECUTED.CYCLES_GE_1_UOPS_EXEC"
 }
 
 core_domains = set(["Slots", "CoreClocks", "CoreMetric"])
@@ -252,12 +249,16 @@ def needed_counters(evlist, nolimit=False):
 
     # split if any resource is oversubscribed
     if resource_split(evlist):
+        if args.debug:
+            print("resource split", evlist, file=sys.stderr)
         return 100
 
     # force split if we overflow fixed or limit4
     # some fixed could be promoted to generic, but that doesn't work
     # with ref-cycles.
     if not nolimit and (fixed_overflow(evlist) or limit4_overflow(evlist) > 4):
+        if args.debug:
+            print("fixed or limit4 overflow", evlist, file=sys.stderr)
         return 100
 
     # account events that only schedule on one of the generic counters
@@ -387,7 +388,8 @@ g.add_argument('--frequency', help="Measure frequency", action='store_true')
 g.add_argument('--power', help='Display power metrics', action='store_true')
 g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, '
                'comma separated list, wildcards allowed, add * to include all children/siblings, '
-               'add /level to specify highest level node to match)')
+               'add /level to specify highest level node to match, '
+               'start with ! to only include specified nodes)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
                'comma separated list from --list-metric-groups.', default=None)
@@ -414,14 +416,10 @@ g.add_argument('--no-desc', help='Do not print event descriptions', action='stor
 g.add_argument('--desc', help='Force event descriptions', action='store_true')
 g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. '
                'Note this can result in bogus values, as the TopDown methodology relies on thresholds '
-               'to correctly characterize workloads.',
+               'to correctly characterize workloads. Values not crossing threshold are marked with <.',
                action='store_true')
 g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
 g.add_argument('--output', '-o', help='Set output file')
-g.add_argument('--xlsx', help='Generate xlsx spreadsheet output with data for '
-               'socket/global/thread/core/summary/raw views with 1s interval.'
-               'Add --single-thread to only get program output, or add --pid/--cgroup filters')
-g.add_argument('--xnormalize', help='Normalize output in xlsx files', action='store_true')
 g.add_argument('--split-output', help='Generate multiple output files, one for each specified '
                'aggregation option (with -o)',
                action='store_true')
@@ -456,6 +454,14 @@ g.add_argument('--raw', help="Print raw values", action='store_true')
 g.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file')
 g.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
 
+g = p.add_argument_group('xlsx output')
+g.add_argument('--xlsx', help='Generate xlsx spreadsheet output with data for '
+               'socket/global/thread/core/summary/raw views with 1s interval. '
+               'Add --single-thread to only get program output.')
+g.add_argument('--xnormalize', help='Add extra sheets with normalized data in xlsx files', action='store_true')
+g.add_argument('--xchart', help='Chart data in xlsx files', action='store_true')
+g.add_argument('--xkeep', help='Keep temporary CSV files', action='store_true')
+
 g = p.add_argument_group('Sampling')
 g.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
 g.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
@@ -474,7 +480,7 @@ args, rest = p.parse_known_args()
 
 if args.idle_threshold:
     idle_threshold = args.idle_threshold / 100.
-elif args.csv:
+elif args.csv or args.xlsx: # not for args.graph
     idle_threshold = 0  # avoid breaking programs that rely on the CSV output
 else:
     idle_threshold = 0.05
@@ -531,6 +537,10 @@ if args.pid:
 if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
 
+forced_per_socket = False
+if args.xchart:
+    args.xnormalize = True
+    args.verbose = True
 if args.xlsx:
     if args.output:
         sys.exit("-o / --output not allowed with --xlsx")
@@ -553,6 +563,8 @@ if args.xlsx:
     if not args.single_thread:
         args.per_thread = True
         args.split_output = True
+        if args.per_socket:
+            forced_per_socket = True
         args.per_socket = True
         args.per_core = True
         args.no_aggr = True
@@ -630,6 +642,9 @@ def check_ratio(l):
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
+
+if args.xlsx and not forced_per_socket and cpu.sockets == 1:
+    args.per_socket = False
 
 if cpu.hypervisor:
     feat.max_precise = 0
@@ -767,7 +782,7 @@ def raw_event(i, name="", period=False, nopebs=True):
         i = e.output(noname=True, name=name, period=period, noexplode=True)
 
         emap.update_event(e.output(noname=True), e)
-        if e.counter != cpu.standard_counters and not e.counter.startswith("Fixed"):
+        if e.counter not in cpu.standard_counters and not e.counter.startswith("Fixed"):
             # for now use the first counter only to simplify
             # the assignment. This is sufficient for current
             # CPUs
@@ -948,6 +963,8 @@ def verify_rev(rev, cpus):
             assert o == rev[cpus[0]][ind]
         assert len(rev[k]) == len(rev[cpus[0]])
 
+IDLE_MARKER_THRESHOLD = 0.05
+
 def find_idle_keys(res, rev, idle_thresh):
     cycles = { k: max([0] + [val for val, ev in zip(res[k], rev[k])
                     if ev == "cycles" or ev == "cpu/event=0x3c,umask=0x0,any=1/"])
@@ -957,12 +974,22 @@ def find_idle_keys(res, rev, idle_thresh):
     max_cycles = max(cycles.values())
     return set([k for k in cycles.keys() if cycles[k] < max_cycles * idle_thresh])
 
+def is_idle(cpus, idle_keys):
+    return all([("%d" % c) in idle_keys for c in cpus])
+
+def idle_core(core, idle_keys):
+    return is_idle(cpu.coreids[core], idle_keys)
+
+def idle_socket(socket, idle_keys):
+    return is_idle(cpu.sockettocpus[socket], idle_keys)
+
 # from https://stackoverflow.com/questions/4836710/does-python-have-a-built-in-function-for-string-natural-sort
 def num_key(s):
     return [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', s)]
 
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     idle_keys = find_idle_keys(res, rev, runner.idle_threshold)
+    idle_mark_keys = find_idle_keys(res, rev, IDLE_MARKER_THRESHOLD)
     hidden_keys = set()
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
@@ -1029,26 +1056,30 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 runner.print_res(out, interval, "", not_package_node, bn)
                 break
             if mode == OUTPUT_SOCKET:
-                runner.print_res(out, interval, socket_fmt(int(j)), not_package_node, bn)
+                runner.print_res(out, interval, socket_fmt(int(j)), not_package_node, bn,
+                                 idle_socket(sid, idle_mark_keys))
                 printed_sockets.add(sid)
                 continue
             if mode == OUTPUT_THREAD:
-                runner.print_res(out, interval, thread_fmt(int(j)), any_node, bn)
+                runner.print_res(out, interval, thread_fmt(int(j)), any_node, bn, j in idle_mark_keys)
                 continue
 
             # per core or mixed core/thread mode
 
             # print the SMT aware nodes
             if core not in printed_cores:
-                runner.print_res(out, interval, core_fmt(core), core_node, bn)
+                runner.print_res(out, interval, core_fmt(core), core_node, bn,
+                        idle_core(core, idle_mark_keys))
                 printed_cores.add(core)
 
             # print the non SMT nodes
             if mode == OUTPUT_CORE:
                 fmt = core_fmt(core)
+                idle = idle_core(core, idle_mark_keys)
             else:
                 fmt = thread_fmt(int(j))
-            runner.print_res(out, interval, fmt, thread_node, bn)
+                idle = j in idle_mark_keys
+            runner.print_res(out, interval, fmt, thread_node, bn, idle)
     else:
         env['num_merged'] = 1
         for j in keys:
@@ -1059,7 +1090,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
-            runner.print_res(out, interval, j, not_package_node, bn)
+            runner.print_res(out, interval, j, not_package_node, bn, j in idle_mark_keys)
     if mode == OUTPUT_GLOBAL:
         cpus = [x for x in keys
                 if (not is_number(j)) or int(j) in runner.allowed_threads]
@@ -1069,7 +1100,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                        for i in range(len(valstats[cpus[0]]))] if len(cpus) > 0 else []
         runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
                        combined_st, env, package_node, stat)
-        runner.print_res(out, interval, "all", package_node, None)
+        runner.print_res(out, interval, "all", package_node, None, False)
     elif mode != OUTPUT_THREAD:
         packages = set()
         for j in keys:
@@ -1089,7 +1120,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 hidden_keys.add(j)
                 continue
             runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
-            runner.print_res(out, interval, jname, package_node, None)
+            runner.print_res(out, interval, jname, package_node, None, j in idle_mark_keys)
     # no bottlenecks from package nodes for now
     out.flush()
     stat.referenced_check(res, runner.evnum)
@@ -1129,6 +1160,8 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
         print_keys(runner, res, rev, valstats, out, interval, env, mode)
 
 def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
+    if args.interval and interval is None:
+        interval = float('nan')
     if runner.summary:
         runner.summary.add(res, rev, valstats, env)
     print_and_split_keys(runner, res, rev, valstats, out, interval, env)
@@ -1166,7 +1199,7 @@ def execute_no_multiplex(runner, out, rest):
     valstats = defaultdict(list)
     env = dict()
     groups = [x for x in runner.evgroups if len(x) > 0]
-    num_runs = len(groups) - count(is_outgroup, groups)
+    num_runs = len(groups) - len(list(filter(is_outgroup, groups)))
     outg = []
     n = 0
     ctx = SaveContext()
@@ -1278,7 +1311,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
         except KeyboardInterrupt:
             continue
         if interval_mode:
-            m = re.match(r"\s*([0-9.]+);(.*)", l)
+            m = re.match(r"\s*([0-9.]{9,});(.*)", l)
             if m:
                 interval = float(m.group(1))
                 l = m.group(2)
@@ -1290,6 +1323,10 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                         rev = defaultdict(list)
                         valstats = defaultdict(list)
                     prev_interval = interval
+            else:
+                # these are likely summary lines printed by v5.8 perf stat
+                # just ignore
+                continue
 
         n = l.split(";")
 
@@ -1424,6 +1461,8 @@ def do_event_rmap(e):
         n = fixes[n.upper()].lower()
         if n:
             return n
+    if args.debug:
+        print("rmap: cannot find %s, using dummy" % e, file=sys.stderr)
     return "dummy"
 
 rmap_cache = dict()
@@ -1600,9 +1639,6 @@ def thread_node(obj):
 def any_node(obj):
     return True
 
-def count(f, l):
-    return len(list(filter(f, l)))
-
 def obj_domain(obj):
     return obj.domain.replace("Estimated", "est").replace("Calculated", "calc")
 
@@ -1645,15 +1681,21 @@ def node_filter(obj, default, sibmatch):
                     fnmatch(fname, m) or
                     fnmatch(fname, "*" + m))
 
-        def match(m, level=True):
+        def match(m, checklevel=True):
             r = re.match("(.*)/([0-9]+)", m)
             if r:
+                level = int(r.group(2))
+                if checklevel and obj.level > level:
+                    return False
                 m = r.group(1)
-                level = int(r.group(2)) if level else obj.level
-                return _match(r.group(1)) and obj.level <= level
             return _match(m)
 
-        for j in args.nodes.split(","):
+        nodes = args.nodes
+        if nodes[0] == '!':
+            default = False
+            nodes = nodes[1:]
+
+        for j in nodes.split(","):
             i = 0
             if j[0] == '^' or j[0] == '-':
                 if match(j[1:]):
@@ -1870,6 +1912,8 @@ class Runner:
         fmatch = list(map(want_node, self.olist))
         # now keep what is both in fmatch and sibmatch
         self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or obj in sibmatch]
+        if len(self.olist) == 0:
+            sys.exit("All nodes disabled")
 
     def setup_children(self):
         for obj in self.olist:
@@ -1880,12 +1924,14 @@ class Runner:
     def check_nodes(self, nodesarg):
 
         def opt_obj_name(s):
-            if s[0] in ('+', '^', '-'):
+            if s[:1] in ('+', '^', '-'):
                 s = s[1:]
             if "/" in s:
                 s = s[:s.index("/")]
             return s
 
+        if nodesarg[:1] == "!":
+            nodesarg = nodesarg[1:]
         options = [opt_obj_name(s) for s in nodesarg.split(",")]
         def valid_node(s):
             if s in self.odict:
@@ -1908,6 +1954,9 @@ class Runner:
         for g, base in zip(self.evgroups, self.evbases):
             for ind, j in enumerate(g):
                 if not self.indexobj[base + ind]:
+                    if args.debug:
+                        print("replacing unreferenced %d %s with dummy" %
+                                ((base + ind), g[ind]))
                     g[ind] = "dummy"
                     self.evnum[base + ind] = "dummy"
 
@@ -2144,7 +2193,7 @@ class Runner:
         changed += self.propagate_siblings()
         return changed
 
-    def print_res(self, out, timestamp, title, match, bn):
+    def print_res(self, out, timestamp, title, match, bn, idlemark=False):
         if bn:
             self.bottlenecks.add(bn)
 
@@ -2189,7 +2238,8 @@ class Runner:
                 out.metric(obj_area(obj), obj.name, val, timestamp,
                         desc,
                         title,
-                        metric_unit(obj))
+                        metric_unit(obj),
+                        idlemark)
             else:
                 out.ratio(obj_area(obj),
                         full_name(obj), val, timestamp,
@@ -2198,7 +2248,8 @@ class Runner:
                         title,
                         sample_desc(obj.sample) if has(obj, 'sample') else None,
                         "<==" if obj == bn else "",
-                        node_below(obj))
+                        node_below(obj),
+                        idlemark)
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
 
@@ -2234,7 +2285,7 @@ def clean_event(e):
 
 SAMPLE_EXTEND = 2 # how deep to look into children for additional sample events
 
-def do_sample(sample_obj, rest, count, full_olist):
+def do_sample(sample_obj, rest, count, full_olist, ret):
     samples = [("cycles:pp", "Precise cycles", )]
 
     def sample_list(obj):
@@ -2279,19 +2330,19 @@ def do_sample(sample_obj, rest, count, full_olist):
     print("Sampling:")
     extra_args = args.sample_args.replace("+", "-").split()
     perf_data = args.sample_basename
-    if count:
+    if count is not None:
         perf_data += ".%d" % count
     sperf = [perf, "record"] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
     cmd = " ".join(sperf)
     print(cmd)
-    if args.run_sample:
+    if args.run_sample and ret == 0:
         ret = os.system(cmd)
         if ret:
             print("Sampling failed")
             sys.exit(1)
         if not args.quiet:
-            print("Run `" + perf + " report %s%s' to show the sampling results" % (
-                ("-i %s" % perf_data) if perf_data != "perf_data" else "",
+            print("Run `" + perf + " report%s%s' to show the sampling results" % (
+                (" -i %s" % perf_data) if perf_data != "perf.data" else "",
                 " --no-branch-history" if "-b" in extra_args else ""))
 
 BOTTLENECK_LEVEL_INC = 1
@@ -2304,7 +2355,7 @@ def suggest_bottlenecks(runner):
         children = [x for x in children if x[:-1] not in args.nodes]
     if children:
         if not args.quiet:
-            print("Add%s --nodes '%s' for breakdown on the bottleneck%s." % (
+            print("Add%s --nodes '!%s,+MUX' for breakdown on the bottleneck%s." % (
                     "ing" if args.drilldown else "",
                     ",".join(children),
                     "s" if len(children) > 1 else ""))
@@ -2313,7 +2364,9 @@ def suggest_bottlenecks(runner):
                 args.nodes += ","
             else:
                 args.nodes = ""
-            args.nodes += ",".join(children)
+            if args.nodes == "" or args.nodes[0] != '!':
+                args.nodes = "!" + args.nodes
+            args.nodes += ",".join(children) + ",+MUX"
             return True
     return False
 
@@ -2328,15 +2381,16 @@ def do_xlsx(runner):
         names = ["program"]
         files = [out.logf.name]
     else:
-        names = ["socket", "global", "core", "thread"]
+        names = (["socket"] if args.per_socket else []) + ["global", "core", "thread"]
         files = [tl_output.output_name(args.output, p) for p in names]
 
     extrafiles = []
     extranames = []
+    charts = []
     if args.xnormalize:
         for j, n in zip(files, names):
             nname = j.replace(".csv", "-norm.csv")
-            ncmd = "%s %s/interval-normalize.py --error-exit < '%s' > '%s'" % (
+            ncmd = "%s %s/interval-normalize.py --normalize-cpu --error-exit < '%s' > '%s'" % (
                     sys.executable,
                     exe_dir(),
                     j,
@@ -2345,20 +2399,23 @@ def do_xlsx(runner):
                 print(ncmd)
             ret = os.system(ncmd)
             if ret:
-                print("interval-normalize failed", file=sys.stderr)
+                print("interval-normalize failed: %d" % ret, file=sys.stderr)
                 return ret
             extrafiles.append(nname)
             extranames.append("n" + n)
+            if args.xchart:
+                charts.append("n" + n)
 
-    def gen_arg(n, f):
-        return " --%s '%s'" % (n, f)
     cmd += " ".join(["--%s '%s'" % (n, f) for n, f in zip(names, files)])
-    cmd += " ".join(["--add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
+    cmd += " " + " ".join(["--add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
+    cmd += " " + " ".join(["--chart '%s'" % f for f in charts])
     cmd += " '%s'" % args.xlsx
     if not args.quiet:
         print(cmd)
     ret = os.system(cmd)
-    # XXX delete temp files
+    if not args.xkeep:
+        for fn in files + extrafiles:
+            os.remove(fn)
     return ret
 
 def sysctl(name):
@@ -2482,6 +2539,7 @@ else:
 
 version = model.version
 model.print_error = pe
+model.check_event = lambda ev: emap.getevent(ev) is not None
 model.Setup(runner)
 
 if args.gen_script:
@@ -2625,13 +2683,16 @@ def measure_and_sample(count):
             ret = 1
         print_summary(runner, out)
         runner.stat.compute_errors()
-        if ret:
-            break
         repeat = False
         if args.level < runner.max_node_level and runner.bottlenecks:
             repeat = suggest_bottlenecks(runner)
         if (args.show_sample or args.run_sample) and ret == 0:
-            do_sample(runner.sample_obj, rest, count, runner.full_olist)
+            do_sample(runner.sample_obj, rest, count, runner.full_olist, ret)
+        if ret >= 100 and ret <= 200 and repeat:
+            print("perf appears to have failed %d. not drilling down" % ret)
+            break
+        if count is not None:
+            count += 1
         if repeat:
             runner.reset()
             runner.olist = runner.full_olist
@@ -2640,15 +2701,16 @@ def measure_and_sample(count):
             runner.schedule()
         else:
             break
-    return ret
+    return ret, count
 
 if args.sample_repeat:
+    cnt = 1
     for j in range(args.sample_repeat):
-        ret = measure_and_sample(j + 1)
+        ret, cnt = measure_and_sample(cnt)
         if ret:
             break
 else:
-    ret = measure_and_sample(None)
+    ret, count = measure_and_sample(0 if args.drilldown else None)
 
 out.print_footer()
 out.flushfiles()

@@ -21,7 +21,7 @@ key = None
 c = csv.reader(args.file)
 wr = csv.writer(args.output)
 
-fields = dict()
+fields = collections.OrderedDict()
 util = collections.defaultdict(list)
 
 for t in c:
@@ -35,17 +35,19 @@ for t in c:
     else:
         fields[key] = [t]
     if t[2] == "CPU_Utilization":
-        util[t[1]].append(float(t[3]))
+        util[key].append(float(t[3]))
 
 final = []
 skipped = []
-for j in sorted(fields.keys()):
-    if "-T" not in j:
+for j in fields.keys():
+    if "-T" not in j and not j.startswith("CPU"):
         if "S" in j:
             final.append(j)
         continue
     core = re.sub(r'-T\d+', '', j)
-    utilization = (sum(util[j]) / len(util[j])) * 100.
+    utilization = 100
+    if len(util[j]) > 0:
+        utilization = (sum(util[j]) / len(util[j])) * 100.
     if utilization >= float(args.min_util):
         for k in fields[core] + fields[j]:
             wr.writerow(k)

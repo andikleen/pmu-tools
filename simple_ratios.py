@@ -4,10 +4,13 @@
 
 print_error = lambda msg: False
 version = "1.0"
+check_event = lambda ev: False
 
 # Constants
 
 PipelineWidth = 4
+
+uops_retired_slots = "UOPS_RETIRED.RETIRE_SLOTS"
 
 def CLKS(EV):
     return EV("CPU_CLK_UNHALTED.THREAD", 1)
@@ -21,7 +24,7 @@ def IPC(EV, level):
 
 # Uops Per Instruction
 def UPI(EV, level):
-    return EV("UOPS_RETIRED.RETIRE_SLOTS", level) / EV("INST_RETIRED.ANY", level)
+    return EV(uops_retired_slots, level) / EV("INST_RETIRED.ANY", level)
 
 # Average Frequency Utilization relative nominal frequency
 def TurboUtilization(EV, level):
@@ -55,7 +58,7 @@ categorized under the Bad Speculation category"""
     level = 1
     def compute(self, EV):
          try:
-             self.val = ( EV("UOPS_ISSUED.ANY", 1) - EV("UOPS_RETIRED.RETIRE_SLOTS", 1) + PipelineWidth * EV("INT_MISC.RECOVERY_CYCLES", 1) ) / SLOTS(EV)
+             self.val = ( EV("UOPS_ISSUED.ANY", 1) - EV(uops_retired_slots, 1) + PipelineWidth * EV("INT_MISC.RECOVERY_CYCLES", 1) ) / SLOTS(EV)
              self.thresh = self.val > 0.1
          except ZeroDivisionError:
              self.val = 0
@@ -87,7 +90,7 @@ eventually get retired."""
     level = 1
     def compute(self, EV):
          try:
-             self.val = EV("UOPS_RETIRED.RETIRE_SLOTS", 1) / SLOTS(EV)
+             self.val = EV(uops_retired_slots, 1) / SLOTS(EV)
              self.thresh = self.val > 0.7
          except ZeroDivisionError:
              self.val = 0
@@ -138,6 +141,10 @@ Average Frequency Utilization relative nominal frequency"""
 
 class Setup:
     def __init__(self, r):
+        if check_event("UOPS_RETIRED.SLOTS"):
+            global uops_retired_slots
+            uops_retired_slots = "UOPS_RETIRED.SLOTS"
+
         prev = None
         o = dict()
         n = FrontendBound() ; r.run(n)

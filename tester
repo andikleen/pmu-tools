@@ -55,6 +55,7 @@ checklist slm 100
 checklist bdw-de 100
 checklist bdw 100
 checklist skl 100
+checklist icl 100
 
 O=$(EVENTMAP=${cpus[skl]} $WRAP ./ocperf.py list | wc -l)
 E=$(EVENTMAP=${cpus[skl]} $WRAP ./ocperf.py list --experimental  | wc -l)
@@ -216,6 +217,17 @@ TOPOLOGY=top2$$ EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=
 
 checkp_record '{cpu/cpu_clk_unhalted.thread/,cpu/br_inst_retired.all_branches/}:S'  \
 	'{cpu/event=0x3c,umask=0x0,name=cpu_clk_unhalted_thread,period=2000003/,cpu/event=0xc4,umask=0x0,name=br_inst_retired_all_branches/}:S'
+
+export EVENTMAP=${cpus[skl]}
+checkp cpu_clk_unhalted.thread_p:os=yes /k
+checkp cpu_clk_unhalted.thread_p:os=no /u
+checkp cpu_clk_unhalted.thread_p:sup /k
+checkp cpu_clk_unhalted.thread_p:SUP /k
+checkp cpu_clk_unhalted.thread_any:anythr=no any=0
+checkp cpu_clk_unhalted.thread_any:anythr=yes any=1
+checkp cpu_clk_unhalted.thread_any:pdir /ppp
+checkp cpu_clk_unhalted.thread_any:precise=yes /pp
+
 trap "" ERR 0
 rm -f tlog$$ top2$$
 

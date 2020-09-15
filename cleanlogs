@@ -13,3 +13,4 @@ rm out*-{core,global,socket,thread}
 rm perf.data.*.old
 rm tlog[0-9]*
 rm tltest*_*
+rm perf.data*

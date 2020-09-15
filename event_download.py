@@ -111,13 +111,18 @@ def cpu_without_step(match):
     return "%s-%s-%s" % tuple(n[:3])
 
 allowed_chars = string.ascii_letters + '_-.' + string.digits
-def download(match, key=None, link=True):
+def download(match, key=None, link=True, onlyprint=False):
     match2 = cpu_without_step(match)
     found = 0
     dir = getdir()
     try:
-        getfile(modelpath, dir, "mapfile.csv")
-        models = open(os.path.join(dir, "mapfile.csv"))
+        mapfn = os.path.join(dir, "mapfile.csv")
+        if onlyprint and not os.path.exists(mapfn):
+            print("Download", mapfn, "first for --print")
+            return 0
+        if not onlyprint:
+            getfile(modelpath, dir, "mapfile.csv")
+        models = open(mapfn)
         for j in models:
             if j.startswith("Family-model"):
                 continue
@@ -143,6 +148,9 @@ def download(match, key=None, link=True):
                 os.remove(os.path.join(dir, fn))
             except OSError:
                 pass
+            if onlyprint:
+                print(os.path.join(dir, fn))
+                continue
             getfile(url, dir, fn)
             if link:
                 lname = re.sub(r'.*/', '', name)
@@ -157,7 +165,8 @@ def download(match, key=None, link=True):
                     print("Cannot link %s to %s:" % (name, lname), e, file=sys.stderr)
             found += 1
         models.close()
-        getfile(urlpath + "/readme.txt", dir, "readme.txt")
+        if not onlyprint:
+            getfile(urlpath + "/readme.txt", dir, "readme.txt")
     except URLError as e:
         print("Cannot access event server:", e, file=sys.stderr)
         print("""
@@ -172,10 +181,10 @@ To get events for all possible CPUs use:
         print("Cannot write events file:", e, file=sys.stderr)
     return found
 
-def download_current(link=False):
+def download_current(link=False, onlyprint=False):
     """Download JSON event list for current cpu.
        Returns >0 when a event list is found"""
-    return download(get_cpustr(), link=link)
+    return download(get_cpustr(), link=link, onlyprint=onlyprint)
 
 def eventlist_name(name=None, key="core"):
     if not name:
@@ -206,6 +215,8 @@ if __name__ == '__main__':
     p.add_argument('--verbose', '-v', help='Be verbose', action='store_true')
     p.add_argument('--mine', help='Print name of current CPU', action='store_true')
     p.add_argument('--link', help='Create links with the original event file name', action='store_true', default=True)
+    p.add_argument('--print', help='Print file names of all event files instead of downloading. Requires existing mapfile.csv.',
+                   dest='_print', action='store_true')
     p.add_argument('cpus', help='CPU identifiers to download', nargs='*')
     args = p.parse_args()
 
@@ -216,17 +227,17 @@ if __name__ == '__main__':
         sys.exit(0)
     d = getdir()
     if args.all:
-        found = download('*', link=args.link)
+        found = download('*', link=args.link, onlyprint=args._print)
     elif len(args.cpus) == 0:
-        found = download_current(link=args.link)
+        found = download_current(link=args.link, onlyprint=args._print)
     else:
         found = 0
         for j in args.cpus:
-            found += download(j, link=args.link)
+            found += download(j, link=args.link, onlyprint=args._print)
 
-    if found == 0:
-        print("Nothing found", file=sys.stderr)
+    if found == 0 and not args._print:
+        print("Nothing found", file=sys.stderr, onlyprint=args._print)
 
     el = eventlist_name()
-    if os.path.exists(el):
+    if os.path.exists(el) and not args._print:
         print("my event list", el)
