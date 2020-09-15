@@ -43,6 +43,7 @@ ap.add_argument('--perf', type=argparse.FileType('r'), help="toplev perf values 
 ap.add_argument('--cpuinfo', type=argparse.FileType('r'), help="cpuinfo file")
 ap.add_argument('--chart', help="add sheet with plots of normalized sheet. argument is normalied sheet name",
                 action="append")
+ap.add_argument('--no-summary', help='Do not generate summary charts', action='store_true')
 args = ap.parse_args()
 
 workbook = xlsxwriter.Workbook(args.xlsxfile, {'constant_memory': True})
@@ -92,6 +93,8 @@ def create_sheet(name, infh, delimiter=',', version=None):
         if row < 10:
             set_columns(worksheet, c, lengths)
         if not summary and len(c) > 0 and c[0] == "SUMMARY":
+            if args.no_summary:
+                continue
             rows[name] = row
             sname = name + " summary"
             worksheet = get_worksheet(sname)
