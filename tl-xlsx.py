@@ -163,7 +163,7 @@ def gen_chart(source):
             key = n[:n.rindex('.')] if '.' in n else prefix
             if key not in charts:
                 charts[key] = workbook.add_chart(
-                        {'type': 'area', 'subtype': 'percent_stacked' })
+                        {'type': 'column', 'subtype': 'percent_stacked' })
             chart = charts[key]
             chart.set_title({
                 'name': '%s Level %d %s' % (prefix, n.count('.') + 1,
