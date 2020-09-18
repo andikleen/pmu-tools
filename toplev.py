@@ -777,7 +777,7 @@ def raw_event(i, name="", period=False, nopebs=True):
             return "dummy"
         if i in fixed_counters:
             return fixed_counters[i]
-        if not cpu.ht or args.per_thread:
+        if not cpu.ht:
             i = i.replace(":percore", "")
         e = emap.getevent(i, nocheck=event_nocheck)
         if e is None:
@@ -2568,7 +2568,8 @@ elif cpu.cpu == "clx":
 elif cpu.cpu == "icl":
     import icl_client_ratios
     icl_client_ratios.smt_enabled = cpu.ht
-    smt_mode = cpu.ht
+    icl_client_ratios.topdown_use_fixed = os.path.exists(
+            "/sys/devices/cpu/events/topdown-fe-bound")
     model = icl_client_ratios
     core_domains = set(["CoreClocks", "CoreMetric"])
 elif cpu.cpu == "slm":
@@ -2665,7 +2666,7 @@ if ((args._global or args.per_socket or args.per_core or args.per_thread)
         rest = ["-a"] + rest
 
 full_system = False
-if not args.single_thread and cpu.ht:
+if not args.single_thread and smt_mode:
     if not args.quiet and not import_mode:
         print("Will measure complete system.")
     if smt_mode:
