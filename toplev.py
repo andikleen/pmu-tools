@@ -288,7 +288,7 @@ def event_group(evlist):
             continue
         g = list(itertools.takewhile(notuncore, evlist))
         e = ",".join(g)
-        if not args.no_group and needed_counters(g) <= cpu.counters and len(g) > 1:
+        if not args.no_group and needed_counters(g) <= cpu.counters and len(g) > 1 and not is_outgroup(g):
             e = "{%s}" % e
         l.append(e)
         evlist = evlist[len(g):]
@@ -796,10 +796,10 @@ def raw_event(i, name="", period=False, nopebs=True):
                 errata_events[orig_i] = e.errata
             else:
                 errata_warn_events[orig_i] = e.errata
-    if not i.startswith("cpu/") and not re.match(r'r[0-9a-f]+', i):
+    if not i.startswith("cpu/") and not i in ingroup_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
-        outgroup_events.add(i)
+        outgroup_events.add(add_filter_event(i))
     return i
 
 # generate list of converted raw events from events string
