@@ -1996,6 +1996,19 @@ class Runner:
 
     def add_duplicate(self, evnum, objl):
         evset = set(evnum)
+
+        # check if we can merge with the last group
+        if len(self.evgroups) > 0:
+            j = self.evgroups[-1]
+            base = self.evbases[-1]
+            if needed_counters(set(evnum) | set(j)) <= cpu.counters:
+                for k in evnum:
+                    if k not in j:
+                        j.append(k)
+                        self.evnum.append(k)
+                update_res_map(j, objl, base)
+                return True
+
         for j, base in zip(self.evgroups, self.evbases):
             # cannot add super sets, as that would need patching
             # up all indexes inbetween.
