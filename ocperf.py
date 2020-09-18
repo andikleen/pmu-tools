@@ -548,7 +548,6 @@ fixed_counters = {
     "inst_retired.any": (0xc0, 0, 0),
     "cpu_clk_unhalted.thread": (0x3c, 0, 0),
     "cpu_clk_unhalted.thread_any": (0x3c, 0, 1),
-    "topdown.slots": (0x00, 0x04, 0),
 }
 
 def update_ename(ev, name):
