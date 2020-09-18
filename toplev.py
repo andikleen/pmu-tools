@@ -62,6 +62,7 @@ fixed_to_num = {
     "cpu/event=0x0,umask=0x3/": 2,
     "cpu/event=0x0,umask=0x3,any=1/": 2,
     "slots": 3,
+    "topdown.slots": 3,
     "topdown-fe-bound": 100,
     "topdown-be-bound": 101,
     "topdown-bad-spec": 102,
@@ -782,7 +783,7 @@ def raw_event(i, name="", period=False, nopebs=True):
         i = e.output(noname=True, name=name, period=period, noexplode=True)
 
         emap.update_event(e.output(noname=True), e)
-        if e.counter not in cpu.standard_counters and not e.counter.startswith("Fixed"):
+        if e.counter not in cpu.standard_counters and not e.counter.startswith("Fixed") and not orig_i.startswith("UNC_"):
             # for now use the first counter only to simplify
             # the assignment. This is sufficient for current
             # CPUs

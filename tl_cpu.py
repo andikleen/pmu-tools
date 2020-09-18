@@ -166,9 +166,9 @@ class CPU:
                 self.standard_counters = ("0,1",)
             # when running in a hypervisor always assume worst case HT in on
             # also when CPUs are offline assume SMT is on
-            elif self.ht or self.hypervisor or (num_offline_cpus() > 0 and not nocheck):
+            elif self.ht or self.hypervisor or (num_offline_cpus() > 0 and not nocheck) or self.cpu == "icl":
                 if self.cpu == "icl" or (self.cpu == "simple" and self.realcpu == "icl"):
-                    self.counters = 4 # XXX fixme to 8, but 4 works for now
+                    self.counters = 8
                     self.standard_counters = ("0,1,2,3,4,5,6,7", "0,1,2,3", )
                 else:
                     self.counters = 4
@@ -176,6 +176,9 @@ class CPU:
                 self.counters = 8
             if not nocheck and reduced_counters():
                 self.counters -= 1
+        elif self.cpu == "icl":
+            self.standard_counters = ("0,1,2,3,4,5,6,7", "0,1,2,3", )
+
         self.sockets = len(sockets.keys())
         self.modelid = None
         mid = (self.model,)
