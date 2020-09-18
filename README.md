@@ -8,6 +8,21 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev was updated to Ahmad Yasin's/Anton Hanna's TMA 4.1
+  New Metrics:
+  - Re-arrange Retiring Level 2 into Light\_Operations & Heavy\_Operations. Light\_Operations replaces
+    the previous Base (or "General Retirement") while Heavy\_Operations is a superset of the
+    Microcode\_Sequencer node (that moves to Level 3)
+  - Mixing\_Vectors: hints on a pitfall when intermixing the newer AVX* with legacy SSE* vectors,
+    a tree node under Core Bound [SKL onwards]
+  Key Enhancements & fixes
+  - Tuning of Level 2 breakdown for Backend\_Bound, Frontend\_Bound (rollback FRONTEND\_RETIRED 2-events use) [SKL onwards]
+  - Improved branch misprediction related metrics to leverage a new PerfMon event [ICL onwards]
+  - Improved CORE\_CLKS & #Retire\_Slots-based metrics [ICL onwards]
+  - Adjusted cost of all nodes using MEM\_LOAD*RETIRED.* in case of shadow L1 d-cache misses
+  - renamed Frontend_ to FetchLatency/Bandwidth [all]
+  - Additional documentation/details to aid automated parsing in ‘For Tool Developers’.
+  - Other fixes including Thresholds, Tagging (e.g. $issueSnoops), Locate-with, Metric Group
 * toplev can now generate charts in xlsx files with the --xchart option.
 * interval-normalize has a new --normalize-cpu option to normalize multi CPU
   CSV files from toplev or perf
