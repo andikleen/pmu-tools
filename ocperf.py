@@ -259,6 +259,7 @@ class Event:
         self.errata = None
         self.counter = ""
         self.period = 0
+        self.pname = None
 
     # XXX return with pmu to be consistent with Uncore and fix callers
     def output_newstyle(self, extra="", noname=False, period=False, name="", noexplode=False):
@@ -269,7 +270,10 @@ class Event:
             extra = self.newextra + "," + extra
         else:
             extra = self.newextra
-        e = "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff, extra)
+        if self.pname:
+            e = self.pname
+        else:
+            e = "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff, extra)
         if version.has_name:
             if name:
                 e += ",name=" + name
@@ -290,12 +294,22 @@ class Event:
         extra = "".join(merge_extra(extra_set(self.extra), extra_set(flags)))
         extra, val = convert_extra(":" + extra, val, newe)
         if version.direct or use_raw:
-            ename = "r%x" % (val,)
+            if self.pname:
+                ename = self.pname
+            else:
+                ename = "r%x" % (val,)
             if extra:
                 ename += ":" + extra
             # XXX should error for extras that don't fit into raw
         else:
-            ename = "cpu/%s/" % (self.output_newstyle(extra=",".join(newe), noname=noname, period=period, name=name)) + extra
+            p = self.output_newstyle(extra=",".join(newe),
+                    noname=noname, period=period, name=name)
+            if self.pname:
+                ename = p
+                if extra:
+                    ename += ":" + extra
+            else:
+                ename = "cpu/%s/" % (p) + extra
         return ename
 
     def filter_qual(self):
@@ -807,14 +821,16 @@ class EmapNativeJSON(object):
                 pass
 
     def add_topdown(self):
-        def td_event(name, umask, desc, counter):
-            e = Event(name, umask, desc)
+        def td_event(name, pname, desc, counter):
+            e = Event(name, 0, desc)
             e.counter = counter
+            e.pname = pname
             self.add_event(e)
-        td_event("perf_metrics.retiring", 0x1000, "Number of slots the pipeline was frontend bound.", "32")
-        td_event("perf_metrics.bad_speculation", 0x1100, "Number of slots the pipeline was doing bad speculation.", "33")
-        td_event("perf_metrics.frontend_bound", 0x1200, "Number of slots the pipeline was frontend bound.", "34")
-        td_event("perf_metrics.backend_bound", 0x1300, "Number of slots the pipeline was backend bound.", "35")
+        td_event("perf_metrics.retiring", "topdown-retiring", "Number of slots the pipeline was frontend bound.", "32")
+        td_event("perf_metrics.bad_speculation", "topdown-bad-spec", "Number of slots the pipeline was doing bad speculation.", "33")
+        td_event("perf_metrics.frontend_bound", "topdown-fe-bound", "Number of slots the pipeline was frontend bound.", "34")
+        td_event("perf_metrics.backend_bound", "topdown-be-bound", "Number of slots the pipeline was backend bound.", "35")
+        td_event("topdown.slots", "slots", "Number of slots", "36")
 
 def handle_io_error(f, name, warn=False):
     try:
