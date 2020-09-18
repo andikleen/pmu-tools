@@ -797,7 +797,7 @@ def raw_event(i, name="", period=False, nopebs=True):
                 errata_events[orig_i] = e.errata
             else:
                 errata_warn_events[orig_i] = e.errata
-    if not i.startswith("cpu/") and not i in ingroup_events:
+    if not i.startswith("cpu/") and i not in ingroup_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
         outgroup_events.add(add_filter_event(i))
