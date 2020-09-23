@@ -1706,8 +1706,6 @@ def node_filter(obj, default, sibmatch):
                 i += 1
             # siblings only for direct matches
             if match(j[i:], False):
-                if re.match(r'.*\*(/[0-9]+)?', j) and has(obj, 'sibling') and obj.sibling:
-                    sibmatch |= set(obj.sibling)
                 return True
     return default
 
