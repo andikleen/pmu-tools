@@ -539,6 +539,7 @@ if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
 
 forced_per_socket = False
+forced_per_core = False
 if args.xchart:
     args.xnormalize = True
     args.verbose = True
@@ -566,6 +567,8 @@ if args.xlsx:
         args.split_output = True
         if args.per_socket:
             forced_per_socket = True
+        if args.per_core:
+            forced_per_core = True
         args.per_socket = True
         args.per_core = True
         args.no_aggr = True
@@ -646,6 +649,8 @@ cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
 
 if args.xlsx and not forced_per_socket and cpu.sockets == 1:
     args.per_socket = False
+if args.xlsx and not forced_per_core and cpu.threads == 1:
+    args.per_core = False
 
 if cpu.hypervisor:
     feat.max_precise = 0
@@ -2398,7 +2403,9 @@ def do_xlsx(runner):
         names = ["program"]
         files = [out.logf.name]
     else:
-        names = (["socket"] if args.per_socket else []) + ["global", "core", "thread"]
+        names = ((["socket"] if args.per_socket else []) +
+                 (["core"] if args.per_core else []) +
+                 ["global", "thread"])
         files = [tl_output.output_name(args.output, p) for p in names]
 
     extrafiles = []
