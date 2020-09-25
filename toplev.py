@@ -1327,8 +1327,8 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                         rev = defaultdict(list)
                         valstats = defaultdict(list)
                     prev_interval = interval
-            else:
-                # these are likely summary lines printed by v5.8 perf stat
+            elif l.count(';') < 6:
+                # these are likely bogus summary lines printed by v5.8 perf stat
                 # just ignore
                 continue
 
