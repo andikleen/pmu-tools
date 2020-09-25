@@ -802,7 +802,7 @@ def raw_event(i, name="", period=False, nopebs=True):
                 errata_events[orig_i] = e.errata
             else:
                 errata_warn_events[orig_i] = e.errata
-    if not i.startswith("cpu/") and not i in ingroup_events:
+    if not i.startswith("cpu/") and i not in ingroup_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
         outgroup_events.add(add_filter_event(i))
@@ -1714,8 +1714,6 @@ def node_filter(obj, default, sibmatch):
                 i += 1
             # siblings only for direct matches
             if match(j[i:], False):
-                if re.match(r'.*\*(/[0-9]+)?', j) and has(obj, 'sibling') and obj.sibling:
-                    sibmatch |= set(obj.sibling)
                 return True
     return default
 
