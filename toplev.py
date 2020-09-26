@@ -395,6 +395,7 @@ g.add_argument('--power', help='Display power metrics', action='store_true')
 g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, '
                'comma separated list, wildcards allowed, add * to include all children/siblings, '
                'add /level to specify highest level node to match, '
+               'add ^ to match related siblings and metrics, '
                'start with ! to only include specified nodes)')
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
@@ -1699,6 +1700,8 @@ def node_filter(obj, default, sibmatch):
                     fnmatch(fname, "*" + m))
 
         def match(m, checklevel=True):
+            if m.endswith("^"):
+                m = m[:-1]
             r = re.match("(.*)/([0-9]+)", m)
             if r:
                 level = int(r.group(2))
@@ -1721,7 +1724,7 @@ def node_filter(obj, default, sibmatch):
             elif j[0] == '+':
                 i += 1
             if match(j[i:], False):
-                if j.endswith("^") and safe_ref(obj, 'sibling'):
+                if j.endswith("^") and 'sibling' in obj.__dict__ and obj.sibling:
                     sibmatch |= set(obj.sibling)
                 return True
     return default
@@ -1944,6 +1947,8 @@ class Runner:
                 s = s[1:]
             if "/" in s:
                 s = s[:s.index("/")]
+            if s.endswith("^"):
+                s = s[:-1]
             return s
 
         if nodesarg[:1] == "!":
@@ -2377,9 +2382,14 @@ def do_sample(sample_obj, rest, count, full_olist, ret):
 BOTTLENECK_LEVEL_INC = 1
 
 def suggest_bottlenecks(runner):
-    children = ["+%s*/%d" % (o.name, o.level + BOTTLENECK_LEVEL_INC)
-                    for o in runner.bottlenecks
-                    if o.children]
+    def gen_bn(o):
+        if o.children:
+            return "+%s*/%d" % (o.name, o.level + BOTTLENECK_LEVEL_INC)
+        if 'sibling' in o.__dict__ and o.sibling:
+            return "+%s^" % full_name(o)
+        return None
+    children = [gen_bn(o) for o in runner.bottlenecks]
+    children = filter(None, children)
     if children and args.nodes:
         children = [x for x in children if x[:-1] not in args.nodes]
     if children:
