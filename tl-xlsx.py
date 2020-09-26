@@ -49,6 +49,8 @@ args = ap.parse_args()
 workbook = xlsxwriter.Workbook(args.xlsxfile, {'constant_memory': True})
 bold = workbook.add_format({'bold': True})
 valueformat = workbook.add_format({'num_format': '###,###,###,###,##0.0'})
+valueformat_bold = workbook.add_format({'num_format': '###,###,###,###,##0.0',
+    'bold': True})
 #valueformat.set_num_format(1)
 
 def set_columns(worksheet, c, lengths):
@@ -115,14 +117,19 @@ def create_sheet(name, infh, delimiter=',', version=None):
             row = rows[name]
         c = map(to_float, c)
         worksheet.write_row(row, 0, c)
+        isbn = False
         if "Bottleneck" in title:
             bn = title["Bottleneck"]
             if len(c) > bn and c[bn] == "<==":
                 worksheet.write(row, title["Area"], c[title["Area"]], bold)
                 worksheet.write(row, title["Value"], c[title["Value"]], bold)
+                if "CPUs" in title:
+                    worksheet.write(row, title["CPUs"], c[title["CPUs"]], bold)
+                isbn = True
                 worksheet.write(row, bn, c[bn], bold)
         if "Value" in title and len(c) > title["Value"] and isinstance(c[title["Value"]], float):
-            worksheet.write_number(row, title["Value"], c[title["Value"]], valueformat)
+            worksheet.write_number(row, title["Value"], c[title["Value"]],
+                                   valueformat_bold if isbn else valueformat)
         elif "0" in title:
             num = 0
             while num in title:
