@@ -834,6 +834,11 @@ def pwrap_not_quiet(s, linelen=70, indent=""):
 def has(obj, name):
     return name in obj.__class__.__dict__
 
+def safe_ref(obj, name):
+    if has(obj, name):
+        return obj.__class__.__dict__[name]
+    return None
+
 def flatten(x):
     return list(itertools.chain(*x))
 
@@ -1450,7 +1455,7 @@ def ev_append(ev, level, obj):
         return 99
     if not (ev, level, obj.name) in obj.evlevels:
         obj.evlevels.append((ev, level, obj.name))
-    if has(obj, 'nogroup') and obj.nogroup:
+    if safe_ref(obj, 'nogroup'):
         outgroup_events.add(ev.lower())
     return 99
 
@@ -1491,9 +1496,7 @@ def event_rmap(e):
 
 def map_fields(obj, fields):
     def map_field(name):
-        if has(obj, name):
-            return obj.name
-        return None
+        return safe_ref(obj, name)
     return list(map(map_field, fields))
 
 # compare events to handle name aliases
@@ -1636,13 +1639,13 @@ def full_name(obj):
     return name
 
 def package_node(obj):
-    return has(obj, 'domain') and obj.domain in ("Package", "SystemMetric")
+    return safe_ref(obj, 'domain') in ("Package", "SystemMetric")
 
 def not_package_node(obj):
     return not package_node(obj)
 
 def core_node(obj):
-    return has(obj, 'domain') and obj.domain in core_domains
+    return safe_ref(obj, 'domain') in core_domains
 
 def thread_node(obj):
     if package_node(obj):
@@ -1718,8 +1721,9 @@ def node_filter(obj, default, sibmatch):
                 continue
             elif j[0] == '+':
                 i += 1
-            # siblings only for direct matches
             if match(j[i:], False):
+                if j.endswith("^") and safe_ref(obj, 'sibling'):
+                    sibmatch |= set(obj.sibling)
                 return True
     return default
 
@@ -1899,7 +1903,7 @@ class Runner:
         parents = [get_parents(x) for x in add_obj]
         if add_obj:
             for o in self.olist:
-                if not has(o, 'sibling') or o.sibling is None:
+                if safe_ref(o, 'sibling') is None:
                     continue
                 m = set(o.sibling) & add_obj
                 for s in m:
@@ -1911,7 +1915,7 @@ class Runner:
         def want_node(obj):
             if args.reduced and has(obj, 'server') and not obj.server:
                 return False
-            if args.no_uncore and has(obj, 'area') and obj.area == "Info.System":
+            if args.no_uncore and safe_ref(obj, 'area') == "Info.System":
                 return False
             want = ((obj.metric and args.metrics) or
                     (('force_metric' in obj.__dict__) and obj.force_metric) or
@@ -2223,7 +2227,7 @@ class Runner:
         if bn:
             self.bottlenecks.add(bn)
 
-        if has(out, 'logf') and out.logf == sys.stderr:
+        if safe_ref(out, 'logf') == sys.stderr:
             out.logf.flush()
 
         # determine all objects to print
