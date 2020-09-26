@@ -2644,6 +2644,11 @@ if args.nodes:
 runner.setup_children()
 runner.filter_nodes()
 
+if smt_mode and not os.getenv('FORCEHT'):
+    # do not need SMT mode if no objects have Core scope
+    if not any(map(core_node, runner.olist)):
+        smt_mode = False
+
 if args.per_socket and not smt_mode and "-A" not in rest:
     rest = ["--per-socket"] + rest
 if args.per_core and not smt_mode and "-A" not in rest:
