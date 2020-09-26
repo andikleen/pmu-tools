@@ -563,11 +563,11 @@ if args.xlsx:
     if not args.interval:
         args.interval = 1000
     args.csv = ','
-    xlsx_base = args.xlsx.replace(".xlsx", ".csv")
-    args.valcsv = xlsx_base.replace(".", "-valcsv.")
+    xlsx_base = re.sub(r'\.xlsx$', '.csv', args.xlsx)
+    args.valcsv = re.sub(r'\.csv$', '-valcsv.csv', xlsx_base)
     args.output = xlsx_base
     args.summary = True
-    args.perf_output = xlsx_base.replace(".", "-perf.")
+    args.perf_output = re.sub(r'\.csv$', '-perf.csv', xlsx_base)
     if not args.single_thread:
         args.per_thread = True
         args.split_output = True
