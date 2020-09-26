@@ -11,6 +11,16 @@
 # more details.
 #
 # toplev CPU detection
+
+#
+# Environment variables to override (mainly for testing):
+# FORCECPU=cpu     Force CPU type (e.g. skl). Also --force-cpu
+# FORCECOUNTERS=n  Force number of generic counters
+# FORCEHT=0/1      Force SMT mode
+# HYPERVISOR=0/1   Force hypervisor mode (also --force-hypervisor)
+# CPUINFO=file     Read cpu information from file instead of /proc/cpuinfo. Also --force-cpuinfo
+#
+
 from collections import defaultdict, Counter
 import os
 import re

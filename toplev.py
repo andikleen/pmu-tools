@@ -18,6 +18,12 @@
 # Handles a variety of perf and kernel versions, but older ones have various
 # limitations.
 
+# Environment variables for overrides (see also tl_cpu/ocperf):
+# TOPOLOGY=file     Read sysfs topology from file. Also --force-topology
+# PERF=exe          Force perf binary to run
+# FORCE_NMI_WATCHDOG=1  Force NMI watchdog mode
+# KERNEL_VERSION=...    Force kernel version (e.g. 5.0)
+
 from __future__ import print_function
 import sys, os, re, itertools, textwrap, platform, pty, subprocess
 import argparse, time, types, csv, copy
