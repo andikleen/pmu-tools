@@ -300,7 +300,8 @@ def event_group(evlist):
     return ",".join(l)
 
 def exe_dir():
-    d = os.path.dirname(sys.argv[0])
+    d = os.path.realpath(sys.argv[0])
+    d = os.path.dirname(d)
     if d:
         return d
     return "."
