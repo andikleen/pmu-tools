@@ -284,21 +284,19 @@ def needed_counters(evlist, nolimit=False):
 
 def event_group(evlist):
     evlist = add_filter(evlist)
-    # keep uncore events outside groups for now
-    def notuncore(ev):
-        return not ev.startswith("uncore_")
     l = []
-    while len(evlist) > 0:
-        if not notuncore(evlist[0]):
-            l.append(evlist[0])
-            evlist = evlist[1:]
-            continue
-        g = list(itertools.takewhile(notuncore, evlist))
-        e = ",".join(g)
-        if not args.no_group and needed_counters(g) <= cpu.counters and len(g) > 1 and not is_outgroup(g):
-            e = "{%s}" % e
-        l.append(e)
-        evlist = evlist[len(g):]
+    for is_og, g in itertools.groupby(evlist, lambda x: x in outgroup_events):
+        if is_og or args.no_group:
+            l += g
+        else:
+            g = list(g)
+            e = ",".join(g)
+            if needed_counters(g) <= cpu.counters:
+                e = "{%s}" % e
+            else:
+                # the scheduler should have avoided that
+                print("group", e, " does not fit in pmu", file=sys.stderr)
+            l.append(e)
     return ",".join(l)
 
 def exe_dir():
