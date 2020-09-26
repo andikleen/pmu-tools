@@ -2382,10 +2382,12 @@ def suggest_bottlenecks(runner):
     if children and args.nodes:
         children = [x for x in children if x[:-1] not in args.nodes]
     if children:
+        mux = ",+MUX" if not (args.metrics or args.all) and (args.nodes is None or "MUX" not in args.nodes) else ""
         if not args.quiet:
-            print("Add%s --nodes '!%s,+MUX' for breakdown on the bottleneck%s." % (
+            print("Add%s --nodes '!%s%s' for breakdown on the bottleneck%s." % (
                     "ing" if args.drilldown else "",
                     ",".join(children),
+                    mux,
                     "s" if len(children) > 1 else ""))
         if args.drilldown:
             if args.nodes:
@@ -2394,7 +2396,7 @@ def suggest_bottlenecks(runner):
                 args.nodes = ""
             if args.nodes == "" or args.nodes[0] != '!':
                 args.nodes = "!" + args.nodes
-            args.nodes += ",".join(children) + ",+MUX"
+            args.nodes += ",".join(children) + mux
             return True
     return False
 
