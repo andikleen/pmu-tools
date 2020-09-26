@@ -586,14 +586,14 @@ if args.no_aggr:
 if args.valcsv:
     try:
         args.valcsv = flex_open_w(args.valcsv)
-    except IOError:
-        sys.exit("Cannot open valcsv file")
+    except IOError as e:
+        sys.exit("Cannot open valcsv file %s: %s" % (args.valcsv, e))
 
 if args.perf_output:
     try:
         args.perf_output = flex_open_w(args.perf_output)
-    except IOError:
-        sys.exit("Cannot open perf output file")
+    except IOError as e:
+        sys.exit("Cannot open perf output file %s: %s" % (args.perf_output, e))
 
 if args.all:
     args.tsx = True
