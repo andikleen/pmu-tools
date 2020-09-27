@@ -3707,3 +3707,8 @@ class Setup:
         o["Serializing_Operation"].sibling = (o["MS_Switches"],)
         o["Ports_Utilized_1"].sibling = (o["L1_Bound"],)
         o["Microcode_Sequencer"].sibling = (o["MS_Switches"],)
+        o["Mispredictions"].sibling = (o["Mispredicts_Resteers"], o["Branch_Mispredicts"],)
+        o["IpTB"].sibling = (o["Fetch_Bandwidth"],)
+        o["Branch_Misprediction_Cost"].sibling = (o["Mispredicts_Resteers"], o["Branch_Mispredicts"],)
+        o["IpMispredict"].sibling = (o["Mispredicts_Resteers"], o["Branch_Mispredicts"],)
+        o["DRAM_BW_Use"].sibling = (o["FB_Full"], o["SQ_Full"], o["MEM_Bandwidth"],)

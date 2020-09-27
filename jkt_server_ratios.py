@@ -1646,3 +1646,4 @@ class Setup:
 
         o["MS_Switches"].sibling = (o["Microcode_Sequencer"],)
         o["Microcode_Sequencer"].sibling = (o["MS_Switches"],)
+        o["DRAM_BW_Use"].sibling = (o["MEM_Bandwidth"],)

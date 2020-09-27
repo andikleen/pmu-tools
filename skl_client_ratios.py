@@ -3822,3 +3822,8 @@ class Setup:
         o["Ports_Utilized_1"].sibling = (o["L1_Bound"],)
         o["Port_4"].sibling = (o["Split_Stores"],)
         o["Microcode_Sequencer"].sibling = (o["MS_Switches"],)
+        o["Mispredictions"].sibling = (o["Mispredicts_Resteers"], o["Branch_Mispredicts"],)
+        o["IpTB"].sibling = (o["Fetch_Bandwidth"],)
+        o["Branch_Misprediction_Cost"].sibling = (o["Mispredicts_Resteers"], o["Branch_Mispredicts"],)
+        o["IpMispredict"].sibling = (o["Mispredicts_Resteers"], o["Branch_Mispredicts"],)
+        o["DRAM_BW_Use"].sibling = (o["FB_Full"], o["SQ_Full"], o["MEM_Bandwidth"],)
