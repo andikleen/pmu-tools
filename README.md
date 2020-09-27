@@ -359,12 +359,14 @@ General operation:
                         same /proc/cpuinfo, same topology, unless overriden
   --gen-script          Generate script to collect perfmon information for
                         --import later
+  --drilldown           Automatically rerun to get more details on bottleneck
 
 Measurement filtering:
   --kernel              Only measure kernel code
   --user                Only measure user code
   --core CORE           Limit output to cores. Comma list of Sx-Cx-Tx. All
                         parts optional.
+  --no-aggr, -A         Measure every CPU
 
 Select events:
   --level LEVEL, -l LEVEL
@@ -377,7 +379,11 @@ Select events:
   --frequency           Measure frequency
   --power               Display power metrics
   --nodes NODES         Include or exclude nodes (with + to add, -|^ to
-                        remove, comma separated list, wildcards allowed)
+                        remove, comma separated list, wildcards allowed, add *
+                        to include all children/siblings, add /level to
+                        specify highest level node to match, add ^ to match
+                        related siblings and metrics, start with ! to only
+                        include specified nodes)
   --reduced             Use reduced server subset of nodes/metrics
   --metric-group METRIC_GROUP
                         Add (+) or remove (-|^) metric groups of metrics,
@@ -406,7 +412,8 @@ Output:
   --verbose, -v         Print all results even when below threshold or
                         exceeding boundaries. Note this can result in bogus
                         values, as the TopDown methodology relies on
-                        thresholds to correctly characterize workloads.
+                        thresholds to correctly characterize workloads. Values
+                        not crossing threshold are marked with <.
   --csv CSV, -x CSV     Enable CSV mode with specified delimeter
   --output OUTPUT, -o OUTPUT
                         Set output file
@@ -423,9 +430,14 @@ Output:
   --no-area             Hide area column
   --perf-output PERF_OUTPUT
                         Save perf stat output in specified file
+  --no-perf             Don't print perf command line
+  --print               Only print perf command line. Don't run
+  --idle-threshold IDLE_THRESHOLD
+                        Hide idle CPUs (default <5% of busiest if not CSV,
+                        specify percent)
 
 Environment:
-  --force-cpu {snb,jkt,ivb,ivt,hsw,hsx,slm,bdw,bdx,skl,knl,skx,clx,icl}
+  --force-cpu {snb,jkt,ivb,ivt,hsw,hsx,slm,bdw,bdx,simple,skl,knl,skx,clx,icl}
                         Force CPU type
   --force-topology findsysoutput
                         Use specified topology file (find /sys/devices)
@@ -442,6 +454,15 @@ Additional information:
   --valcsv VALCSV, -V VALCSV
                         Write raw counter values into CSV file
   --stats               Show statistics on what events counted
+
+xlsx output:
+  --xlsx XLSX           Generate xlsx spreadsheet output with data for
+                        socket/global/thread/core/summary/raw views with 1s
+                        interval. Add --single-thread to only get program
+                        output.
+  --xnormalize          Add extra sheets with normalized data in xlsx files
+  --xchart              Chart data in xlsx files
+  --xkeep               Keep temporary CSV files
 
 Sampling:
   --show-sample         Show command line to rerun workload with sampling
