@@ -58,9 +58,10 @@ class ComputeStat:
             if len(referenced) != len(r) and not self.quiet:
                 dummies = set([i for i, d in enumerate(evnum) if d == "dummy"])
                 notr = set(range(len(r))) - referenced - dummies
-                print("%d results not referenced: " % (len(notr)),
-                      " ".join(["%d" % x for x in sorted(notr)]),
-                      file=sys.stderr)
+                if notr:
+                    print("%d results not referenced: " % (len(notr)),
+                          " ".join(["%d" % x for x in sorted(notr)]),
+                          file=sys.stderr)
 
     def compute_errors(self):
         if self.errcount > 0 and self.errors != self.prev_errors:
