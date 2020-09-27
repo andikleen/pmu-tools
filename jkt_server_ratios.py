@@ -217,6 +217,20 @@ class Frontend_Bound:
     name = "Frontend_Bound"
     domain = "Slots"
     area = "FE"
+    level = 1
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    server = False
+    metricgroup = ['TopDownL1']
+    def compute(self, EV):
+        try:
+            self.val = EV("IDQ_UOPS_NOT_DELIVERED.CORE", 1) / SLOTS(self, EV, 1)
+            self.thresh = (self.val > 0.2)
+        except ZeroDivisionError:
+            handle_error(self, "Frontend_Bound zero division")
+        return self.val
     desc = """
 This category represents fraction of slots where the
 processor's Frontend undersupplies its Backend. Frontend
@@ -232,32 +246,12 @@ no Backend stall; i.e. bubbles where Frontend delivered no
 uops while Backend could have accepted them. For example;
 stalls due to instruction-cache misses would be categorized
 under Frontend Bound."""
-    level = 1
-    htoff = False
-    sample = []
-    errcount = 0
-    sibling = None
-    server = False
-    metricgroup = ['TopDownL1']
-    def compute(self, EV):
-        try:
-            self.val = EV("IDQ_UOPS_NOT_DELIVERED.CORE", 1) / SLOTS(self, EV, 1)
-            self.thresh = (self.val > 0.2)
-        except ZeroDivisionError:
-            handle_error(self, "Frontend_Bound zero division")
-        return self.val
+
 
 class Fetch_Latency:
     name = "Fetch_Latency"
     domain = "Slots"
     area = "FE"
-    desc = """
-This metric represents fraction of slots the CPU was stalled
-due to Frontend latency issues.  For example; instruction-
-cache misses; iTLB misses or fetch stalls after a branch
-misprediction are categorized under Frontend Latency. In
-such cases; the Frontend eventually delivers no uops for
-some period."""
     level = 2
     htoff = False
     sample = ['RS_EVENTS.EMPTY_END']
@@ -272,20 +266,19 @@ some period."""
         except ZeroDivisionError:
             handle_error(self, "Fetch_Latency zero division")
         return self.val
+    desc = """
+This metric represents fraction of slots the CPU was stalled
+due to Frontend latency issues.  For example; instruction-
+cache misses; iTLB misses or fetch stalls after a branch
+misprediction are categorized under Frontend Latency. In
+such cases; the Frontend eventually delivers no uops for
+some period."""
+
 
 class ITLB_Misses:
     name = "ITLB_Misses"
     domain = "Clocks"
     area = "FE"
-    desc = """
-This metric represents fraction of cycles the CPU was
-stalled due to Instruction TLB (ITLB) misses.. Consider
-large 2M pages for code (selectively prefer hot large-size
-function, due to limited 2M entries). Linux options:
-standard binaries use libhugetlbfs; Hfsort.. https://github.
-com/libhugetlbfs/libhugetlbfs;https://research.fb.com/public
-ations/optimizing-function-placement-for-large-scale-data-
-center-applications-2/"""
     level = 3
     htoff = False
     sample = ['ITLB_MISSES.WALK_COMPLETED']
@@ -300,19 +293,21 @@ center-applications-2/"""
         except ZeroDivisionError:
             handle_error(self, "ITLB_Misses zero division")
         return self.val
+    desc = """
+This metric represents fraction of cycles the CPU was
+stalled due to Instruction TLB (ITLB) misses.. Consider
+large 2M pages for code (selectively prefer hot large-size
+function, due to limited 2M entries). Linux options:
+standard binaries use libhugetlbfs; Hfsort.. https://github.
+com/libhugetlbfs/libhugetlbfs;https://research.fb.com/public
+ations/optimizing-function-placement-for-large-scale-data-
+center-applications-2/"""
+
 
 class Branch_Resteers:
     name = "Branch_Resteers"
     domain = "Clocks_Estimated"
     area = "FE"
-    desc = """
-This metric represents fraction of cycles the CPU was
-stalled due to Branch Resteers. Branch Resteers estimates
-the Frontend delay in fetching operations from corrected
-path; following all sorts of miss-predicted branches. For
-example; branchy code with lots of miss-predictions might
-get categorized under Branch Resteers. Note the value of
-this node may overlap with its siblings."""
     level = 3
     htoff = False
     sample = ['BR_MISP_RETIRED.ALL_BRANCHES:pp']
@@ -327,24 +322,20 @@ this node may overlap with its siblings."""
         except ZeroDivisionError:
             handle_error(self, "Branch_Resteers zero division")
         return self.val
+    desc = """
+This metric represents fraction of cycles the CPU was
+stalled due to Branch Resteers. Branch Resteers estimates
+the Frontend delay in fetching operations from corrected
+path; following all sorts of miss-predicted branches. For
+example; branchy code with lots of miss-predictions might
+get categorized under Branch Resteers. Note the value of
+this node may overlap with its siblings."""
+
 
 class DSB_Switches:
     name = "DSB_Switches"
     domain = "Clocks"
     area = "FE"
-    desc = """
-This metric represents fraction of cycles the CPU was
-stalled due to switches from DSB to MITE pipelines. The DSB
-(decoded i-cache; introduced with the Sandy Bridge
-microarchitecture) pipeline has shorter latency and
-delivered higher bandwidth than the MITE (legacy instruction
-decode pipeline). Switching between the two pipelines can
-cause penalties. This metric estimates when such penalty can
-be exposed. Optimizing for better DSB hit rate may be
-considered.. See section 'Optimization for Decoded Icache'
-in Optimization Manual:.
-http://www.intel.com/content/www/us/en/architecture-and-
-technology/64-ia-32-architectures-optimization-manual.html"""
     level = 3
     htoff = False
     sample = []
@@ -359,16 +350,25 @@ technology/64-ia-32-architectures-optimization-manual.html"""
         except ZeroDivisionError:
             handle_error(self, "DSB_Switches zero division")
         return self.val
+    desc = """
+This metric represents fraction of cycles the CPU was
+stalled due to switches from DSB to MITE pipelines. The DSB
+(decoded i-cache; introduced with the Sandy Bridge
+microarchitecture) pipeline has shorter latency and
+delivered higher bandwidth than the MITE (legacy instruction
+decode pipeline). Switching between the two pipelines can
+cause penalties. This metric estimates when such penalty can
+be exposed. Optimizing for better DSB hit rate may be
+considered.. See section 'Optimization for Decoded Icache'
+in Optimization Manual:.
+http://www.intel.com/content/www/us/en/architecture-and-
+technology/64-ia-32-architectures-optimization-manual.html"""
+
 
 class LCP:
     name = "LCP"
     domain = "Clocks"
     area = "FE"
-    desc = """
-This metric represents fraction of cycles CPU was stalled
-due to Length Changing Prefixes (LCPs). Using proper
-compiler flags or Intel Compiler by default will certainly
-avoid this."""
     level = 3
     htoff = False
     sample = []
@@ -383,24 +383,17 @@ avoid this."""
         except ZeroDivisionError:
             handle_error(self, "LCP zero division")
         return self.val
+    desc = """
+This metric represents fraction of cycles CPU was stalled
+due to Length Changing Prefixes (LCPs). Using proper
+compiler flags or Intel Compiler by default will certainly
+avoid this."""
+
 
 class MS_Switches:
     name = "MS_Switches"
     domain = "Clocks"
     area = "FE"
-    desc = """
-This metric estimates the fraction of cycles when the CPU
-was stalled due to switches of uop delivery to the Microcode
-Sequencer (MS). Commonly used instructions are optimized for
-delivery by the DSB (decoded i-cache) or MITE (legacy
-instruction decode) pipelines. Certain operations cannot be
-handled natively by the execution pipeline; and must be
-performed by microcode (small programs injected into the
-execution stream). Switching to the MS too often can
-negatively impact performance. The MS is designated to
-deliver long uop flows required by CISC instructions like
-CPUID; or uncommon conditions like Floating Point Assists
-when dealing with Denormals."""
     level = 3
     htoff = False
     sample = ['IDQ.MS_SWITCHES']
@@ -415,19 +408,25 @@ when dealing with Denormals."""
         except ZeroDivisionError:
             handle_error(self, "MS_Switches zero division")
         return self.val
+    desc = """
+This metric estimates the fraction of cycles when the CPU
+was stalled due to switches of uop delivery to the Microcode
+Sequencer (MS). Commonly used instructions are optimized for
+delivery by the DSB (decoded i-cache) or MITE (legacy
+instruction decode) pipelines. Certain operations cannot be
+handled natively by the execution pipeline; and must be
+performed by microcode (small programs injected into the
+execution stream). Switching to the MS too often can
+negatively impact performance. The MS is designated to
+deliver long uop flows required by CISC instructions like
+CPUID; or uncommon conditions like Floating Point Assists
+when dealing with Denormals."""
+
 
 class Fetch_Bandwidth:
     name = "Fetch_Bandwidth"
     domain = "Slots"
     area = "FE"
-    desc = """
-This metric represents fraction of slots the CPU was stalled
-due to Frontend bandwidth issues.  For example;
-inefficiencies at the instruction decoders; or code
-restrictions for caching in the DSB (decoded uops cache) are
-categorized under Frontend Bandwidth. In such cases; the
-Frontend typically delivers non-optimal amount of uops to
-the Backend (less than four)."""
     level = 2
     htoff = False
     sample = []
@@ -442,20 +441,20 @@ the Backend (less than four)."""
         except ZeroDivisionError:
             handle_error(self, "Fetch_Bandwidth zero division")
         return self.val
+    desc = """
+This metric represents fraction of slots the CPU was stalled
+due to Frontend bandwidth issues.  For example;
+inefficiencies at the instruction decoders; or code
+restrictions for caching in the DSB (decoded uops cache) are
+categorized under Frontend Bandwidth. In such cases; the
+Frontend typically delivers non-optimal amount of uops to
+the Backend (less than four)."""
+
 
 class Bad_Speculation:
     name = "Bad_Speculation"
     domain = "Slots"
     area = "BAD"
-    desc = """
-This category represents fraction of slots wasted due to
-incorrect speculations. This include slots used to issue
-uops that do not eventually get retired and slots for which
-the issue-pipeline was blocked due to recovery from earlier
-incorrect speculation. For example; wasted work due to miss-
-predicted branches are categorized under Bad Speculation
-category. Incorrect data speculation followed by Memory
-Ordering Nukes is another example."""
     level = 1
     htoff = False
     sample = []
@@ -470,22 +469,21 @@ Ordering Nukes is another example."""
         except ZeroDivisionError:
             handle_error(self, "Bad_Speculation zero division")
         return self.val
+    desc = """
+This category represents fraction of slots wasted due to
+incorrect speculations. This include slots used to issue
+uops that do not eventually get retired and slots for which
+the issue-pipeline was blocked due to recovery from earlier
+incorrect speculation. For example; wasted work due to miss-
+predicted branches are categorized under Bad Speculation
+category. Incorrect data speculation followed by Memory
+Ordering Nukes is another example."""
+
 
 class Branch_Mispredicts:
     name = "Branch_Mispredicts"
     domain = "Slots"
     area = "BAD"
-    desc = """
-This metric represents fraction of slots the CPU has wasted
-due to Branch Misprediction.  These slots are either wasted
-by uops fetched from an incorrectly speculated program path;
-or stalls when the out-of-order part of the machine needs to
-recover its state from a speculative path.. Using profile
-feedback in the compiler may help. Please see the
-Optimization Manual for general strategies for addressing
-branch misprediction issues..
-http://www.intel.com/content/www/us/en/architecture-and-
-technology/64-ia-32-architectures-optimization-manual.html"""
     level = 2
     htoff = False
     sample = ['BR_MISP_RETIRED.ALL_BRANCHES:pp']
@@ -500,21 +498,23 @@ technology/64-ia-32-architectures-optimization-manual.html"""
         except ZeroDivisionError:
             handle_error(self, "Branch_Mispredicts zero division")
         return self.val
+    desc = """
+This metric represents fraction of slots the CPU has wasted
+due to Branch Misprediction.  These slots are either wasted
+by uops fetched from an incorrectly speculated program path;
+or stalls when the out-of-order part of the machine needs to
+recover its state from a speculative path.. Using profile
+feedback in the compiler may help. Please see the
+Optimization Manual for general strategies for addressing
+branch misprediction issues..
+http://www.intel.com/content/www/us/en/architecture-and-
+technology/64-ia-32-architectures-optimization-manual.html"""
+
 
 class Machine_Clears:
     name = "Machine_Clears"
     domain = "Slots"
     area = "BAD"
-    desc = """
-This metric represents fraction of slots the CPU has wasted
-due to Machine Clears.  These slots are either wasted by
-uops fetched prior to the clear; or stalls the out-of-order
-portion of the machine needs to recover its state after the
-clear. For example; this can happen due to memory ordering
-Nukes (e.g. Memory Disambiguation) or Self-Modifying-Code
-(SMC) nukes.. See \"Memory Disambiguation\" in Optimization
-Manual and:. https://software.intel.com/sites/default/files/
-m/d/4/1/d/8/sma.pdf"""
     level = 2
     htoff = False
     sample = ['MACHINE_CLEARS.COUNT']
@@ -529,23 +529,22 @@ m/d/4/1/d/8/sma.pdf"""
         except ZeroDivisionError:
             handle_error(self, "Machine_Clears zero division")
         return self.val
+    desc = """
+This metric represents fraction of slots the CPU has wasted
+due to Machine Clears.  These slots are either wasted by
+uops fetched prior to the clear; or stalls the out-of-order
+portion of the machine needs to recover its state after the
+clear. For example; this can happen due to memory ordering
+Nukes (e.g. Memory Disambiguation) or Self-Modifying-Code
+(SMC) nukes.. See \"Memory Disambiguation\" in Optimization
+Manual and:. https://software.intel.com/sites/default/files/
+m/d/4/1/d/8/sma.pdf"""
+
 
 class Backend_Bound:
     name = "Backend_Bound"
     domain = "Slots"
     area = "BE"
-    desc = """
-This category represents fraction of slots where no uops are
-being delivered due to a lack of required resources for
-accepting new uops in the Backend. Backend is the portion of
-the processor core where the out-of-order scheduler
-dispatches ready uops into their respective execution units;
-and once completed these uops get retired according to
-program order. For example; stalls due to data-cache misses
-or stalls due to the divider unit being overloaded are both
-categorized under Backend Bound. Backend Bound is further
-divided into two main categories: Memory Bound and Core
-Bound."""
     level = 1
     htoff = False
     sample = []
@@ -560,21 +559,24 @@ Bound."""
         except ZeroDivisionError:
             handle_error(self, "Backend_Bound zero division")
         return self.val
+    desc = """
+This category represents fraction of slots where no uops are
+being delivered due to a lack of required resources for
+accepting new uops in the Backend. Backend is the portion of
+the processor core where the out-of-order scheduler
+dispatches ready uops into their respective execution units;
+and once completed these uops get retired according to
+program order. For example; stalls due to data-cache misses
+or stalls due to the divider unit being overloaded are both
+categorized under Backend Bound. Backend Bound is further
+divided into two main categories: Memory Bound and Core
+Bound."""
+
 
 class Memory_Bound:
     name = "Memory_Bound"
     domain = "Slots"
     area = "BE/Mem"
-    desc = """
-This metric represents fraction of slots the Memory
-subsystem within the Backend was a bottleneck.  Memory Bound
-estimates fraction of slots where pipeline is likely stalled
-due to demand load or store instructions. This accounts
-mainly for (1) non-completed in-flight memory demand loads
-which coincides with execution units starvation; in addition
-to (2) cases where stores could impose backpressure on the
-pipeline when many of them get buffered at the same time
-(less common out of the two)."""
     level = 2
     htoff = False
     sample = []
@@ -589,22 +591,22 @@ pipeline when many of them get buffered at the same time
         except ZeroDivisionError:
             handle_error(self, "Memory_Bound zero division")
         return self.val
+    desc = """
+This metric represents fraction of slots the Memory
+subsystem within the Backend was a bottleneck.  Memory Bound
+estimates fraction of slots where pipeline is likely stalled
+due to demand load or store instructions. This accounts
+mainly for (1) non-completed in-flight memory demand loads
+which coincides with execution units starvation; in addition
+to (2) cases where stores could impose backpressure on the
+pipeline when many of them get buffered at the same time
+(less common out of the two)."""
+
 
 class DTLB_Load:
     name = "DTLB_Load"
     domain = "Clocks_Estimated"
     area = "BE/Mem"
-    desc = """
-This metric roughly estimates the fraction of cycles where
-the Data TLB (DTLB) was missed by load accesses. TLBs
-(Translation Look-aside Buffers) are processor caches for
-recently used entries out of the Page Tables that are used
-to map virtual- to physical-addresses by the operating
-system. This metric approximates the potential delay of
-demand loads missing the first-level data TLB (assuming
-worst case scenario with back to back misses to different
-pages). This includes hitting in the second-level TLB (STLB)
-as well as performing a hardware page walk on an STLB miss.."""
     level = 4
     htoff = False
     sample = ['MEM_UOPS_RETIRED.STLB_MISS_LOADS:pp']
@@ -619,16 +621,23 @@ as well as performing a hardware page walk on an STLB miss.."""
         except ZeroDivisionError:
             handle_error(self, "DTLB_Load zero division")
         return self.val
+    desc = """
+This metric roughly estimates the fraction of cycles where
+the Data TLB (DTLB) was missed by load accesses. TLBs
+(Translation Look-aside Buffers) are processor caches for
+recently used entries out of the Page Tables that are used
+to map virtual- to physical-addresses by the operating
+system. This metric approximates the potential delay of
+demand loads missing the first-level data TLB (assuming
+worst case scenario with back to back misses to different
+pages). This includes hitting in the second-level TLB (STLB)
+as well as performing a hardware page walk on an STLB miss.."""
+
 
 class L3_Bound:
     name = "L3_Bound"
     domain = "Stalls"
     area = "BE/Mem"
-    desc = """
-This metric estimates how often the CPU was stalled due to
-loads accesses to L3 cache or contended with a sibling Core.
-Avoiding cache misses (i.e. L2 misses/L3 hits) can improve
-the latency and increase performance."""
     level = 3
     htoff = False
     sample = ['MEM_LOAD_UOPS_RETIRED.LLC_HIT:pp']
@@ -643,15 +652,17 @@ the latency and increase performance."""
         except ZeroDivisionError:
             handle_error(self, "L3_Bound zero division")
         return self.val
+    desc = """
+This metric estimates how often the CPU was stalled due to
+loads accesses to L3 cache or contended with a sibling Core.
+Avoiding cache misses (i.e. L2 misses/L3 hits) can improve
+the latency and increase performance."""
+
 
 class DRAM_Bound:
     name = "DRAM_Bound"
     domain = "Stalls"
     area = "BE/Mem"
-    desc = """
-This metric estimates how often the CPU was stalled on
-accesses to external memory (DRAM) by loads. Better caching
-can improve the latency and increase performance."""
     level = 3
     htoff = False
     sample = ['MEM_LOAD_UOPS_RETIRED.LLC_MISS:pp']
@@ -666,11 +677,30 @@ can improve the latency and increase performance."""
         except ZeroDivisionError:
             handle_error(self, "DRAM_Bound zero division")
         return self.val
+    desc = """
+This metric estimates how often the CPU was stalled on
+accesses to external memory (DRAM) by loads. Better caching
+can improve the latency and increase performance."""
+
 
 class MEM_Bandwidth:
     name = "MEM_Bandwidth"
     domain = "Clocks"
     area = "BE/Mem"
+    level = 4
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    server = False
+    metricgroup = ['Memory_BW', 'Offcore']
+    def compute(self, EV):
+        try:
+            self.val = ORO_DRD_BW_Cycles(self, EV, 4) / CLKS(self, EV, 4)
+            self.thresh = (self.val > 0.2) & self.parent.thresh
+        except ZeroDivisionError:
+            handle_error(self, "MEM_Bandwidth zero division")
+        return self.val
     desc = """
 This metric estimates fraction of cycles where the core's
 performance was likely hurt due to approaching bandwidth
@@ -688,33 +718,12 @@ is evicted (e.g. reorder structure elements and split non-
 hot ones), 2) merge computed-limited with BW-limited loops,
 3) NUMA optimizations in multi-socket system. Note: software
 prefetches will not help BW-limited application.."""
-    level = 4
-    htoff = False
-    sample = []
-    errcount = 0
-    sibling = None
-    server = False
-    metricgroup = ['Memory_BW', 'Offcore']
-    def compute(self, EV):
-        try:
-            self.val = ORO_DRD_BW_Cycles(self, EV, 4) / CLKS(self, EV, 4)
-            self.thresh = (self.val > 0.2) & self.parent.thresh
-        except ZeroDivisionError:
-            handle_error(self, "MEM_Bandwidth zero division")
-        return self.val
+
 
 class MEM_Latency:
     name = "MEM_Latency"
     domain = "Clocks"
     area = "BE/Mem"
-    desc = """
-This metric estimates fraction of cycles where the
-performance was likely hurt due to latency from external
-memory (DRAM).  This metric does not aggregate requests from
-other Logical Processors/Physical Cores/sockets (see Uncore
-counters for that).. Improve data accesses or interleave
-them with compute. Examples: 1) Data layout re-structuring,
-2) Software Prefetches (also through the compiler).."""
     level = 4
     htoff = False
     sample = []
@@ -729,17 +738,20 @@ them with compute. Examples: 1) Data layout re-structuring,
         except ZeroDivisionError:
             handle_error(self, "MEM_Latency zero division")
         return self.val
+    desc = """
+This metric estimates fraction of cycles where the
+performance was likely hurt due to latency from external
+memory (DRAM).  This metric does not aggregate requests from
+other Logical Processors/Physical Cores/sockets (see Uncore
+counters for that).. Improve data accesses or interleave
+them with compute. Examples: 1) Data layout re-structuring,
+2) Software Prefetches (also through the compiler).."""
+
 
 class Store_Bound:
     name = "Store_Bound"
     domain = "Stalls"
     area = "BE/Mem"
-    desc = """
-This metric estimates how often CPU was stalled  due to
-store memory accesses. Even though store accesses do not
-typically stall out-of-order CPUs; there are few cases where
-stores can lead to actual stalls. This metric will be
-flagged should any of these cases be a bottleneck."""
     level = 3
     htoff = False
     sample = ['MEM_UOPS_RETIRED.ALL_STORES:pp']
@@ -754,22 +766,18 @@ flagged should any of these cases be a bottleneck."""
         except ZeroDivisionError:
             handle_error(self, "Store_Bound zero division")
         return self.val
+    desc = """
+This metric estimates how often CPU was stalled  due to
+store memory accesses. Even though store accesses do not
+typically stall out-of-order CPUs; there are few cases where
+stores can lead to actual stalls. This metric will be
+flagged should any of these cases be a bottleneck."""
+
 
 class Core_Bound:
     name = "Core_Bound"
     domain = "Slots"
     area = "BE/Core"
-    desc = """
-This metric represents fraction of slots where Core non-
-memory issues were of a bottleneck.  Shortage in hardware
-compute resources; or dependencies in software's
-instructions are both categorized under Core Bound. Hence it
-may indicate the machine ran out of an out-of-order
-resource; certain execution units are overloaded or
-dependencies in program's data- or instruction-flow are
-limiting the performance (e.g. FP-chained long-latency
-arithmetic operations).. Tip: consider Port Saturation
-analysis as next step."""
     level = 2
     htoff = False
     sample = []
@@ -784,17 +792,23 @@ analysis as next step."""
         except ZeroDivisionError:
             handle_error(self, "Core_Bound zero division")
         return self.val
+    desc = """
+This metric represents fraction of slots where Core non-
+memory issues were of a bottleneck.  Shortage in hardware
+compute resources; or dependencies in software's
+instructions are both categorized under Core Bound. Hence it
+may indicate the machine ran out of an out-of-order
+resource; certain execution units are overloaded or
+dependencies in program's data- or instruction-flow are
+limiting the performance (e.g. FP-chained long-latency
+arithmetic operations).. Tip: consider Port Saturation
+analysis as next step."""
+
 
 class Divider:
     name = "Divider"
     domain = "Clocks"
     area = "BE/Core"
-    desc = """
-This metric represents fraction of cycles where the Divider
-unit was active. Divide and square root instructions are
-performed by the Divider unit and can take considerably
-longer latency than integer or Floating Point addition;
-subtraction; or multiplication."""
     level = 3
     htoff = False
     sample = ['ARITH.FPU_DIV_ACTIVE']
@@ -809,24 +823,18 @@ subtraction; or multiplication."""
         except ZeroDivisionError:
             handle_error(self, "Divider zero division")
         return self.val
+    desc = """
+This metric represents fraction of cycles where the Divider
+unit was active. Divide and square root instructions are
+performed by the Divider unit and can take considerably
+longer latency than integer or Floating Point addition;
+subtraction; or multiplication."""
+
 
 class Ports_Utilization:
     name = "Ports_Utilization"
     domain = "Clocks"
     area = "BE/Core"
-    desc = """
-This metric estimates fraction of cycles the CPU performance
-was potentially limited due to Core computation issues (non
-divider-related).  Two distinct categories can be attributed
-into this metric: (1) heavy data-dependency among contiguous
-instructions would manifest in this metric - such cases are
-often referred to as low Instruction Level Parallelism
-(ILP). (2) Contention on some hardware execution unit other
-than Divider. For example; when there are too many multiply
-operations.. Loop Vectorization -most compilers feature
-auto-Vectorization options today- reduces pressure on the
-execution ports as multiple elements are calculated with
-same uop."""
     level = 3
     htoff = False
     sample = []
@@ -841,11 +849,39 @@ same uop."""
         except ZeroDivisionError:
             handle_error(self, "Ports_Utilization zero division")
         return self.val
+    desc = """
+This metric estimates fraction of cycles the CPU performance
+was potentially limited due to Core computation issues (non
+divider-related).  Two distinct categories can be attributed
+into this metric: (1) heavy data-dependency among contiguous
+instructions would manifest in this metric - such cases are
+often referred to as low Instruction Level Parallelism
+(ILP). (2) Contention on some hardware execution unit other
+than Divider. For example; when there are too many multiply
+operations.. Loop Vectorization -most compilers feature
+auto-Vectorization options today- reduces pressure on the
+execution ports as multiple elements are calculated with
+same uop."""
+
 
 class Retiring:
     name = "Retiring"
     domain = "Slots"
     area = "RET"
+    level = 1
+    htoff = False
+    sample = ['UOPS_RETIRED.RETIRE_SLOTS']
+    errcount = 0
+    sibling = None
+    server = False
+    metricgroup = ['TopDownL1']
+    def compute(self, EV):
+        try:
+            self.val = Retired_Slots(self, EV, 1) / SLOTS(self, EV, 1)
+            self.thresh = (self.val > 0.75) | self.Heavy_Operations.thresh
+        except ZeroDivisionError:
+            handle_error(self, "Retiring zero division")
+        return self.val
     desc = """
 This category represents fraction of slots utilized by
 useful work i.e. issued uops that eventually get retired.
@@ -863,37 +899,12 @@ for programmer to consider vectorizing his code.  Doing so
 essentially lets more computations be done without
 significantly increasing number of instructions thus
 improving the performance."""
-    level = 1
-    htoff = False
-    sample = ['UOPS_RETIRED.RETIRE_SLOTS']
-    errcount = 0
-    sibling = None
-    server = False
-    metricgroup = ['TopDownL1']
-    def compute(self, EV):
-        try:
-            self.val = Retired_Slots(self, EV, 1) / SLOTS(self, EV, 1)
-            self.thresh = (self.val > 0.75) | self.Heavy_Operations.thresh
-        except ZeroDivisionError:
-            handle_error(self, "Retiring zero division")
-        return self.val
+
 
 class Light_Operations:
     name = "Light_Operations"
     domain = "Slots"
     area = "RET"
-    desc = """
-This metric represents fraction of slots where the CPU was
-retiring light-weight operations -- instructions that
-require no more than one uop (micro-operation). This
-correlates with total number of instructions used by the
-program. A uops-per-instruction (see UPI metric) ratio of 1
-or less should be expected on modern Intel Core generations.
-While this often indicates efficient X86 instructions were
-executed; high values does not necessarily mean further
-performance cannot be gained.. Focus on techniques that
-reduce instruction count or result in more efficient
-instructions generation such as vectorization."""
     level = 2
     htoff = False
     sample = ['INST_RETIRED.PREC_DIST']
@@ -908,14 +919,24 @@ instructions generation such as vectorization."""
         except ZeroDivisionError:
             handle_error(self, "Light_Operations zero division")
         return self.val
+    desc = """
+This metric represents fraction of slots where the CPU was
+retiring light-weight operations -- instructions that
+require no more than one uop (micro-operation). This
+correlates with total number of instructions used by the
+program. A uops-per-instruction (see UPI metric) ratio of 1
+or less should be expected on modern Intel Core generations.
+While this often indicates efficient X86 instructions were
+executed; high values does not necessarily mean further
+performance cannot be gained.. Focus on techniques that
+reduce instruction count or result in more efficient
+instructions generation such as vectorization."""
+
 
 class FP_Arith:
     name = "FP_Arith"
     domain = "Uops"
     area = "RET"
-    desc = """
-This metric represents overall arithmetic floating-point
-(FP) uops fraction the CPU has executed (retired)"""
     level = 3
     htoff = False
     sample = []
@@ -930,19 +951,15 @@ This metric represents overall arithmetic floating-point
         except ZeroDivisionError:
             handle_error(self, "FP_Arith zero division")
         return self.val
+    desc = """
+This metric represents overall arithmetic floating-point
+(FP) uops fraction the CPU has executed (retired)"""
+
 
 class X87_Use:
     name = "X87_Use"
     domain = "Uops"
     area = "RET"
-    desc = """
-This metric serves as an approximation of legacy x87 usage.
-It accounts for instructions beyond X87 FP arithmetic
-operations; hence may be used as a thermometer to avoid X87
-high usage and preferably upgrade to modern ISA. Tip:
-consider compiler flags to generate newer AVX (or SSE)
-instruction sets; which typically perform better and feature
-vectors."""
     level = 4
     htoff = False
     sample = []
@@ -957,15 +974,20 @@ vectors."""
         except ZeroDivisionError:
             handle_error(self, "X87_Use zero division")
         return self.val
+    desc = """
+This metric serves as an approximation of legacy x87 usage.
+It accounts for instructions beyond X87 FP arithmetic
+operations; hence may be used as a thermometer to avoid X87
+high usage and preferably upgrade to modern ISA. Tip:
+consider compiler flags to generate newer AVX (or SSE)
+instruction sets; which typically perform better and feature
+vectors."""
+
 
 class FP_Scalar:
     name = "FP_Scalar"
     domain = "Uops"
     area = "RET"
-    desc = """
-This metric represents arithmetic floating-point (FP) scalar
-uops fraction the CPU has executed (retired).. Investigate
-what limits (compiler) generation of vector code."""
     level = 4
     htoff = False
     sample = []
@@ -980,15 +1002,16 @@ what limits (compiler) generation of vector code."""
         except ZeroDivisionError:
             handle_error(self, "FP_Scalar zero division")
         return self.val
+    desc = """
+This metric represents arithmetic floating-point (FP) scalar
+uops fraction the CPU has executed (retired).. Investigate
+what limits (compiler) generation of vector code."""
+
 
 class FP_Vector:
     name = "FP_Vector"
     domain = "Uops"
     area = "RET"
-    desc = """
-This metric represents arithmetic floating-point (FP) vector
-uops fraction the CPU has executed (retired) aggregated
-across all vector widths.. Check if vector width is expected"""
     level = 4
     htoff = False
     sample = []
@@ -1003,16 +1026,16 @@ across all vector widths.. Check if vector width is expected"""
         except ZeroDivisionError:
             handle_error(self, "FP_Vector zero division")
         return self.val
+    desc = """
+This metric represents arithmetic floating-point (FP) vector
+uops fraction the CPU has executed (retired) aggregated
+across all vector widths.. Check if vector width is expected"""
+
 
 class Other:
     name = "Other"
     domain = "Uops"
     area = "RET"
-    desc = """
-This metric represents non-floating-point (FP) uop fraction
-the CPU has executed. If you application has no FP
-operations and performs with decent IPC (Instructions Per
-Cycle); this node will likely be biggest fraction."""
     level = 3
     htoff = False
     sample = []
@@ -1027,18 +1050,17 @@ Cycle); this node will likely be biggest fraction."""
         except ZeroDivisionError:
             handle_error(self, "Other zero division")
         return self.val
+    desc = """
+This metric represents non-floating-point (FP) uop fraction
+the CPU has executed. If you application has no FP
+operations and performs with decent IPC (Instructions Per
+Cycle); this node will likely be biggest fraction."""
+
 
 class Heavy_Operations:
     name = "Heavy_Operations"
     domain = "Slots"
     area = "RET"
-    desc = """
-This metric represents fraction of slots where the CPU was
-retiring heavy-weight operations -- instructions that
-require two or more uops ([ICL/TGL] this metric accounts
-only for the subset of heavy operations that are delivered
-by the microcode sequencer unit). This highly-correlates
-with the uop length of these instructions."""
     level = 2
     htoff = False
     sample = []
@@ -1053,19 +1075,19 @@ with the uop length of these instructions."""
         except ZeroDivisionError:
             handle_error(self, "Heavy_Operations zero division")
         return self.val
+    desc = """
+This metric represents fraction of slots where the CPU was
+retiring heavy-weight operations -- instructions that
+require two or more uops ([ICL/TGL] this metric accounts
+only for the subset of heavy operations that are delivered
+by the microcode sequencer unit). This highly-correlates
+with the uop length of these instructions."""
+
 
 class Microcode_Sequencer:
     name = "Microcode_Sequencer"
     domain = "Slots"
     area = "RET"
-    desc = """
-This metric represents fraction of slots the CPU was
-retiring uops fetched by the Microcode Sequencer (MS) unit.
-The MS is used for CISC instructions not supported by the
-default decoders (like repeat move strings; or CPUID); or by
-microcode assists used to address some operation modes (like
-in Floating Point assists). These cases can often be
-avoided.."""
     level = 3
     htoff = False
     sample = ['IDQ.MS_UOPS']
@@ -1080,435 +1102,467 @@ avoided.."""
         except ZeroDivisionError:
             handle_error(self, "Microcode_Sequencer zero division")
         return self.val
+    desc = """
+This metric represents fraction of slots the CPU was
+retiring uops fetched by the Microcode Sequencer (MS) unit.
+The MS is used for CISC instructions not supported by the
+default decoders (like repeat move strings; or CPUID); or by
+microcode assists used to address some operation modes (like
+in Floating Point assists). These cases can often be
+avoided.."""
+
 
 class Metric_IPC:
     name = "IPC"
-    desc = """
-Instructions Per Cycle (per Logical Processor)"""
     domain = "Metric"
     maxval = Pipeline_Width + 1
     server = False
     errcount = 0
     area = "Info.Thread"
     metricgroup = ['Summary']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = IPC(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "IPC zero division")
+    desc = """
+Instructions Per Cycle (per Logical Processor)"""
 
 
 class Metric_UPI:
     name = "UPI"
-    desc = """
-Uops Per Instruction"""
     domain = "Metric"
     maxval = 2
     server = False
     errcount = 0
     area = "Info.Thread"
     metricgroup = ['Pipeline', 'Retire']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = UPI(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "UPI zero division")
+    desc = """
+Uops Per Instruction"""
 
 
 class Metric_CPI:
     name = "CPI"
-    desc = """
-Cycles Per Instruction (per Logical Processor)"""
     domain = "Metric"
     maxval = 0
     server = False
     errcount = 0
     area = "Info.Thread"
     metricgroup = ['Pipeline']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = CPI(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "CPI zero division")
+    desc = """
+Cycles Per Instruction (per Logical Processor)"""
 
 
 class Metric_CLKS:
     name = "CLKS"
-    desc = """
-Per-Logical Processor actual clocks when the Logical
-Processor is active."""
     domain = "Count"
     maxval = 0
     server = False
     errcount = 0
     area = "Info.Thread"
     metricgroup = ['Summary']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = CLKS(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "CLKS zero division")
+    desc = """
+Per-Logical Processor actual clocks when the Logical
+Processor is active."""
 
 
 class Metric_SLOTS:
     name = "SLOTS"
-    desc = """
-Total issue-pipeline slots (per-Physical Core till ICL; per-
-Logical Processor ICL onward)"""
     domain = "Count"
     maxval = 0
     server = False
     errcount = 0
     area = "Info.Thread"
     metricgroup = ['TopDownL1']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = SLOTS(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "SLOTS zero division")
+    desc = """
+Total issue-pipeline slots (per-Physical Core till ICL; per-
+Logical Processor ICL onward)"""
 
 
 class Metric_CoreIPC:
     name = "CoreIPC"
-    desc = """
-Instructions Per Cycle (per physical core)"""
     domain = "CoreMetric"
     maxval = 5
     server = False
     errcount = 0
     area = "Info.Core"
     metricgroup = ['SMT', 'TopDownL1']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = CoreIPC(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "CoreIPC zero division")
+    desc = """
+Instructions Per Cycle (per physical core)"""
 
 
 class Metric_FLOPc:
     name = "FLOPc"
-    desc = """
-Floating Point Operations Per Cycle"""
     domain = "CoreMetric"
     maxval = 10
     server = False
     errcount = 0
     area = "Info.Core"
     metricgroup = ['FLOPS']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = FLOPc(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "FLOPc zero division")
+    desc = """
+Floating Point Operations Per Cycle"""
 
 
 class Metric_ILP:
     name = "ILP"
-    desc = """
-Instruction-Level-Parallelism (average number of uops
-executed when there is at least 1 uop executed)"""
     domain = "CoreMetric"
     maxval = 10
     server = False
     errcount = 0
     area = "Info.Core"
     metricgroup = ['Pipeline', 'Ports_Utilization']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = ILP(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "ILP zero division")
+    desc = """
+Instruction-Level-Parallelism (average number of uops
+executed when there is at least 1 uop executed)"""
 
 
 class Metric_CORE_CLKS:
     name = "CORE_CLKS"
-    desc = """
-Core actual clocks when any Logical Processor is active on
-the Physical Core"""
     domain = "Count"
     maxval = 0
     server = False
     errcount = 0
     area = "Info.Core"
     metricgroup = ['SMT']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = CORE_CLKS(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "CORE_CLKS zero division")
+    desc = """
+Core actual clocks when any Logical Processor is active on
+the Physical Core"""
 
 
 class Metric_Instructions:
     name = "Instructions"
-    desc = """
-Total number of retired Instructions"""
     domain = "Count"
     maxval = 0
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = ['Summary', 'TopDownL1']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = Instructions(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "Instructions zero division")
+    desc = """
+Total number of retired Instructions"""
 
 
 class Metric_DSB_Coverage:
     name = "DSB_Coverage"
-    desc = """
-Fraction of Uops delivered by the DSB (aka Decoded ICache;
-or Uop Cache). See section 'Decoded ICache' in Optimization
-Manual. http://www.intel.com/content/www/us/en/architecture-
-and-technology/64-ia-32-architectures-optimization-
-manual.html"""
     domain = "Metric"
     maxval = 1
     server = False
     errcount = 0
     area = "Info.Frontend"
     metricgroup = ['DSB', 'Fetch_BW']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = DSB_Coverage(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "DSB_Coverage zero division")
+    desc = """
+Fraction of Uops delivered by the DSB (aka Decoded ICache;
+or Uop Cache). See section 'Decoded ICache' in Optimization
+Manual. http://www.intel.com/content/www/us/en/architecture-
+and-technology/64-ia-32-architectures-optimization-
+manual.html"""
 
 
 class Metric_CPU_Utilization:
     name = "CPU_Utilization"
-    desc = """
-Average CPU Utilization"""
     domain = "Metric"
     maxval = 200
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['HPC', 'Summary']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = CPU_Utilization(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "CPU_Utilization zero division")
+    desc = """
+Average CPU Utilization"""
 
 
 class Metric_Average_Frequency:
     name = "Average_Frequency"
-    desc = """
-Measured Average Frequency for unhalted processors [GHz]"""
     domain = "SystemMetric"
     maxval = 0
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['Summary', 'Power']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = Average_Frequency(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "Average_Frequency zero division")
+    desc = """
+Measured Average Frequency for unhalted processors [GHz]"""
 
 
 class Metric_GFLOPs:
     name = "GFLOPs"
-    desc = """
-Giga Floating Point Operations Per Second"""
     domain = "Metric"
     maxval = 200
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['FLOPS', 'HPC']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = GFLOPs(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "GFLOPs zero division")
+    desc = """
+Giga Floating Point Operations Per Second"""
 
 
 class Metric_Turbo_Utilization:
     name = "Turbo_Utilization"
-    desc = """
-Average Frequency Utilization relative nominal frequency"""
     domain = "CoreMetric"
     maxval = 10
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['Power']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = Turbo_Utilization(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "Turbo_Utilization zero division")
+    desc = """
+Average Frequency Utilization relative nominal frequency"""
 
 
 class Metric_SMT_2T_Utilization:
     name = "SMT_2T_Utilization"
-    desc = """
-Fraction of cycles where both hardware Logical Processors
-were active"""
     domain = "CoreMetric"
     maxval = 1
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['SMT']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = SMT_2T_Utilization(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "SMT_2T_Utilization zero division")
+    desc = """
+Fraction of cycles where both hardware Logical Processors
+were active"""
 
 
 class Metric_Kernel_Utilization:
     name = "Kernel_Utilization"
-    desc = """
-Fraction of cycles spent in the Operating System (OS) Kernel
-mode"""
     domain = "Metric"
     maxval = 1
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['OS']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = Kernel_Utilization(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "Kernel_Utilization zero division")
+    desc = """
+Fraction of cycles spent in the Operating System (OS) Kernel
+mode"""
 
 
 class Metric_DRAM_BW_Use:
     name = "DRAM_BW_Use"
-    desc = """
-Average external Memory Bandwidth Use for reads and writes
-[GB / sec]"""
     domain = "GB/sec"
     maxval = 200
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['HPC', 'Memory_BW', 'SoC']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = DRAM_BW_Use(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "DRAM_BW_Use zero division")
+    desc = """
+Average external Memory Bandwidth Use for reads and writes
+[GB / sec]"""
 
 
 class Metric_MEM_Read_Latency:
     name = "MEM_Read_Latency"
-    desc = """
-Average latency of data read request to external memory (in
-nanoseconds). Accounts for demand loads and L1/L2 prefetches"""
     domain = "NanoSeconds"
     maxval = 1000
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['Memory_Lat', 'SoC']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = MEM_Read_Latency(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "MEM_Read_Latency zero division")
+    desc = """
+Average latency of data read request to external memory (in
+nanoseconds). Accounts for demand loads and L1/L2 prefetches"""
 
 
 class Metric_MEM_Parallel_Reads:
     name = "MEM_Parallel_Reads"
-    desc = """
-Average number of parallel data read requests to external
-memory. Accounts for demand loads and L1/L2 prefetches"""
     domain = "SystemMetric"
     maxval = 100
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['Memory_BW', 'SoC']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = MEM_Parallel_Reads(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "MEM_Parallel_Reads zero division")
+    desc = """
+Average number of parallel data read requests to external
+memory. Accounts for demand loads and L1/L2 prefetches"""
 
 
 class Metric_Time:
     name = "Time"
-    desc = """
-Run duration time in seconds"""
     domain = "Seconds"
     maxval = 0
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['Summary']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = Time(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "Time zero division")
+    desc = """
+Run duration time in seconds"""
 
 
 class Metric_Socket_CLKS:
     name = "Socket_CLKS"
-    desc = """
-Socket actual clocks when any core is active on that socket"""
     domain = "Count"
     maxval = 0
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['SoC']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = Socket_CLKS(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "Socket_CLKS zero division")
+    desc = """
+Socket actual clocks when any core is active on that socket"""
 
 
 class Metric_IpFarBranch:
     name = "IpFarBranch"
-    desc = """
-Instructions per Far Branch ( Far Branches apply upon
-transition from application to operating system, handling
-interrupts, exceptions) [lower number means higher
-occurrence rate]"""
     domain = "Metric"
     maxval = 0
     server = False
     errcount = 0
     area = "Info.System"
     metricgroup = ['Branches', 'OS']
+    sibling = None
 
     def compute(self, EV):
         try:
             self.val = IpFarBranch(self, EV, 0)
         except ZeroDivisionError:
             handle_error_metric(self, "IpFarBranch zero division")
+    desc = """
+Instructions per Far Branch ( Far Branches apply upon
+transition from application to operating system, handling
+interrupts, exceptions) [lower number means higher
+occurrence rate]"""
 
 
 # Schedule
