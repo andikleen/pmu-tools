@@ -25,11 +25,11 @@
 # KERNEL_VERSION=...    Force kernel version (e.g. 5.0)
 
 from __future__ import print_function
-import sys, os, re, itertools, textwrap, platform, pty, subprocess
+import sys, os, re, textwrap, platform, pty, subprocess
 import argparse, time, types, csv, copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
-from itertools import compress
+from itertools import compress, groupby, chain, count
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
 import tl_cpu
@@ -285,7 +285,7 @@ def needed_counters(evlist, nolimit=False):
 def event_group(evlist):
     evlist = add_filter(evlist)
     l = []
-    for is_og, g in itertools.groupby(evlist, lambda x: x in outgroup_events):
+    for is_og, g in groupby(evlist, lambda x: x in outgroup_events):
         if is_og or args.no_group:
             l += g
         else:
@@ -840,7 +840,7 @@ def safe_ref(obj, name):
     return None
 
 def flatten(x):
-    return list(itertools.chain(*x))
+    return list(chain(*x))
 
 def print_header(work):
     evnames = set(flatten([obj.evlist for obj in work]))
@@ -1251,7 +1251,7 @@ def execute(runner, out, rest):
     return ret
 
 def group_number(num, events):
-    gnum = itertools.count(1)
+    gnum = count(1)
     def group_nums(group):
         if all([x in outgroup_events for x in group]):
             idx = 0
@@ -2330,13 +2330,13 @@ def do_sample(sample_obj, rest, count, full_olist, ret):
             samples.append((s, obj.name))
 
     # first dedup
-    samples = [k for k, g in itertools.groupby(sorted(samples))]
+    samples = [k for k, g in groupby(sorted(samples))]
 
     # now merge objects with the same sample event into one
     def sample_event(x):
         return x[0]
     samples = sorted(samples, key=sample_event)
-    samples = [(k, "_".join([x[1] for x in g])) for k, g in itertools.groupby(samples, key=sample_event)]
+    samples = [(k, "_".join([x[1] for x in g])) for k, g in groupby(samples, key=sample_event)]
 
     # find unsupported events
     nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
