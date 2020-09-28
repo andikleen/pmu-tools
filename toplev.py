@@ -890,7 +890,8 @@ class ValidEvents:
     def __init__(self):
         self.valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*",
                              r"msr.*", "emulation-faults",
-                             r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy"]
+                             r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy",
+                             "slots", r"topdown-(fe-bound|be-bound|retiring|bad-spec)"]
         self.update()
 
     def add_event(self, ev):
