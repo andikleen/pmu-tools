@@ -221,13 +221,12 @@ def limit_overflow(evlist):
     # >1   counter is over subscribed
     return sum([x - 1 for x in assigned if x > 1])
 
+limit4_overflow = lambda ev: 0
+
 # limited to first four counters
-def limit4_overflow(evlist):
-    # hardcoded for ICL (XXX)
-    if cpu.cpu == "icl":
-        limit4 = [x for x in evlist if fnmatch(x, "cpu/event=0xd[0123],*")]
-        return len(limit4)
-    return 0
+def icl_limit4_overflow(evlist):
+    limit4 = [x for x in evlist if fnmatch(x, "cpu/event=0xd[0123],*")]
+    return len(limit4)
 
 def ismetric(x):
     return re.match(r"cpu/event=0x0,umask=0x(1[0123]|4)/", x) is not None
@@ -2572,6 +2571,7 @@ elif cpu.cpu == "icl":
             "/sys/devices/cpu/events/topdown-fe-bound")
     model = icl_client_ratios
     core_domains = set(["CoreClocks", "CoreMetric"])
+    limit4_overflow = icl_limit4_overflow
 elif cpu.cpu == "slm":
     import slm_ratios
     model = slm_ratios
