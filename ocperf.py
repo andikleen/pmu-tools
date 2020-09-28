@@ -545,7 +545,7 @@ def update_ename(ev, name):
 
 def json_open(name):
     if ocverbose:
-        print("open", name)
+        print("open", name, file=sys.stderr)
     d = open(name, "rb").read()
     if not isinstance(d, str):
         d = d.decode('utf-8')
