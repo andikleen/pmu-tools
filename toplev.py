@@ -251,6 +251,11 @@ def resource_split(evlist):
             return True
     return False
 
+def dedup(a, b):
+    aset = set(a)
+    add = [x for x in b if x not in aset]
+    return a + add
+
 def needed_counters(evlist, nolimit=False):
     evlist = list(set(evlist)) # remove duplicates first
     evlist = list(map(remove_qual, evlist))
@@ -1621,14 +1626,17 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
         return make_uval(vv, sd=st[index].stddev, mux=st[index].multiplex)
     return vv
 
-def add_key(k, x, y):
-    k[x] = y
-
 # dedup a and keep b uptodate
 def dedup2(a, b):
-    k = dict()
-    list(map(lambda x, y: add_key(k, x, y), a, b))
-    return list(sorted(k.keys())), list(map(lambda x: k[x], sorted(k.keys())))
+    aset = set()
+    al = []
+    bl = []
+    for ai, bi in zip(a, b):
+        if ai not in aset:
+            al.append(ai)
+            bl.append(bi)
+            aset.add(ai)
+    return al, bl
 
 def update_res_map(evnum, objl, base):
     for obj in objl:
@@ -2066,7 +2074,7 @@ class Runner:
         if len(self.evgroups) > 0:
             j = self.evgroups[-1]
             base = self.evbases[-1]
-            if needed_counters(set(evnum) | set(j)) <= cpu.counters:
+            if needed_counters(dedup(evnum, j)) <= cpu.counters:
                 for k in evnum:
                     if k not in j:
                         j.append(k)
@@ -2083,13 +2091,13 @@ class Runner:
                 update_res_map(j, objl, base)
                 return True
             # for now...
-            elif needed_counters(set(evnum) | set(j)) <= cpu.counters:
+            elif needed_counters(dedup(evnum, j)) <= cpu.counters:
                 self.missed += 1
         return False
 
     def add(self, objl, evnum, evlev, force=False):
         # does not fit into a group.
-        if needed_counters(list(set(evnum))) > cpu.counters and not force:
+        if needed_counters(evnum) > cpu.counters and not force:
             self.split_groups(objl, evlev)
             return
         evnum, evlev = dedup2(evnum, evlev)
