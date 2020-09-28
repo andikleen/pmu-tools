@@ -29,7 +29,8 @@ import sys, os, re, textwrap, platform, pty, subprocess
 import argparse, time, types, csv, copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
-from itertools import compress, groupby, chain, count
+from itertools import compress, groupby, chain
+import itertools
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
 import tl_cpu
@@ -1251,7 +1252,7 @@ def execute(runner, out, rest):
     return ret
 
 def group_number(num, events):
-    gnum = count(1)
+    gnum = itertools.count(1)
     def group_nums(group):
         if all([x in outgroup_events for x in group]):
             idx = 0
