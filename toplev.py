@@ -2684,6 +2684,12 @@ if not args.single_thread and smt_mode:
 else:
     full_system = "-A" in rest or "--per-core" in rest or "--per-socket" in rest
 
+if ("Slots" not in core_domains and
+    cpu.ht and
+    not args.single_thread and
+    any(map(core_node, runner.olist))):
+    rest = ["--percore-show-thread"] + rest
+
 if args.perf_output:
     ph = []
     if args.interval:
