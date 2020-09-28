@@ -1451,16 +1451,59 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
     print_account(account)
     return ret, res, rev, interval, valstats
 
+# dummy arithmetic type without any errors, for collecting
+# the events from the model. Otherwise divisions by zero cause
+# early exits
+class DummyArith:
+    def __sub__(self, o):
+        return self
+    def __add__(self, o):
+        return self
+    def __mul__(self, o):
+        return self
+    def __div__(self, o):
+        return self
+    def __truediv__(self, o):
+        return self
+    def __rsub__(self, o):
+        return self
+    def __radd__(self, o):
+        return self
+    def __rmul__(self, o):
+        return self
+    def __rdiv__(self, o):
+        return self
+    def __rtruediv__(self, o):
+        return self
+    def __lt__(self, o):
+        return True
+    def __eq__(self, o):
+        return True
+    def __ne__(self, o):
+        return True
+    def __ge__(self, o):
+        return True
+    def __gt__(self, o):
+        return True
+    def __or__(self, o):
+        return self
+    def __and__(self, o):
+        return self
+    def __min__(self, o):
+        return self
+    def __max__(self, o):
+        return self
+
 def ev_append(ev, level, obj):
     if isinstance(ev, types.LambdaType):
         return ev(lambda ev, level: ev_append(ev, level, obj), level)
     if ev in nonperf_events:
-        return 99
+        return DummyArith()
     if not (ev, level, obj.name) in obj.evlevels:
         obj.evlevels.append((ev, level, obj.name))
     if safe_ref(obj, 'nogroup'):
         outgroup_events.add(ev.lower())
-    return 99
+    return DummyArith()
 
 def canon_event(e):
     m = re.match(r"(.*?):(.*)", e)
@@ -2073,6 +2116,7 @@ class Runner:
         for obj in self.olist:
             obj.evlevels = []
             obj.compute(lambda ev, level: ev_append(ev, level, obj))
+            obj.val = None
             obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist)
             obj.nc = needed_counters(obj.evnum)
