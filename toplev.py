@@ -157,6 +157,10 @@ def warn_once(msg):
         print(msg, file=sys.stderr)
         warned.add(msg)
 
+def debug_print(x):
+    if args.debug:
+        print(x, file=sys.stderr)
+
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
@@ -257,16 +261,14 @@ def needed_counters(evlist, nolimit=False):
 
     # split if any resource is oversubscribed
     if resource_split(evlist):
-        if args.debug:
-            print("resource split", evlist, file=sys.stderr)
+        debug_print("resource split %s" %evlist)
         return 100
 
     # force split if we overflow fixed or limit4
     # some fixed could be promoted to generic, but that doesn't work
     # with ref-cycles.
     if not nolimit and (fixed_overflow(evlist) or limit4_overflow(evlist) > 4):
-        if args.debug:
-            print("fixed or limit4 overflow", evlist, file=sys.stderr)
+        debug_print("fixed or limit4 overflow %s " % evlist)
         return 100
 
     # account events that only schedule on one of the generic counters
@@ -1482,8 +1484,7 @@ def do_event_rmap(e):
         n = fixes[n.upper()].lower()
         if n:
             return n
-    if args.debug:
-        print("rmap: cannot find %s, using dummy" % e, file=sys.stderr)
+    debug_print("rmap: cannot find %s, using dummy" % e)
     return "dummy"
 
 rmap_cache = dict()
@@ -1976,8 +1977,7 @@ class Runner:
         for g, base in zip(self.evgroups, self.evbases):
             for ind, j in enumerate(g):
                 if not self.indexobj[base + ind]:
-                    if args.debug:
-                        print("replacing unreferenced %d %s with dummy" %
+                    debug_print("replacing unreferenced %d %s with dummy" %
                                 ((base + ind), g[ind]))
                     g[ind] = "dummy"
                     self.evnum[base + ind] = "dummy"
@@ -2035,8 +2035,8 @@ class Runner:
             # cannot add super sets, as that would need patching
             # up all indexes inbetween.
             if evset <= set(j):
-                if args.debug:
-                    print("add_duplicate", evnum, base, map(event_rmap, evnum), "in", j)
+                debug_print("add_duplicate %s %d %s in %s" % (
+                    evnum, base, map(event_rmap, evnum), j))
                 update_res_map(j, objl, base)
                 return True
             # for now...
@@ -2052,8 +2052,7 @@ class Runner:
         evnum, evlev = dedup2(evnum, evlev)
         if not self.add_duplicate(evnum, objl):
             base = len(self.evnum)
-            if args.debug:
-                print("add", evnum, base, map(event_rmap, evnum))
+            debug_print("add %s %d %s" % (evnum, base, map(event_rmap, evnum)))
             update_res_map(evnum, objl, base)
             self.evnum += evnum
             self.evgroups.append(evnum)
