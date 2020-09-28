@@ -151,7 +151,13 @@ def download(match, key=None, link=True, onlyprint=False):
             if onlyprint:
                 print(os.path.join(dir, fn))
                 continue
-            getfile(url, dir, fn)
+            try:
+                getfile(url, dir, fn)
+            except URLError as e:
+                print("error accessing %s: %s" % (url, e), file=sys.stderr)
+                if match == '*':
+                    continue
+                raise
             if link:
                 lname = re.sub(r'.*/', '', name)
                 lname = sanitize(lname, allowed_chars)
