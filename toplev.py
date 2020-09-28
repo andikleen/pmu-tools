@@ -257,16 +257,24 @@ def dedup(a, b):
     return a + add
 
 def needed_counters(evlist, nolimit=False):
-    evlist = list(set(evlist)) # remove duplicates first
     evlist = list(map(remove_qual, evlist))
-    evlist = [x for x in evlist if not ismetric(x)] # XXX fixme ignore metrics for now
     evset = set(evlist)
     num = len(evset - ingroup_events)
+
+    metrics = map(ismetric, evlist)
+
+    if any(metrics):
+        # slots must be first if metrics are present
+        if "slots" in evset and evlist[0] != "slots":
+            debug_print("split for slots %s" % evlist)
+            return 100
 
     # split if any resource is oversubscribed
     if resource_split(evlist):
         debug_print("resource split %s" %evlist)
         return 100
+
+    evlist = [x for x in evlist if not ismetric(x)]
 
     # force split if we overflow fixed or limit4
     # some fixed could be promoted to generic, but that doesn't work
@@ -1504,8 +1512,15 @@ def ev_append(ev, level, obj):
         return ev(lambda ev, level: ev_append(ev, level, obj), level)
     if ev in nonperf_events:
         return DummyArith()
-    if not (ev, level, obj.name) in obj.evlevels:
-        obj.evlevels.append((ev, level, obj.name))
+
+    key = (ev, level, obj.name)
+    if key not in obj.evlevels:
+        if ev == "TOPDOWN.SLOTS" or ev.startswith("PERF_METRICS."):
+            ind = [x[1] == level for x in obj.evlevels]
+            ins = ind.index(True) if any(ind) else 0
+            obj.evlevels.insert(ins + (0 if ev == "TOPDOWN.SLOTS" else 1), key)
+        else:
+            obj.evlevels.append(key)
     if safe_ref(obj, 'nogroup'):
         outgroup_events.add(ev.lower())
     return DummyArith()
