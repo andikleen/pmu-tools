@@ -1079,6 +1079,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 printed_sockets.add(sid)
                 continue
             if mode == OUTPUT_THREAD:
+                runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
                 runner.print_res(out, interval, thread_fmt(int(j)), any_node, bn, j in idle_mark_keys)
                 continue
 
