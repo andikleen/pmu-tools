@@ -1913,7 +1913,7 @@ class Runner:
                     parents.append(s)
                     parents += get_parents(s)
 
-        sibmatch = set()
+        self.sibmatch = set()
 
         def want_node(obj):
             if args.reduced and has(obj, 'server') and not obj.server:
@@ -1926,12 +1926,12 @@ class Runner:
                     obj in parents) and obj.name not in remove_met
             if not obj.metric and obj.level <= self.max_level:
                 want = True
-            return node_filter(obj, want, sibmatch)
+            return node_filter(obj, want, self.sibmatch)
 
         # this updates sibmatch
         fmatch = list(map(want_node, self.olist))
         # now keep what is both in fmatch and sibmatch
-        self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or obj in sibmatch]
+        self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or obj in self.sibmatch]
         if len(self.olist) == 0:
             sys.exit("All nodes disabled")
 
@@ -2183,6 +2183,8 @@ class Runner:
                 changed[0] += 1
 
         for obj in self.olist:
+            if obj in self.sibmatch:
+                propagate(obj, changed)
             if obj.thresh and obj.sibling:
                 if isinstance(obj.sibling, (list, tuple)):
                     for k in obj.sibling:
