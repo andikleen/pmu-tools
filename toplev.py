@@ -687,14 +687,15 @@ def gen_script(r):
           " ".join([x for x in sys.argv if x != "--gen-script"]) +
           " --import toplev_perf.csv --force-cpuinfo toplev_cpuinfo --force-topology toplev_topology --force-cpu " +
           cpu.cpu)
-    print("# print until Ctrl-C or run with command on command line (e.g. sleep 10)")
+    print("# print until Ctrl-C or run with command on command line (e.g. -a -I 1000 sleep 10)")
     print("# override output file names with OUT=... script (default toplev_...)")
+    print("# enable compression with POSTFIX=.xz script")
     print("OUT=${OUT:-toplev}")
     print("find /sys/devices > ${OUT}_topology")
     print("cat /proc/cpuinfo > ${OUT}_cpuinfo")
     i = r.index('--log-fd')
     r[i] = "-o"
-    r[i + 1] = "${OUT}_perf.csv"
+    r[i + 1] = "${OUT}_perf.csv${POSTFIX}"
     i = r.index('-x;')
     r[i] = '-x\\;'
     i = r.index('-e')
