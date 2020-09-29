@@ -632,7 +632,6 @@ if args.sample_repeat:
 if args.handle_errata:
     args.ignore_errata = False
 
-print_all = args.verbose # or args.csv
 dont_hide = args.verbose
 csv_mode = args.csv
 interval_mode = args.interval
@@ -648,7 +647,7 @@ print_group = args.print_group
 MAX_ERROR = 0.05
 
 def check_ratio(l):
-    if print_all:
+    if args.verbose:
         return True
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
@@ -2240,11 +2239,11 @@ class Runner:
 
         # determine all objects to print
         def should_print_obj(obj):
-            if obj.thresh or print_all:
+            if obj.thresh or args.verbose:
                 if not match(obj):
                     pass
                 elif obj.metric:
-                    if print_all or obj.val != 0:
+                    if args.verbose or obj.val != 0:
                         return True
                 elif check_ratio(obj.val):
                     return True
