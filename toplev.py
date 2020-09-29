@@ -826,7 +826,7 @@ def mark_fixed(s):
     return s
 
 def pwrap(s, linelen=70, indent=""):
-    print(indent + ("\n" + indent).join(textwrap.wrap(s, linelen, break_long_words=False)))
+    print(indent + ("\n" + indent).join(textwrap.wrap(s, linelen, break_long_words=False)), file=sys.stderr)
 
 def pwrap_not_quiet(s, linelen=70, indent=""):
     if not args.quiet:
@@ -1366,7 +1366,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
         elif is_event(n, 2):
             title, count, event, off = n[0], n[1], n[2], 3
         else:
-            print("unparseable perf output")
+            print("unparseable perf output", file=sys.stderr)
             sys.stdout.write(l)
             continue
 
@@ -1387,7 +1387,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
             multiplex = 0.
             val = 0
         else:
-            print("unparseable perf count")
+            print("unparseable perf count", file=sys.stderr)
             sys.stdout.write(l)
             continue
 
@@ -2099,8 +2099,8 @@ class Runner:
                        " due to unsupported events in kernel: " +
                        " ".join(sorted(bad_events)), 80, "")
                     if min_kernel:
-                        print("Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0]))
-                    print("Use --force-events to override (may result in wrong measurements)")
+                        print("Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0]), file=sys.stderr)
+                    print("Use --force-events to override (may result in wrong measurements)", file=sys.stderr)
                 self.olist = [x for x in self.olist if x not in bad_nodes]
         if unsup_nodes:
             pwrap_not_quiet("Nodes " + " ".join(x.name for x in unsup_nodes) + " has unsupported PMUs")
@@ -2172,7 +2172,8 @@ class Runner:
                 len(self.evnum),
                 len(set(self.evnum)),
                 len(self.olist),
-                self.missed))
+                self.missed),
+                file=sys.stderr)
 
     def propagate_siblings(self):
         changed = [0]
@@ -2195,7 +2196,7 @@ class Runner:
 
     def compute(self, res, rev, valstats, env, match, stat):
         if len(res) == 0:
-            print("Nothing measured?")
+            print("Nothing measured?", file=sys.stderr)
             return
 
         changed = 0
@@ -2740,7 +2741,7 @@ def measure_and_sample(count):
         if (args.show_sample or args.run_sample) and ret == 0:
             do_sample(runner.sample_obj, rest, count, runner.full_olist, ret)
         if ret >= 100 and ret <= 200 and repeat:
-            print("perf appears to have failed %d. not drilling down" % ret)
+            print("Perf or workload appears to have failed with error %d. Not drilling down" % ret, file=sys.stderr)
             break
         if count is not None:
             count += 1

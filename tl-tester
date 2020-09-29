@@ -90,7 +90,7 @@ grep :k log$$
 grep /k log$$
 EVENTMAP=${cpus[$DCPU]} FORCECPU=simple $WRAP ./toplev.py --no-desc -l1 $LOAD
 # check errata handling
-EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py --handle-errata --force-events --no-desc --all $LOAD | tee log
+EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py --handle-errata --force-events --no-desc --all $LOAD 2>&1 | tee log
 grep BDE70 log
 
 # test L1 uses a single group
