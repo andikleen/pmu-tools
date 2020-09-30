@@ -2770,10 +2770,10 @@ if args.xlsx and ret == 0:
     ret = do_xlsx(runner)
 
 if runner.idle_keys and not args.quiet:
-    print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" % (",".join(runner.idle_keys)))
+    print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" % (",".join(runner.idle_keys)), file=sys.stderr)
 
 if notfound_cache and not args.quiet:
-    print("Some events not found. Consider running event_download.py to update event lists")
+    print("Some events not found. Consider running event_download.py to update event lists", file=sys.stderr)
 
 if args.graph:
     args.output.close()
