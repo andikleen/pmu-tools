@@ -2339,6 +2339,8 @@ class Runner:
 
         # determine all objects to print
         def should_print_obj(obj):
+            if obj.val is None:
+                return False
             if obj.thresh or args.verbose:
                 if not match(obj):
                     pass
