@@ -1517,11 +1517,21 @@ class DummyArith:
     def __max__(self, o):
         return self
 
+run_l1_parallel = False # disabled for now until we can fix the perf scheduler
+
+def adjust_ev(ev, level):
+    # use the programmable slots for non L1 so that level 1
+    # can (mostly) run in parallel with other groups.
+    if run_l1_parallel and level != 1 and ev == "TOPDOWN.SLOTS":
+        ev = "TOPDOWN.SLOTS_P"
+    return ev
+
 def ev_append(ev, level, obj):
     if isinstance(ev, types.LambdaType):
         return ev(lambda ev, level: ev_append(ev, level, obj), level)
     if ev in nonperf_events:
         return DummyArith()
+    ev = adjust_ev(ev, level)
 
     key = (ev, level, obj.name)
     if key not in obj.evlevels:
@@ -1587,6 +1597,8 @@ def compare_event(aname, bname):
 
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     """get measurement result and wrap in UVal"""
+
+    ev = adjust_ev(ev, level)
 
     def make_uval(v, sd=0.0, mux=None):
         return UVal(name=ev, value=v, stddev=sd, mux=mux)
