@@ -1982,7 +1982,7 @@ class Runner:
                     self.evnum[base + ind] = "dummy"
 
     def run(self, obj):
-        obj.thresh = False
+        obj.thresh = True
         obj.metric = False
         obj.children = []
         self.do_run(obj)
