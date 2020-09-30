@@ -2441,7 +2441,10 @@ def do_sample(sample_obj, rest, count, full_olist, ret):
     perf_data = args.sample_basename
     if count is not None:
         perf_data += ".%d" % count
-    sperf = [perf, "record"] + extra_args + ["-e", sample, "-o", perf_data] + [x for x in rest if x != "-A"]
+    sperf = ([perf, "record"] +
+             extra_args +
+             ["-e", sample, "-o", perf_data] +
+             [x for x in rest if x not in ("-A", "--percore-show-thread")])
     cmd = " ".join(sperf)
     print(cmd)
     if args.run_sample and ret == 0:
