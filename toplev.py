@@ -280,7 +280,7 @@ def needed_counters(evlist, nolimit=False):
 
     # split if any resource is oversubscribed
     if resource_split(evlist):
-        debug_print("resource split %s" %evlist)
+        debug_print("resource split %s" % evlist)
         return 100
 
     evlist = [x for x in evlist if not ismetric(x)]
@@ -2791,9 +2791,9 @@ else:
     full_system = "-A" in rest or "--per-core" in rest or "--per-socket" in rest
 
 if ("Slots" not in core_domains and
-    cpu.ht and
-    not args.single_thread and
-    any(map(core_node, runner.olist))):
+        cpu.ht and
+        not args.single_thread and
+        any(map(core_node, runner.olist))):
     if not feat.supports_percore:
         runner.olist = filternot(core_node, runner.olist)
     else:
