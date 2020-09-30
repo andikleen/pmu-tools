@@ -1522,11 +1522,13 @@ class DummyArith:
         return self
 
 run_l1_parallel = False # disabled for now until we can fix the perf scheduler
+slots_available = False
 
 def adjust_ev(ev, level):
     # use the programmable slots for non L1 so that level 1
     # can (mostly) run in parallel with other groups.
-    if run_l1_parallel and level != 1 and ev == "TOPDOWN.SLOTS":
+    # this also helps for old or non ICL kernels
+    if ev == "TOPDOWN.SLOTS" and ((run_l1_parallel and level != 1) or not slots_available):
         ev = "TOPDOWN.SLOTS_P"
     return ev
 
@@ -2703,6 +2705,8 @@ if "base_frequency" in model.__dict__:
 
 if "model" in model.__dict__:
     model.model = cpu.modelid
+
+slots_available = os.path.exists("/sys/devices/cpu/events/slots")
 
 if args.list_metrics or args.list_all:
     runner.list_nodes("Metrics", lambda obj: obj.metric)
