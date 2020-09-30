@@ -174,6 +174,7 @@ class PerfFeatures:
                 not args.no_uncore
                 and not args.force_hypervisor
                 and works(perf + " stat -e power/energy-cores/ -a true"))
+        self.supports_percore = works(perf + " stat --percore-show-thread true")
         # guests don't support offcore response
         if event_nocheck:
             self.supports_ocr = True
@@ -866,6 +867,9 @@ def safe_ref(obj, name):
 
 def flatten(x):
     return list(chain(*x))
+
+def filternot(p, l):
+    return filter(lambda x: not p(x), l)
 
 def print_header(work):
     evnames = set(flatten([obj.evlist for obj in work]))
@@ -2786,7 +2790,10 @@ if ("Slots" not in core_domains and
     cpu.ht and
     not args.single_thread and
     any(map(core_node, runner.olist))):
-    rest = ["--percore-show-thread"] + rest
+    if not feat.supports_percore:
+        runner.olist = filternot(core_node, runner.olist)
+    else:
+        rest = ["--percore-show-thread"] + rest
 
 if args.perf_output:
     ph = []
