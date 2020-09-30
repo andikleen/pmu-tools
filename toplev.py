@@ -1922,6 +1922,8 @@ def get_parents(obj):
         p = get_par(p)
     return l
 
+in_collection = False
+
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
@@ -2136,6 +2138,8 @@ class Runner:
         errata_names = set()
         errata_warn_names = set()
         min_kernel = []
+        global in_collection
+        in_collection = True
         for obj in self.olist:
             obj.evlevels = []
             obj.compute(lambda ev, level: ev_append(ev, level, obj))
@@ -2154,6 +2158,7 @@ class Runner:
                 unsup_nodes.add(obj)
             query_errata(obj, errata_events, errata_nodes, errata_names)
             query_errata(obj, errata_warn_events, errata_warn_nodes, errata_warn_names)
+        in_collection = False
         if bad_nodes:
             if args.force_events:
                 pwrap_not_quiet("warning: Using --force-events. Nodes: " +
@@ -2567,6 +2572,7 @@ if args.debug:
         if x not in printed_error:
             print(x)
             printed_error.add(x)
+        assert not in_collection
     pe = lambda e: print_err(e)
 
 if args.single_thread:
