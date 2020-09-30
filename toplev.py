@@ -229,7 +229,7 @@ def icl_limit4_overflow(evlist):
     return len(limit4)
 
 def ismetric(x):
-    return re.match(r"cpu/event=0x0,umask=0x(1[0123]|4)/", x) is not None
+    return re.match(r"topdown-.*", x) is not None
 
 resources = ("frontend=", "offcore_rsp=", "ldlat=", "in_tx_cp=")
 
