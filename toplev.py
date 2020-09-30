@@ -223,9 +223,11 @@ def limit_overflow(evlist):
 
 limit4_overflow = lambda ev: 0
 
+limit4_events = set()
+
 # limited to first four counters
 def icl_limit4_overflow(evlist):
-    limit4 = [x for x in evlist if fnmatch(x, "cpu/event=0xd[0123],*")]
+    limit4 = [x for x in evlist if x in limit4_events]
     return len(limit4)
 
 def ismetric(x):
@@ -824,6 +826,8 @@ def raw_event(i, name="", period=False, nopebs=True):
             counter = e.counter.replace('"', '')
             limited_counters[i] = int(counter.split(",")[0])
             limited_set.add(i)
+        if e.counter == "0,1,2,3":
+            limit4_events.add(i)
         if e.errata:
             if e.errata not in errata_whitelist:
                 errata_events[orig_i] = e.errata
