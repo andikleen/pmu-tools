@@ -268,6 +268,12 @@ def needed_counters(evlist, nolimit=False):
         if "slots" in evset and evlist[0] != "slots":
             debug_print("split for slots %s" % evlist)
             return 100
+        # force split if there are other events.
+        # sadly this causes the topdown group to not run in parallel
+        # with other groups because there is usually a conflict on slots
+        if len(evlist) > sum(metrics) + 1:
+            debug_print("split for other events in topdown %s" % evlist)
+            return 100
 
     # split if any resource is oversubscribed
     if resource_split(evlist):
