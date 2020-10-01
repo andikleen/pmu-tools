@@ -230,8 +230,7 @@ limit4_events = set()
 
 # limited to first four counters
 def icl_limit4_overflow(evlist):
-    limit4 = [x for x in evlist if x in limit4_events]
-    return len(limit4)
+    return sum([1 for x in evlist if x in limit4_events]) > 4
 
 def ismetric(x):
     return re.match(r"topdown-.*", x) is not None
@@ -285,7 +284,7 @@ def needed_counters(evlist, nolimit=False):
     # force split if we overflow fixed or limit4
     # some fixed could be promoted to generic, but that doesn't work
     # with ref-cycles.
-    if not nolimit and (fixed_overflow(evlist) or limit4_overflow(evlist) > 4):
+    if not nolimit and (fixed_overflow(evlist) or limit4_overflow(evlist)):
         debug_print("fixed or limit4 overflow %s " % evlist)
         return 100
 
