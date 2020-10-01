@@ -1583,11 +1583,8 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
 
     ev = adjust_ev(ev, level)
 
-    def make_uval(v, sd=0.0, mux=None):
-        return UVal(name=ev, value=v, stddev=sd, mux=mux)
-
     if ev in env:
-        return UVal(name=ev, value=env[ev], stddev=0)
+        return env[ev]
     if ev == "mux":
         return min([s.multiplex for s in st])
     #
@@ -1599,15 +1596,9 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     # otherwise we always sum up.
     #
     if isinstance(ev, types.LambdaType):
-        uv = None
-        tmp = [ev(lambda ev, level:
+        return sum([ev(lambda ev, level:
                   lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
-                  for off in range(env['num_merged'])]
-        if tmp:
-            uv = tmp[0]
-            for o in tmp[1:]:
-                uv += o
-        return uv
+                  for off in range(env['num_merged'])])
 
     index = obj.res_map[(ev, level, obj.name)]
     referenced.add(index)
@@ -1631,7 +1622,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     except IndexError:
         warn_once("Not enough lines in perf output for res (%d vs %d for %s)" %
                 (index, len(res), obj.name))
-        return make_uval(0)
+        return 0.0
     if type(vv) is tuple:
         if cpuoff == -1:
             vv = sum(vv)
@@ -1641,9 +1632,9 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
             except IndexError:
                 warn_once("warning: Partial CPU thread data from perf for %s" %
                         obj.name)
-                return 0
+                return 0.0
     if st[index].stddev or st[index].multiplex != 100.0:
-        return make_uval(vv, sd=st[index].stddev, mux=st[index].multiplex)
+        return UVal(name=ev, value=vv, stddev=st[index].stddev, mux=st[index].multiplex)
     return vv
 
 def update_res_map(evnum, objl, base):
