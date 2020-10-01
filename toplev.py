@@ -29,8 +29,10 @@ import sys, os, re, textwrap, platform, pty, subprocess
 import argparse, time, types, csv, copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
-from itertools import compress, groupby, chain
+from itertools import compress, groupby
 import itertools
+from listutils import dedup, dedup2, flatten, filternot
+from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
 import tl_cpu
@@ -253,11 +255,6 @@ def resource_split(evlist):
         elif r[j] > 1:
             return True
     return False
-
-def dedup(a, b):
-    aset = set(a)
-    add = [x for x in b if x not in aset]
-    return a + add
 
 def needed_counters(evlist, nolimit=False):
     evlist = list(map(remove_qual, evlist))
@@ -856,20 +853,6 @@ def pwrap(s, linelen=70, indent=""):
 def pwrap_not_quiet(s, linelen=70, indent=""):
     if not args.quiet:
         pwrap(s, linelen, indent)
-
-def has(obj, name):
-    return name in obj.__class__.__dict__
-
-def safe_ref(obj, name):
-    if has(obj, name):
-        return obj.__class__.__dict__[name]
-    return None
-
-def flatten(x):
-    return list(chain(*x))
-
-def filternot(p, l):
-    return filter(lambda x: not p(x), l)
 
 def print_header(work):
     evnames = set(flatten([obj.evlist for obj in work]))
@@ -1585,11 +1568,6 @@ def event_rmap(e):
     rmap_cache[e] = n
     return n
 
-def map_fields(obj, fields):
-    def map_field(name):
-        return safe_ref(obj, name)
-    return list(map(map_field, fields))
-
 # compare events to handle name aliases
 def compare_event(aname, bname):
     a = emap.getevent(aname, nocheck=event_nocheck)
@@ -1668,18 +1646,6 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     if st[index].stddev or st[index].multiplex != 100.0:
         return make_uval(vv, sd=st[index].stddev, mux=st[index].multiplex)
     return vv
-
-# dedup a and keep b uptodate
-def dedup2(a, b):
-    aset = set()
-    al = []
-    bl = []
-    for ai, bi in zip(a, b):
-        if ai not in aset:
-            al.append(ai)
-            bl.append(bi)
-            aset.add(ai)
-    return al, bl
 
 def update_res_map(evnum, objl, base):
     for obj in objl:
