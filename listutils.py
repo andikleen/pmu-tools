@@ -9,7 +9,7 @@ def filternot(p, l):
     return filter(lambda x: not p(x), l)
 
 # add items from b to a if not already in a
-def dedup(a, b):
+def cat_unique(a, b):
     aset = set(a)
     add = [x for x in b if x not in aset]
     return a + add

@@ -31,7 +31,7 @@ from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby
 import itertools
-from listutils import dedup, dedup2, flatten, filternot
+from listutils import cat_unique, dedup2, flatten, filternot
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -2075,7 +2075,7 @@ class Runner:
         if len(self.evgroups) > 0:
             j = self.evgroups[-1]
             base = self.evbases[-1]
-            if needed_counters(dedup(evnum, j)) <= cpu.counters:
+            if needed_counters(cat_unique(evnum, j)) <= cpu.counters:
                 for k in evnum:
                     if k not in j:
                         j.append(k)
@@ -2092,7 +2092,7 @@ class Runner:
                 update_res_map(j, objl, base)
                 return True
             # for now...
-            elif needed_counters(dedup(evnum, j)) <= cpu.counters:
+            elif needed_counters(cat_unique(evnum, j)) <= cpu.counters:
                 self.missed += 1
         return False
 
