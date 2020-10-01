@@ -143,6 +143,10 @@ FORCEHT=0 \
 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
+if [ $j == "icl" ] ; then
+FORCEMETRICS=1 ./toplev.py --force-cpu $j --force-topology topology --force-events --print $ALL $LOAD
+fi
+
 done
 
 for j in $NOSMTCPUS ; do

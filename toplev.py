@@ -23,6 +23,7 @@
 # PERF=exe          Force perf binary to run
 # FORCE_NMI_WATCHDOG=1  Force NMI watchdog mode
 # KERNEL_VERSION=...    Force kernel version (e.g. 5.0)
+# FORCEMETRICS=1    Force fixed metrics and slots
 
 from __future__ import print_function
 import sys, os, re, textwrap, platform, pty, subprocess
@@ -2630,11 +2631,13 @@ elif cpu.cpu == "clx":
 elif cpu.cpu == "icl":
     import icl_client_ratios
     icl_client_ratios.smt_enabled = cpu.ht
-    icl_client_ratios.topdown_use_fixed = os.path.exists(
+    force_metrics = os.getenv("FORCEMETRICS") is not None
+    icl_client_ratios.topdown_use_fixed = force_metrics or os.path.exists(
             "/sys/devices/cpu/events/topdown-fe-bound")
     model = icl_client_ratios
     core_domains = set(["CoreClocks", "CoreMetric"])
     limit4_overflow = icl_limit4_overflow
+    slots_available = force_metrics or os.path.exists("/sys/devices/cpu/events/slots")
 elif cpu.cpu == "slm":
     import slm_ratios
     model = slm_ratios
@@ -2664,7 +2667,6 @@ if "base_frequency" in model.__dict__:
 if "model" in model.__dict__:
     model.model = cpu.modelid
 
-slots_available = os.path.exists("/sys/devices/cpu/events/slots")
 
 if args.list_metrics or args.list_all:
     runner.list_nodes("Metrics", lambda obj: obj.metric)
