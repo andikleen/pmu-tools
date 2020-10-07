@@ -184,7 +184,8 @@ class PerfFeatures:
             self.has_max_precise = True
             self.max_precise = 3
         else:
-            self.supports_ocr = works(perf + " stat -e '{cpu/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true")
+            self.supports_ocr = works(perf +
+                    " stat -e '{cpu/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true")
             self.has_max_precise = os.path.exists("/sys/devices/cpu/caps/max_precise")
             if self.has_max_precise:
                 self.max_precise = int(open("/sys/devices/cpu/caps/max_precise").read())
@@ -392,7 +393,8 @@ g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumpt
 g.add_argument('--import', help='Import specified perf stat output file instead of running perf. '
                'Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
                 dest='_import')
-g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later', action='store_true')
+g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later',
+               action='store_true')
 g.add_argument('--drilldown', help='Automatically rerun to get more details on bottleneck', action='store_true')
 
 g = p.add_argument_group('Measurement filtering')
@@ -471,7 +473,8 @@ g = p.add_argument_group('Environment')
 g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
 g.add_argument('--force-topology', metavar='findsysoutput', help='Use specified topology file (find /sys/devices)')
 g.add_argument('--force-cpuinfo', metavar='cpuinfo', help='Use specified cpuinfo file (/proc/cpuinfo)')
-g.add_argument('--force-hypervisor', help='Assume running under hypervisor (no uncore, no offcore, no PEBS)', action='store_true')
+g.add_argument('--force-hypervisor', help='Assume running under hypervisor (no uncore, no offcore, no PEBS)',
+               action='store_true')
 g.add_argument('--no-uncore', help='Disable uncore events', action='store_true')
 g.add_argument('--no-check', help='Do not check that PMU units exist', action='store_true')
 
@@ -493,8 +496,10 @@ g.add_argument('--xkeep', help='Keep temporary CSV files', action='store_true')
 g = p.add_argument_group('Sampling')
 g.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
 g.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
-g.add_argument('--sample-args', help='Extra rguments to pass to perf record for sampling. Use + to specify -', default='-g')
-g.add_argument('--sample-repeat', help='Repeat measurement and sampling N times. This interleaves counting and sampling. '
+g.add_argument('--sample-args', help='Extra arguments to pass to perf record for sampling. Use + to specify -',
+               default='-g')
+g.add_argument('--sample-repeat',
+               help='Repeat measurement and sampling N times. This interleaves counting and sampling. '
                'Useful for background collection with -a sleep X.', type=int)
 g.add_argument('--sample-basename', help='Base name of sample perf.data files', default="perf.data")
 
@@ -815,7 +820,9 @@ def raw_event(i, name="", period=False, nopebs=True):
         i = e.output(noname=True, name=name, period=period, noexplode=True)
 
         emap.update_event(e.output(noname=True), e)
-        if e.counter not in cpu.standard_counters and not e.counter.startswith("Fixed") and not orig_i.startswith("UNC_"):
+        if (e.counter not in cpu.standard_counters and
+                not e.counter.startswith("Fixed") and
+                not orig_i.startswith("UNC_")):
             # for now use the first counter only to simplify
             # the assignment. This is sufficient for current
             # CPUs
@@ -856,7 +863,9 @@ def pwrap_not_quiet(s, linelen=70, indent=""):
 
 def print_header(work):
     evnames = set(flatten([obj.evlist for obj in work]))
-    names = ["%s%s" % (obj.__class__.__name__, ("[%d]" % obj.__class__.level) if has(obj, 'level') else "") for obj in work]
+    names = ["%s%s" % (obj.__class__.__name__, ("[%d]" % obj.__class__.level)
+             if has(obj, 'level') else "")
+             for obj in work]
     pwrap(" ".join(names) + ":", 78)
     pwrap(" ".join(map(mark_fixed, evnames)).lower() +
           " [%d counters]" % (needed_counters(raw_events(evnames), True)), 75, "  ")
@@ -1283,9 +1292,11 @@ def dump_raw(interval, title, event, val, index, events, stddev, multiplex, node
         ename = event_rmap(event)
     gnum = group_number(index, events)
     if args.raw:
-        print("raw", title, "event", event, "val", val, "ename", ename, "index", index, "group", gnum, "nodes", nodes)
+        print("raw", title, "event", event, "val", val, "ename", ename, "index",
+                index, "group", gnum, "nodes", nodes)
     if args.valcsv:
-        runner.valcsv.writerow((interval, title, gnum, ename, val, event, index, stddev, multiplex, nodes))
+        runner.valcsv.writerow((interval, title, gnum, ename, val, event, index,
+                                stddev, multiplex, nodes))
 
 perf_fields = [
     r"[0-9.]+",
@@ -2018,7 +2029,8 @@ class Runner:
             return False
         valid = map(valid_node, options)
         if not all(valid):
-            sys.exit("Unknown node(s) in --nodes: " + " ".join([o for o, v in zip(options, valid) if not v]))
+            sys.exit("Unknown node(s) in --nodes: " +
+                     " ".join([o for o, v in zip(options, valid) if not v]))
 
     def reset_thresh(self):
         for obj in self.olist:
@@ -2155,8 +2167,10 @@ class Runner:
                        " due to unsupported events in kernel: " +
                        " ".join(sorted(bad_events)), 80, "")
                     if min_kernel:
-                        print("Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0]), file=sys.stderr)
-                    print("Use --force-events to override (may result in wrong measurements)", file=sys.stderr)
+                        print("Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0]),
+                                file=sys.stderr)
+                    print("Use --force-events to override (may result in wrong measurements)",
+                            file=sys.stderr)
                 self.olist = [x for x in self.olist if x not in bad_nodes]
         if unsup_nodes:
             pwrap_not_quiet("Nodes " + " ".join(x.name for x in unsup_nodes) + " has unsupported PMUs")
@@ -2551,7 +2565,8 @@ kernel_version = list(map(int, kv.split(".")[:2]))
 def ht_warning():
     if cpu.ht and not args.quiet:
         print("WARNING: HT enabled", file=sys.stderr)
-        print("Measuring multiple processes/threads on the same core may is not reliable.", file=sys.stderr)
+        print("Measuring multiple processes/threads on the same core may is not reliable.",
+                file=sys.stderr)
 
 runner = Runner(args.level, idle_threshold)
 
@@ -2681,7 +2696,8 @@ if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_
 
 def check_root():
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1) and not args.quiet:
-        print("Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid", file=sys.stderr)
+        print("Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid",
+                file=sys.stderr)
 
 if not args.no_util:
     import perf_metrics
@@ -2738,7 +2754,8 @@ if not args.single_thread and smt_mode:
         print("Will measure complete system.")
     if smt_mode:
         if args.cpu:
-            print("Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!", file=sys.stderr)
+            print("Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!",
+                  file=sys.stderr)
         if args.pid:
             sys.exit("-p/--pid mode not compatible with SMT. Use sleep in global mode.")
     check_root()
@@ -2817,7 +2834,8 @@ def measure_and_sample(count):
         if (args.show_sample or args.run_sample) and ret == 0:
             do_sample(runner.sample_obj, rest, count, runner.full_olist, ret)
         if ret >= 100 and ret <= 200 and repeat:
-            print("Perf or workload appears to have failed with error %d. Not drilling down" % ret, file=sys.stderr)
+            print("Perf or workload appears to have failed with error %d. Not drilling down" % ret,
+                  file=sys.stderr)
             break
         if count is not None:
             count += 1
@@ -2847,7 +2865,8 @@ if args.xlsx and ret == 0:
     ret = do_xlsx(runner)
 
 if runner.idle_keys and not args.quiet:
-    print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" % (",".join(runner.idle_keys)), file=sys.stderr)
+    print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" %
+            (",".join(runner.idle_keys)), file=sys.stderr)
 
 if notfound_cache and not args.quiet:
     print("Some events not found. Consider running event_download.py to update event lists", file=sys.stderr)
