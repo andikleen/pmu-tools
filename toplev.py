@@ -2869,7 +2869,7 @@ if runner.idle_keys and not args.quiet:
             (",".join(runner.idle_keys)), file=sys.stderr)
 
 if notfound_cache and not args.quiet:
-    print("Some events not found. Consider running event_download.py to update event lists", file=sys.stderr)
+    print("Some events not found. Consider running event_download to update event lists", file=sys.stderr)
 
 if args.graph:
     args.output.close()
