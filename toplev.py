@@ -855,7 +855,10 @@ def mark_fixed(s):
     return s
 
 def pwrap(s, linelen=70, indent=""):
-    print(indent + ("\n" + indent).join(textwrap.wrap(s, linelen, break_long_words=False)), file=sys.stderr)
+    print(indent +
+          ("\n" + indent).join(
+              textwrap.wrap(s, linelen, break_long_words=False)),
+          file=sys.stderr)
 
 def pwrap_not_quiet(s, linelen=70, indent=""):
     if not args.quiet:
@@ -868,13 +871,14 @@ def print_header(work):
              for obj in work]
     pwrap(" ".join(names) + ":", 78)
     pwrap(" ".join(map(mark_fixed, evnames)).lower() +
-          " [%d counters]" % (needed_counters(raw_events(evnames), True)), 75, "  ")
+          " [%d counters]" % (
+              needed_counters(raw_events(evnames), True)), 75, "  ")
 
 def perf_args(evstr, rest):
     add = []
     if interval_mode:
         add += ['-I', str(interval_mode)]
-    return [perf, "stat", "-x;", "--log-fd", "X"] + add + ["-e", evstr]  + rest
+    return [perf, "stat", "-x;", "--log-fd", "X"] + add + ["-e", evstr] + rest
 
 def setup_perf(evstr, rest):
     prun = PerfRun()
@@ -888,7 +892,10 @@ class Stat:
 
 def print_not(a, count, msg, j):
     print(("%s %s %s %.2f%% in %d measurements"
-                % (emap.getperf(j), j, msg, 100.0 * (float(count) / float(a.total)), a.total)), file=sys.stderr)
+                % (emap.getperf(j), j, msg,
+                    100.0 * (float(count) / float(a.total)),
+                    a.total)),
+                file=sys.stderr)
 
 # XXX need to get real ratios from perf
 def print_account(ad):
@@ -900,7 +907,8 @@ def print_account(ad):
                 print_not(a, a.errors[e], e, j)
             total[e] += 1
     if sum(total.values()) > 0 and not args.quiet:
-        print(", ".join(["%d events %s" % (num, e) for e, num in total.items()]), file=sys.stderr)
+        print(", ".join(["%d events %s" % (num, e) for e, num in total.items()]),
+                file=sys.stderr)
 
 class ValidEvents:
     def update(self):
