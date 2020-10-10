@@ -8,6 +8,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* Updated to TMA 4.104: Fixed an error in misprediction-related and Power License metrics
 * toplev now supports the new fixed TMA metrics counters on Icelake. This requires
   the upcoming 5.9+ kernel.
 * toplev was updated to Ahmad Yasin's/Anton Hanna's TMA 4.1

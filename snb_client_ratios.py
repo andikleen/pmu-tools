@@ -1,12 +1,14 @@
 
 #
-# auto generated TopDown/TMAM 4.1-full-perf description for Intel 2nd gen Core (code named SandyBridge)
+# auto generated TopDown/TMAM 4.11-full-perf description for Intel 2nd gen Core (code named SandyBridge)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
+# http://bit.ly/tma-ispass14
 # http://halobates.de/blog/p/262
 # https://sites.google.com/site/analysismethods/yasin-pubs
 # https://download.01.org/perfmon/
+# https://github.com/andikleen/pmu-tools/wiki/toplev-manual
 #
 
 # Helpers
@@ -14,7 +16,7 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.1-full-perf"
+version = "4.11-full-perf"
 base_frequency = -1.0
 Memory = 0
 
@@ -644,7 +646,7 @@ class L3_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Cache_Misses', 'Memory_Bound']
+    metricgroup = ['Cache_Misses', 'Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = Mem_L3_Hit_Fraction(self, EV, 3) * EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3) / CLKS(self, EV, 3)
@@ -669,7 +671,7 @@ class DRAM_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Memory_Bound']
+    metricgroup = ['Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = (1 - Mem_L3_Hit_Fraction(self, EV, 3)) * EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3) / CLKS(self, EV, 3)
@@ -758,7 +760,7 @@ class Store_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Memory_Bound']
+    metricgroup = ['Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = EV("RESOURCE_STALLS.SB", 3) / CLKS(self, EV, 3)
@@ -1094,7 +1096,7 @@ class Microcode_Sequencer:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['MicroSeq', 'Retire', 'TopDownL2']
+    metricgroup = ['MicroSeq', 'Retire']
     def compute(self, EV):
         try:
             self.val = Retire_Fraction(self, EV, 3) * EV("IDQ.MS_UOPS", 3) / SLOTS(self, EV, 3)
@@ -1176,7 +1178,7 @@ class Metric_CLKS:
     server = False
     errcount = 0
     area = "Info.Thread"
-    metricgroup = ['Summary']
+    metricgroup = ['Pipeline']
     sibling = None
 
     def compute(self, EV):

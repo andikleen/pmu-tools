@@ -1,12 +1,14 @@
 
 #
-# auto generated TopDown/TMAM 4.1-full-perf description for Intel 10th gen Core (code name Icelake)
+# auto generated TopDown/TMAM 4.11-full-perf description for Intel 10th gen Core (code name Icelake)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
+# http://bit.ly/tma-ispass14
 # http://halobates.de/blog/p/262
 # https://sites.google.com/site/analysismethods/yasin-pubs
 # https://download.01.org/perfmon/
+# https://github.com/andikleen/pmu-tools/wiki/toplev-manual
 #
 
 # Helpers
@@ -14,7 +16,7 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.1-full-perf"
+version = "4.11-full-perf"
 base_frequency = -1.0
 Memory = 0
 topdown_use_fixed = False
@@ -122,7 +124,7 @@ def Memory_Bound_Fraction(self, EV, level):
     return (EV("CYCLE_ACTIVITY.STALLS_MEM_ANY", level) + EV("EXE_ACTIVITY.BOUND_ON_STORES", level)) / Backend_Bound_Cycles(self, EV, level)
 
 def Mispred_Clears_Fraction(self, EV, level):
-    return EV("TOPDOWN.BR_MISPREDICT_SLOTS", level) / (self.Bad_Speculation.compute(EV) * SLOTS(self, EV, level))
+    return EV("BR_MISP_RETIRED.ALL_BRANCHES", level) / (EV("BR_MISP_RETIRED.ALL_BRANCHES", level) + EV("MACHINE_CLEARS.COUNT", level))
 
 def ORO_Demand_RFO_C1(self, EV, level):
     return EV(lambda EV , level : min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("OFFCORE_REQUESTS_OUTSTANDING.CYCLES_WITH_DEMAND_RFO", level)) , level )
@@ -344,15 +346,15 @@ def Turbo_Utilization(self, EV, level):
 
 # Fraction of Core cycles where the core was running with power-delivery for baseline license level 0.  This includes non-AVX codes, SSE, AVX 128-bit, and low-current AVX 256-bit codes.
 def Power_License0_Utilization(self, EV, level):
-    return EV("CORE_POWER.LVL0_TURBO_LICENSE", level) / 2 / CORE_CLKS(self, EV, level) if smt_enabled else EV("CORE_POWER.LVL0_TURBO_LICENSE", level) / CORE_CLKS(self, EV, level)
+    return EV("CORE_POWER.LVL0_TURBO_LICENSE", level) / CORE_CLKS(self, EV, level)
 
 # Fraction of Core cycles where the core was running with power-delivery for license level 1.  This includes high current AVX 256-bit instructions as well as low current AVX 512-bit instructions.
 def Power_License1_Utilization(self, EV, level):
-    return EV("CORE_POWER.LVL1_TURBO_LICENSE", level) / 2 / CORE_CLKS(self, EV, level) if smt_enabled else EV("CORE_POWER.LVL1_TURBO_LICENSE", level) / CORE_CLKS(self, EV, level)
+    return EV("CORE_POWER.LVL1_TURBO_LICENSE", level) / CORE_CLKS(self, EV, level)
 
 # Fraction of Core cycles where the core was running with power-delivery for license level 2 (introduced in SKX).  This includes high current AVX 512-bit instructions.
 def Power_License2_Utilization(self, EV, level):
-    return EV("CORE_POWER.LVL2_TURBO_LICENSE", level) / 2 / CORE_CLKS(self, EV, level) if smt_enabled else EV("CORE_POWER.LVL2_TURBO_LICENSE", level) / CORE_CLKS(self, EV, level)
+    return EV("CORE_POWER.LVL2_TURBO_LICENSE", level) / CORE_CLKS(self, EV, level)
 
 # Fraction of cycles where both hardware Logical Processors were active
 def SMT_2T_Utilization(self, EV, level):
@@ -962,7 +964,7 @@ class L1_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Cache_Misses', 'Memory_Bound']
+    metricgroup = ['Cache_Misses', 'Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = max((EV("CYCLE_ACTIVITY.STALLS_MEM_ANY", 3) - EV("CYCLE_ACTIVITY.STALLS_L1D_MISS", 3)) / CLKS(self, EV, 3) , 0 )
@@ -1212,7 +1214,7 @@ class L2_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Cache_Misses', 'Memory_Bound']
+    metricgroup = ['Cache_Misses', 'Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = (LOAD_L2_HIT(self, EV, 3) / (LOAD_L2_HIT(self, EV, 3) + EV("L1D_PEND_MISS.FB_FULL_PERIODS", 3))) * L2_Bound_Ratio(self, EV, 3)
@@ -1237,7 +1239,7 @@ class L3_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Cache_Misses', 'Memory_Bound']
+    metricgroup = ['Cache_Misses', 'Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = (EV("CYCLE_ACTIVITY.STALLS_L2_MISS", 3) - EV("CYCLE_ACTIVITY.STALLS_L3_MISS", 3)) / CLKS(self, EV, 3)
@@ -1371,7 +1373,7 @@ class DRAM_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Memory_Bound']
+    metricgroup = ['Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = MEM_Bound_Ratio(self, EV, 3)
@@ -1460,7 +1462,7 @@ class Store_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Memory_Bound']
+    metricgroup = ['Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = EV("EXE_ACTIVITY.BOUND_ON_STORES", 3) / CLKS(self, EV, 3)
@@ -2305,7 +2307,7 @@ class Microcode_Sequencer:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['MicroSeq', 'Retire', 'TopDownL2']
+    metricgroup = ['MicroSeq', 'Retire']
     def compute(self, EV):
         try:
             self.val = Retire_Fraction(self, EV, 3) * EV("IDQ.MS_UOPS", 3) / SLOTS(self, EV, 3)
@@ -2460,7 +2462,7 @@ class Metric_CLKS:
     server = False
     errcount = 0
     area = "Info.Thread"
-    metricgroup = ['Summary']
+    metricgroup = ['Pipeline']
     sibling = None
 
     def compute(self, EV):
@@ -3729,24 +3731,16 @@ class Setup:
 
         # references between groups
 
-        o["Mispredicts_Resteers"].Retiring = o["Retiring"]
-        o["Mispredicts_Resteers"].Bad_Speculation = o["Bad_Speculation"]
-        o["Mispredicts_Resteers"].Frontend_Bound = o["Frontend_Bound"]
-        o["Mispredicts_Resteers"].Backend_Bound = o["Backend_Bound"]
-        o["Clears_Resteers"].Retiring = o["Retiring"]
-        o["Clears_Resteers"].Bad_Speculation = o["Bad_Speculation"]
-        o["Clears_Resteers"].Frontend_Bound = o["Frontend_Bound"]
-        o["Clears_Resteers"].Backend_Bound = o["Backend_Bound"]
         o["Unknown_Branches"].Branch_Resteers = o["Branch_Resteers"]
         o["Fetch_Bandwidth"].Frontend_Bound = o["Frontend_Bound"]
         o["Fetch_Bandwidth"].Fetch_Latency = o["Fetch_Latency"]
         o["Bad_Speculation"].Retiring = o["Retiring"]
         o["Bad_Speculation"].Frontend_Bound = o["Frontend_Bound"]
         o["Bad_Speculation"].Backend_Bound = o["Backend_Bound"]
-        o["Branch_Mispredicts"].Backend_Bound = o["Backend_Bound"]
         o["Branch_Mispredicts"].Retiring = o["Retiring"]
         o["Branch_Mispredicts"].Bad_Speculation = o["Bad_Speculation"]
         o["Branch_Mispredicts"].Frontend_Bound = o["Frontend_Bound"]
+        o["Branch_Mispredicts"].Backend_Bound = o["Backend_Bound"]
         o["Machine_Clears"].Branch_Mispredicts = o["Branch_Mispredicts"]
         o["Machine_Clears"].Retiring = o["Retiring"]
         o["Machine_Clears"].Frontend_Bound = o["Frontend_Bound"]

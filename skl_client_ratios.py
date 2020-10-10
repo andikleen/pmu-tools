@@ -1,12 +1,14 @@
 
 #
-# auto generated TopDown/TMAM 4.1-full-perf description for Intel 6th/7th gen Core (code named Skykale/Kabylake/Coffeelake)
+# auto generated TopDown/TMAM 4.11-full-perf description for Intel 6th/7th gen Core (code named Skykale/Kabylake/Coffeelake)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
+# http://bit.ly/tma-ispass14
 # http://halobates.de/blog/p/262
 # https://sites.google.com/site/analysismethods/yasin-pubs
 # https://download.01.org/perfmon/
+# https://github.com/andikleen/pmu-tools/wiki/toplev-manual
 #
 
 # Helpers
@@ -14,7 +16,7 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.1-full-perf"
+version = "4.11-full-perf"
 base_frequency = -1.0
 Memory = 0
 
@@ -287,10 +289,6 @@ def Load_Miss_Real_Latency(self, EV, level):
 # Memory-Level-Parallelism (average number of L1 miss demand load when there is at least one such miss. Per-Logical Processor)
 def MLP(self, EV, level):
     return EV("L1D_PEND_MISS.PENDING", level) / EV("L1D_PEND_MISS.PENDING_CYCLES", level)
-
-# Utilization of the core's Page Walker(s) serving STLB misses triggered by instruction/Load/Store accesses
-def Page_Walks_Utilization(self, EV, level):
-    return (EV("ITLB_MISSES.WALK_PENDING", level) + EV("DTLB_LOAD_MISSES.WALK_PENDING", level) + EV("DTLB_STORE_MISSES.WALK_PENDING", level) + EV("EPT.WALK_PENDING", level)) / (2 * CORE_CLKS(self, EV, level))
 
 # Average data fill bandwidth to the L1 data cache [GB / sec]
 def L1D_Cache_Fill_BW(self, EV, level):
@@ -984,7 +982,7 @@ class L1_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Cache_Misses', 'Memory_Bound']
+    metricgroup = ['Cache_Misses', 'Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = max((EV("CYCLE_ACTIVITY.STALLS_MEM_ANY", 3) - EV("CYCLE_ACTIVITY.STALLS_L1D_MISS", 3)) / CLKS(self, EV, 3) , 0 )
@@ -1234,7 +1232,7 @@ class L2_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Cache_Misses', 'Memory_Bound']
+    metricgroup = ['Cache_Misses', 'Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = (LOAD_L2_HIT(self, EV, 3) / (LOAD_L2_HIT(self, EV, 3) + EV("L1D_PEND_MISS.FB_FULL:c1", 3))) * L2_Bound_Ratio(self, EV, 3)
@@ -1259,7 +1257,7 @@ class L3_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Cache_Misses', 'Memory_Bound']
+    metricgroup = ['Cache_Misses', 'Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = (EV("CYCLE_ACTIVITY.STALLS_L2_MISS", 3) - EV("CYCLE_ACTIVITY.STALLS_L3_MISS", 3)) / CLKS(self, EV, 3)
@@ -1393,7 +1391,7 @@ class DRAM_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Memory_Bound']
+    metricgroup = ['Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = MEM_Bound_Ratio(self, EV, 3)
@@ -1482,7 +1480,7 @@ class Store_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Memory_Bound']
+    metricgroup = ['Memory_Bound', 'TopdownL3mem']
     def compute(self, EV):
         try:
             self.val = EV("EXE_ACTIVITY.BOUND_ON_STORES", 3) / CLKS(self, EV, 3)
@@ -2424,7 +2422,7 @@ class Microcode_Sequencer:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['MicroSeq', 'Retire', 'TopDownL2']
+    metricgroup = ['MicroSeq', 'Retire']
     def compute(self, EV):
         try:
             self.val = Retire_Fraction(self, EV, 3) * EV("IDQ.MS_UOPS", 3) / SLOTS(self, EV, 3)
@@ -2579,7 +2577,7 @@ class Metric_CLKS:
     server = False
     errcount = 0
     area = "Info.Thread"
-    metricgroup = ['Summary']
+    metricgroup = ['Pipeline']
     sibling = None
 
     def compute(self, EV):
@@ -3093,26 +3091,6 @@ class Metric_MLP:
 Memory-Level-Parallelism (average number of L1 miss demand
 load when there is at least one such miss. Per-Logical
 Processor)"""
-
-
-class Metric_Page_Walks_Utilization:
-    name = "Page_Walks_Utilization"
-    domain = "CoreMetric"
-    maxval = 1
-    server = False
-    errcount = 0
-    area = "Info.Memory"
-    metricgroup = ['TLB']
-    sibling = None
-
-    def compute(self, EV):
-        try:
-            self.val = Page_Walks_Utilization(self, EV, 0)
-        except ZeroDivisionError:
-            handle_error_metric(self, "Page_Walks_Utilization zero division")
-    desc = """
-Utilization of the core's Page Walker(s) serving STLB misses
-triggered by instruction/Load/Store accesses"""
 
 
 class Metric_L1D_Cache_Fill_BW:
@@ -3841,7 +3819,6 @@ class Setup:
         n = Metric_IpUnknown_Branch() ; r.metric(n) ; o["IpUnknown_Branch"] = n
         n = Metric_Load_Miss_Real_Latency() ; r.metric(n) ; o["Load_Miss_Real_Latency"] = n
         n = Metric_MLP() ; r.metric(n) ; o["MLP"] = n
-        n = Metric_Page_Walks_Utilization() ; r.metric(n) ; o["Page_Walks_Utilization"] = n
         n = Metric_L1D_Cache_Fill_BW() ; r.metric(n) ; o["L1D_Cache_Fill_BW"] = n
         n = Metric_L2_Cache_Fill_BW() ; r.metric(n) ; o["L2_Cache_Fill_BW"] = n
         n = Metric_L3_Cache_Fill_BW() ; r.metric(n) ; o["L3_Cache_Fill_BW"] = n
