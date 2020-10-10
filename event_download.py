@@ -111,16 +111,18 @@ def cpu_without_step(match):
     return "%s-%s-%s" % tuple(n[:3])
 
 allowed_chars = string.ascii_letters + '_-.' + string.digits
-def download(match, key=None, link=True, onlyprint=False):
+def parse_map_file(match, key=None, link=True, onlyprint=False, acceptfile=False):
     match2 = cpu_without_step(match)
-    found = 0
+    files = []
     dir = getdir()
     try:
         mapfn = os.path.join(dir, "mapfile.csv")
         if onlyprint and not os.path.exists(mapfn):
             print("Download", mapfn, "first for --print")
-            return 0
-        if not onlyprint:
+            return []
+        if acceptfile and os.path.exists(mapfn):
+            pass
+        elif not onlyprint:
             getfile(modelpath, dir, "mapfile.csv")
         models = open(mapfn)
         for j in models:
@@ -144,20 +146,26 @@ def download(match, key=None, link=True, onlyprint=False):
                 matchfn = cpu
             if ".json" not in matchfn:
                 fn = "%s-%s.json" % (matchfn, sanitize(typ, allowed_chars))
-            try:
-                os.remove(os.path.join(dir, fn))
-            except OSError:
-                pass
-            if onlyprint:
-                print(os.path.join(dir, fn))
-                continue
-            try:
-                getfile(url, dir, fn)
-            except URLError as e:
-                print("error accessing %s: %s" % (url, e), file=sys.stderr)
-                if match == '*':
+            path = os.path.join(dir, fn)
+            if acceptfile and os.path.exists(path):
+                if onlyprint:
+                    print(path)
                     continue
-                raise
+            else:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+                if onlyprint:
+                    print(path)
+                    continue
+                try:
+                    getfile(url, dir, fn)
+                except URLError as e:
+                    print("error accessing %s: %s" % (url, e), file=sys.stderr)
+                    if match == '*':
+                        continue
+                    raise
             if link:
                 lname = re.sub(r'.*/', '', name)
                 lname = sanitize(lname, allowed_chars)
@@ -169,7 +177,7 @@ def download(match, key=None, link=True, onlyprint=False):
                     os.symlink(fn, os.path.join(dir, lname))
                 except OSError as e:
                     print("Cannot link %s to %s:" % (name, lname), e, file=sys.stderr)
-            found += 1
+            files.append(fn)
         models.close()
         if not onlyprint:
             getfile(urlpath + "/readme.txt", dir, "readme.txt")
@@ -185,7 +193,10 @@ To get events for all possible CPUs use:
 \tevent_download.py -a""" % match, file=sys.stderr)
     except OSError as e:
         print("Cannot write events file:", e, file=sys.stderr)
-    return found
+    return files
+
+def download(match, key=None, link=True, onlyprint=False, acceptfile=False):
+    return len(parse_map_file(match, key, link, onlyprint, acceptfile))
 
 def download_current(link=False, onlyprint=False):
     """Download JSON event list for current cpu.
@@ -205,11 +216,17 @@ def eventlist_name(name=None, key="core"):
         return fn
     fn = "%s/%s" % (cache, fn)
     if not os.path.exists(fn):
+        files = parse_map_file(name, key, acceptfile=True)
+        if len(files):
+            return files[0]
         name = cpu_without_step(name)
         if "*" in fn:
             fn = "%s/%s" % (cache, name)
         else:
             fn = "%s/%s-%s.json" % (cache, name, key)
+        files = parse_map_file(name, key, acceptfile=True)
+        if len(files):
+            fn = files[0]
     return fn
 
 if __name__ == '__main__':
