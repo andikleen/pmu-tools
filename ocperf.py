@@ -690,8 +690,6 @@ class EmapNativeJSON(object):
             return self.events[e]
         elif e.endswith("_ps"):
             return update_ename(self.getevent(e[:-3] + ":p" + extra), e)
-        elif e.endswith("_0") or e.endswith("_1"):
-            return update_ename(self.getevent(e.replace("_0","").replace("_1","") + edelim + extra), e)
         elif e.startswith("offcore") and (e + "_0") in self.events:
             return update_ename(self.getevent(e + "_0" + edelim + extra), e)
         elif e in self.uncore_events:
