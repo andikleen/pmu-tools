@@ -670,7 +670,6 @@ if args.user:
     ring_filter = 'u'
 if args.user and args.kernel:
     ring_filter = None
-print_group = args.print_group
 
 MAX_ERROR = 0.05
 
@@ -1908,17 +1907,6 @@ def quote(s):
         return '"' + s + '"'
     return s
 
-def print_group(g):
-    objnames = set([("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "")
-                    for o in g.objl
-                    for x in o.group_map.keys()])
-    evnames = set([mark_fixed(x[0])
-                   for o in g.objl
-                   for x in o.group_map.keys()])
-    pwrap(" ".join(objnames) + ":", 78)
-    pwrap(" ".join(evnames).lower() +
-          " [%d counters]" % (needed_counters(g.evnum)), 75, "  ")
-
 in_collection = False
 
 class Group:
@@ -2190,6 +2178,15 @@ class Runner:
             for k, gr in obj.group_map.iteritems():
                 obj.res_map[k] = gr[0].base + gr[1]
 
+    def print_group(self, g):
+        evkeys = [k for o in g.objl for k, gr in o.group_map.iteritems() if gr[0] == g]
+        objnames = set([("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys])
+        evnames = set([mark_fixed(x[0]) for x in evkeys])
+        pwrap(" ".join(objnames) + ":", 78)
+        pwrap(" ".join(evnames).lower() +
+              (" [%d counters]" % needed_counters(g.evnum)) +
+              (" [%d]" % g.base if args.debug else ""), 75, "  ")
+
     def print_group_summary(self):
         num_groups = len(self.evgroups)
         print("%d groups, %d non-groups with %d events total (%d unique) for %d objects" % (
@@ -2250,14 +2247,14 @@ class Runner:
 
         self.allocate_bases()
 
-        if print_group:
+        if args.print_group:
             for g in self.evgroups:
-                print_group(g)
+                self.print_group(g)
 
         self.gen_res_map(solist)
         self.gen_indexobj()
         self.unreferenced_dummy()
-        if print_group:
+        if args.print_group:
             self.print_group_summary()
 
     def propagate_siblings(self):
