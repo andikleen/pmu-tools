@@ -1911,6 +1911,8 @@ class Group:
         self.base = None
         self.objl = set(objl)
 
+any_merge = True
+
 class Runner:
     """Schedule measurements of event groups. Map events to groups."""
 
@@ -2075,9 +2077,19 @@ class Runner:
     def add_duplicate(self, evnum, objl):
         # could speed up by keeping list of not-yet-full groups
         # but that would need special handling for fixed counters
+        evset = set(evnum)
 
         for g in self.evgroups:
-            if needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters:
+
+            #
+            # in principle we should only merge if there is any overlap
+            # otherwise completely unrelated nodes get merged. But the perf
+            # scheduler isn't very good at handling smaller groups, and
+            # with eventual exclusive use we would like as big groups as possible.
+            # still keep it as a option to play around.
+            #
+            if ((any_merge or not evset.isdisjoint(g.evnum)) and
+                needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
                 debug_print("add_duplicate %s %s in %s" % (
                     evnum, map(event_rmap, evnum), g.evnum))
                 for k in evnum:
