@@ -77,7 +77,7 @@ def sort_key(i, data):
         return early_plots.index(i)
     if i in data.metrics:
         return 30
-    return i
+    return list(data.levels.keys()).index(i)
 
 def level_order(data):
     """Return plot order of all levels."""
