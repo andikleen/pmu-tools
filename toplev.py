@@ -2079,8 +2079,11 @@ class Runner:
             #
             if ((any_merge or not evset.isdisjoint(g.evnum)) and
                   needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
-                debug_print("add_duplicate %s %s in %s" % (
-                    evnum, map(event_rmap, evnum), g.evnum))
+                debug_print("add_duplicate %s %s in %s objl %s" % (
+                    evnum,
+                    list(map(event_rmap, evnum)),
+                    g.evnum,
+                    [o.name for o in objl]))
                 for k in evnum:
                     if k not in g.evnum:
                         g.evnum.append(k)
@@ -2097,7 +2100,7 @@ class Runner:
             return
         evnum, evlev = dedup2(evnum, evlev)
         if not self.add_duplicate(evnum, objl):
-            debug_print("add %s %s" % (evnum, map(event_rmap, evnum)))
+            debug_print("add %s %s" % (evnum, list(map(event_rmap, evnum))))
             g = Group(evnum, objl)
             self.evgroups.append(g)
             update_group_map(evnum, objl, g)
