@@ -79,6 +79,8 @@ fixed_to_num = {
     "topdown-retiring": 103,
 }
 
+non_json_events = set()
+
 # handle kernels that don't support all events
 unsup_pebs = (
     ("BR_MISP_RETIRED.ALL_BRANCHES:pp", (("hsw",), (3, 18), None)),
@@ -756,19 +758,6 @@ class PerfRun:
             ret = self.perf.wait()
         return ret
 
-fixed_counters = {
-    "CPU_CLK_UNHALTED.THREAD": "cycles",
-    "CPU_CLK_UNHALTED.THREAD:amt1": "cpu/event=0x3c,umask=0x0,any=1/",
-    "INST_RETIRED.ANY": "instructions",
-    "CPU_CLK_UNHALTED.REF_TSC": "ref-cycles",
-    "CPU_CLK_UNHALTED.REF_TSC:amt1": "cpu/event=0x0,umask=0x3,any=1/",
-    "CPU_CLK_UNHALTED.REF_TSC:sup": "cpu/event=0x0,umask=0x3/k",
-    "CPU_CLK_UNHALTED.REF_TSC:SUP": "cpu/event=0x0,umask=0x3/k",
-}
-
-fixed_set = frozenset(fixed_counters.keys())
-fixed_to_name = dict(zip(fixed_counters.values(), fixed_counters.keys()))
-
 def separator(x):
     if x.startswith("cpu"):
         return ""
@@ -798,8 +787,6 @@ def raw_event(i, name="", period=False, nopebs=True):
         if re.match(r'^(OCR|OFFCORE_RESPONSE).*', i) and not feat.supports_ocr:
             print("%s not supported in guest" % i, file=sys.stderr)
             return "dummy"
-        if i in fixed_counters:
-            return fixed_counters[i]
         if not cpu.ht:
             i = i.replace(":percore", "")
         e = emap.getevent(i, nocheck=event_nocheck)
@@ -838,6 +825,8 @@ def raw_event(i, name="", period=False, nopebs=True):
                 errata_events[orig_i] = e.errata
             else:
                 errata_warn_events[orig_i] = e.errata
+    else:
+        non_json_events.add(i)
     if not i.startswith("cpu/") and i not in ingroup_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
@@ -1284,10 +1273,7 @@ def group_number(num, events):
     return flatten(gnums)[num]
 
 def dump_raw(interval, title, event, val, index, events, stddev, multiplex, nodes):
-    if event in fixed_to_name:
-        ename = fixed_to_name[event].lower()
-    else:
-        ename = event_rmap(event)
+    ename = event_rmap(event)
     gnum = group_number(index, events)
     if args.raw:
         print("raw", title, "event", event, "val", val, "ename", ename, "index",
@@ -1547,8 +1533,6 @@ def canon_event(e):
     m = re.match(r"(.*?):(.*)", e)
     if m and m.group(2) != "amt1" and m.group(2) not in ("sup", "SUP"):
         e = m.group(1)
-    if e in fixed_counters:
-        return fixed_counters[e]
     if m:
         e = m.group(1)
     if e.endswith("_0"):
@@ -1565,6 +1549,8 @@ def do_event_rmap(e):
         n = fixes[n.upper()].lower()
         if n:
             return n
+    if e in non_json_events:
+        return e
     debug_print("rmap: cannot find %s, using dummy" % e)
     return "dummy"
 
