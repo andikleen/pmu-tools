@@ -1531,8 +1531,6 @@ def ev_append(ev, level, obj):
 
 def canon_event(e):
     m = re.match(r"(.*?):(.*)", e)
-    if m and m.group(2) != "amt1" and m.group(2) not in ("sup", "SUP"):
-        e = m.group(1)
     if m:
         e = m.group(1)
     return e.lower()
