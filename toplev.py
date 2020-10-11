@@ -80,7 +80,7 @@ fixed_to_num = {
     "topdown-retiring": 103,
 }
 
-non_json_events = set()
+non_json_events = set(("dummy",))
 
 # handle kernels that don't support all events
 unsup_pebs = (
