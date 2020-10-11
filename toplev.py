@@ -1136,7 +1136,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             runner.print_res(out, interval, jname, package_node, None, j in idle_mark_keys)
     # no bottlenecks from package nodes for now
     out.flush()
-    stat.referenced_check(res, runner.evnum)
+    stat.referenced_check(res, runner.sched.evnum)
     stat.compute_errors()
     runner.idle_keys |= hidden_keys
 
@@ -1211,7 +1211,7 @@ def execute_no_multiplex(runner, out, rest):
     rev = defaultdict(list)
     valstats = defaultdict(list)
     env = dict()
-    groups = [g.evnum for g in runner.evgroups if len(g.evnum) > 0]
+    groups = [g.evnum for g in runner.sched.evgroups if len(g.evnum) > 0]
     num_runs = len(groups) - len(list(filter(is_outgroup, groups)))
     outg = []
     n = 0
@@ -1234,7 +1234,7 @@ def execute_no_multiplex(runner, out, rest):
 
 def execute(runner, out, rest):
     env = dict()
-    events = [x.evnum for x in runner.evgroups if len(x.evnum) > 0]
+    events = [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
     ctx = SaveContext()
     ret, res, rev, interval, valstats = do_execute(runner, events,
                                          out, rest,
@@ -1434,7 +1434,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                      val,
                      len(res[title]) - len(init_res[title]) - 1,
                      events, stddev, multiplex,
-                     " ".join([o.name.replace(" ", "_") for o in runner.indexobj[len(res[title]) - 1]]))
+                     " ".join([o.name.replace(" ", "_") for o in runner.sched.indexobj[len(res[title]) - 1]]))
     inf.close()
     if 'interval-s' not in env:
         set_interval(env, time.time() - start)
@@ -1614,15 +1614,6 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     if st[index].stddev or st[index].multiplex != 100.0:
         return UVal(name=ev, value=vv, stddev=st[index].stddev, mux=st[index].multiplex)
     return vv
-
-def update_group_map(evnum, objl, group):
-    for obj in objl:
-        for lev in obj.evlevels:
-            r = raw_event(lev[0])
-            # can happen during splitting
-            # the update of the other level will fix it
-            if r in evnum:
-                obj.group_map[lev] = (group, evnum.index(r))
 
 class BadEvent(Exception):
     def __init__(self, name):
@@ -1900,13 +1891,186 @@ class Group:
 
 any_merge = True
 
-class Runner:
-    """Schedule measurements of event groups. Map events to groups."""
+class Scheduler:
+    """Schedule events into groups."""
 
-    def reset(self):
+    def __init__(self):
         self.evnum = [] # flat global list
         self.evgroups = [] # of Group
         self.og_groups = dict()
+        self.indexobj = None
+
+    # replace unreferenced events with dummy. Should remove instead
+    def unreferenced_dummy(self):
+        for g in self.evgroups:
+            for ind, j in enumerate(g.evnum):
+                if not self.indexobj[g.base + ind]:
+                    debug_print("replacing unreferenced %d %s with dummy" %
+                                ((g.base + ind), g.evnum[ind]))
+                    g.evnum[ind] = "dummy"
+                    self.evnum[g.base + ind] = "dummy"
+
+    def split_groups(self, objl, evlev):
+        levels = set(get_levels(evlev))
+        if len(levels) == 1:
+            # when there is only a single left just fill groups
+            while evlev:
+                n = grab_group(list(map(raw_event, get_names(evlev))))
+                l = evlev[:n]
+                self.add(objl, raw_events(get_names(l)), l, True)
+                evlev = evlev[n:]
+        else:
+            for l in levels:
+                evl = [x for x in evlev if x[1] == l]
+                # don't filter objects, the lower level functions
+                # have to handle missing entries
+                if evl:
+                    self.add(objl, raw_events(get_names(evl)), evl)
+
+    def add_duplicate(self, evnum, objl):
+        # could speed up by keeping list of not-yet-full groups
+        # but that would need special handling for fixed counters
+        evset = set(evnum)
+
+        for g in reversed(self.evgroups):
+            if g.outgroup:
+                continue
+
+            #
+            # in principle we should only merge if there is any overlap
+            # otherwise completely unrelated nodes get merged. But the perf
+            # scheduler isn't very good at handling smaller groups, and
+            # with eventual exclusive use we would like as big groups as possible.
+            # still keep it as a option to play around.
+            #
+            if ((any_merge or not evset.isdisjoint(g.evnum)) and
+                  needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
+                debug_print("add_duplicate %s %s in %s objl %s" % (
+                    evnum,
+                    list(map(event_rmap, evnum)),
+                    g.evnum,
+                    [o.name for o in objl]))
+                for k in evnum:
+                    if k not in g.evnum:
+                        g.evnum.append(k)
+                    g.objl |= set(objl)
+                self.update_group_map(g.evnum, objl, g)
+                return True
+
+        return False
+
+    def add(self, objl, evnum, evlev, force=False):
+        # does not fit into a group.
+        if needed_counters(evnum) > cpu.counters and not force:
+            self.split_groups(objl, evlev)
+            return
+        evnum, evlev = dedup2(evnum, evlev)
+        if not self.add_duplicate(evnum, objl):
+            debug_print("add %s %s" % (evnum, list(map(event_rmap, evnum))))
+            g = Group(evnum, objl)
+            self.evgroups.append(g)
+            self.update_group_map(evnum, objl, g)
+
+    def add_outgroup(self, obj, evnum):
+        debug_print("add_outgroup %s" % evnum)
+        for ev in evnum:
+            if ev in self.og_groups:
+                g = self.og_groups[ev]
+                g.objl.add(obj)
+            else:
+                g = Group([ev], [obj], True)
+                self.og_groups[ev] = g
+                self.evgroups.append(g)
+            self.update_group_map([ev], [obj], g)
+
+    def update_group_map(self, evnum, objl, group):
+        for obj in objl:
+            for lev in obj.evlevels:
+                r = raw_event(lev[0])
+                # can happen during splitting
+                # the update of the other level will fix it
+                if r in evnum:
+                    obj.group_map[lev] = (group, evnum.index(r))
+
+    def allocate_bases(self):
+        base = 0
+        for g in self.evgroups:
+            g.base = base
+            self.evnum += g.evnum
+            base += len(g.evnum)
+
+    def gen_res_map(self, solist):
+        for obj in solist:
+            for k in obj.group_map.keys():
+                gr = obj.group_map[k]
+                obj.res_map[k] = gr[0].base + gr[1]
+
+    def gen_indexobj(self, olist):
+        self.indexobj = defaultdict(list)
+        for o in olist:
+            for n in o.res_map.values():
+                self.indexobj[n].append(o)
+
+    def print_group(self, g):
+        evkeys = [k for o in g.objl for k in o.group_map.keys() if o.group_map[k][0] == g]
+        objnames = set([("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys])
+        evnames = set([mark_fixed(x[0]) for x in evkeys])
+        pwrap(" ".join(objnames) + ":", 78)
+        pwrap(" ".join(evnames).lower() +
+              (" [%d counters]" % needed_counters(g.evnum)) +
+              (" [%d]" % g.base if args.debug else ""), 75, "  ")
+
+    def print_group_summary(self, olist):
+        num_groups = len([g for g in self.evgroups if not g.outgroup])
+        print("%d cpu groups, %d outgroups with %d events total (%d unique) for %d objects" % (
+            num_groups,
+            len(self.evgroups) - num_groups,
+            len(self.evnum),
+            len(set(self.evnum)),
+            len(olist)),
+              file=sys.stderr)
+
+    # fit events into available counters
+    def schedule(self, olist):
+        # sort objects by level and inside each level by num-counters
+        solist = sorted(olist, key=lambda x: (x.level, x.nc))
+        # try to fit each objects events into groups
+        # that fit into the available CPU counters
+        for obj in solist:
+            debug_print("schedule %s " % obj.name)
+            evnum = obj.evnum
+            evlevels = obj.evlevels
+            oe = [e in outgroup_events for e in obj.evnum]
+            if any(oe):
+                # add events outside group separately
+                og_evnum = list(compress(obj.evnum, oe))
+                self.add_outgroup(obj, og_evnum)
+                if all(oe):
+                    continue
+
+                # keep other events
+                ie = not_list(oe)
+                evlevels = list(compress(obj.evlevels, ie))
+                evnum = list(compress(obj.evnum, ie))
+
+            self.add([obj], evnum, evlevels)
+
+        self.allocate_bases()
+
+        if args.print_group:
+            for g in self.evgroups:
+                self.print_group(g)
+
+        self.gen_res_map(olist)
+        self.gen_indexobj(olist)
+        self.unreferenced_dummy()
+        if args.print_group:
+            self.print_group_summary(olist)
+
+class Runner:
+    """Handle measurements of event groups. Map events to groups."""
+
+    def reset(self):
         self.stat = ComputeStat(args.quiet)
         self.sample_obj = set()
         self.olist = []
@@ -1915,8 +2079,8 @@ class Runner:
         self.summary = None
         if args.summary:
             self.summary = Summary()
-        self.indexobj = None
         self.idle_threshold = idle_threshold
+        self.sched = Scheduler()
 
     def __init__(self, max_level, idle_threshold):
         self.reset()
@@ -2017,16 +2181,6 @@ class Runner:
             if not obj.metric:
                 obj.thresh = False
 
-    # replace unreferenced events with dummy. Should remove instead
-    def unreferenced_dummy(self):
-        for g in self.evgroups:
-            for ind, j in enumerate(g.evnum):
-                if not self.indexobj[g.base + ind]:
-                    debug_print("replacing unreferenced %d %s with dummy" %
-                                ((g.base + ind), g.evnum[ind]))
-                    g.evnum[ind] = "dummy"
-                    self.evnum[g.base + ind] = "dummy"
-
     def run(self, obj):
         obj.thresh = True
         obj.metric = False
@@ -2043,79 +2197,6 @@ class Runner:
     def force_metric(self, obj):
         obj.force_metric = True
         self.metric(obj)
-
-    def split_groups(self, objl, evlev):
-        levels = set(get_levels(evlev))
-        if len(levels) == 1:
-            # when there is only a single left just fill groups
-            while evlev:
-                n = grab_group(list(map(raw_event, get_names(evlev))))
-                l = evlev[:n]
-                self.add(objl, raw_events(get_names(l)), l, True)
-                evlev = evlev[n:]
-        else:
-            for l in levels:
-                evl = [x for x in evlev if x[1] == l]
-                # don't filter objects, the lower level functions
-                # have to handle missing entries
-                if evl:
-                    self.add(objl, raw_events(get_names(evl)), evl)
-
-    def add_duplicate(self, evnum, objl):
-        # could speed up by keeping list of not-yet-full groups
-        # but that would need special handling for fixed counters
-        evset = set(evnum)
-
-        for g in reversed(self.evgroups):
-            if g.outgroup:
-                continue
-
-            #
-            # in principle we should only merge if there is any overlap
-            # otherwise completely unrelated nodes get merged. But the perf
-            # scheduler isn't very good at handling smaller groups, and
-            # with eventual exclusive use we would like as big groups as possible.
-            # still keep it as a option to play around.
-            #
-            if ((any_merge or not evset.isdisjoint(g.evnum)) and
-                  needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
-                debug_print("add_duplicate %s %s in %s objl %s" % (
-                    evnum,
-                    list(map(event_rmap, evnum)),
-                    g.evnum,
-                    [o.name for o in objl]))
-                for k in evnum:
-                    if k not in g.evnum:
-                        g.evnum.append(k)
-                    g.objl |= set(objl)
-                update_group_map(g.evnum, objl, g)
-                return True
-
-        return False
-
-    def add(self, objl, evnum, evlev, force=False):
-        # does not fit into a group.
-        if needed_counters(evnum) > cpu.counters and not force:
-            self.split_groups(objl, evlev)
-            return
-        evnum, evlev = dedup2(evnum, evlev)
-        if not self.add_duplicate(evnum, objl):
-            debug_print("add %s %s" % (evnum, list(map(event_rmap, evnum))))
-            g = Group(evnum, objl)
-            self.evgroups.append(g)
-            update_group_map(evnum, objl, g)
-
-    def add_outgroup(self, obj, evnum):
-        debug_print("add_outgroup %s" % evnum)
-        for ev in evnum:
-            if ev in self.og_groups:
-                g = self.og_groups[ev]
-                g.objl.add(obj)
-            else:
-                g = Group([ev], [obj], True)
-                self.og_groups[ev] = g
-                self.evgroups.append(g)
-            update_group_map([ev], [obj], g)
 
     # collect the events by pre-computing the equation
     def collect(self):
@@ -2177,76 +2258,6 @@ class Runner:
                         " ".join(errata_warn_names))
         if len(self.olist) == 0:
             sys.exit("No usable events found")
-
-    def allocate_bases(self):
-        base = 0
-        for g in self.evgroups:
-            g.base = base
-            self.evnum += g.evnum
-            base += len(g.evnum)
-
-    def gen_res_map(self, solist):
-        for obj in solist:
-            for k in obj.group_map.keys():
-                gr = obj.group_map[k]
-                obj.res_map[k] = gr[0].base + gr[1]
-
-    def print_group(self, g):
-        evkeys = [k for o in g.objl for k in o.group_map.keys() if o.group_map[k][0] == g]
-        objnames = set([("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys])
-        evnames = set([mark_fixed(x[0]) for x in evkeys])
-        pwrap(" ".join(objnames) + ":", 78)
-        pwrap(" ".join(evnames).lower() +
-              (" [%d counters]" % needed_counters(g.evnum)) +
-              (" [%d]" % g.base if args.debug else ""), 75, "  ")
-
-    def print_group_summary(self):
-        num_groups = len([g for g in self.evgroups if not g.outgroup])
-        print("%d cpu groups, %d outgroups with %d events total (%d unique) for %d objects" % (
-            num_groups,
-            len(self.evgroups) - num_groups,
-            len(self.evnum),
-            len(set(self.evnum)),
-            len(self.olist)),
-              file=sys.stderr)
-
-    # fit events into available counters
-    # simple first fit algorithm
-    def schedule(self):
-        # sort objects by level and inside each level by num-counters
-        solist = sorted(self.olist, key=lambda x: (x.level, x.nc))
-        # try to fit each objects events into groups
-        # that fit into the available CPU counters
-        for obj in solist:
-            debug_print("schedule %s " % obj.name)
-            evnum = obj.evnum
-            evlevels = obj.evlevels
-            oe = [e in outgroup_events for e in obj.evnum]
-            if any(oe):
-                # add events outside group separately
-                og_evnum = list(compress(obj.evnum, oe))
-                self.add_outgroup(obj, og_evnum)
-                if all(oe):
-                    continue
-
-                # keep other events
-                ie = not_list(oe)
-                evlevels = list(compress(obj.evlevels, ie))
-                evnum = list(compress(obj.evnum, ie))
-
-            self.add([obj], evnum, evlevels)
-
-        self.allocate_bases()
-
-        if args.print_group:
-            for g in self.evgroups:
-                self.print_group(g)
-
-        self.gen_res_map(solist)
-        self.gen_indexobj()
-        self.unreferenced_dummy()
-        if args.print_group:
-            self.print_group_summary()
 
     def propagate_siblings(self):
         changed = [0]
@@ -2365,12 +2376,6 @@ class Runner:
                         idlemark)
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
-
-    def gen_indexobj(self):
-        self.indexobj = defaultdict(list)
-        for o in self.olist:
-            for n in o.res_map.values():
-                self.indexobj[n].append(o)
 
     def list_metric_groups(self):
         print("MetricGroups:")
@@ -2818,7 +2823,7 @@ elif args.columns:
     out = tl_output.OutputColumns(args.output, args, version, cpu)
 else:
     out = tl_output.OutputHuman(args.output, args, version, cpu)
-runner.schedule()
+runner.sched.schedule(runner.olist)
 
 def measure_and_sample(count):
     while True:
@@ -2847,7 +2852,7 @@ def measure_and_sample(count):
             runner.olist = runner.full_olist
             runner.filter_nodes()
             runner.collect()
-            runner.schedule()
+            runner.sched.schedule(runner.olist)
         else:
             break
     return ret, count
