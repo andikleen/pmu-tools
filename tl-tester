@@ -139,8 +139,10 @@ notfound $j
 if ! grep -q hypervisor /proc/cpuinfo ; then
 FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
+FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals --user $LOAD 2>&1
 fi
 FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $LOAD 2>&1 | tee log$$.$j
+FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals --user $ALL $LOAD 2>&1 | tee log$$.$j
 FORCEHT=1 FORCE_NMI_WATCHDOG=1 \
 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $LOAD 2>&1 | tee log$$.$j
 FORCEHT=0 \
