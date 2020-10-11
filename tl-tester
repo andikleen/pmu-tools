@@ -12,10 +12,14 @@
 
 set -e
 set -o pipefail
+set -u
 
 WRAP=${WRAP:-}
 DCPU=${DCPU:-skl}
 OPT=${OPT:-}
+MATCH=${MATCH:-}
+NOGROUP=${NOGROUP:-}
+NORES=${NORES:-}
 
 failed() {
 	echo FAILED
