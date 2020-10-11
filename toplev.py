@@ -2066,7 +2066,7 @@ class Runner:
                 evlev = evlev[n:]
         else:
             for l in levels:
-                evl = list(filter(lambda x: x[1] == l, evlev))
+                evl = [x for x in evlev if x[1] == l]
                 # don't filter objects, the lower level functions
                 # have to handle missing entries
                 if evl:
