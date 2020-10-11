@@ -2184,11 +2184,12 @@ class Runner:
 
     def gen_res_map(self, solist):
         for obj in solist:
-            for k, gr in obj.group_map.iteritems():
+            for k in obj.group_map.keys():
+                gr = obj.group_map[k]
                 obj.res_map[k] = gr[0].base + gr[1]
 
     def print_group(self, g):
-        evkeys = [k for o in g.objl for k, gr in o.group_map.iteritems() if gr[0] == g]
+        evkeys = [k for o in g.objl for k in o.group_map.keys() if o.group_map[k][0] == g]
         objnames = set([("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys])
         evnames = set([mark_fixed(x[0]) for x in evkeys])
         pwrap(" ".join(objnames) + ":", 78)
