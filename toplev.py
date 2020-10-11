@@ -1535,8 +1535,6 @@ def canon_event(e):
         e = m.group(1)
     if m:
         e = m.group(1)
-    if e.endswith("_0"):
-        e = e[:-2]
     return e.lower()
 
 fixes = dict(zip(event_fixes.values(), event_fixes.keys()))
