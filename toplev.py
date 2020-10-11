@@ -1549,8 +1549,8 @@ def ev_append(ev, level, obj):
             obj.evlevels.insert(ins + (0 if ev == "TOPDOWN.SLOTS" else 1), key)
         else:
             obj.evlevels.append(key)
-    if safe_ref(obj, 'nogroup'):
-        outgroup_events.add(ev.lower())
+        if safe_ref(obj, 'nogroup'):
+            outgroup_events.add(ev.lower())
     return DummyArith()
 
 def canon_event(e):
