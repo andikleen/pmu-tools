@@ -2324,7 +2324,7 @@ class Runner:
                 elif check_ratio(obj.val):
                     return True
             return False
-        olist = filter(should_print_obj, self.olist)
+        olist = list(filter(should_print_obj, self.olist))
 
         # sort by metric group
         olist = olist_by_metricgroup(olist, self.metricgroups)
@@ -2471,7 +2471,7 @@ def suggest_bottlenecks(runner):
             return "+%s^" % full_name(o)
         return None
     children = [gen_bn(o) for o in runner.bottlenecks]
-    children = filter(None, children)
+    children = list(filter(None, children))
     if children and args.nodes:
         children = [x for x in children if x[:-1] not in args.nodes]
     if children:
