@@ -2098,7 +2098,7 @@ class Runner:
             # still keep it as a option to play around.
             #
             if ((any_merge or not evset.isdisjoint(g.evnum)) and
-                needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
+                  needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
                 debug_print("add_duplicate %s %s in %s" % (
                     evnum, map(event_rmap, evnum), g.evnum))
                 for k in evnum:
