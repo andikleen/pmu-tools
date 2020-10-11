@@ -115,7 +115,7 @@ def create_sheet(name, infh, delimiter=',', version=None):
             summary = False
             rows[sname] = row
             row = rows[name]
-        c = map(to_float, c)
+        c = list(map(to_float, c))
         worksheet.write_row(row, 0, c)
         isbn = False
         if "Bottleneck" in title:
