@@ -2084,7 +2084,7 @@ class Runner:
                 for k in evnum:
                     if k not in g.evnum:
                         g.evnum.append(k)
-                        g.objl |= set(objl)
+                    g.objl |= set(objl)
                 update_group_map(g.evnum, objl, g)
                 return True
 
