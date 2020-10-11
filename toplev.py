@@ -830,7 +830,8 @@ def raw_event(i, name="", period=False, nopebs=True):
     if not i.startswith("cpu/") and i not in fixed_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
-        outgroup_events.add(add_filter_event(i))
+        if not i.startswith("msr/"):
+            outgroup_events.add(add_filter_event(i))
     return i
 
 # generate list of converted raw events from events string
