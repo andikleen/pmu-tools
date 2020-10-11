@@ -2066,7 +2066,7 @@ class Runner:
         # but that would need special handling for fixed counters
         evset = set(evnum)
 
-        for g in self.evgroups:
+        for g in reversed(self.evgroups):
             if g.outgroup:
                 continue
 
@@ -2210,14 +2210,12 @@ class Runner:
     # fit events into available counters
     # simple first fit algorithm
     def schedule(self):
-        curobj = []
-        curev = []
-        curlev = []
         # sort objects by level and inside each level by num-counters
         solist = sorted(self.olist, key=lambda x: (x.level, x.nc))
         # try to fit each objects events into groups
         # that fit into the available CPU counters
         for obj in solist:
+            debug_print("schedule %s " % obj.name)
             evnum = obj.evnum
             evlevels = obj.evlevels
             oe = [e in outgroup_events for e in obj.evnum]
@@ -2233,27 +2231,7 @@ class Runner:
                 evlevels = list(compress(obj.evlevels, ie))
                 evnum = list(compress(obj.evnum, ie))
 
-            # try adding another object to the current group
-            newev = curev + evnum
-            newlev = curlev + evlevels
-            needed = needed_counters(newev)
-            # when the current group doesn't have enough free slots
-            # or is already too large
-            # start a new group
-            if cpu.counters < needed and curobj:
-                self.add(curobj, curev, curlev)
-                # restart new group
-                curobj = []
-                curev = []
-                curlev = []
-                newev = obj.evnum
-                newlev = obj.evlevels
-            # commit the object to the group
-            curobj.append(obj)
-            curev = newev
-            curlev = newlev
-        if curobj:
-            self.add(curobj, curev, curlev)
+            self.add([obj], evnum, evlevels)
 
         self.allocate_bases()
 
