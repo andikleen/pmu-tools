@@ -32,7 +32,7 @@ from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby
 import itertools
-from listutils import cat_unique, dedup2, flatten, filternot
+from listutils import cat_unique, dedup2, flatten, filternot, not_list
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -263,7 +263,7 @@ def resource_split(evlist):
 def needed_counters(evlist, nolimit=False):
     evlist = list(map(remove_qual, evlist))
     evset = set(evlist)
-    num = len(evset - fixed_events)
+    num = len(evset - fixed_events - outgroup_events)
 
     metrics = map(ismetric, evlist)
 
@@ -1906,10 +1906,11 @@ def quote(s):
 in_collection = False
 
 class Group:
-    def __init__(self, evnum, objl):
+    def __init__(self, evnum, objl, outgroup=False):
         self.evnum = evnum
         self.base = None
         self.objl = set(objl)
+        self.outgroup = outgroup
 
 any_merge = True
 
@@ -1919,7 +1920,7 @@ class Runner:
     def reset(self):
         self.evnum = [] # flat global list
         self.evgroups = [] # of Group
-        self.missed = 0
+        self.og_groups = dict()
         self.stat = ComputeStat(args.quiet)
         self.sample_obj = set()
         self.olist = []
@@ -2080,6 +2081,8 @@ class Runner:
         evset = set(evnum)
 
         for g in self.evgroups:
+            if g.outgroup:
+                continue
 
             #
             # in principle we should only merge if there is any overlap
@@ -2112,6 +2115,18 @@ class Runner:
             g = Group(evnum, objl)
             self.evgroups.append(g)
             update_group_map(evnum, objl, g)
+
+    def add_outgroup(self, obj, evnum):
+        debug_print("add_outgroup %s" % evnum)
+        for ev in evnum:
+            if ev in self.og_groups:
+                g = self.og_groups[ev]
+                g.objl.add(obj)
+            else:
+                g = Group([ev], [obj], True)
+                self.og_groups[ev] = g
+                self.evgroups.append(g)
+            update_group_map([ev], [obj], g)
 
     # collect the events by pre-computing the equation
     def collect(self):
@@ -2196,8 +2211,8 @@ class Runner:
               (" [%d]" % g.base if args.debug else ""), 75, "  ")
 
     def print_group_summary(self):
-        num_groups = len(self.evgroups)
-        print("%d groups, %d non-groups with %d events total (%d unique) for %d objects" % (
+        num_groups = len([g for g in self.evgroups if not g.outgroup])
+        print("%d cpu groups, %d outgroups with %d events total (%d unique) for %d objects" % (
             num_groups,
             len(self.evgroups) - num_groups,
             len(self.evnum),
@@ -2221,15 +2236,15 @@ class Runner:
             oe = [e in outgroup_events for e in obj.evnum]
             if any(oe):
                 # add events outside group separately
-                self.add([obj], list(compress(obj.evnum, oe)),
-                         list(compress(obj.evlevels, oe)))
-                if sum(oe) == len(obj.evnum):
+                og_evnum = list(compress(obj.evnum, oe))
+                self.add_outgroup(obj, og_evnum)
+                if all(oe):
                     continue
-                evlevels = list(compress(obj.evlevels, [not x for x in oe]))
-                evnum = list(compress(obj.evnum, [not x for x in oe]))
-                evnum, evlevels = dedup2(evnum, evlevels)
-                if self.add_duplicate(evnum, [obj]):
-                    continue
+
+                # keep other events
+                ie = not_list(oe)
+                evlevels = list(compress(obj.evlevels, ie))
+                evnum = list(compress(obj.evnum, ie))
 
             # try adding another object to the current group
             newev = curev + evnum

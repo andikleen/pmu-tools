@@ -25,3 +25,6 @@ def dedup2(a, b):
             bl.append(bi)
             aset.add(ai)
     return al, bl
+
+def not_list(l):
+    return [not x for x in l]
