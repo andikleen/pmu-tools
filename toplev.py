@@ -131,7 +131,7 @@ import_mode = False
 
 errata_whitelist = []
 
-ingroup_events = frozenset(fixed_to_num.keys())
+fixed_events = frozenset(fixed_to_num.keys())
 
 outgroup_events = set(["dummy"])
 
@@ -263,7 +263,7 @@ def resource_split(evlist):
 def needed_counters(evlist, nolimit=False):
     evlist = list(map(remove_qual, evlist))
     evset = set(evlist)
-    num = len(evset - ingroup_events)
+    num = len(evset - fixed_events)
 
     metrics = map(ismetric, evlist)
 
@@ -828,7 +828,7 @@ def raw_event(i, name="", period=False, nopebs=True):
                 errata_warn_events[orig_i] = e.errata
     else:
         non_json_events.add(i)
-    if not i.startswith("cpu/") and i not in ingroup_events:
+    if not i.startswith("cpu/") and i not in fixed_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
         outgroup_events.add(add_filter_event(i))
@@ -840,7 +840,7 @@ def raw_events(evlist):
 
 def mark_fixed(s):
     r = raw_event(s)
-    if r in ingroup_events:
+    if r in fixed_events:
         return "%s[F]" % s
     return s
 
