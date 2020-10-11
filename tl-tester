@@ -68,13 +68,13 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 $LOAD | tee log$$
 checklog0
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 --single-thread $LOAD | tee log$$
 checklog0
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 --single-thread --columns $LOAD | tee log
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 --single-thread --columns $LOAD | tee log$$
 checklog0
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --all --core S0-C0-T0 $LOAD0 | tee log
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --all --core S0-C0-T0 $LOAD0 | tee log$$
 checklog0
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -v -l4 $LOAD | tee log
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -v -l4 $LOAD | tee log$$
 checklog0
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -x, -v -l4 $LOAD | tee log
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -x, -v -l4 $LOAD | tee log$$
 checklog0
 # temporarily disabled because perf has a regression that causes segfaults with -r
 #$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -r2 -l4 $LOAD
@@ -90,8 +90,8 @@ grep :k log$$
 grep /k log$$
 EVENTMAP=${cpus[$DCPU]} FORCECPU=simple $WRAP ./toplev.py --no-desc -l1 $LOAD
 # check errata handling
-EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py --handle-errata --force-events --no-desc --all $LOAD 2>&1 | tee log
-grep BDE70 log
+EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py --handle-errata --force-events --no-desc --all $LOAD 2>&1 | tee log$$
+grep BDE70 log$$
 
 # test L1 uses a single group
 onegroup() {
@@ -259,11 +259,11 @@ grep :u log$$
 grep /u log$$
 rm log$$
 rm val$$.csv.xz val$$.csv.gz val$$.csv
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --all --sample-basename perf$$.data --sample-repeat 5 --filterqual -a sleep 0.1  | tee log
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --all --sample-basename perf$$.data --sample-repeat 5 --filterqual -a sleep 0.1  | tee log$$
 # do all perf.data exist?
 rm perf$$.data.{1,2,3,4,5}
 if python -c 'import xlsxwriter' ; then
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --sample-basename perf$$.data --xlsx x$$.xlsx --sample-repeat 3 --filterqual -a $LOAD | tee log
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --sample-basename perf$$.data --xlsx x$$.xlsx --sample-repeat 3 --filterqual -a $LOAD | tee log$$
 rm perf$$.data.{1,2,3}
 rm x$$.xlsx
 fi
