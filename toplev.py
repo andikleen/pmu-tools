@@ -69,6 +69,7 @@ fixed_to_num = {
     "cpu/event=0x3c,umask=0x00,any=1/": 1,
     "cpu/event=0x3c,umask=0x0,any=1/": 1,
     "cpu/event=0x3c,umask=0x0/": 1,
+    "cpu/event=0xc0,umask=0x0/" : 0,
     "ref-cycles": 2,
     "cpu/event=0x0,umask=0x3/": 2,
     "cpu/event=0x0,umask=0x3,any=1/": 2,
@@ -220,15 +221,6 @@ def fixed_overflow(evlist):
     assigned = Counter([fixed_to_num[x] for x in evlist if x in fixed_to_num]).values()
     return any([x > 1 for x in assigned])
 
-def is_limited(x):
-    return x.startswith("cpu/cycles-ct/")
-
-def limit_overflow(evlist):
-    assigned = Counter([limited_counters[x] for x in evlist if is_limited(x)]).values()
-    # 0..1 counter is ok
-    # >1   counter is over subscribed
-    return sum([x - 1 for x in assigned if x > 1])
-
 limit4_overflow = lambda ev: 0
 
 limit4_events = set()
@@ -240,7 +232,7 @@ def icl_limit4_overflow(evlist):
 def ismetric(x):
     return re.match(r"topdown-.*", x) is not None
 
-resources = ("frontend=", "offcore_rsp=", "ldlat=", "in_tx_cp=")
+resources = ("frontend=", "offcore_rsp=", "ldlat=", "in_tx_cp=", "cycles-ct")
 
 def event_to_resource(ev):
     for j in resources:
@@ -260,22 +252,18 @@ def resource_split(evlist):
             return True
     return False
 
-def needed_counters(evlist, nolimit=False):
+def needed_counters(evlist):
     evlist = list(map(remove_qual, evlist))
     evset = set(evlist)
     num = len(evset - fixed_events - outgroup_events)
 
-    metrics = map(ismetric, evlist)
-
-    if any(metrics):
+    if any(map(ismetric, evlist)):
         # slots must be first if metrics are present
         if "slots" in evset and evlist[0] != "slots":
             debug_print("split for slots %s" % evlist)
             return 100
         # force split if there are other events.
-        # sadly this causes the topdown group to not run in parallel
-        # with other groups because there is usually a conflict on slots
-        if len(evlist) > sum(metrics) + 1:
+        if len(evlist) > sum(map(ismetric, evlist)) + 1:
             debug_print("split for other events in topdown %s" % evlist)
             return 100
 
@@ -286,24 +274,16 @@ def needed_counters(evlist, nolimit=False):
 
     evlist = [x for x in evlist if not ismetric(x)]
 
-    # force split if we overflow fixed or limit4
+    # force split if we overflow fixed
     # some fixed could be promoted to generic, but that doesn't work
     # with ref-cycles.
-    if not nolimit and (fixed_overflow(evlist) or limit4_overflow(evlist)):
-        debug_print("fixed or limit4 overflow %s " % evlist)
+    if fixed_overflow(evlist):
+        debug_print("split for fixed overflow %s " % evlist)
         return 100
 
-    # account events that only schedule on one of the generic counters
-
-    # first allocate the limited counters that are not oversubscribed
-    num_limit = limit_overflow(evlist)
-    num += len(evset & limited_set) - num_limit
-
-    # if we need more than one of a limited counter make it look
-    # like it fills the group to limit first before adding them to force
-    # a split
-    if num_limit > 0 and not nolimit:
-        num = max(num, cpu.counters) + num_limit
+    if limit4_overflow(evlist):
+        debug_print("split for limit4 overflow %s" % evlist)
+        return 100
 
     return num
 
