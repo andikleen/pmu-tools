@@ -512,6 +512,7 @@ p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
 p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true')
+p.add_argument('--tune', nargs='+', help=argparse.SUPPRESS) # override global variables with python expression
 args, rest = p.parse_known_args()
 
 if args.idle_threshold:
@@ -537,6 +538,10 @@ def gen_cpu_name(cpu):
             else:
                 return "GenuineIntel-6-%02X" % j[1][0]
     assert False
+
+if args.tune:
+    for t in args.tune:
+        exec(t)
 
 env = tl_cpu.Env()
 
