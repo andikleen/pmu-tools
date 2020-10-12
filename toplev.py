@@ -1604,7 +1604,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
         warn_once("Not enough lines in perf output for res (%d vs %d for %s)" %
                 (index, len(res), obj.name))
         return 0.0
-    if type(vv) is tuple:
+    if isinstance(vv, tuple):
         if cpuoff == -1:
             vv = sum(vv)
         else:
