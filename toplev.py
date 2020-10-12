@@ -1938,6 +1938,7 @@ class Scheduler:
                 for i in range(len(g.evnum)):
                     if i not in ref:
                         debug_print("unreferenced %s -> dummy" % g.evnum[i])
+                        g.evnum[i] = "dummy"
 
     def split_groups(self, obj, evlev):
         levels = set(get_levels(evlev))
