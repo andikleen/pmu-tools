@@ -1646,14 +1646,6 @@ def get_levels(evlev):
 def get_names(evlev):
     return [x[0] for x in evlev]
 
-def grab_group(l):
-    n = 1
-    while needed_counters(l[:n]) < cpu.counters and n < len(l):
-        n += 1
-    if needed_counters(l[:n]) > cpu.counters and n > 0:
-        n -= 1
-    return n
-
 def full_name(obj):
     name = obj.name
     while 'parent' in obj.__dict__ and obj.parent:
@@ -1904,6 +1896,17 @@ any_merge = True
 # Interleave uncore events between CPU groups
 distribute_uncore = False
 
+def grab_group(l):
+    if needed_counters(l) <= cpu.counters:
+        return len(l)
+    n = 1
+    while needed_counters(l[:n]) < cpu.counters and n < len(l):
+        n += 1
+    if needed_counters(l[:n]) > cpu.counters and n > 0:
+        n -= 1
+        assert needed_counters(l[:n]) <= cpu.counters
+    return n
+
 def update_group_map(evnum, obj, group):
     for lev in obj.evlevels:
         r = raw_event(lev[0])
@@ -1940,13 +1943,14 @@ class Scheduler:
         levels = set(get_levels(evlev))
         if len(levels) == 1:
             # when there is only a single left just fill groups
+            evnum = list(map(raw_event, get_names(evlev)))
             while evlev:
-                n = grab_group(list(map(raw_event, get_names(evlev))))
-                l = evlev[:n]
-                self.add(obj, raw_events(get_names(l)), l, True)
+                n = grab_group(evnum)
+                self.add(obj, evnum[:n], None)
                 evlev = evlev[n:]
+                evnum = evnum[n:]
         else:
-            for l in levels:
+            for l in sorted(levels):
                 evl = [x for x in evlev if x[1] == l]
                 # don't filter objects, the lower level functions
                 # have to handle missing entries
@@ -1990,9 +1994,9 @@ class Scheduler:
 
         return False
 
-    def add(self, obj, evnum, evlev, force=False):
+    def add(self, obj, evnum, evlev):
         # does not fit into a group.
-        if needed_counters(evnum) > cpu.counters and not force:
+        if needed_counters(evnum) > cpu.counters:
             self.split_groups(obj, evlev)
             return
         evnum = dedup(evnum)
