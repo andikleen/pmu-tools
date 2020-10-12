@@ -71,9 +71,6 @@ class UVal:
 
     def format_uncertainty(self):
         """string representation of measurement uncertainty"""
-        def isnan(x):
-            return x != x
-
         vs = ""
         if self.stddev is not None:
             if self.is_ratio:
