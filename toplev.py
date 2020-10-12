@@ -989,7 +989,7 @@ IDLE_MARKER_THRESHOLD = 0.05
 
 def find_idle_keys(res, rev, idle_thresh):
     cycles = { k: max([0] + [val for val, ev in zip(res[k], rev[k])
-                    if ev == "cycles" or ev == "cpu/event=0x3c,umask=0x0,any=1/"])
+                    if ev in ("cycles", "cpu/event=0x3c,umask=0x0,any=1/")])
                for k in res.keys() }
     if not cycles:
         return set()
@@ -1349,7 +1349,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
         n = l.split(";")
 
         # filter out the empty unit field added by 3.14
-        n = list(filter(lambda x: x != "" and x != "Joules", n))
+        n = list(filter(lambda x: x not in ('', 'Joules'), n))
 
         # timestamp is already removed
         # -a --per-socket socket,numcpus,count,event,...
