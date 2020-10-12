@@ -773,7 +773,7 @@ def add_filter(s):
         s = list(map(add_filter_event, s))
     return s
 
-notfound_cache = set()
+notfound_cache = dict()
 
 def raw_event(i, name="", period=False, nopebs=True):
     orig_i = i
@@ -783,14 +783,15 @@ def raw_event(i, name="", period=False, nopebs=True):
             return "dummy"
         if not cpu.ht:
             i = i.replace(":percore", "")
-        e = emap.getevent(i, nocheck=event_nocheck)
+        extramsg = []
+        e = emap.getevent(i, nocheck=event_nocheck, extramsg=extramsg)
         if e is None:
             if i in event_fixes:
                 e = emap.getevent(event_fixes[i], nocheck=event_nocheck)
         if e is None:
             if i not in notfound_cache:
-                notfound_cache.add(i)
-                print("%s not found" % i, file=sys.stderr)
+                notfound_cache[i] = extramsg[0]
+                print("%s %s" % (i, extramsg[0]), file=sys.stderr)
             return "dummy"
         if re.match("^[0-9]", name):
             name = "T" + name
@@ -2907,7 +2908,7 @@ if runner.idle_keys and not args.quiet:
     print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" %
             (",".join(runner.idle_keys)), file=sys.stderr)
 
-if notfound_cache and not args.quiet:
+if notfound_cache and any(["not supported" not in x for x in notfound_cache.values()]) and not args.quiet:
     print("Some events not found. Consider running event_download to update event lists", file=sys.stderr)
 
 if args.graph:
