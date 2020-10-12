@@ -38,13 +38,13 @@ This category reflects slots where the Frontend of the processor undersupplies
 its Backend."""
     level = 1
     def compute(self, EV):
-         try:
-             self.val = EV("IDQ_UOPS_NOT_DELIVERED.CORE", 1) / SLOTS(EV)
-             self.thresh = self.val > 0.2
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
+        try:
+            self.val = EV("IDQ_UOPS_NOT_DELIVERED.CORE", 1) / SLOTS(EV)
+            self.thresh = self.val > 0.2
+        except ZeroDivisionError:
+            self.val = 0
+            self.thresh = False
+        return self.val
 
 class BadSpeculation:
     name = "Bad Speculation"
@@ -57,13 +57,13 @@ speculation. For example, wasted work due to miss-predicted branches is
 categorized under the Bad Speculation category"""
     level = 1
     def compute(self, EV):
-         try:
-             self.val = ( EV("UOPS_ISSUED.ANY", 1) - EV(uops_retired_slots, 1) + PipelineWidth * EV("INT_MISC.RECOVERY_CYCLES", 1) ) / SLOTS(EV)
-             self.thresh = self.val > 0.1
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
+        try:
+            self.val = ( EV("UOPS_ISSUED.ANY", 1) - EV(uops_retired_slots, 1) + PipelineWidth * EV("INT_MISC.RECOVERY_CYCLES", 1) ) / SLOTS(EV)
+            self.thresh = self.val > 0.1
+        except ZeroDivisionError:
+            self.val = 0
+            self.thresh = False
+        return self.val
 
 class BackendBound:
     name = "Backend Bound"
@@ -73,13 +73,13 @@ This category reflects slots where no uops are being delivered due to a lack
 of required resources for accepting more uops in the Backend of the pipeline."""
     level = 1
     def compute(self, EV):
-         try:
-             self.val = 1 - ( self.FrontendBound.compute(EV) + self.BadSpeculation.compute(EV) + self.Retiring.compute(EV) )
-             self.thresh = self.val > 0.2
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
+        try:
+            self.val = 1 - ( self.FrontendBound.compute(EV) + self.BadSpeculation.compute(EV) + self.Retiring.compute(EV) )
+            self.thresh = self.val > 0.2
+        except ZeroDivisionError:
+            self.val = 0
+            self.thresh = False
+        return self.val
 
 class Retiring:
     name = "Retiring"
@@ -89,13 +89,13 @@ This category reflects slots utilized by good uops i.e. allocated uops that
 eventually get retired."""
     level = 1
     def compute(self, EV):
-         try:
-             self.val = EV(uops_retired_slots, 1) / SLOTS(EV)
-             self.thresh = self.val > 0.7
-         except ZeroDivisionError:
-             self.val = 0
-             self.thresh = False
-         return self.val
+        try:
+            self.val = EV(uops_retired_slots, 1) / SLOTS(EV)
+            self.thresh = self.val > 0.7
+        except ZeroDivisionError:
+            self.val = 0
+            self.thresh = False
+        return self.val
 
 class Metric_IPC:
     name = "IPC"
@@ -160,7 +160,6 @@ class Setup:
         o["BadSpeculation"].parent = None
         o["BackendBound"].parent = None
         o["Retiring"].parent = None
-        
         o["BackendBound"].FrontendBound = o["FrontendBound"]
         o["BackendBound"].BadSpeculation = o["BadSpeculation"]
         o["BackendBound"].Retiring = o["Retiring"]
