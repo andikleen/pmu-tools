@@ -530,18 +530,21 @@ def uncore_exists(box, postfix=""):
 
 missing_boxes = set()
 
-def check_uncore_event(e):
+def check_uncore_event(e, extramsg):
     if uncore_exists(e.unit):
         if e.cmask and not uncore_exists(e.unit, "/format/cmask"):
             warn_once("Uncore unit " + e.unit + " missing cmask for " + e.name)
+            extramsg.append("not supported due to missing cmask in PMU")
             return None
         if e.umask and not uncore_exists(e.unit, "/format/umask"):
             warn_once("Uncore unit " + e.unit + " missing umask for " + e.name)
+            extramsg.append("not supported due to missing umask in PMU")
             return None
         return e
     if e.unit not in missing_boxes:
         warn_once("Uncore unit " + e.unit + " missing")
         missing_boxes.add(e.unit)
+    extramsg.append("not supported due to missing PMU")
     return None
 
 fixed_counters = {
@@ -661,7 +664,7 @@ class EmapNativeJSON(object):
             e.period = int(get('sav')) if m['sav'] in row else 0
             self.add_event(e)
 
-    def getevent(self, e, nocheck=False):
+    def getevent(self, e, nocheck=False, extramsg=[]):
         """Retrieve an event with name e. Return Event object or None.
            When nocheck is set don't check against current system."""
         e = e.lower()
@@ -670,7 +673,7 @@ class EmapNativeJSON(object):
         m = re.match(r'([^:]+):request=([^:]+):response=([^:]+)', e)
         if m:
             ename = m.group(1) + "." + m.group(2) + "." + m.group(3)
-            return update_ename(self.getevent(ename), e)
+            return update_ename(self.getevent(ename, nocheck=nocheck, extramsg=extramsg), e)
         m = re.match(r'(.*?):(.*)', e)
         if m:
             extra = m.group(2)
@@ -695,13 +698,14 @@ class EmapNativeJSON(object):
         elif e in self.uncore_events:
             ev = self.uncore_events[e]
             if ev and not nocheck:
-                ev = check_uncore_event(ev)
+                ev = check_uncore_event(ev, extramsg)
             if ev and extra:
                 ev = copy.deepcopy(ev)
                 ev.newextra = extra
             return ev
         elif e in self.perf_events:
             return self.perf_events[e]
+        extramsg.append("not found")
         return None
 
     def update_event(self, e, ev):
