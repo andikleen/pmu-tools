@@ -4,6 +4,8 @@ import metrics
 import node
 import slm_ratios as slm
 
+slm.set_clks_event_name("CPU_CLK_UNHALTED.CORE")
+
 smt_enabled = False
 
 class CyclesPerUop(slm.CyclesPerUop):
