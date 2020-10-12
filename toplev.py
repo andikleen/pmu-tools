@@ -252,18 +252,24 @@ def resource_split(evlist):
             return True
     return False
 
-def needed_counters(evlist):
-    evlist = list(map(remove_qual, evlist))
-    evset = set(evlist)
-    num = len(evset - fixed_events - outgroup_events)
+def num_generic_counters(evset):
+    return len(evset - fixed_events - outgroup_events)
 
-    if any(map(ismetric, evlist)):
+def needed_counters(evlist):
+    evset = set(evlist)
+    num = num_generic_counters(evset)
+
+    evlist = list(map(remove_qual, evlist))
+
+    metrics = [ismetric(x) for x in evlist]
+
+    if any(metrics):
         # slots must be first if metrics are present
-        if "slots" in evset and evlist[0] != "slots":
+        if "slots" in evlist and evlist[0] != "slots":
             debug_print("split for slots %s" % evlist)
             return 100
         # force split if there are other events.
-        if len(evlist) > sum(map(ismetric, evlist)) + 1:
+        if len(evlist) > sum(metrics) + 1:
             debug_print("split for other events in topdown %s" % evlist)
             return 100
 
@@ -1899,6 +1905,9 @@ class Scheduler:
         self.evgroups = [] # of Group
         self.og_groups = dict()
         self.indexobj = None
+        # list of groups that still have generic counters, for faster
+        # duplicate checks
+        self.evgroups_nf = []
 
     # replace unreferenced events with dummy. Should remove instead
     def unreferenced_dummy(self):
@@ -1929,8 +1938,10 @@ class Scheduler:
 
     def add_duplicate(self, evnum, obj):
         evset = set(evnum)
+        num_gen = num_generic_counters(evset)
+        full = set()
 
-        for g in reversed(self.evgroups):
+        for g in reversed(self.evgroups_nf if num_gen else self.evgroups):
             if g.outgroup:
                 continue
 
@@ -1953,6 +1964,12 @@ class Scheduler:
                 g.objl.add(obj)
                 self.update_group_map(g.evnum, obj, g)
                 return True
+
+            # memorize already full groups
+            elif num_generic_counters(set(g.evnum)) >= cpu.counters:
+                full.add(g)
+        if full:
+            self.evgroups_nf = [g for g in self.evgroups_nf if g not in full]
 
         return False
 
