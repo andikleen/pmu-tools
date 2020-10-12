@@ -30,7 +30,7 @@ import sys, os, re, textwrap, platform, pty, subprocess
 import argparse, time, types, csv, copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
-from itertools import compress, groupby
+from itertools import compress, groupby, chain
 import itertools
 from listutils import cat_unique, dedup, flatten, filternot, not_list
 from objutils import has, safe_ref, map_fields
@@ -1895,7 +1895,11 @@ class Group:
         self.objl = set(objl)
         self.outgroup = outgroup
 
+# Control whether even unrelated groups can be merged
 any_merge = True
+
+# Interleave uncore events between CPU groups
+distribute_uncore = False
 
 class Scheduler:
     """Schedule events into groups."""
@@ -2020,6 +2024,12 @@ class Scheduler:
                 gr = obj.group_map[k]
                 obj.res_map[k] = gr[0].base + gr[1]
 
+    def distribute_uncore(self, evgroups):
+        cg = [g for g in evgroups if not g.outgroup]
+        og = [g for g in evgroups if g.outgroup]
+        z_l = itertools.zip_longest if sys.version_info.major == 3 else itertools.izip_longest
+        return [x for x in chain(*z_l(cg, og)) if x is not None]
+
     def gen_indexobj(self, olist):
         self.indexobj = defaultdict(list)
         for o in olist:
@@ -2069,6 +2079,9 @@ class Scheduler:
                 evnum = list(compress(obj.evnum, ie))
 
             self.add(obj, evnum, evlevels)
+
+        if args.no_multiplex or distribute_uncore:
+            self.evgroups = self.distribute_uncore(self.evgroups)
 
         self.allocate_bases()
 
