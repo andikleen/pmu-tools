@@ -2114,7 +2114,6 @@ class Runner:
         self.summary = None
         if args.summary:
             self.summary = Summary()
-        self.idle_threshold = idle_threshold
         self.sched = Scheduler()
 
     def __init__(self, max_level, idle_threshold):
@@ -2122,6 +2121,7 @@ class Runner:
         self.odict = dict()
         self.max_level = max_level
         self.max_node_level = 0
+        self.idle_threshold = idle_threshold
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         if args.valcsv:
