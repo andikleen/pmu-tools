@@ -55,7 +55,7 @@ elif 'CLKS' in data.headers and len(data.vals) > 0:
 elif len(data.cpus) > 0:
     cpu = sorted(sorted(data.cpus), key=len, reverse=True)[0]
 
-def cpumatch(x, match, base):
+def cpumatch(x, cpu, base):
     return x.startswith(cpu) or x == base
 
 if cpu:
