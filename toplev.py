@@ -2429,8 +2429,6 @@ def remove_pp(s):
 def clean_event(e):
     return remove_pp(e).replace(".", "_").replace(":", "_").replace('=','')
 
-SAMPLE_EXTEND = 2 # how deep to look into children for additional sample events
-
 def do_sample(sample_obj, rest, count, full_olist, ret):
     samples = [("cycles:pp", "Precise cycles", )]
 
