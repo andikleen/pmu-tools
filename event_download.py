@@ -217,7 +217,7 @@ def eventlist_name(name=None, key="core"):
     fn = "%s/%s" % (cache, fn)
     if not os.path.exists(fn):
         files = parse_map_file(name, key, acceptfile=True)
-        if len(files):
+        if files:
             return files[0]
         name = cpu_without_step(name)
         if "*" in fn:
@@ -225,7 +225,7 @@ def eventlist_name(name=None, key="core"):
         else:
             fn = "%s/%s-%s.json" % (cache, name, key)
         files = parse_map_file(name, key, acceptfile=True)
-        if len(files):
+        if files:
             fn = files[0]
     return fn
 
