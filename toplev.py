@@ -2436,11 +2436,8 @@ def remove_pp(s):
 def clean_event(e):
     return remove_pp(e).replace(".", "_").replace(":", "_").replace('=','')
 
-def do_sample(sample_obj, rest, count, full_olist, ret):
+def do_sample(sample_obj, rest, count, ret):
     samples = [("cycles:pp", "Precise cycles", )]
-
-    def sample_list(obj):
-        return [(s, obj.name) for s in obj.sample]
 
     for obj in sample_obj:
         for s in obj.sample:
@@ -2531,7 +2528,7 @@ def suggest_bottlenecks(runner):
             return True
     return False
 
-def do_xlsx(runner):
+def do_xlsx():
     cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s' " % (
         sys.executable,
         exe_dir(),
@@ -2873,8 +2870,8 @@ def measure_and_sample(count):
         if args.level < runner.max_node_level and runner.bottlenecks:
             repeat = suggest_bottlenecks(runner)
         if (args.show_sample or args.run_sample) and ret == 0:
-            do_sample(runner.sample_obj, rest, count, runner.full_olist, ret)
-        if ret >= 100 and ret <= 200 and repeat:
+            do_sample(runner.sample_obj, rest, count, ret)
+        if 100 <= ret <= 200 and repeat:
             print("Perf or workload appears to have failed with error %d. Not drilling down" % ret,
                   file=sys.stderr)
             break
@@ -2903,7 +2900,7 @@ out.print_footer()
 out.flushfiles()
 
 if args.xlsx and ret == 0:
-    ret = do_xlsx(runner)
+    ret = do_xlsx()
 
 if runner.idle_keys and not args.quiet:
     print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" %
