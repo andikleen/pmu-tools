@@ -123,7 +123,7 @@ checklog() {
 
 notfound() {
 	egrep "not found|missing" log$$.$1 || true
-	egrep "not found|missing" log$$.$1 | sed "s/^/$1:/" >> nflog$$ || true
+	egrep "not found" log$$.$1 | sed "s/^/$1:/" >> nflog$$ || true
 }
 for j in $SMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$j" ] && continue
