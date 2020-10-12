@@ -256,6 +256,8 @@ def resource_split(evlist):
 def num_generic_counters(evset):
     return len(evset - fixed_events - outgroup_events)
 
+FORCE_SPLIT = 100
+
 def needed_counters(evlist):
     evset = set(evlist)
     num = num_generic_counters(evset)
@@ -268,16 +270,16 @@ def needed_counters(evlist):
         # slots must be first if metrics are present
         if "slots" in evlist and evlist[0] != "slots":
             debug_print("split for slots %s" % evlist)
-            return 100
+            return FORCE_SPLIT
         # force split if there are other events.
         if len(evlist) > sum(metrics) + 1:
             debug_print("split for other events in topdown %s" % evlist)
-            return 100
+            return FORCE_SPLIT
 
     # split if any resource is oversubscribed
     if resource_split(evlist):
         debug_print("resource split %s" % evlist)
-        return 100
+        return FORCE_SPLIT
 
     evlist = list(compress(evlist, not_list(metrics)))
 
@@ -286,11 +288,11 @@ def needed_counters(evlist):
     # with ref-cycles.
     if fixed_overflow(evlist):
         debug_print("split for fixed overflow %s " % evlist)
-        return 100
+        return FORCE_SPLIT
 
     if limit4_overflow(evlist):
         debug_print("split for limit4 overflow %s" % evlist)
-        return 100
+        return FORCE_SPLIT
 
     return num
 
