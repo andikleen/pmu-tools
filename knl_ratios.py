@@ -4,7 +4,7 @@ import metrics
 import node
 import slm_ratios as slm
 
-slm.set_clks_event_name("CPU_CLK_UNHALTED.CORE")
+slm.set_clks_event_name("CPU_CLK_UNHALTED.THREAD")
 
 smt_enabled = False
 

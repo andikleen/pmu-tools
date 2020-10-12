@@ -11,7 +11,7 @@ print_error = lambda msg: False
 version = "1.0"
 
 # Override using set_clks_event_name()
-CLKS_EVENT_NAME = "CPU_CLK_UNHALTED.THREAD"
+CLKS_EVENT_NAME = "CPU_CLK_UNHALTED.CORE"
 
 # Module-level function used to work around event name differences,
 # e.g. Knights Landing
