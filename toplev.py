@@ -1911,20 +1911,22 @@ class Scheduler:
         self.evnum = [] # flat global list
         self.evgroups = [] # of Group
         self.og_groups = dict()
-        self.indexobj = None
         # list of groups that still have generic counters, for faster
         # duplicate checks
         self.evgroups_nf = []
 
-    # replace unreferenced events with dummy. Should remove instead
-    def unreferenced_dummy(self):
+    # should avoid adding those in the first place instead
+    def dummy_unreferenced(self, olist):
+        refs = defaultdict(set)
+        for o in olist:
+            for g, ind in o.group_map.values():
+                refs[g].add(ind)
         for g in self.evgroups:
-            for ind, j in enumerate(g.evnum):
-                if not self.indexobj[g.base + ind]:
-                    debug_print("replacing unreferenced %d %s with dummy" %
-                                ((g.base + ind), g.evnum[ind]))
-                    g.evnum[ind] = "dummy"
-                    self.evnum[g.base + ind] = "dummy"
+            ref = refs[g]
+            if len(ref) < len(g.evnum):
+                for i in range(len(g.evnum)):
+                    if i not in ref:
+                        debug_print("unreferenced %s -> dummy" % g.evnum[i])
 
     def split_groups(self, obj, evlev):
         levels = set(get_levels(evlev))
@@ -2034,12 +2036,6 @@ class Scheduler:
         z_l = itertools.zip_longest if sys.version_info.major == 3 else itertools.izip_longest
         return [x for x in chain(*z_l(cg, og)) if x is not None]
 
-    def gen_indexobj(self, olist):
-        self.indexobj = defaultdict(list)
-        for o in olist:
-            for n in o.res_map.values():
-                self.indexobj[n].append(o)
-
     def print_group(self, g):
         evkeys = [k for o in g.objl for k in o.group_map.keys() if o.group_map[k][0] == g]
         objnames = set([("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys])
@@ -2087,6 +2083,7 @@ class Scheduler:
         if args.no_multiplex or distribute_uncore:
             self.evgroups = self.distribute_uncore(self.evgroups)
 
+        self.dummy_unreferenced(olist)
         self.allocate_bases()
 
         if args.print_group:
@@ -2094,8 +2091,6 @@ class Scheduler:
                 self.print_group(g)
 
         self.gen_res_map(olist)
-        self.gen_indexobj(olist)
-        self.unreferenced_dummy()
         if args.print_group:
             self.print_group_summary(olist)
 
