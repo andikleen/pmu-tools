@@ -21,8 +21,6 @@ MATCH=${MATCH:-}
 NOGROUP=${NOGROUP:-}
 NORES=${NORES:-}
 
-export https_proxy=http://127.0.0.99:123456  # enforce no download
-
 failed() {
 	echo FAILED
 	[ -f nflog$$ ] && ( sort nflog$$ | uniq ) && rm nflog$$
