@@ -1217,21 +1217,21 @@ def execute_no_multiplex(runner, out, rest):
     rev = defaultdict(list)
     valstats = defaultdict(list)
     env = dict()
-    groups = [g.evnum for g in runner.sched.evgroups if len(g.evnum) > 0]
-    num_runs = len(groups) - len(list(filter(is_outgroup, groups)))
+    groups = [g.evnum for g in runner.sched.evgroups]
+    num_runs = len(groups) - sum([g.outgroup for g in runner.sched.evgroups])
     outg = []
     n = 0
     ctx = SaveContext()
     # runs could be further reduced by tweaking
     # the scheduler to avoid any duplicated events
-    for g in groups:
-        if is_outgroup(g):
+    for g, gg in zip(groups, runner.sched.evgroups):
+        if gg.outgroup:
             outg.append(g)
             continue
         n += 1
-        print("RUN #%d of %d" % (n, num_runs))
-        ret, res, rev, interval, valstats = do_execute(runner, outg + [g], out, rest,
-                                                 res, rev, valstats, env)
+        print("RUN #%d of %d: %s" % (n, num_runs, " ".join([quote(o.name) for o in gg.objl])))
+        ret, res, rev, interval, valstats = do_execute(runner, outg + [g], out, rest, res,
+                                                       rev, valstats, env)
         ctx.restore()
         outg = []
     assert num_runs == n
