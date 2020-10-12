@@ -69,7 +69,7 @@ fixed_to_num = {
     "cpu/event=0x3c,umask=0x00,any=1/": 1,
     "cpu/event=0x3c,umask=0x0,any=1/": 1,
     "cpu/event=0x3c,umask=0x0/": 1,
-    "cpu/event=0xc0,umask=0x0/" : 0,
+    "cpu/event=0xc0,umask=0x0/": 0,
     "ref-cycles": 2,
     "cpu/event=0x0,umask=0x3/": 2,
     "cpu/event=0x0,umask=0x3,any=1/": 2,
