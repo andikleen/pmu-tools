@@ -145,7 +145,6 @@ class Setup:
             global uops_retired_slots
             uops_retired_slots = "UOPS_RETIRED.SLOTS"
 
-        prev = None
         o = dict()
         n = FrontendBound() ; r.run(n)
         o["FrontendBound"] = n
