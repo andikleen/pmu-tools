@@ -1912,7 +1912,7 @@ def update_group_map(evnum, obj, group):
         r = raw_event(lev[0])
         # can happen during splitting
         # the update of the other level will fix it
-        if r in evnum:
+        if r in evnum and lev not in obj.group_map:
             obj.group_map[lev] = (group, evnum.index(r))
 
 class Scheduler:
