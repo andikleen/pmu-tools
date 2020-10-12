@@ -77,7 +77,7 @@ for h in data.headers:
                 return d[(h, c)]
         return float('nan')
 
-    ratios[h] = map(findval, data.vals)
+    ratios[h] = list(map(findval, data.vals))
 
 def valid_row(r):
     s = sum(r)
@@ -141,7 +141,7 @@ for l in tldata.level_order(data):
         ax.set_ylim(0, 100)
         ax.yaxis.set_ticks([0., 50., 100.])
         p = [plt.Rectangle((0, 0), 1, 1, fc=pc.get_facecolor()[0]) for pc in stack]
-        leg = plt.legend(p, map(suffix, non_null),
+        leg = plt.legend(p, list(map(suffix, non_null)),
                 ncol=6,
                 bbox_to_anchor=legend_bbox,
                 loc=legend_loc,
