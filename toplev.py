@@ -1620,6 +1620,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
 
 class BadEvent(Exception):
     def __init__(self, name):
+        super().__init__()
         self.event = name
 
 # XXX check for errata

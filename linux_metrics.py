@@ -46,7 +46,7 @@ class Migrations:
 
 # The events below require trace points, so typically root.
 
-class BadEV:
+class BadEV(Exception):
     pass
 
 def C(ev):
