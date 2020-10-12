@@ -169,12 +169,14 @@ notfound $j
 done
 
 # misc features
-$WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --ignore-errata --stats --metrics --force-events --no-multiplex -l4 $LOAD
+$WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --ignore-errata --stats --metrics --force-events --no-multiplex -l4 $LOAD
 [ -z "$NORES" ] && grep Turbo_Utilization log$$
-rm log$$
-$WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all --no-perf --fast $LOAD
+[ -z "$NORES" ] && grep -q -v "not supported" perfo$$.csv
+rm log$$ val$$.csv perfo$$.csv
+$WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --all --fast $LOAD
 [ -z "$NORES" ] && grep Turbo_Utilization log$$
-rm log$$
+[ -z "$NORES" ] && grep -q -v "not supported" perfo$$.csv
+rm log$$ val$$.csv perfo$$.csv
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --perf-output x$$.csv --all $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --import x$$.csv --all
 xz x$$.csv
@@ -215,7 +217,7 @@ FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --split-output -o out
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics  --per-thread --per-core --per-socket --global --summary --filterquals --columns -x, -a -l4 $LOAD
 rm out$$-*
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --single-thread  --per-thread --per-core --per-socket --filterquals --summary -a -l4 $LOAD
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --power -l4 $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-perf --no-desc --power -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc $ALL --no-group $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --sw -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --single-thread --user $LOAD | tee log$$
