@@ -2316,7 +2316,7 @@ class Runner:
     def compute(self, res, rev, valstats, env, match, stat):
         if len(res) == 0:
             print("Nothing measured?", file=sys.stderr)
-            return
+            return False
 
         changed = 0
 
