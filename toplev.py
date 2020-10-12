@@ -1917,6 +1917,18 @@ def update_group_map(evnum, obj, group):
         if r in evnum and lev not in obj.group_map:
             obj.group_map[lev] = (group, evnum.index(r))
 
+def do_distribute_uncore(evgroups):
+    cg = [g for g in evgroups if not g.outgroup]
+    og = [g for g in evgroups if g.outgroup]
+    z_l = itertools.zip_longest if sys.version_info.major == 3 else itertools.izip_longest
+    return [x for x in chain(*z_l(cg, og)) if x is not None]
+
+def gen_res_map(solist):
+    for obj in solist:
+        for k in obj.group_map.keys():
+            gr = obj.group_map[k]
+            obj.res_map[k] = gr[0].base + gr[1]
+
 class Scheduler:
     """Schedule events into groups."""
 
@@ -2031,18 +2043,6 @@ class Scheduler:
             self.evnum += g.evnum
             base += len(g.evnum)
 
-    def gen_res_map(self, solist):
-        for obj in solist:
-            for k in obj.group_map.keys():
-                gr = obj.group_map[k]
-                obj.res_map[k] = gr[0].base + gr[1]
-
-    def distribute_uncore(self, evgroups):
-        cg = [g for g in evgroups if not g.outgroup]
-        og = [g for g in evgroups if g.outgroup]
-        z_l = itertools.zip_longest if sys.version_info.major == 3 else itertools.izip_longest
-        return [x for x in chain(*z_l(cg, og)) if x is not None]
-
     def print_group(self, g):
         evkeys = [k for o in g.objl for k in o.group_map.keys() if o.group_map[k][0] == g]
         objnames = {("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys}
@@ -2089,7 +2089,7 @@ class Scheduler:
             self.add(obj, evnum, evlevels)
 
         if args.no_multiplex or distribute_uncore:
-            self.evgroups = self.distribute_uncore(self.evgroups)
+            self.evgroups = do_distribute_uncore(self.evgroups)
 
         self.dummy_unreferenced(olist)
         self.allocate_bases()
@@ -2098,7 +2098,7 @@ class Scheduler:
             for g in self.evgroups:
                 self.print_group(g)
 
-        self.gen_res_map(olist)
+        gen_res_map(olist)
         if args.print_group:
             self.print_group_summary(olist)
 
