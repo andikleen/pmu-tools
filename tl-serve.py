@@ -259,9 +259,9 @@ def gencsv(wfile, l, cpu):
         wr.writerow([ts] + [val[(x, cpu)] if (x, cpu) in val else "" for x in hdr])
 
 class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    def header(self, type):
+    def header(self, typ):
         self.send_response(200)
-        self.send_header('Content-Type', type)
+        self.send_header('Content-Type', typ)
         self.end_headers()
 
     def bad(self):
