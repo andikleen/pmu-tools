@@ -1904,6 +1904,14 @@ any_merge = True
 # Interleave uncore events between CPU groups
 distribute_uncore = False
 
+def update_group_map(evnum, obj, group):
+    for lev in obj.evlevels:
+        r = raw_event(lev[0])
+        # can happen during splitting
+        # the update of the other level will fix it
+        if r in evnum:
+            obj.group_map[lev] = (group, evnum.index(r))
+
 class Scheduler:
     """Schedule events into groups."""
 
@@ -1971,7 +1979,7 @@ class Scheduler:
                     if k not in g.evnum:
                         g.evnum.append(k)
                 g.objl.add(obj)
-                self.update_group_map(g.evnum, obj, g)
+                update_group_map(g.evnum, obj, g)
                 return True
 
             # memorize already full groups
@@ -1993,7 +2001,7 @@ class Scheduler:
             g = Group(evnum, [obj])
             self.evgroups.append(g)
             self.evgroups_nf.append(g)
-            self.update_group_map(evnum, obj, g)
+            update_group_map(evnum, obj, g)
 
     def add_outgroup(self, obj, evnum):
         debug_print("add_outgroup %s" % evnum)
@@ -2006,15 +2014,7 @@ class Scheduler:
                 self.og_groups[ev] = g
                 self.evgroups.append(g)
                 self.evgroups_nf.append(g)
-            self.update_group_map([ev], obj, g)
-
-    def update_group_map(self, evnum, obj, group):
-        for lev in obj.evlevels:
-            r = raw_event(lev[0])
-            # can happen during splitting
-            # the update of the other level will fix it
-            if r in evnum:
-                obj.group_map[lev] = (group, evnum.index(r))
+            update_group_map([ev], obj, g)
 
     def allocate_bases(self):
         base = 0
