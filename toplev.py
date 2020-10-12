@@ -28,11 +28,12 @@
 from __future__ import print_function
 import sys, os, re, textwrap, platform, pty, subprocess
 import argparse, time, types, csv, copy
+import bisect
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby, chain
 import itertools
-from listutils import cat_unique, dedup, flatten, filternot, not_list
+from listutils import cat_unique, dedup, filternot, not_list
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -1252,28 +1253,22 @@ def execute(runner, out, rest):
     print_and_sum_keys(runner, res, rev, valstats, out, interval, env)
     return ret
 
-def group_number(num, events):
-    gnum = itertools.count(1)
-    def group_nums(group):
-        if all([x in outgroup_events for x in group]):
-            idx = 0
-        else:
-            idx = next(gnum)
-        return [idx] * len(group)
+def find_group(num):
+    groups = runner.sched.evgroups
+    g = groups[bisect.bisect_right(groups, GroupCmp(num)) - 1]
+    assert g.base <= num < g.base + len(g.evnum)
+    return g
 
-    gnums = map(group_nums, events)
-    return flatten(gnums)[num]
-
-def dump_raw(interval, title, event, val, index, events, stddev, multiplex, nodes):
+def dump_raw(interval, title, event, val, index, stddev, multiplex):
     ename = event_rmap(event)
-    gnum = group_number(index, events)
+    g = find_group(index)
+    nodes = " ".join([o.name.replace(" ", "_") for o in g.objl if event in o.evnum])
     if args.raw:
         print("raw", title, "event", event, "val", val, "ename", ename, "index",
-                index, "group", gnum, "nodes", nodes)
+                index, "group", g.num, "nodes", nodes)
     if args.valcsv:
-        runner.valcsv.writerow((interval, title, gnum, ename, val, event, index,
+        runner.valcsv.writerow((interval, title, g.num, ename, val, event, index,
                                 stddev, multiplex, nodes))
-
 perf_fields = [
     r"[0-9.]+",
     r"<.*?>",
@@ -1439,8 +1434,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                      event,
                      val,
                      len(res[title]) - len(init_res[title]) - 1,
-                     events, stddev, multiplex,
-                     " ".join([o.name.replace(" ", "_") for o in runner.sched.indexobj[len(res[title]) - 1]]))
+                     stddev, multiplex)
     inf.close()
     if 'interval-s' not in env:
         set_interval(env, time.time() - start)
@@ -1891,9 +1885,16 @@ in_collection = False
 class Group:
     def __init__(self, evnum, objl, outgroup=False):
         self.evnum = evnum
-        self.base = None
+        self.base = -1
         self.objl = set(objl)
         self.outgroup = outgroup
+        self.num = -1
+
+class GroupCmp:
+    def __init__(self, v):
+        self.v = v
+    def __lt__(self, g):
+        return self.v < g.base
 
 # Control whether even unrelated groups can be merged
 any_merge = True
@@ -2013,8 +2014,9 @@ class Scheduler:
 
     def allocate_bases(self):
         base = 0
-        for g in self.evgroups:
+        for i, g in enumerate(self.evgroups):
             g.base = base
+            g.num = i
             self.evnum += g.evnum
             base += len(g.evnum)
 
