@@ -32,7 +32,7 @@ from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby
 import itertools
-from listutils import cat_unique, dedup2, flatten, filternot, not_list
+from listutils import cat_unique, dedup, flatten, filternot, not_list
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -1910,14 +1910,14 @@ class Scheduler:
                     g.evnum[ind] = "dummy"
                     self.evnum[g.base + ind] = "dummy"
 
-    def split_groups(self, objl, evlev):
+    def split_groups(self, obj, evlev):
         levels = set(get_levels(evlev))
         if len(levels) == 1:
             # when there is only a single left just fill groups
             while evlev:
                 n = grab_group(list(map(raw_event, get_names(evlev))))
                 l = evlev[:n]
-                self.add(objl, raw_events(get_names(l)), l, True)
+                self.add(obj, raw_events(get_names(l)), l, True)
                 evlev = evlev[n:]
         else:
             for l in levels:
@@ -1925,11 +1925,9 @@ class Scheduler:
                 # don't filter objects, the lower level functions
                 # have to handle missing entries
                 if evl:
-                    self.add(objl, raw_events(get_names(evl)), evl)
+                    self.add(obj, raw_events(get_names(evl)), evl)
 
-    def add_duplicate(self, evnum, objl):
-        # could speed up by keeping list of not-yet-full groups
-        # but that would need special handling for fixed counters
+    def add_duplicate(self, evnum, obj):
         evset = set(evnum)
 
         for g in reversed(self.evgroups):
@@ -1937,39 +1935,39 @@ class Scheduler:
                 continue
 
             #
-            # in principle we should only merge if there is any overlap
+            # In principle we should only merge if there is any overlap,
             # otherwise completely unrelated nodes get merged. But the perf
             # scheduler isn't very good at handling smaller groups, and
-            # with eventual exclusive use we would like as big groups as possible.
-            # still keep it as a option to play around.
-            #
+            # with eventual exclusive use we would like as big groups as
+            # possible. Still keep it as a --tune option to play around.
             if ((any_merge or not evset.isdisjoint(g.evnum)) and
                   needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
-                debug_print("add_duplicate %s %s in %s objl %s" % (
+                debug_print("add_duplicate %s %s in %s obj %s" % (
                     evnum,
                     list(map(event_rmap, evnum)),
                     g.evnum,
-                    [o.name for o in objl]))
+                    obj.name))
                 for k in evnum:
                     if k not in g.evnum:
                         g.evnum.append(k)
-                    g.objl |= set(objl)
-                self.update_group_map(g.evnum, objl, g)
+                g.objl.add(obj)
+                self.update_group_map(g.evnum, obj, g)
                 return True
 
         return False
 
-    def add(self, objl, evnum, evlev, force=False):
+    def add(self, obj, evnum, evlev, force=False):
         # does not fit into a group.
         if needed_counters(evnum) > cpu.counters and not force:
-            self.split_groups(objl, evlev)
+            self.split_groups(obj, evlev)
             return
-        evnum, evlev = dedup2(evnum, evlev)
-        if not self.add_duplicate(evnum, objl):
+        evnum = dedup(evnum)
+        if not self.add_duplicate(evnum, obj):
             debug_print("add %s %s" % (evnum, list(map(event_rmap, evnum))))
-            g = Group(evnum, objl)
+            g = Group(evnum, [obj])
             self.evgroups.append(g)
-            self.update_group_map(evnum, objl, g)
+            self.evgroups_nf.append(g)
+            self.update_group_map(evnum, obj, g)
 
     def add_outgroup(self, obj, evnum):
         debug_print("add_outgroup %s" % evnum)
@@ -1981,16 +1979,16 @@ class Scheduler:
                 g = Group([ev], [obj], True)
                 self.og_groups[ev] = g
                 self.evgroups.append(g)
-            self.update_group_map([ev], [obj], g)
+                self.evgroups_nf.append(g)
+            self.update_group_map([ev], obj, g)
 
-    def update_group_map(self, evnum, objl, group):
-        for obj in objl:
-            for lev in obj.evlevels:
-                r = raw_event(lev[0])
-                # can happen during splitting
-                # the update of the other level will fix it
-                if r in evnum:
-                    obj.group_map[lev] = (group, evnum.index(r))
+    def update_group_map(self, evnum, obj, group):
+        for lev in obj.evlevels:
+            r = raw_event(lev[0])
+            # can happen during splitting
+            # the update of the other level will fix it
+            if r in evnum:
+                obj.group_map[lev] = (group, evnum.index(r))
 
     def allocate_bases(self):
         base = 0
@@ -2053,7 +2051,7 @@ class Scheduler:
                 evlevels = list(compress(obj.evlevels, ie))
                 evnum = list(compress(obj.evnum, ie))
 
-            self.add([obj], evnum, evlevels)
+            self.add(obj, evnum, evlevels)
 
         self.allocate_bases()
 
