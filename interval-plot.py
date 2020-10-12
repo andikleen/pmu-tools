@@ -8,15 +8,15 @@
 # TODO: move legend somewhere else where it doesn't overlap?
 from __future__ import print_function
 import os
-import matplotlib
 import csv
 import sys
-if os.getenv("DISPLAY") is None:
-    matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import collections
 import argparse
 import re
+import matplotlib.pyplot as plt
+import matplotlib
+if os.getenv("DISPLAY") is None:
+    matplotlib.use('Agg')
 import csv_formats
 import gen_level
 

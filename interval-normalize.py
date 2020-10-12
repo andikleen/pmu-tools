@@ -12,8 +12,8 @@
 import sys
 import csv
 import argparse
-import csv_formats
 import collections
+import csv_formats
 
 ap = argparse.ArgumentParser(description=
 'Normalize CSV data from perf or toplev. All values are printed on a single line.')

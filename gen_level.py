@@ -1,6 +1,7 @@
 # generate levels for events from the model
 # utility module for other tools
 # the model used must be a superset of all
+import re
 import ivb_server_ratios
 import skl_client_ratios
 import power_metrics
@@ -8,7 +9,6 @@ import linux_metrics
 import tsx_metrics
 import perf_metrics
 import frequency
-import re
 
 omap = dict()
 metric = dict()

@@ -1,8 +1,8 @@
-version = "1.0"
-
 import metrics
 import node
 import slm_ratios as slm
+
+version = "1.0"
 
 slm.set_clks_event_name("CPU_CLK_UNHALTED.THREAD")
 

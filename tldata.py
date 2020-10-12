@@ -1,8 +1,8 @@
 import os
-import gen_level
-from collections import defaultdict
 import csv
 import re
+from collections import defaultdict
+import gen_level
 
 class TLData:
     """Read a toplev output CSV file.

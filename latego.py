@@ -3,12 +3,12 @@
 # can be run as a standalone tool or used as module
 # latego enable|disable hexevent
 from __future__ import print_function
-import msr
-import pci
 import signal
 import struct
-import os
 import re
+import os
+import msr
+import pci
 
 busses = (0x3f, 0x7f, 0xbf, 0xff)
 

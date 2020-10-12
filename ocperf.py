@@ -62,6 +62,7 @@ import copy
 import textwrap
 import pipes
 import itertools
+import glob
 from pmudef import EVENTSEL_ANY, EVENTSEL_INV, EVMASK, extra_flags
 
 import msr as msrmod
@@ -896,15 +897,14 @@ def add_extra_env(emap, el, eventmap_is_file):
                 # don't try to download for now
         except IOError:
             print("Cannot open", e2, file=sys.stderr)
-    read_map("EVENTMAP2", "core", lambda r: emap.read_events(r))
-    read_map("EVENTMAP3", "core", lambda r: emap.read_events(r))
-    read_map("UNCORE2", "uncore", lambda r: emap.add_uncore(r))
+    read_map("EVENTMAP2", "core", emap.read_events)
+    read_map("EVENTMAP3", "core", emap.read_events)
+    read_map("UNCORE2", "uncore", emap.add_uncore)
 
 def canon_emapvar(el, typ):
     if ("*" in el or "." in el or "_" in el) and "/" not in el and not file_exists(el):
         el = "%s/%s" % (event_download.getdir(), el)
     if '*' in el:
-        import glob
         l = glob.glob(el)
         if l:
             if len(l) > 1:

@@ -3,16 +3,16 @@
 #
 from __future__ import print_function
 import os
+import re
+import argparse
+import math
+from collections import defaultdict
 import matplotlib
 if os.getenv('DISPLAY') is None:
     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import argparse
-import math
-from collections import defaultdict
 import gen_level
 import tldata
-import re
 
 def parse_args():
     p = argparse.ArgumentParser(usage='plot toplev -I...  -x, output as bar plot')

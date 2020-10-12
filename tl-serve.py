@@ -5,17 +5,17 @@
 from __future__ import print_function
 import string
 import argparse
+import csv
+import re
+import os
+import signal
+import sys
 try:
     import BaseHTTPServer
 except ImportError:
     import http.server as BaseHTTPServer
-import csv
 import gen_level
-import re
-import os
 import tldata
-import signal
-import sys
 
 ap = argparse.ArgumentParser(usage="Serve toplev csv file as http or generate in directory")
 ap.add_argument('csvfile', help='toplev csv file to serve')

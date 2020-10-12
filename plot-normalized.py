@@ -1,14 +1,14 @@
 #!/usr/bin/env python2
 # plot already normalized data
 # first column is time stamp
-import csv
+import sys
+import argparse
 import os
 import matplotlib
 if os.getenv("DISPLAY") is None:
     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import sys
-import argparse
+import csv
 
 ap = argparse.ArgumentParser(usage='Plot already normalized CSV data')
 ap.add_argument('--output', '-o', help='Output to file. Otherwise show.',
