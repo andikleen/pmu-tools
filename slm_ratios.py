@@ -10,14 +10,6 @@ import node
 print_error = lambda msg: False
 version = "1.0"
 
-# Override using set_clks_event_name()
-CLKS_EVENT_NAME = "CPU_CLK_UNHALTED.THREAD"
-
-# Module-level function used to work around event name differences,
-# e.g. Knights Landing
-def set_clks_event_name(ev_name):
-    CLKS_EVENT_NAME = ev_name
-
 # Instructions Per Cycle
 def IPC(EV, level):
     return EV("INST_RETIRED.ANY", level) / EV("cycles", 1)
@@ -35,7 +27,7 @@ def Time(EV, level):
 
 # Per-thread actual clocks
 def CLKS(EV, level):
-    return EV(CLKS_EVENT_NAME, level)
+    return EV("CPU_CLK_UNHALTED.CORE", level)
 
 # Cycles Per Instruction (threaded)
 def CPI(EV, level):
@@ -64,7 +56,7 @@ class CyclesPerUop(metrics.MetricBase):
     domain = "Metric"
     desc = "\nCycles per uop."
     def _compute(self, ev):
-        return ev("CPU_CLK_UNHALTED.THREAD", self.level) / \
+        return ev("CPU_CLK_UNHALTED.CORE", self.level) / \
                ev("UOPS_RETIRED.ALL", self.level)
 
 # LEVEL 1
