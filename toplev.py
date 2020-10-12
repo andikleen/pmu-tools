@@ -2047,12 +2047,13 @@ class Scheduler:
 
     def print_group_summary(self, olist):
         num_groups = len([g for g in self.evgroups if not g.outgroup])
-        print("%d cpu groups, %d outgroups with %d events total (%d unique) for %d objects" % (
+        print("%d cpu groups, %d outgroups with %d events total (%d unique) for %d objects, %d dummies" % (
             num_groups,
             len(self.evgroups) - num_groups,
             len(self.evnum),
             len(set(self.evnum)),
-            len(olist)),
+            len(olist),
+            self.evnum.count("dummy")),
               file=sys.stderr)
 
     # fit events into available counters
