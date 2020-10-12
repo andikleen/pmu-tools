@@ -49,6 +49,7 @@ for i in range(0, 8):
                 for j in emap.codes.keys():
                     if j == evsel and extra == emap.codes[j].msrvalue:
                         print(j.name, "msr:%x" % (extra), end="")
+                        break
                 else:
                     print("no exact match for %s, msr %x value %x" % (ev.name,
                                                                       ev.msr, ev.msrvalue), end="")
@@ -75,7 +76,7 @@ for i in range(0, 8):
             print("pc=1", end=" ")
         if pebs_enable & (1 << i):
             print("precise=1", end=" ")
-        print
+        print()
 if found == 0:
     print("Cannot read any MSRs")
 
