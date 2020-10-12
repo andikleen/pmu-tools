@@ -34,4 +34,3 @@ for j in sys.argv[1:]:
     else:
         # XXX implement offcore new style events
         print("cannot parse", j)
-

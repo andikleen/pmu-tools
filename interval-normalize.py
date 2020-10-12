@@ -95,4 +95,3 @@ for row, ts, cpunum in zip(out, times, cpus):
     writer.writerow([ts] +
                 ([cpunum] if (cpu is not None and not args.normalize_cpu) else []) +
                 ([resolve(row, events[x]) for x in keys]))
-

@@ -27,4 +27,3 @@ for l in sys.stdin:
     else:
         delta = 0
     print(n[1], j[0], n[0], "%.2f" % (delta * 100.0))
-

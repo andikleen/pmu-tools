@@ -79,4 +79,3 @@ class Setup:
         r.force_metric(AbortedCycles())
         r.force_metric(AverageRTM())
         r.force_metric(AverageHLE())
-

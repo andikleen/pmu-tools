@@ -21,4 +21,3 @@ while j < len(sys.argv):
     print(av[j], file=out, end=' ')
     j += 1
 out.write("\n")
-

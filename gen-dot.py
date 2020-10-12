@@ -45,5 +45,3 @@ print("digraph {")
 print("fontname=\"Courier\";")
 runner.finish()
 print("}")
-
-
