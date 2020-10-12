@@ -994,7 +994,7 @@ def find_idle_keys(res, rev, idle_thresh):
     if not cycles:
         return set()
     max_cycles = max(cycles.values())
-    return set([k for k in cycles.keys() if cycles[k] < max_cycles * idle_thresh])
+    return {k for k in cycles.keys() if cycles[k] < max_cycles * idle_thresh}
 
 def is_idle(cpus, idle_keys):
     return all([("%d" % c) in idle_keys for c in cpus])
@@ -2045,8 +2045,8 @@ class Scheduler:
 
     def print_group(self, g):
         evkeys = [k for o in g.objl for k in o.group_map.keys() if o.group_map[k][0] == g]
-        objnames = set([("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys])
-        evnames = set([mark_fixed(x[0]) for x in evkeys])
+        objnames = {("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys}
+        evnames = {mark_fixed(x[0]) for x in evkeys}
         pwrap(" ".join(objnames) + ":", 78)
         pwrap(" ".join(evnames).lower() +
               (" [%d counters]" % needed_counters(g.evnum)) +
@@ -2146,7 +2146,7 @@ class Runner:
 
         add_met, remove_met = parse_metric_group(args.metric_group, self.metricgroups)
 
-        add_obj = set([self.odict[x] for x in add_met])
+        add_obj = {self.odict[x] for x in add_met}
         parents = [get_parents(x) for x in add_obj]
         if add_obj:
             for o in self.olist:

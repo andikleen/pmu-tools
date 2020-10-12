@@ -87,7 +87,7 @@ def file_exists(s):
         topology = set()
         if top:
             try:
-                topology = set([x.strip() for x in open(top).readlines()])
+                topology = {x.strip() for x in open(top).readlines()}
             except OSError:
                 print("Cannot open", top, file=sys.stderr)
     if s in topology:

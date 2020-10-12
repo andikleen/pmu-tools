@@ -56,7 +56,7 @@ class ComputeStat:
             r = res[list(res.keys())[0]]
             assert len(r) == len(evnum)
             if len(referenced) != len(r) and not self.quiet:
-                dummies = set([i for i, d in enumerate(evnum) if d == "dummy"])
+                dummies = {i for i, d in enumerate(evnum) if d == "dummy"}
                 notr = set(range(len(r))) - referenced - dummies
                 if notr:
                     print("%d results not referenced: " % (len(notr)),
