@@ -272,7 +272,7 @@ def needed_counters(evlist):
         debug_print("resource split %s" % evlist)
         return 100
 
-    evlist = [x for x in evlist if not ismetric(x)]
+    evlist = list(compress(evlist, not_list(metrics)))
 
     # force split if we overflow fixed
     # some fixed could be promoted to generic, but that doesn't work
