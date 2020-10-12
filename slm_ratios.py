@@ -64,7 +64,7 @@ class CyclesPerUop(metrics.MetricBase):
     domain = "Metric"
     desc = "\nCycles per uop."
     def _compute(self, ev):
-        return ev("CPU_CLK_UNHALTED.THREAD", self.level) / \
+        return ev(CLKS_EVENT_NAME, self.level) / \
                ev("UOPS_RETIRED.ALL", self.level)
 
 # LEVEL 1
