@@ -1059,7 +1059,7 @@ def process_args():
         elif sys.argv[i][0:2] == '-e' or sys.argv[i] == '--event':
             event, i, prefix = getarg(i, cmd)
             event, overflow = process_events(event, print_only,
-                                             True if record == yes else False,
+                                             record == yes,
                                              noexplode)
             cmd.append(prefix + event)
         elif record and (sys.argv[i][0:2] == '-c' or sys.argv[i] == '--count'):
