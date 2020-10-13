@@ -192,6 +192,8 @@ class CPU:
         self.sockets = len(sockets.keys())
         self.modelid = None
         mid = (self.model,)
+        self.true_name = self.cpu
         if mid in modelid_map:
             self.modelid = modelid_map[mid]
+            self.true_name = self.modelid.lower()
         # XXX match steppings here too
