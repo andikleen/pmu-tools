@@ -389,7 +389,7 @@ g.add_argument('--single-thread', '-S', help='Measure workload as single thread.
 g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumption', action='store_true')
 g.add_argument('--import', help='Import specified perf stat output file instead of running perf. '
                'Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
-                dest='_import')
+                dest='import_')
 g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later',
                action='store_true')
 g.add_argument('--drilldown', help='Automatically rerun to get more details on bottleneck', action='store_true')
@@ -438,7 +438,7 @@ g = p.add_argument_group('Output')
 g.add_argument('--per-core', help='Aggregate output per core', action='store_true')
 g.add_argument('--per-socket', help='Aggregate output per socket', action='store_true')
 g.add_argument('--per-thread', help='Aggregate output per CPU thread', action='store_true')
-g.add_argument('--global', help='Aggregate output for all CPUs', action='store_true', dest='_global')
+g.add_argument('--global', help='Aggregate output for all CPUs', action='store_true', dest='global_')
 g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
 g.add_argument('--desc', help='Force event descriptions', action='store_true')
 g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. '
@@ -516,7 +516,7 @@ elif args.csv or args.xlsx: # not for args.graph
 else:
     idle_threshold = 0.05
 
-import_mode = args._import is not None
+import_mode = args.import_ is not None
 event_nocheck = import_mode or args.no_check
 
 feat = PerfFeatures(args)
@@ -606,7 +606,7 @@ if args.xlsx:
         args.per_socket = True
         args.per_core = True
         args.no_aggr = True
-        args._global = True
+        args.global_ = True
 
 if args.no_aggr:
     rest = ["-A"] + rest
@@ -734,7 +734,7 @@ class PerfRun:
     def execute(self, r):
         if import_mode:
             self.perf = None
-            return flex_open_r(args._import)
+            return flex_open_r(args.import_)
 
         if args.gen_script:
             gen_script(r)
@@ -1157,7 +1157,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     runner.idle_keys |= hidden_keys
 
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
-    if args.per_core + args.per_thread + args.per_socket + args._global > 1:
+    if args.per_core + args.per_thread + args.per_socket + args.global_ > 1:
         if args.per_thread:
             out.remark("Per thread")
             out.reset("thread")
@@ -1170,7 +1170,7 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
             out.remark("Per socket")
             out.reset("socket")
             print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_SOCKET)
-        if args._global:
+        if args.global_:
             out.remark("Global")
             out.reset("global")
             print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_GLOBAL)
@@ -1184,7 +1184,7 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
             mode = OUTPUT_CORE
         elif args.per_socket:
             mode = OUTPUT_SOCKET
-        elif args._global:
+        elif args.global_:
             mode = OUTPUT_GLOBAL
         print_keys(runner, res, rev, valstats, out, interval, env, mode)
 
@@ -2798,7 +2798,7 @@ if args.per_core and not smt_mode and "-A" not in rest:
     rest = ["--per-core"] + rest
 if args.per_thread and not smt_mode and "-A" not in rest:
     rest = ["-A"] + rest
-if ((args._global or args.per_socket or args.per_core or args.per_thread)
+if ((args.global_ or args.per_socket or args.per_core or args.per_thread)
         and not smt_mode
         and not args.single_thread):
     if "-a" not in rest:

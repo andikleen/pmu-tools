@@ -43,7 +43,7 @@ def open_logfile(name, typ):
 class Output:
     """Abstract base class for Output classes."""
     def __init__(self, logfile, version, cpu, args):
-        if args.split_output and args.per_thread + args.per_core + args.per_socket + args._global > 0:
+        if args.split_output and args.per_thread + args.per_core + args.per_socket + args.global_ > 0:
             self.logfiles = dict()
             if args.per_thread:
                 self.logfiles['thread'] = open_logfile(logfile, "thread")
@@ -51,7 +51,7 @@ class Output:
                 self.logfiles['core'] = open_logfile(logfile, "core")
             if args.per_socket:
                 self.logfiles['socket'] = open_logfile(logfile, "socket")
-            if args._global:
+            if args.global_:
                 self.logfiles['global'] = open_logfile(logfile, "global")
         else:
             self.logfiles = None
