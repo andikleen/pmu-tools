@@ -1942,6 +1942,15 @@ def gen_res_map(solist):
             gr = obj.group_map[k]
             obj.res_map[k] = gr[0].base + gr[1]
 
+def print_group(g):
+    evkeys = [k for o in g.objl for k in o.group_map.keys() if o.group_map[k][0] == g]
+    objnames = {("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys}
+    evnames = {mark_fixed(x[0]) for x in evkeys}
+    pwrap(" ".join(objnames) + ":", 78)
+    pwrap(" ".join(evnames).lower() +
+          (" [%d counters]" % needed_counters(g.evnum)) +
+          (" [%d]" % g.base if args.debug else ""), 75, "  ")
+
 class Scheduler:
     """Schedule events into groups."""
 
@@ -2056,15 +2065,6 @@ class Scheduler:
             self.evnum += g.evnum
             base += len(g.evnum)
 
-    def print_group(self, g):
-        evkeys = [k for o in g.objl for k in o.group_map.keys() if o.group_map[k][0] == g]
-        objnames = {("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys}
-        evnames = {mark_fixed(x[0]) for x in evkeys}
-        pwrap(" ".join(objnames) + ":", 78)
-        pwrap(" ".join(evnames).lower() +
-              (" [%d counters]" % needed_counters(g.evnum)) +
-              (" [%d]" % g.base if args.debug else ""), 75, "  ")
-
     def print_group_summary(self, olist):
         num_groups = len([g for g in self.evgroups if not g.outgroup])
         print("%d cpu groups, %d outgroups with %d events total (%d unique) for %d objects, %d dummies" % (
@@ -2109,7 +2109,7 @@ class Scheduler:
 
         if args.print_group:
             for g in self.evgroups:
-                self.print_group(g)
+                print_group(g)
 
         gen_res_map(olist)
         if args.print_group:
