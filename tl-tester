@@ -16,10 +16,12 @@ set -u
 
 WRAP=${WRAP:-}
 DCPU=${DCPU:-skl}
-OPT="${OPT:---perf}"
+OPT="${OPT:-}"
 MATCH=${MATCH:-}
 NOGROUP=${NOGROUP:-}
 NORES=${NORES:-}
+
+OPT="$OPT --perf"
 
 failed() {
 	echo FAILED
