@@ -2395,7 +2395,7 @@ class Runner:
                 elif check_ratio(obj.val):
                     return True
             return False
-        olist = list(filter(should_print_obj, self.olist))
+        olist = [o for o in self.olist if should_print_obj(o)]
 
         # sort by metric group
         olist = olist_by_metricgroup(olist, self.metricgroups)
