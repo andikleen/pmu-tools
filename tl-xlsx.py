@@ -31,7 +31,7 @@ import gen_level
 ap = argparse.ArgumentParser(description="Convert toplev CSV files to xlsx")
 ap.add_argument('xlsxfile', help="xlsx output name")
 ap.add_argument('--socket', type=argparse.FileType('r'), help="toplev socket csv file", metavar="csvfile")
-ap.add_argument('--global', type=argparse.FileType('r'), help="toplev global csv file", dest='_global', metavar="csvfile")
+ap.add_argument('--global', type=argparse.FileType('r'), help="toplev global csv file", dest='global_', metavar="csvfile")
 ap.add_argument('--core', type=argparse.FileType('r'), help="toplev core csv file", metavar="csvfile")
 ap.add_argument('--program', type=argparse.FileType('r'), help="toplev program csv file", metavar="csvfile")
 ap.add_argument('--thread', type=argparse.FileType('r'), help="toplev thread csv file", metavar="csvfile")
@@ -193,8 +193,8 @@ def gen_chart(source):
         row += GRAPH_ROWS
 
 version = None
-if args._global:
-    version = create_sheet("global", args._global, version=version)
+if args.global_:
+    version = create_sheet("global", args.global_, version=version)
 if args.socket:
     version = create_sheet("socket", args.socket, version=version)
 if args.core:
