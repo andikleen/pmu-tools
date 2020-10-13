@@ -527,6 +527,7 @@ def gen_cpu_name(cpu):
             else:
                 return "GenuineIntel-6-%02X" % j[1][0]
     assert False
+    return None
 
 if args.tune:
     for t in args.tune:
