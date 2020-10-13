@@ -2900,6 +2900,8 @@ def measure_and_sample(count):
             runner.olist = runner.full_olist
             for o in runner.olist:
                 o.thresh = True
+                o.group_map = dict()
+                o.res_map = dict()
             runner.filter_nodes()
             runner.collect()
             runner.sched.schedule(runner.olist)
