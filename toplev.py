@@ -503,6 +503,7 @@ p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true') # enable 
 p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS) # start python repl after initialization
 p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true') # remove events not supported by perf
 p.add_argument('--tune', nargs='+', help=argparse.SUPPRESS) # override global variables with python expression
+p.add_argument('--force-bn', action='append', help=argparse.SUPPRESS) # force bottleneck for testing
 args, rest = p.parse_known_args()
 
 if args.idle_threshold:
@@ -1775,8 +1776,13 @@ def _find_bn(bn, level):
     return n
 
 def find_bn(olist, match):
-    bn = [o for o in olist if match(o) and o.thresh and not o.metric]
-    if len(bn) == 0:
+    bn = [o for o in olist if match(o) and not o.metric]
+    if args.force_bn:
+        bn = sorted([o for o in olist if o.name in args.force_bn], key=lambda x: x.level, reverse=True)
+        if bn:
+            return bn[0]
+    bn = [o for o in olist if o.thresh]
+    if not bn:
         return None
     return _find_bn(bn, 0)
 
@@ -2344,6 +2350,8 @@ class Runner:
             oldthresh = obj.thresh
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
+            if args.force_bn and obj.name in args.force_bn:
+                obj.thresh = True
             if obj.thresh != oldthresh:
                 changed += 1
             if stat:
