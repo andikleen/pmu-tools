@@ -1019,6 +1019,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
     out.set_cpus(display_keys(runner, keys, mode))
+    runner.numprint = 0
     if smt_mode:
         printed_cores = set()
         printed_sockets = set()
@@ -1152,6 +1153,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat.referenced_check(res, runner.sched.evnum)
     stat.compute_errors()
     runner.idle_keys |= hidden_keys
+    if runner.numprint == 0 and not args.quiet and runner.olist:
+        print("No node crossed threshold", file=sys.stderr)
 
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
     if args.per_core + args.per_thread + args.per_socket + args.global_ > 1:
@@ -2143,6 +2146,7 @@ class Runner:
         self.idle_threshold = idle_threshold
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
+        self.numprint = 0
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv, lineterminator='\n')
             self.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
@@ -2432,6 +2436,7 @@ class Runner:
                         idlemark)
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
+            self.numprint += 1
 
     def list_metric_groups(self):
         print("MetricGroups:")
