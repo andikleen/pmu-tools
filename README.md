@@ -8,6 +8,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now hides the perf command line by default. Override with --perf.
 * Updated to TMA 4.11: Fixed an error in misprediction-related and Power License metrics
 * toplev now supports the new fixed TMA metrics counters on Icelake. This requires
   the upcoming 5.9+ kernel.

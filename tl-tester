@@ -16,7 +16,7 @@ set -u
 
 WRAP=${WRAP:-}
 DCPU=${DCPU:-skl}
-OPT=${OPT:-}
+OPT="${OPT:---perf}"
 MATCH=${MATCH:-}
 NOGROUP=${NOGROUP:-}
 NORES=${NORES:-}
@@ -92,11 +92,11 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --stats $ALL --kernel --valcs
 checklog0
 grep :k log$$
 grep /k log$$
-EVENTMAP=${cpus[$DCPU]} FORCECPU=simple $WRAP ./toplev.py --no-desc -l1 $LOAD
+EVENTMAP=${cpus[$DCPU]} FORCECPU=simple $WRAP ./toplev.py $OPT --no-desc -l1 $LOAD
 # check errata handling
-EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py --handle-errata --force-events --no-desc --all $LOAD 2>&1 | tee log$$
+EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py $OPT --handle-errata --force-events --no-desc --all $LOAD 2>&1 | tee log$$
 grep BDE70 log$$
-$WRAP ./toplev.py --force-cpu skl --nodes '!+Bad_Speculation.Branch_Mispredicts^' -o log$$ -v $LOAD
+$WRAP ./toplev.py --force-cpu skl $OPT --nodes '!+Bad_Speculation.Branch_Mispredicts^' -o log$$ -v $LOAD
 [ -z "$NORES" ] && grep Branch_Misprediction_Cost log$$
 [ -z "$NORES" ] && grep IpMispredict log$$
 [ -z "$NORES" ] && grep Branch_Mispredicts log$$
@@ -134,40 +134,40 @@ notfound() {
 for j in $SMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$j" ] && continue
 if ! grep -q hypervisor /proc/cpuinfo ; then
-FORCEHT=1 $WRAP ./toplev.py --force-cpu $j --force-topology topology --force-events -l1 --filterquals $LOAD 2>&1 | tee log$$.$j
+FORCEHT=1 $WRAP ./toplev.py --force-cpu $j --force-topology topology --force-events -l1 --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
 [ $j != "knl" ] && onegroup log$$.$j
 checklog log$$.$j
 notfound $j
 fi
-FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events -l1 --filterquals $LOAD 2>&1 | tee log$$.$j
+FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events -l1 --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
 [ $j != "knl" ] && onegroup log$$.$j
 notfound $j
 if ! grep -q hypervisor /proc/cpuinfo ; then
-FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $LOAD 2>&1 | tee log$$.$j
+FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
-FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals --user $LOAD 2>&1
+FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $OPT --user $LOAD 2>&1
 fi
-FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $LOAD 2>&1 | tee log$$.$j
-FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals --user $ALL $LOAD 2>&1 | tee log$$.$j
+FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
+FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals --user $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 FORCEHT=1 FORCE_NMI_WATCHDOG=1 \
-$WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $LOAD 2>&1 | tee log$$.$j
+$WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 FORCEHT=0 \
-$WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $LOAD 2>&1 | tee log$$.$j
+$WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
 if [ $j == "icl" ] ; then
-FORCEMETRICS=1 ./toplev.py --force-cpu $j --force-topology topology --force-events --print $ALL $LOAD
+FORCEMETRICS=1 ./toplev.py --force-cpu $j --force-topology topology --force-events --print $ALL $OPT $LOAD
 fi
 
 done
 
 for j in $NOSMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$j" ] && continue
-$WRAP ./toplev.py --force-cpu $j -l1 $LOAD 2>&1 | tee log$$.$j
+$WRAP ./toplev.py --force-cpu $j $OPT -l1 $LOAD 2>&1 | tee log$$.$j
 # SLM now needs two groups
 [ $j != "slm" ] && onegroup log$$.$j
 checklog log$$.$j
-$WRAP ./toplev.py --force-cpu $j $ALL $LOAD 2>&1 | tee log$$.$j
+$WRAP ./toplev.py --force-cpu $j $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
 done
@@ -192,7 +192,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --import x$$.csv.gz --all -
 [ -z "$NORES" ] && zgrep IPC y$$.out.gz
 rm x$$.csv.gz y$$.out.gz
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --no-multiplex --columns -l4 $LOAD
-$WRAP ./toplev.py --force-cpu bdw --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns -l4 $LOAD
+$WRAP ./toplev.py --force-cpu bdw $OPT --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD
@@ -239,11 +239,11 @@ echo >> log$$
 [ -z "$NORES" ] && grep IPC log$$
 checklog0
 rm log$$
-$WRAP ./toplev.py > log$$ true
+$WRAP ./toplev.py $OPT > log$$ true
 # assumes that true is backend_bound. If not would need some parsing
 [ -z "$NORES" ] && egrep "Add --nodes.*(Back|Front)end" log$$
 rm log$$
-$WRAP ./toplev.py  -v --nodes Backend*/3 -o log$$ true
+$WRAP ./toplev.py  -v $OPT --nodes Backend*/3 -o log$$ true
 echo >> log$$
 [ -z "$NORES" ] && grep Backend_Bound.Memory_Bound.L3_Bound log$$
 [ -z "$NORES" ] && grep -v Backend_Bound.Core_Bound.Ports_Utilization.Ports_Utilized_0 log$$
@@ -303,7 +303,7 @@ checklog0
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -l4 -I 1000 -a --per-thread --filterquals sleep 1
 checklog0
 
-$WRAP ./toplev.py --force-cpu hsx -l4 true
+$WRAP ./toplev.py --force-cpu hsx $OPT -l4 true
 
 # test gen-script / import
 $WRAP ./toplev.py --all --gen-script > script$$
@@ -323,13 +323,13 @@ fi
 
 
 # check current platform
-$WRAP ./toplev.py -o /dev/null --no-desc -v --all --run-sample $LOAD
-HYPERVISOR=1 $WRAP ./toplev.py -o /dev/null --no-desc -v -l5 --run-sample $LOAD
+$WRAP ./toplev.py -o /dev/null $OPT --no-desc -v --all --run-sample $LOAD
+HYPERVISOR=1 $WRAP ./toplev.py $OPT -o /dev/null --no-desc -v -l5 --run-sample $LOAD
 for cpu in $SMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$cpu" ] && continue
 
 FORCEHT=1 \
-$WRAP ./toplev.py --force-cpu $cpu --force-topology topology -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log$$
+$WRAP ./toplev.py --force-cpu $cpu $OPT --force-topology topology -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log$$
 cat log$$
 # need to ignore errors for now to allow testing on laptop for uncore events
 notfound $cpu
@@ -340,7 +340,7 @@ fi
 done
 for cpu in $NOSMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$cpu" ] && continue
-$WRAP ./toplev.py --force-cpu $cpu -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log$$
+$WRAP ./toplev.py --force-cpu $cpu $OPT -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log$$
 cat log$$
 notfound $cpu
 done

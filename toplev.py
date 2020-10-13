@@ -456,7 +456,8 @@ g.add_argument('--columns', help='Print CPU output in multiple columns for each 
 g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
 g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file')
-g.add_argument('--no-perf', help="Don't print perf command line", action='store_true')
+g.add_argument('--no-perf', help=argparse.SUPPRESS, action='store_true') # noop, for compatibility
+g.add_argument('--perf', help='Print perf command line', action='store_true')
 g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
 g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5%% of busiest if not CSV, specify percent)",
                default=None, type=float)
@@ -693,7 +694,7 @@ if cpu.hypervisor or args.no_uncore:
     feat.supports_power = False
 
 def print_perf(r):
-    if args.quiet or args.no_perf:
+    if not args.perf:
         return
     l = ["'" + x + "'" if x.find("{") >= 0 else x for x in r]
     l = [x.replace(";", "\\;") for x in l]
