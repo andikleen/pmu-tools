@@ -106,7 +106,7 @@ $WRAP ./toplev.py --force-cpu skl $OPT --nodes '!+Bad_Speculation.Branch_Mispred
 [ -z "$NORES" ] && grep IpMispredict log$$
 [ -z "$NORES" ] && grep Branch_Mispredicts log$$
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
-$WRAP ./toplev --force-cpu skl $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Frontend_Latency --drilldown -o log$$ $LOAD
+$WRAP ./toplev --force-cpu skl $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $LOAD
 [ -z "$NORES" ] && grep Branch_Misprediction_Cost log$$
 [ -z "$NORES" ] && grep IpMispredict log$$
 [ -z "$NORES" ] && grep Branch_Mispredicts log$$
