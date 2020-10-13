@@ -105,7 +105,6 @@ class Output:
         self.item(area, name, uval, timestamp, unit, desc, title, sample, bn, below, idle)
 
     def metric(self, area, name, uval, timestamp, desc, title, unit, idle):
-        uval.is_metric = True
         self.item(area, name, uval, timestamp, unit, desc, title, None, "", "", idle)
 
     def flush(self):
@@ -215,9 +214,8 @@ class OutputHuman(Output):
         write(vals + "\n")
         self.print_desc(desc, sample)
 
-    def metric(self, area, name, l, timestamp, desc, title, unit, idle):
-        l.is_metric = True
-        self.item(area, name, l, timestamp, unit, desc, title, None, "", "", False)
+    def metric(self, area, name, uval, timestamp, desc, title, unit, idle):
+        self.item(area, name, uval, timestamp, unit, desc, title, None, "", "", False)
 
 def convert_ts(ts):
     if isnan(ts):
