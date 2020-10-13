@@ -2765,7 +2765,7 @@ if not args.no_util:
 if args.power and feat.supports_power:
     import power_metrics
     power_metrics.Setup(runner)
-    if not args.quiet and not import_mode:
+    if not args.quiet and not import_mode and not args.print:
         print("Running with --power. Will measure complete system.")
     if args.single_thread:
         print("--single-thread conflicts with --power")
@@ -2853,7 +2853,7 @@ if args.core:
 else:
     runner.allowed_threads = cpu.allcpus
 
-if not args.quiet:
+if not args.quiet and not args.print:
     print("Using level %d." % (args.level), end='')
     if not args.level and cpu.cpu != "slm":
         print("Change level with -lX")
