@@ -118,7 +118,7 @@ class UVal:
             elif isinstance(v, (float, int)):
                 return binop(self, UVal(TEMPVAL, value=v, stddev=0))
             else:
-                return NotImplemented()
+                return NotImplemented
         return wrapper
 
     @ensure_uval
