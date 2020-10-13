@@ -19,14 +19,13 @@
 from __future__ import print_function
 import sys
 import argparse
+import re
+import collections
+import csv
 try:
     import xlsxwriter
 except ImportError:
     sys.exit("Please install xlswriter with 'pip%s install xlsxwriter'" % sys.version[0])
-import sys
-import csv
-import re
-import collections
 import gen_level
 
 ap = argparse.ArgumentParser(description="Convert toplev CSV files to xlsx")
