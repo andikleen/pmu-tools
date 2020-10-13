@@ -62,6 +62,11 @@ known_cpus = (
     ("icl", (126, )),
 )
 
+cpu_extra_name = {
+    142: "kbl",
+    158: "cfl",
+}
+
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl")
 
 fixed_to_num = {
@@ -673,6 +678,7 @@ def check_ratio(l):
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
+cpu.true_name = cpu_extra_name[cpu.model] if cpu.model in cpu_extra_name else cpu.cpu
 
 if args.xlsx and not forced_per_socket and cpu.sockets == 1:
     args.per_socket = False
