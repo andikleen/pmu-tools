@@ -96,6 +96,12 @@ EVENTMAP=${cpus[$DCPU]} FORCECPU=simple $WRAP ./toplev.py --no-desc -l1 $LOAD
 # check errata handling
 EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py --handle-errata --force-events --no-desc --all $LOAD 2>&1 | tee log$$
 grep BDE70 log$$
+$WRAP ./toplev.py --force-cpu skl --nodes '!+Bad_Speculation.Branch_Mispredicts^' -o log$$ -v $LOAD
+grep Branch_Misprediction_Cost log$$
+grep IpMispredict log$$
+grep Branch_Mispredicts log$$
+grep Mispredicts_Resteers log$$
+rm log$$
 
 # test L1 uses a single group
 onegroup() {

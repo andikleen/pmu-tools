@@ -1733,6 +1733,9 @@ def node_filter(obj, default, sibmatch):
                 m = r.group(1)
             return _match(m)
 
+        def has_siblings(j, obj):
+            return j.endswith("^") and 'sibling' in obj.__dict__ and obj.sibling
+
         nodes = args.nodes
         if nodes[0] == '!':
             default = False
@@ -1746,10 +1749,19 @@ def node_filter(obj, default, sibmatch):
                 continue
             elif j[0] == '+':
                 i += 1
+
             if match(j[i:], False):
-                if j.endswith("^") and 'sibling' in obj.__dict__ and obj.sibling:
+                if has_siblings(j, obj):
                     sibmatch |= set(obj.sibling)
                 return True
+            if has_siblings(j, obj):
+                for sib in obj.sibling:
+                    fname = full_name(sib)
+                    name = sib.name
+                    if match(j[i:], False):
+                        sibmatch.add(obj)
+                        return True
+
     return default
 
 SIB_THRESH = 0.05
