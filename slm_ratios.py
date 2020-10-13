@@ -16,6 +16,7 @@ CLKS_EVENT_NAME = "CPU_CLK_UNHALTED.CORE"
 # Module-level function used to work around event name differences,
 # e.g. Knights Landing
 def set_clks_event_name(ev_name):
+    global CLKS_EVENT_NAME
     CLKS_EVENT_NAME = ev_name
 
 # Instructions Per Cycle
