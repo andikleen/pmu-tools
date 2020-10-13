@@ -179,7 +179,7 @@ def parse_map_file(match, key=None, link=True, onlyprint=False, acceptfile=False
                     print("Cannot link %s to %s:" % (name, lname), e, file=sys.stderr)
             files.append(fn)
         models.close()
-        if not onlyprint:
+        if not onlyprint and not os.path.exists(os.path.join(dir, "readme.txt")):
             getfile(urlpath + "/readme.txt", dir, "readme.txt")
     except URLError as e:
         print("Cannot access event server:", e, file=sys.stderr)
