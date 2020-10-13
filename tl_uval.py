@@ -215,7 +215,7 @@ class UVal:
             elif op == div_op or op == operator.truediv:
                 u = 0.
                 if A != 0:
-                    log.warning("Error prop failed because of DIV/0: {} {} {}".format(lhs, op, rhs))
+                    log.warning("Error prop failed because of DIV/0: {} {} {}", lhs, op, rhs)
 
         elif op in (operator.add, operator.sub):
             sgn = 1 if op == operator.add else -1
@@ -223,8 +223,8 @@ class UVal:
 
         else:
             u = None
-            log.error("Unsupported operation for uncertainty propagator in {} {} {}".format(lhs, op, rhs))
+            log.error("Unsupported operation for uncertainty propagator in {} {} {}", lhs, op, rhs)
         # --
         ret = UVal(TEMPVAL, value=f, stddev=u, mux=UVal._merge_mux(lhs, rhs), computed=True)
-        log.debug("{} {} {} => {}".format(lhs, op, rhs, ret))
+        log.debug("{} {} {} => {}", lhs, op, rhs, ret)
         return ret
