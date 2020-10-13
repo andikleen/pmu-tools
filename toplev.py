@@ -499,9 +499,9 @@ g.add_argument('--sample-basename', help='Base name of sample perf.data files', 
 g.add_argument('-d', help=argparse.SUPPRESS, action='help') # prevent passing this to perf
 
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
-p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true')
-p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS)
-p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true')
+p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true') # enable scheduler debugging
+p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS) # start python repl after initialization
+p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true') # remove events not supported by perf
 p.add_argument('--tune', nargs='+', help=argparse.SUPPRESS) # override global variables with python expression
 args, rest = p.parse_known_args()
 
