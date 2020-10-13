@@ -13,10 +13,10 @@ import sys
 import collections
 import argparse
 import re
-import matplotlib.pyplot as plt
 import matplotlib
 if os.getenv("DISPLAY") is None:
     matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import csv_formats
 import gen_level
 
