@@ -191,4 +191,3 @@ class IFetchLine(MetricBase):
             "This metric represents cycles fraction the fetch stalls\n"
             "due to an instruction cache miss.")
     metricgroup = []
-
