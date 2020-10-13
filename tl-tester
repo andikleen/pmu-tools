@@ -80,8 +80,11 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -v -l4 $LOAD | tee log$$
 checklog0
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -x, -v -l4 $LOAD | tee log$$
 checklog0
-# temporarily disabled because perf has a regression that causes segfaults with -r
+set +e
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -r2 -l4 $LOAD
+# ignore perf segfault with -r, which happens in some versions
+if [ $? != 0 -a $? != 245 ] ; then failed ; fi
+set -e
 KERNEL_VERSION=2.1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --all $LOAD | tee log$$
 checklog0
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --metrics -x, -v -l4 $LOAD | tee log$$
