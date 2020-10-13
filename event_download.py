@@ -239,7 +239,7 @@ if __name__ == '__main__':
     p.add_argument('--mine', help='Print name of current CPU', action='store_true')
     p.add_argument('--link', help='Create links with the original event file name', action='store_true', default=True)
     p.add_argument('--print', help='Print file names of all event files instead of downloading. Requires existing mapfile.csv.',
-                   dest='_print', action='store_true')
+                   dest='print_', action='store_true')
     p.add_argument('cpus', help='CPU identifiers to download', nargs='*')
     args = p.parse_args()
 
@@ -250,17 +250,17 @@ if __name__ == '__main__':
         sys.exit(0)
     d = getdir()
     if args.all:
-        found = download('*', link=args.link, onlyprint=args._print)
+        found = download('*', link=args.link, onlyprint=args.print_)
     elif len(args.cpus) == 0:
-        found = download_current(link=args.link, onlyprint=args._print)
+        found = download_current(link=args.link, onlyprint=args.print_)
     else:
         found = 0
         for j in args.cpus:
-            found += download(j, link=args.link, onlyprint=args._print)
+            found += download(j, link=args.link, onlyprint=args.print_)
 
-    if found == 0 and not args._print:
-        print("Nothing found", file=sys.stderr, onlyprint=args._print)
+    if found == 0 and not args.print_:
+        print("Nothing found", file=sys.stderr, onlyprint=args.print_)
 
     el = eventlist_name()
-    if os.path.exists(el) and not args._print:
+    if os.path.exists(el) and not args.print_:
         print("my event list", el)
