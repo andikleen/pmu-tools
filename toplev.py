@@ -2733,7 +2733,6 @@ if "base_frequency" in model.__dict__:
 if "model" in model.__dict__:
     model.model = cpu.modelid
 
-
 if args.list_metrics or args.list_all:
     runner.list_nodes("Metrics", lambda obj: obj.metric)
 if args.list_nodes or args.list_all:
