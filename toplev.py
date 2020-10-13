@@ -1747,7 +1747,7 @@ def node_filter(obj, default, sibmatch):
             elif j[0] == '+':
                 i += 1
 
-            if match(j[i:], False):
+            if match(j[i:], True):
                 if has_siblings(j, obj):
                     sibmatch |= set(obj.sibling)
                 return True
@@ -1758,7 +1758,6 @@ def node_filter(obj, default, sibmatch):
                     if match(j[i:], False):
                         sibmatch.add(obj)
                         return True
-
     return default
 
 SIB_THRESH = 0.05
