@@ -2903,6 +2903,8 @@ def measure_and_sample(count):
         if count is not None:
             count += 1
         if repeat:
+            if not args.quiet:
+                print("Rerunning workload", file=sys.stderr)
             runner.reset()
             runner.olist = runner.full_olist
             for o in runner.olist:
