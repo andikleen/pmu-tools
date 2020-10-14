@@ -231,7 +231,7 @@ def icl_limit4_overflow(evlist):
     return sum([1 for x in evlist if x in limit4_events]) > 4
 
 def ismetric(x):
-    return re.match(r"topdown-.*", x) is not None
+    return x.startswith("topdown-")
 
 resources = ("frontend=", "offcore_rsp=", "ldlat=", "in_tx_cp=", "cycles-ct")
 
