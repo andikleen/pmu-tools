@@ -113,6 +113,10 @@ $WRAP ./toplev --force-cpu skl $OPT --force-bn=Mispredicts_Resteers --force-bn=F
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
 rm log$$
 
+FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu icl --pinned --print --all | tee log$$
+grep :D log$$
+rm log$$
+
 # test L1 uses a single group
 onegroup() {
 	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
@@ -165,9 +169,19 @@ FORCEHT=0 \
 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
+
 if [ $j == "icl" ] ; then
-FORCEMETRICS=1 ./toplev.py --force-cpu $j --force-topology topology --force-events --print $ALL $OPT $LOAD
-fi
+
+FORCEMETRICS=1 ./toplev.py --force-cpu $j --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
+grep topdown- log$$
+rm log$$
+
+FORCEMETRICS=1 ./toplev.py --force-cpu $j --pinned --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
+grep topdown- log$$
+grep :D log$$
+rm log$$
+
+fi # icl
 
 done
 
