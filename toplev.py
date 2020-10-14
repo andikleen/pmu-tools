@@ -2868,6 +2868,7 @@ if not args.quiet and not args.print:
     if not args.level and cpu.cpu != "slm":
         print("Change level with -lX")
     print()
+    sys.stdout.flush()
 
 if args.repl:
     import code
