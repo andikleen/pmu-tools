@@ -2240,7 +2240,7 @@ class Runner:
                 obj.thresh = False
 
     def run(self, obj):
-        obj.thresh = True
+        obj.thresh = False
         obj.metric = False
         obj.children = []
         self.do_run(obj)
@@ -2351,6 +2351,8 @@ class Runner:
                 continue
             ref = set()
             oldthresh = obj.thresh
+            if 'parent' in obj.__dict__ and obj.parent not in self.olist:
+                obj.parent.thresh = True
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
             if args.force_bn and obj.name in args.force_bn:
@@ -2908,7 +2910,6 @@ def measure_and_sample(count):
             runner.reset()
             runner.olist = runner.full_olist
             for o in runner.olist:
-                o.thresh = True
                 o.group_map = dict()
                 o.res_map = dict()
             runner.filter_nodes()
