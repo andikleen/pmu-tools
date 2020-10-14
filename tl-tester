@@ -365,5 +365,6 @@ for i in $ALLCPUS ; do
 	rm log$$.$i ;
 done
 [ -f nflog$$ ] && ( sort nflog$$ | uniq ) && rm nflog$$
+times
 echo
 echo "SUCCEEDED"
