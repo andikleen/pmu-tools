@@ -137,6 +137,8 @@ fixed_events = frozenset(fixed_to_num.keys())
 
 outgroup_events = set(["dummy"])
 
+sched_ignore_events = set([])
+
 nonperf_events = set(["interval-ns", "interval-s", "interval-ms", "mux"])
 
 event_fixes = {
@@ -254,7 +256,7 @@ def resource_split(evlist):
     return False
 
 def num_generic_counters(evset):
-    return len(evset - fixed_events - outgroup_events)
+    return len(evset - fixed_events - outgroup_events - sched_ignore_events)
 
 FORCE_SPLIT = 100
 
@@ -828,7 +830,9 @@ def raw_event(i, name="", period=False, nopebs=True):
     if not i.startswith("cpu/") and i not in fixed_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
-        if not i.startswith("msr/"):
+        if i.startswith("msr/"):
+            sched_ignore_events.add(i)
+        else:
             outgroup_events.add(add_filter_event(i))
     return i
 
