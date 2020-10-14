@@ -196,6 +196,8 @@ class PerfFeatures:
             self.has_max_precise = os.path.exists("/sys/devices/cpu/caps/max_precise")
             if self.has_max_precise:
                 self.max_precise = int(open("/sys/devices/cpu/caps/max_precise").read())
+        if args.exclusive and not works(perf + " stat -e '{branches,branches,branches,branches}:e' true"):
+            sys.exit("perf binary does not support :e exclusive modifier")
 
 def kv_to_key(v):
     return v[0] * 100 + v[1]
@@ -309,7 +311,9 @@ def event_group(evlist):
             e = ",".join(g)
             if needed_counters(g) <= cpu.counters:
                 e = "{%s}" % e
-                if args.pinned and all([ismetric(x) or x == "slots" for x in g]):
+                if args.exclusive:
+                    e += ":e"
+                elif args.pinned and all([ismetric(x) or x == "slots" for x in g]):
                     e += ":D"
             else:
                 # the scheduler should have avoided that
@@ -419,6 +423,7 @@ g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to 
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
                'comma separated list from --list-metric-groups.', default=None)
+g.add_argument('--exclusive', help='Run CPU PMU groups in exclusive mode', action='store_true')
 g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
 
 g = p.add_argument_group('Query nodes')
@@ -517,6 +522,9 @@ elif args.csv or args.xlsx: # not for args.graph
     idle_threshold = 0  # avoid breaking programs that rely on the CSV output
 else:
     idle_threshold = 0.05
+
+if args.exclusive and args.pinned:
+    sys.exit("--exclusive and --pinned cannot be combined")
 
 import_mode = args.import_ is not None
 event_nocheck = import_mode or args.no_check
@@ -2623,6 +2631,8 @@ def sysctl(name):
 
 # check nmi watchdog
 if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
+    if args.exclusive:
+        sys.exit("--exclusive not supported with nmi watchdog")
     cpu.counters -= 1
     print("Consider disabling nmi watchdog to minimize multiplexing", file=sys.stderr)
     print("(echo 0 > /proc/sys/kernel/nmi_watchdog as root)", file=sys.stderr)
