@@ -309,6 +309,8 @@ def event_group(evlist):
             e = ",".join(g)
             if needed_counters(g) <= cpu.counters:
                 e = "{%s}" % e
+                if args.pinned and all([ismetric(x) or x == "slots" for x in g]):
+                    e += ":D"
             else:
                 # the scheduler should have avoided that
                 print("group", e, " does not fit in pmu", file=sys.stderr)
@@ -417,6 +419,7 @@ g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to 
 g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
                'comma separated list from --list-metric-groups.', default=None)
+g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
 
 g = p.add_argument_group('Query nodes')
 g.add_argument('--list-metrics', help='List all metrics', action='store_true')
