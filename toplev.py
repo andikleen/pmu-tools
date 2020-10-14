@@ -697,7 +697,7 @@ if cpu.hypervisor or args.no_uncore:
     feat.supports_power = False
 
 def print_perf(r):
-    if not args.perf:
+    if not (args.perf or args.print):
         return
     l = ["'" + x + "'" if x.find("{") >= 0 else x for x in r]
     l = [x.replace(";", "\\;") for x in l]
