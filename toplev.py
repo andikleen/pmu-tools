@@ -2355,7 +2355,7 @@ class Runner:
                 continue
             ref = set()
             oldthresh = obj.thresh
-            if 'parent' in obj.__dict__ and obj.parent not in self.olist:
+            if 'parent' in obj.__dict__ and obj.parent and obj.parent not in self.olist:
                 obj.parent.thresh = True
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
