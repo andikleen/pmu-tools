@@ -56,12 +56,7 @@ SMTCPUS="snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl"
 NOSMTCPUS="slm simple"
 ALLCPUS="$SMTCPUS $NOSMTCPUS"
 
-if [ $(whoami) = root ] ; then
-	ALL="--all"
-else
-	ALL="--metrics -l5 --tsx --power"
-fi
-
+ALL=--all
 
 checklog0() {
 	echo >> log$$
