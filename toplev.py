@@ -2822,17 +2822,18 @@ if smt_mode and not os.getenv('FORCEHT'):
     if not any(map(core_node, runner.olist)):
         smt_mode = False
 
-if args.per_socket and not smt_mode and "-A" not in rest:
-    rest = ["--per-socket"] + rest
-if args.per_core and not smt_mode and "-A" not in rest:
-    rest = ["--per-core"] + rest
-if args.per_thread and not smt_mode and "-A" not in rest:
-    rest = ["-A"] + rest
-if ((args.global_ or args.per_socket or args.per_core or args.per_thread)
-        and not smt_mode
-        and not args.single_thread):
+if not smt_mode:
+    if "-A" not in rest:
+        if args.per_socket:
+            rest = ["--per-socket"] + rest
+        if args.per_core:
+            rest = ["--per-core"] + rest
+        if args.per_thread:
+            rest = ["-A"] + rest
     if "-a" not in rest:
-        rest = ["-a"] + rest
+        if ((args.global_ or args.per_socket or args.per_core or args.per_thread)
+                and not args.single_thread):
+            rest = ["-a"] + rest
 
 full_system = False
 if not args.single_thread and smt_mode:
