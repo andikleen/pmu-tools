@@ -143,6 +143,8 @@ sched_ignore_events = set([])
 
 nonperf_events = set(["interval-ns", "interval-s", "interval-ms", "mux"])
 
+require_pebs_events = set([])
+
 event_fixes = {
 }
 
@@ -832,6 +834,8 @@ def raw_event(i, name="", period=False, nopebs=True):
                 errata_events[orig_i] = e.errata
             else:
                 errata_warn_events[orig_i] = e.errata
+        if ('pebs' in e.__dict__ and e.pebs == 2) or orig_i.startswith("FRONTEND_"):
+            require_pebs_events.add(orig_i)
     else:
         non_json_events.add(i)
     if not i.startswith("cpu/") and i not in fixed_events:
@@ -2498,11 +2502,19 @@ def do_sample(sample_obj, rest, count, ret):
             print("\n".join(missing), file=sys.stderr)
 
     def force_pebs(ev):
-        return ev.startswith("FRONTEND_") or ("PREC_DIST" in ev)
+        return ev in require_pebs_events
 
     no_pebs = not supports_pebs()
     if no_pebs:
-        nsamp = [x for x in nsamp if not force_pebs(x[0])]
+        for j in nsamp:
+            # initialize require_pebs_events
+            raw_event(j[0], nopebs=False)
+        nnopebs = set([x[0] for x in nsamp if force_pebs(x[0])])
+        if nnopebs and not args.quiet:
+            for j in nnopebs:
+                print("sample event %s not (currently) supported in virtualization" % j, file=sys.stderr)
+        nsamp = [x for x in nsamp if x[0] not in nnopebs]
+
     sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True, nopebs=False) for s in nsamp]
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
