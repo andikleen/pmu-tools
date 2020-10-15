@@ -82,7 +82,7 @@ def resolve(row, ind):
         return args.na
     return v
 
-def cpulist(keys):
+def cpulist():
     if args.normalize_cpu:
         return []
     if cpu is not None:
@@ -90,7 +90,7 @@ def cpulist(keys):
     return []
 
 keys = events.keys()
-writer.writerow(["Timestamp"] + cpulist(keys) + list(keys))
+writer.writerow(["Timestamp"] + cpulist() + list(keys))
 for row, ts, cpunum in zip(out, times, cpus):
     writer.writerow([ts] +
                 ([cpunum] if (cpu is not None and not args.normalize_cpu) else []) +
