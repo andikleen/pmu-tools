@@ -22,7 +22,7 @@ DCPU=${DCPU:-skl}
 OPT="${OPT:-}"
 MATCH=${MATCH:-}
 NOGROUP=${NOGROUP:-}
-NORES=${NORES:-}
+NORES="${NORES:-}"
 
 OPT="$OPT --perf"
 
