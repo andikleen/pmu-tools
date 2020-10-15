@@ -128,6 +128,8 @@ unsup_events = (
     # commit 3a632cb229b
     ("CYCLE_ACTIVITY.*", (("hsw", "hsx"), (3, 11), None)))
 
+constraint_fixes = dict()
+
 event_nocheck = False
 import_mode = False
 
@@ -821,6 +823,8 @@ def raw_event(i, name="", period=False, nopebs=True):
             counter = e.counter.replace('"', '')
             limited_counters[i] = int(counter.split(",")[0])
             limited_set.add(i)
+        if e.name.upper() in constraint_fixes:
+            e.counter = constraint_fixes[e.name.upper()]
         if e.counter == "0,1,2,3":
             limit4_events.add(i)
         if e.errata:
@@ -2725,6 +2729,8 @@ elif cpu.cpu == "icl":
     model = icl_client_ratios
     core_domains = set(["CoreClocks", "CoreMetric"])
     limit4_overflow = icl_limit4_overflow
+    # work around kernel constraint table bug in some kernel versions
+    constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
     slots_available = force_metrics or os.path.exists("/sys/devices/cpu/events/slots")
 elif cpu.cpu == "slm":
     import slm_ratios
