@@ -6,7 +6,7 @@ def flatten(x):
     return list(chain(*x))
 
 def filternot(p, l):
-    return filter(lambda x: not p(x), l)
+    return list(filter(lambda x: not p(x), l))
 
 # add items from b to a if not already in a
 def cat_unique(a, b):
