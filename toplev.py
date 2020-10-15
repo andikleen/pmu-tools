@@ -791,7 +791,8 @@ def raw_event(i, name="", period=False, nopebs=True):
     orig_i = i
     if "." in i or "_" in i:
         if re.match(r'^(OCR|OFFCORE_RESPONSE).*', i) and not feat.supports_ocr:
-            print("%s not supported in guest" % i, file=sys.stderr)
+            if not args.quiet:
+                print("%s not supported in guest" % i, file=sys.stderr)
             return "dummy"
         if not cpu.ht:
             i = i.replace(":percore", "")
@@ -2531,7 +2532,8 @@ def do_sample(sample_obj, rest, count, ret):
              ["-e", sample, "-o", perf_data] +
              [x for x in rest if x not in ("-A", "--percore-show-thread")])
     cmd = " ".join(sperf)
-    print(cmd)
+    if not (args.run_sample and args.quiet):
+        print(cmd)
     if args.run_sample and ret == 0:
         ret = os.system(cmd)
         if ret:
