@@ -796,7 +796,7 @@ class Fetch_Bandwidth:
     area = "FE"
     level = 2
     htoff = False
-    sample = ['FRONTEND_RETIRED.LATENCY_GE_2_BUBBLES_GE_1:pp', 'FRONTEND_RETIRED.LATENCY_GE_1', 'FRONTEND_RETIRED.LATENCY_GE_2']
+    sample = ['FRONTEND_RETIRED.LATENCY_GE_2_BUBBLES_GE_1:pp', 'FRONTEND_RETIRED.LATENCY_GE_1:pp', 'FRONTEND_RETIRED.LATENCY_GE_2:pp']
     errcount = 0
     sibling = None
     server = False
