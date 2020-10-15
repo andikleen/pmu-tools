@@ -9,6 +9,9 @@
 # NOGROUP=1 disable testing for single top level group
 # NORES=1   disable checking for results
 # OPT=..    pass extra option to toplev
+# LOAD=...  override test load
+# LOADLONG= override longer running test load
+# LOAD0=..  override test load on cpu 0 (taskset)
 
 set -e
 set -o pipefail
