@@ -60,4 +60,3 @@ def add_references(node, **refs):
     """
     for name, obj in refs.items():
         setattr(node, name, obj)
-
