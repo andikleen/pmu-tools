@@ -52,7 +52,7 @@ LOAD0="-- taskset -c 0 $LOAD"
 
 set -o pipefail
 
-SMTCPUS="snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl"
+SMTCPUS="snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl"
 NOSMTCPUS="slm simple"
 ALLCPUS="$SMTCPUS $NOSMTCPUS"
 
@@ -169,7 +169,7 @@ $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL -
 checklog log$$.$j
 notfound $j
 
-if [ $j == "icl" ] ; then
+if [ $j == "icl" -o $j == "tgl" ] ; then
 
 FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $j --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
 grep topdown- log$$

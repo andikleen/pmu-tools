@@ -60,9 +60,10 @@ known_cpus = (
     ("skx", ((85, 4,), )),
     ("clx", ((85, 5,), (85, 6,), (85, 7,), )),
     ("icl", (126, )),
+    ("tgl", (140, )),
 )
 
-tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl")
+tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl")
 
 fixed_to_num = {
     "instructions": 0,
@@ -2654,6 +2655,15 @@ def ht_warning():
         print("Measuring multiple processes/threads on the same core may is not reliable.",
                 file=sys.stderr)
 
+def setup_metrics(model):
+    force_metrics = os.getenv("FORCEMETRICS") is not None
+    model.topdown_use_fixed = force_metrics or os.path.exists(
+            "/sys/devices/cpu/events/topdown-fe-bound")
+    global core_domains
+    core_domains = set(["CoreClocks", "CoreMetric"])
+    global slots_available
+    slots_available = force_metrics or os.path.exists("/sys/devices/cpu/events/slots")
+
 runner = Runner(args.level, idle_threshold)
 
 pe = lambda x: None
@@ -2731,15 +2741,20 @@ elif cpu.cpu == "clx":
 elif cpu.cpu == "icl":
     import icl_client_ratios
     icl_client_ratios.smt_enabled = cpu.ht
-    force_metrics = os.getenv("FORCEMETRICS") is not None
-    icl_client_ratios.topdown_use_fixed = force_metrics or os.path.exists(
-            "/sys/devices/cpu/events/topdown-fe-bound")
     model = icl_client_ratios
-    core_domains = set(["CoreClocks", "CoreMetric"])
+    setup_metrics(model)
     limit4_overflow = icl_limit4_overflow
     # work around kernel constraint table bug in some kernel versions
     constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
-    slots_available = force_metrics or os.path.exists("/sys/devices/cpu/events/slots")
+elif cpu.cpu == "tgl":
+    # FIXME use the icl model for now until we have a full TGL model
+    import icl_client_ratios
+    icl_client_ratios.smt_enabled = cpu.ht
+    model = icl_client_ratios
+    setup_metrics(model)
+    limit4_overflow = icl_limit4_overflow
+    # work around kernel constraint table bug in some kernel versions
+    constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
 elif cpu.cpu == "slm":
     import slm_ratios
     model = slm_ratios
