@@ -171,11 +171,11 @@ notfound $j
 
 if [ $j == "icl" ] ; then
 
-FORCEMETRICS=1 ./toplev.py --force-cpu $j --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
+FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $j --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
 grep topdown- log$$
 rm log$$
 
-FORCEMETRICS=1 ./toplev.py --force-cpu $j --pinned --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
+FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $j --pinned --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
 grep topdown- log$$
 grep :D log$$
 rm log$$
