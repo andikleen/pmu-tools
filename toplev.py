@@ -2879,6 +2879,9 @@ if not args.quiet and not args.print:
     print()
     sys.stdout.flush()
 
+if args.pinned:
+    run_l1_parallel = True
+
 if args.repl:
     import code
     code.interact(banner='toplev repl', local=locals())
