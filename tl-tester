@@ -198,8 +198,14 @@ done
 # misc features
 $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --ignore-errata --stats --metrics --force-events --no-multiplex -l4 $LOAD
 [ -z "$NORES" ] && grep Turbo_Utilization log$$
-[ -z "$NORES" ] && grep -q -v "not supported" perfo$$.csv
+[ -z "$NORES" ] && grep -v "not supported" log$$
 rm log$$ val$$.csv perfo$$.csv
+
+# always on native CPU
+$WRAP ./toplev.py --all --valcsv val$$.csv --perf-output perfo$$.csv -o log$$ $LOADLONG
+[ -z "$NORES" ] && grep -v "not supported" log$$
+rm val$$.csv perfo$$.csv log$$
+
 $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --all --fast $LOAD
 [ -z "$NORES" ] && grep Turbo_Utilization log$$
 [ -z "$NORES" ] && grep -q -v "not supported" perfo$$.csv
