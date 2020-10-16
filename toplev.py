@@ -2511,7 +2511,7 @@ def do_sample(sample_obj, rest, count, ret):
         for j in nsamp:
             # initialize require_pebs_events
             raw_event(j[0], nopebs=False)
-        nnopebs = set([x[0] for x in nsamp if force_pebs(x[0])])
+        nnopebs = {x[0] for x in nsamp if force_pebs(x[0])}
         if nnopebs and not args.quiet:
             for j in nnopebs:
                 print("sample event %s not (currently) supported in virtualization" % j, file=sys.stderr)
