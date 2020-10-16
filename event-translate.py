@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # translate raw events to names
 # event-translate rXXX ...
 from __future__ import print_function

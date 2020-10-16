@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # convert perf stat -Ixxx -x, / toplev -Ixxx -x, output to normalized output
 # this version buffers all data in memory, so it can use a lot of memory.
 # t1,ev1,num1

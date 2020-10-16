@@ -8,6 +8,8 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* The tools now don't force python 2 anymore to support running out of the box
+  on distributions which do not install python 2.
 * toplev now hides the perf command line by default. Override with --perf.
 * Updated to TMA 4.11: Fixed an error in misprediction-related and Power License metrics
 * toplev now supports the new fixed TMA metrics counters on Icelake. This requires
@@ -46,7 +48,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
   to specify the max level nodes to add.
 * With -v, toplev now indicates nodes that are below threshold with < not ? to avoid confusion.
   Note this is a potentially breaking change for CSV output users.
-* pmu-tools is now generally python3 clean (but still runs with python2 by default). One exception
+* pmu-tools is now generally python3 clean. One exception
   is parser which would need to be ported to the python3 construct.
 * New tool utilized.py to remove idle CPUs from toplev output
 * toplev --import can now directly decompress xz and gz files. -o / --valcsv / --perf-output

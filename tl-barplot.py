@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # plot toplev -I... -x, -o ...csv output as bar plot
 #
 from __future__ import print_function

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # convert README.md to include files for help2man
 from __future__ import print_function
 import sys
