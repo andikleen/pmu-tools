@@ -2840,7 +2840,7 @@ if smt_mode and not os.getenv('FORCEHT'):
     if not any(map(core_node, runner.olist)):
         smt_mode = False
 
-if not smt_mode and not args.single_thread and not "-A" in rest:
+if not smt_mode and not args.single_thread and "-A" not in rest:
     multi = args.per_socket + args.per_core + args.per_thread + args.global_
     if multi > 0:
         rest = add_args(rest, "-a")
