@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2012-2016, Intel Corporation
+# Copyright (c) 2012-2020, Intel Corporation
 # Author: Andi Kleen
 #
 # This program is free software; you can redistribute it and/or modify it
