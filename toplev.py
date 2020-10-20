@@ -1129,6 +1129,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             if j in idle_keys:
                 hidden_keys.add(j)
                 continue
+            runner.reset_thresh()
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
             runner.print_res(out, interval, j, not_package_node, bn, j in idle_mark_keys)
@@ -1139,6 +1140,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                         for i in range(len(res[cpus[0]]))] if len(cpus) > 0 else []
         combined_st = [deprecated_combine_valstat([valstats[j][i] for j in cpus])
                        for i in range(len(valstats[cpus[0]]))] if len(cpus) > 0 else []
+        runner.reset_thresh()
         runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
                        combined_st, env, package_node, stat)
         runner.print_res(out, interval, "all", package_node, None, False)
@@ -1160,6 +1162,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             if j in idle_keys:
                 hidden_keys.add(j)
                 continue
+            runner.reset_thresh()
             runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
             runner.print_res(out, interval, jname, package_node, None, j in idle_mark_keys)
     # no bottlenecks from package nodes for now
