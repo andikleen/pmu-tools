@@ -2652,6 +2652,10 @@ def ht_warning():
         print("Measuring multiple processes/threads on the same core may is not reliable.",
                 file=sys.stderr)
 
+def add_args(rest, *args):
+    a = [x for x in args if x not in rest]
+    return a + rest
+
 def setup_metrics(model):
     force_metrics = os.getenv("FORCEMETRICS") is not None
     model.topdown_use_fixed = force_metrics or os.path.exists(
@@ -2809,8 +2813,7 @@ if args.power and feat.supports_power:
     if args.single_thread:
         print("--single-thread conflicts with --power")
     check_root()
-    if "-a" not in rest:
-        rest = ["-a"] + rest
+    rest = add_args(rest, "-a")
 
 if args.sw:
     import linux_metrics
@@ -2834,18 +2837,15 @@ if smt_mode and not os.getenv('FORCEHT'):
     if not any(map(core_node, runner.olist)):
         smt_mode = False
 
-if not smt_mode:
-    if "-A" not in rest:
-        if args.per_socket:
-            rest = ["--per-socket"] + rest
-        if args.per_core:
-            rest = ["--per-core"] + rest
-        if args.per_thread:
-            rest = ["-A"] + rest
-    if "-a" not in rest:
-        if ((args.global_ or args.per_socket or args.per_core or args.per_thread)
-                and not args.single_thread):
-            rest = ["-a"] + rest
+if not smt_mode and not args.single_thread and not "-A" in rest:
+    if args.per_socket:
+        rest = add_args(rest, "--per-socket", "-a")
+    if args.per_core:
+        rest = add_args(rest, "--per-core", "-a")
+    if args.per_thread:
+        rest = add_args(rest, "-A", "-a")
+    if args.global_:
+        rest = add_args(rest, "-a")
 
 full_system = False
 if not args.single_thread and smt_mode:
@@ -2858,10 +2858,7 @@ if not args.single_thread and smt_mode:
         if args.pid:
             sys.exit("-p/--pid mode not compatible with SMT. Use sleep in global mode.")
     check_root()
-    if "-a" not in rest:
-        rest = ["-a"] + rest
-    if "-A" not in rest:
-        rest = ["-A"] + rest
+    rest = add_args(rest, "-a", "-A")
     full_system = True
 else:
     full_system = "-A" in rest or "--per-core" in rest or "--per-socket" in rest
