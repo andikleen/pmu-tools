@@ -2841,14 +2841,15 @@ if smt_mode and not os.getenv('FORCEHT'):
         smt_mode = False
 
 if not smt_mode and not args.single_thread and not "-A" in rest:
-    if args.per_socket:
-        rest = add_args(rest, "--per-socket", "-a")
-    if args.per_core:
-        rest = add_args(rest, "--per-core", "-a")
-    if args.per_thread:
-        rest = add_args(rest, "-A", "-a")
-    if args.global_:
+    multi = args.per_socket + args.per_core + args.per_thread + args.global_
+    if multi > 0:
         rest = add_args(rest, "-a")
+    if multi > 1 or args.per_thread:
+        rest = add_args(rest, "-A")
+    if args.per_socket and multi == 1:
+        rest = add_args(rest, "--per-socket")
+    if args.per_core and multi == 1:
+        rest = add_args(rest, "--per-core")
 
 full_system = False
 if not args.single_thread and smt_mode:
