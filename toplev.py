@@ -1138,18 +1138,19 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     if mode == OUTPUT_GLOBAL:
         env['num_merged'] = 1
         cpus = [x for x in keys if not filtered(x)]
-        combined_res = [sum([res[j][i] for j in cpus])
-                        for i in range(len(res[cpus[0]]))] if len(cpus) > 0 else []
-        combined_st = [deprecated_combine_valstat([valstats[j][i] for j in cpus])
-                       for i in range(len(valstats[cpus[0]]))] if len(cpus) > 0 else []
-        if smt_mode:
-            nodeselect = package_node
-        else:
-            nodeselect = any_node
-        runner.reset_thresh()
-        runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
-                       combined_st, env, nodeselect, stat)
-        runner.print_res(out, interval, "all", nodeselect, None, False)
+        if cpus:
+            combined_res = [sum([res[j][i] for j in cpus])
+                            for i in range(len(res[cpus[0]]))]
+            combined_st = [deprecated_combine_valstat([valstats[j][i] for j in cpus])
+                           for i in range(len(valstats[cpus[0]]))]
+            if smt_mode:
+                nodeselect = package_node
+            else:
+                nodeselect = any_node
+            runner.reset_thresh()
+            runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
+                           combined_st, env, nodeselect, stat)
+            runner.print_res(out, interval, "all", nodeselect, None, False)
     elif mode != OUTPUT_THREAD:
         packages = set()
         for j in keys:
