@@ -1237,13 +1237,15 @@ class SaveContext:
         if self.startoffset is not None:
             sys.stdin.seek(self.startoffset)
 
+def append_dict(a, b):
+    for k in b:
+        if k in a:
+            a[k] += b[k]
+        else:
+            a[k] = b[k]
+
 def execute_no_multiplex(runner, out, rest):
-    if args.interval: # XXX
-        sys.exit('--no-multiplex is not supported with interval mode')
-    res = defaultdict(list)
-    rev = defaultdict(list)
-    valstats = defaultdict(list)
-    env = dict()
+    results = []
     groups = [g.evnum for g in runner.sched.evgroups]
     num_runs = len(groups) - sum([g.outgroup for g in runner.sched.evgroups])
     outg = []
@@ -1255,28 +1257,30 @@ def execute_no_multiplex(runner, out, rest):
         if gg.outgroup:
             outg.append(g)
             continue
-        n += 1
         print("RUN #%d of %d: %s" % (n, num_runs, " ".join([quote(o.name) for o in gg.objl])))
-        ret, res, rev, interval, valstats = do_execute(runner, outg + [g], out, rest, res,
-                                                       rev, valstats, env)
+        lresults = results if n == 0 else []
+        for ret, res, rev, interval, valstats, env in do_execute(runner, outg + [g], out, rest):
+            lresults.append([ret, res, rev, interval, valstats, env])
+        if n > 0:
+            for r, lr in zip(results, lresults):
+                r[0] = lr[0]
+                # use interval of first
+                for j in (1, 2, 4, 5):
+                    append_dict(r[j], lr[j])
         ctx.restore()
         outg = []
+        n += 1
     assert num_runs == n
-    print_and_sum_keys(runner, res, rev, valstats, out, interval, env)
+    for ret, res, rev, interval, valstats, env in results:
+        print_and_sum_keys(runner, res, rev, valstats, out, interval, env)
     return ret
 
 def execute(runner, out, rest):
-    env = dict()
     events = [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
     ctx = SaveContext()
-    ret, res, rev, interval, valstats = do_execute(runner, events,
-                                         out, rest,
-                                         defaultdict(list),
-                                         defaultdict(list),
-                                         defaultdict(list),
-                                         env)
+    for ret, res, rev, interval, valstats, env in do_execute(runner, events, out, rest):
+        print_and_sum_keys(runner, res, rev, valstats, out, interval, env)
     ctx.restore()
-    print_and_sum_keys(runner, res, rev, valstats, out, interval, env)
     return ret
 
 def find_group(num):
@@ -1319,7 +1323,11 @@ def group_join(events):
         last = j[-1]
     return e
 
-def do_execute(runner, events, out, rest, res, rev, valstats, env):
+def do_execute(runner, events, out, rest):
+    res = defaultdict(list)
+    rev = defaultdict(list)
+    valstats = defaultdict(list)
+    env = dict()
     evstr = group_join(events)
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
@@ -1359,10 +1367,11 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
                 if interval != prev_interval:
                     if res:
                         set_interval(env, interval - prev_interval)
-                        print_and_sum_keys(runner, res, rev, valstats, out, prev_interval, env)
+                        yield 0, res, rev, interval, valstats, env
                         res = defaultdict(list)
                         rev = defaultdict(list)
                         valstats = defaultdict(list)
+                        env = dict()
                     prev_interval = interval
             elif not l[:1].isspace():
                 # these are likely bogus summary lines printed by v5.8 perf stat
@@ -1466,7 +1475,7 @@ def do_execute(runner, events, out, rest, res, rev, valstats, env):
         set_interval(env, time.time() - start)
     ret = prun.wait()
     print_account(account)
-    return ret, res, rev, interval, valstats
+    yield ret, res, rev, interval, valstats, env
 
 # dummy arithmetic type without any errors, for collecting
 # the events from the model. Otherwise divisions by zero cause
