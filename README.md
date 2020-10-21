@@ -8,7 +8,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
-* toplev now support --no-multiplex in interval mode (-Ixxx)
+* toplev now supports --no-multiplex in interval mode (-Ixxx)
 * The tools now don't force python 2 anymore to support running out of the box
   on distributions which do not install python 2.
 * toplev now hides the perf command line by default. Override with --perf.
