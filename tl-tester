@@ -244,7 +244,7 @@ rm x$$.xlsx # must exist
 
 fi
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread -x, --columns -l4 $LOAD
-FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
+FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global --per-core -x, --columns -l4 $LOAD
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics  --per-thread --per-core --per-socket --summary -a -l4 --filterquals $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --split-output -o out$$ --metrics  --per-thread --per-core --per-socket --global --summary --filterquals -x, -a -l4 $LOAD

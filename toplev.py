@@ -1123,7 +1123,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 fmt = thread_fmt(int(j))
                 idle = j in idle_mark_keys
             runner.print_res(out, interval, fmt, thread_node, bn, idle)
-    else:
+    elif mode != OUTPUT_GLOBAL:
         env['num_merged'] = 1
         for j in keys:
             if filtered(j):
@@ -1136,16 +1136,20 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             bn = find_bn(runner.olist, not_package_node)
             runner.print_res(out, interval, j, not_package_node, bn, j in idle_mark_keys)
     if mode == OUTPUT_GLOBAL:
-        cpus = [x for x in keys
-                if (not is_number(j)) or int(j) in runner.allowed_threads]
+        env['num_merged'] = 1
+        cpus = [x for x in keys if not filtered(x)]
         combined_res = [sum([res[j][i] for j in cpus])
                         for i in range(len(res[cpus[0]]))] if len(cpus) > 0 else []
         combined_st = [deprecated_combine_valstat([valstats[j][i] for j in cpus])
                        for i in range(len(valstats[cpus[0]]))] if len(cpus) > 0 else []
+        if smt_mode:
+            nodeselect = package_node
+        else:
+            nodeselect = any_node
         runner.reset_thresh()
         runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
-                       combined_st, env, package_node, stat)
-        runner.print_res(out, interval, "all", package_node, None, False)
+                       combined_st, env, nodeselect, stat)
+        runner.print_res(out, interval, "all", nodeselect, None, False)
     elif mode != OUTPUT_THREAD:
         packages = set()
         for j in keys:
