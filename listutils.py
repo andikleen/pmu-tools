@@ -26,3 +26,11 @@ def dedup(a):
 
 def not_list(l):
     return [not x for x in l]
+
+# merge two dicts with appending lists
+def append_dict(a, b):
+    for k in b:
+        if k in a:
+            a[k] += b[k]
+        else:
+            a[k] = b[k]

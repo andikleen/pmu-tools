@@ -33,7 +33,7 @@ from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby, chain
 import itertools
-from listutils import cat_unique, dedup, filternot, not_list
+from listutils import cat_unique, dedup, filternot, not_list, append_dict
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -1236,13 +1236,6 @@ class SaveContext:
     def restore(self):
         if self.startoffset is not None:
             sys.stdin.seek(self.startoffset)
-
-def append_dict(a, b):
-    for k in b:
-        if k in a:
-            a[k] += b[k]
-        else:
-            a[k] = b[k]
 
 def execute_no_multiplex(runner, out, rest):
     results = []
