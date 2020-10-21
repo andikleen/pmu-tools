@@ -779,9 +779,44 @@ def add_filter(s):
         s = list(map(add_filter_event, s))
     return s
 
+def initialize_event(name, i, e):
+    if "." in name or "_" in name:
+        emap.update_event(e.output(noname=True), e)
+        if (e.counter not in cpu.standard_counters and not name.startswith("UNC_")):
+            if e.counter.startswith("Fixed"):
+                limited_counters[i] = int(e.counter.split()[2]) + 50
+                fixed_events.add(i)
+            else:
+                # for now use the first counter only to simplify
+                # the assignment. This is sufficient for current
+                # CPUs
+                limited_counters[i] = int(e.counter.split(",")[0])
+            limited_set.add(i)
+        if e.name.upper() in constraint_fixes:
+            e.counter = constraint_fixes[e.name.upper()]
+        if e.counter == "0,1,2,3":
+            limit4_events.add(i)
+        if e.errata:
+            if e.errata not in errata_whitelist:
+                errata_events[name] = e.errata
+            else:
+                errata_warn_events[name] = e.errata
+        if ('pebs' in e.__dict__ and e.pebs == 2) or name.startswith("FRONTEND_"):
+            require_pebs_events.add(name)
+    else:
+        non_json_events.add(i)
+    if not i.startswith("cpu/") and i not in fixed_events:
+        if not i.startswith("uncore"):
+            valid_events.add_event(i)
+        if i.startswith("msr/"):
+            sched_ignore_events.add(i)
+        else:
+            outgroup_events.add(add_filter_event(i))
+
 notfound_cache = dict()
 
-def raw_event(i, name="", period=False, nopebs=True):
+def raw_event(i, name="", period=False, nopebs=True, initialize=False):
+    e = None
     orig_i = i
     if "." in i or "_" in i:
         if re.match(r'^(OCR|OFFCORE_RESPONSE).*', i) and not feat.supports_ocr:
@@ -807,43 +842,13 @@ def raw_event(i, name="", period=False, nopebs=True):
         if nopebs and 'extra' in e.__dict__:
             e.extra = e.extra.replace("p", "")
         i = e.output(noname=True, name=name, period=period, noexplode=True)
-
-        emap.update_event(e.output(noname=True), e)
-        if (e.counter not in cpu.standard_counters and not orig_i.startswith("UNC_")):
-            if e.counter.startswith("Fixed"):
-                limited_counters[i] = int(e.counter.split()[2]) + 50
-                fixed_events.add(i)
-            else:
-                # for now use the first counter only to simplify
-                # the assignment. This is sufficient for current
-                # CPUs
-                limited_counters[i] = int(e.counter.split(",")[0])
-            limited_set.add(i)
-        if e.name.upper() in constraint_fixes:
-            e.counter = constraint_fixes[e.name.upper()]
-        if e.counter == "0,1,2,3":
-            limit4_events.add(i)
-        if e.errata:
-            if e.errata not in errata_whitelist:
-                errata_events[orig_i] = e.errata
-            else:
-                errata_warn_events[orig_i] = e.errata
-        if ('pebs' in e.__dict__ and e.pebs == 2) or orig_i.startswith("FRONTEND_"):
-            require_pebs_events.add(orig_i)
-    else:
-        non_json_events.add(i)
-    if not i.startswith("cpu/") and i not in fixed_events:
-        if not i.startswith("uncore"):
-            valid_events.add_event(i)
-        if i.startswith("msr/"):
-            sched_ignore_events.add(i)
-        else:
-            outgroup_events.add(add_filter_event(i))
+    if initialize:
+        initialize_event(orig_i, i, e)
     return i
 
 # generate list of converted raw events from events string
-def raw_events(evlist):
-    return list(map(raw_event, evlist))
+def raw_events(evlist, initialize=False):
+    return [raw_event(x, initialize=initialize) for x in evlist]
 
 def mark_fixed(s):
     r = raw_event(s)
@@ -2290,7 +2295,7 @@ class Runner:
             obj.compute(lambda ev, level: ev_append(ev, level, obj))
             obj.val = None
             obj.evlist = [x[0] for x in obj.evlevels]
-            obj.evnum = raw_events(obj.evlist)
+            obj.evnum = raw_events(obj.evlist, initialize=True)
             obj.nc = needed_counters(set(obj.evnum))
 
             # work arounds for lots of different problems
@@ -2514,7 +2519,7 @@ def do_sample(sample_obj, rest, count, ret):
     if no_pebs:
         for j in nsamp:
             # initialize require_pebs_events
-            raw_event(j[0], nopebs=False)
+            raw_event(j[0], nopebs=False, initialize=True)
         nnopebs = {x[0] for x in nsamp if force_pebs(x[0])}
         if nnopebs and not args.quiet:
             for j in nnopebs:
