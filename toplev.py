@@ -784,7 +784,7 @@ def initialize_event(name, i, e):
         emap.update_event(e.output(noname=True), e)
         if (e.counter not in cpu.standard_counters and not name.startswith("UNC_")):
             if e.counter.startswith("Fixed"):
-                limited_counters[i] = int(e.counter.split()[2]) + 50
+                limited_counters[i] = int(e.counter.split()[2]) + FIXED_BASE
                 fixed_events.add(i)
             else:
                 # for now use the first counter only to simplify
