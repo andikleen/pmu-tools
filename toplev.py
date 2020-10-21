@@ -1027,6 +1027,9 @@ def num_key(s):
     return [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', s)]
 
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
+    def filtered(j):
+        return j != "" and is_number(j) and int(j) not in runner.allowed_threads
+
     idle_keys = find_idle_keys(res, rev, runner.idle_threshold)
     idle_mark_keys = find_idle_keys(res, rev, IDLE_MARKER_THRESHOLD)
     hidden_keys = set()
@@ -1043,9 +1046,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 del res[j]
         keys = sorted(res.keys(), key=num_key)
         for j in keys:
-            if j != "" and int(j) not in runner.allowed_threads:
+            if filtered(j):
                 continue
-
             sid = key_to_socketid(j)
             core = key_to_coreid(j)
             if mode == OUTPUT_CORE and core in printed_cores:
@@ -1061,9 +1063,9 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             if mode == OUTPUT_GLOBAL:
                 cpus = keys
             elif mode == OUTPUT_SOCKET:
-                cpus = [x for x in keys if key_to_socketid(x) == sid]
+                cpus = [x for x in keys if key_to_socketid(x) == sid and not filtered(x)]
             else:
-                cpus = [x for x in keys if key_to_coreid(x) == core]
+                cpus = [x for x in keys if key_to_coreid(x) == core and not filtered(x)]
             combined_res = list(zip(*[res[x] for x in cpus]))
             combined_st = [deprecated_combine_valstat(z)
                   for z in zip(*[valstats[x] for x in cpus])]
@@ -1124,7 +1126,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     else:
         env['num_merged'] = 1
         for j in keys:
-            if j != "" and is_number(j) and int(j) not in runner.allowed_threads:
+            if filtered(j):
                 continue
             if j in idle_keys:
                 hidden_keys.add(j)
@@ -1150,7 +1152,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             if j == "":
                 continue
             if is_number(j):
-                if int(j) not in runner.allowed_threads:
+                if filtered(j):
                     continue
                 p_id = cpu.cputosocket[int(j)]
                 if p_id in packages:
