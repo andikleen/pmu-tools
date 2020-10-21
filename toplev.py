@@ -171,6 +171,8 @@ def warn_once(msg):
     if msg not in warned:
         print(msg, file=sys.stderr)
         warned.add(msg)
+    if os.getenv("TL_TESTER"):
+        assert 0
 
 def debug_print(x):
     if args.debug:

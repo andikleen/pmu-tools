@@ -26,6 +26,8 @@ NORES="${NORES:-}"
 
 OPT="$OPT --perf"
 
+export TL_TESTER=1
+
 failed() {
 	echo FAILED
 	[ -f nflog$$ ] && ( sort nflog$$ | uniq ) && rm nflog$$
