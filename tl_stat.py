@@ -54,7 +54,10 @@ class ComputeStat:
         # sanity check: did we reference all results?
         if len(res.keys()) > 0:
             r = res[list(res.keys())[0]]
-            assert len(r) == len(evnum)
+            if len(r) != len(evnum):
+                print("results len %d does not match event len %d" % (len(r), len(evnum)),
+                      file=sys.stderr)
+                return
             if len(referenced) != len(r) and not self.quiet:
                 dummies = {i for i, d in enumerate(evnum) if d == "dummy"}
                 notr = set(range(len(r))) - referenced - dummies
