@@ -65,24 +65,6 @@ known_cpus = (
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl")
 
-fixed_to_num = {
-    "instructions": 0,
-    "cycles": 1,
-    "cpu/event=0x3c,umask=0x00,any=1/": 1,
-    "cpu/event=0x3c,umask=0x0,any=1/": 1,
-    "cpu/event=0x3c,umask=0x0/": 1,
-    "cpu/event=0xc0,umask=0x0/": 0,
-    "ref-cycles": 2,
-    "cpu/event=0x0,umask=0x3/": 2,
-    "cpu/event=0x0,umask=0x3,any=1/": 2,
-    "slots": 3,
-    "topdown.slots": 3,
-    "topdown-fe-bound": 100,
-    "topdown-be-bound": 101,
-    "topdown-bad-spec": 102,
-    "topdown-retiring": 103,
-}
-
 non_json_events = set(("dummy",))
 
 # handle kernels that don't support all events
@@ -136,8 +118,6 @@ import_mode = False
 
 errata_whitelist = []
 
-fixed_events = frozenset(fixed_to_num.keys())
-
 outgroup_events = set(["dummy"])
 
 sched_ignore_events = set([])
@@ -151,10 +131,24 @@ event_fixes = {
 
 core_domains = set(["Slots", "CoreClocks", "CoreMetric"])
 
+FIXED_BASE = 50
+METRICS_BASE = 100
+SPECIAL_END = 130
+
 limited_counters = {
+    "instructions": FIXED_BASE + 0,
+    "cycles": FIXED_BASE + 1,
+    "ref-cycles": FIXED_BASE + 2,
+    "slots": FIXED_BASE + 3,
+    "topdown.slots": FIXED_BASE + 3,
+    "topdown-fe-bound": METRICS_BASE + 0,
+    "topdown-be-bound": METRICS_BASE + 1,
+    "topdown-bad-spec": METRICS_BASE + 2,
+    "topdown-retiring": METRICS_BASE + 3,
     "cpu/cycles-ct/": 2,
 }
 limited_set = set(limited_counters.keys())
+fixed_events = set([x for x in limited_counters if FIXED_BASE <= limited_counters[x] <= SPECIAL_END])
 
 smt_mode = False
 
@@ -227,8 +221,8 @@ def unsup_event(e, table, min_kernel=None):
 def remove_qual(ev):
     return re.sub(r':[ku]', '', re.sub(r'/[ku+]', '/', ev))
 
-def fixed_overflow(evlist):
-    assigned = Counter([fixed_to_num[x] for x in evlist if x in fixed_to_num]).values()
+def limited_overflow(evlist):
+    assigned = Counter([limited_counters[x] for x in evlist if x in limited_counters]).values()
     return any([x > 1 for x in assigned])
 
 limit4_overflow = lambda ev: 0
@@ -292,11 +286,11 @@ def needed_counters(evlist):
 
     evlist = list(compress(evlist, not_list(metrics)))
 
-    # force split if we overflow fixed
+    # force split if we overflow fixed or limited
     # some fixed could be promoted to generic, but that doesn't work
     # with ref-cycles.
-    if fixed_overflow(evlist):
-        debug_print("split for fixed overflow %s " % evlist)
+    if limited_overflow(evlist):
+        debug_print("split for limited overflow %s " % evlist)
         return FORCE_SPLIT
 
     if limit4_overflow(evlist):
@@ -815,16 +809,15 @@ def raw_event(i, name="", period=False, nopebs=True):
         i = e.output(noname=True, name=name, period=period, noexplode=True)
 
         emap.update_event(e.output(noname=True), e)
-        if (e.counter not in cpu.standard_counters and
-                not e.counter.startswith("Fixed") and
-                not orig_i.startswith("UNC_")):
-            # for now use the first counter only to simplify
-            # the assignment. This is sufficient for current
-            # CPUs
-
-            # workaround for json files with extra quotes.
-            counter = e.counter.replace('"', '')
-            limited_counters[i] = int(counter.split(",")[0])
+        if (e.counter not in cpu.standard_counters and not orig_i.startswith("UNC_")):
+            if e.counter.startswith("Fixed"):
+                limited_counters[i] = int(e.counter.split()[2]) + 50
+                fixed_events.add(i)
+            else:
+                # for now use the first counter only to simplify
+                # the assignment. This is sufficient for current
+                # CPUs
+                limited_counters[i] = int(e.counter.split(",")[0])
             limited_set.add(i)
         if e.name.upper() in constraint_fixes:
             e.counter = constraint_fixes[e.name.upper()]
