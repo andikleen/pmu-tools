@@ -155,6 +155,8 @@ smt_mode = False
 errata_events = dict()
 errata_warn_events = dict()
 
+test_mode = os.getenv("TL_TESTER")
+
 perf = os.getenv("PERF")
 if not perf:
     perf = "perf"
@@ -165,11 +167,15 @@ def warn_once(msg):
     if msg not in warned:
         print(msg, file=sys.stderr)
         warned.add(msg)
-    if os.getenv("TL_TESTER"):
+    if test_mode:
         assert 0
 
 def debug_print(x):
     if args.debug:
+        print(x, file=sys.stderr)
+
+def test_debug_print(x):
+    if args.debug or test_mode:
         print(x, file=sys.stderr)
 
 def works(x):
@@ -2006,7 +2012,7 @@ class Scheduler:
             if len(ref) < len(g.evnum):
                 for i in range(len(g.evnum)):
                     if i not in ref:
-                        debug_print("unreferenced %s -> dummy" % g.evnum[i])
+                        test_debug_print("unreferenced %s  [%d]" % (g.evnum[i], i))
                         g.evnum[i] = "dummy"
 
     def split_groups(self, obj, evlev):
