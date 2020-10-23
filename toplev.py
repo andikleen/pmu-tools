@@ -265,6 +265,9 @@ def num_generic_counters(evset):
 
 FORCE_SPLIT = 100
 
+# Force metrics into own group
+metrics_own_group = True
+
 def needed_counters(evlist):
     evset = set(evlist)
     num = num_generic_counters(evset)
@@ -279,7 +282,7 @@ def needed_counters(evlist):
             debug_print("split for slots %s" % evlist)
             return FORCE_SPLIT
         # force split if there are other events.
-        if len(evlist) > sum(metrics) + 1:
+        if metrics_own_group and len(evlist) > sum(metrics) + 1:
             debug_print("split for other events in topdown %s" % evlist)
             return FORCE_SPLIT
 
