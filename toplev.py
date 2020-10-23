@@ -436,6 +436,7 @@ g.add_argument('--list-nodes', help='List all nodes. Can be followed by prefixes
 g.add_argument('--list-metric-groups', help='List metric groups.', action='store_true')
 g.add_argument('--list-all', help='List every supported node/metric/metricgroup. Can be followed by prefixes to limit',
             action='store_true')
+g.add_argument('--describe', help='Print full descriptions for listed node prefixes', action='store_true')
 
 g = p.add_argument_group('Workarounds')
 g.add_argument('--no-group', help='Dont use groups', action='store_true')
@@ -2606,6 +2607,13 @@ def suggest_bottlenecks(runner):
             return True
     return False
 
+def suggest_desc(runner):
+    def nummatch(n):
+        return sum([x.name.startswith(n) for x in runner.olist])
+    print("Run toplev --describe %s to get more information on bottleneck%s" % (
+        " ".join([full_name(x) if nummatch(x.name) > 1 else x.name for x in runner.bottlenecks]),
+        "s" if len(runner.bottlenecks) > 1 else ""), file=sys.stderr)
+
 def do_xlsx():
     cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s' " % (
         sys.executable,
@@ -2817,13 +2825,18 @@ if "base_frequency" in model.__dict__:
 if "model" in model.__dict__:
     model.model = cpu.modelid
 
+if args.describe:
+    args.long_desc = True
+    if not rest:
+        sys.exit("No nodes to describe")
+    runner.list_nodes(None, any_node, rest)
 if args.list_metrics or args.list_all:
     runner.list_nodes("Metrics", lambda obj: obj.metric, rest)
 if args.list_nodes or args.list_all:
     runner.list_nodes("Nodes", lambda obj: not obj.metric, rest)
 if args.list_metric_groups or args.list_all:
     runner.list_metric_groups()
-if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_all:
+if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_all or args.describe:
     if any([x.startswith("-") for x in rest]):
         sys.exit("Unknown arguments for --list*/--describe")
     sys.exit(0)
@@ -2961,6 +2974,8 @@ def measure_and_sample(count):
             ret = 1
         print_summary(runner, out)
         runner.stat.compute_errors()
+        if runner.bottlenecks and not args.quiet:
+            suggest_desc(runner)
         repeat = False
         if args.level < runner.max_node_level and runner.bottlenecks:
             repeat = suggest_bottlenecks(runner)
