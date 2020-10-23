@@ -185,6 +185,13 @@ $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL -
 checklog log$$.$j
 notfound $j
 
+HYPERVISOR=1 FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
+checklog log$$.$j
+notfound $j
+HYPERVISOR=1 FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
+checklog log$$.$j
+notfound $j
+
 if [ $j = "skl" -o $j = "skx" ] ; then
 REDUCED_COUNTERS=1 FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
