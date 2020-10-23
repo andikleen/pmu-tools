@@ -198,6 +198,11 @@ class CPU:
             self.standard_counters = ("0,1,2,3,4,5,6,7", "0,1,2,3", )
             self.limit4_counters = "0,1,2,3"
 
+        try:
+            self.pmu_name = open("/sys/devices/cpu/caps/pmu_name").read().strip()
+        except IOError:
+            self.pmu_name = None
+
         self.sockets = len(sockets.keys())
         self.modelid = None
         mid = (self.model,)

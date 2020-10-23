@@ -691,6 +691,10 @@ def check_ratio(l):
 
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
 
+if cpu.pmu_name and cpu.pmu_name.startswith("generic") and not args.quiet:
+    print("warning: kernel is in architectural mode and might mismeasure events", file=sys.stderr)
+    print("Consider a kernel update. See https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support", file=sys.stderr)
+
 if args.xlsx and not forced_per_socket and cpu.sockets == 1:
     args.per_socket = False
 if args.xlsx and not forced_per_core and cpu.threads == 1:
