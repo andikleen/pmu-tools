@@ -381,9 +381,7 @@ with only the nodes needed to measure the particular bottlenecks
 This also requires a reproducible or steady-state workload.
 
 toplev needs a new enough perf tool and has specific requirements on
-the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
-
-Valid CPU names: ''' + " ".join([x[0] for x in known_cpus]),
+the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support.''',
 formatter_class=argparse.RawDescriptionHelpFormatter)
 g = p.add_argument_group('General operation')
 g.add_argument('--interval', '-I', help='Measure every ms instead of only once',
