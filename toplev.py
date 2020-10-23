@@ -2425,6 +2425,7 @@ class Runner:
 
         # determine all objects to print
         def should_print_obj(obj):
+            assert not isinstance(obj.val, DummyArith)
             if obj.val is None:
                 return False
             if obj.thresh or args.verbose:
