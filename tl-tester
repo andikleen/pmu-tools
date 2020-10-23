@@ -263,6 +263,8 @@ onegroup log$$
 grep '[:/]u' log$$
 grep /u log$$
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --list-all
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --list-all -x,
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --list-metric-groups
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --print
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore $LOAD
 $WRAP ./toplev.py --force-hypervisor --force-cpu $DCPU $OPT $LOAD

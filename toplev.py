@@ -429,10 +429,13 @@ g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of 
 g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
 
 g = p.add_argument_group('Query nodes')
-g.add_argument('--list-metrics', help='List all metrics', action='store_true')
-g.add_argument('--list-nodes', help='List all nodes', action='store_true')
-g.add_argument('--list-metric-groups', help='List metric groups', action='store_true')
-g.add_argument('--list-all', help='List every supported node/metric/metricgroup', action='store_true')
+g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit',
+            action='store_true')
+g.add_argument('--list-nodes', help='List all nodes. Can be followed by prefixes to limit',
+            action='store_true')
+g.add_argument('--list-metric-groups', help='List metric groups.', action='store_true')
+g.add_argument('--list-all', help='List every supported node/metric/metricgroup. Can be followed by prefixes to limit',
+            action='store_true')
 
 g = p.add_argument_group('Workarounds')
 g.add_argument('--no-group', help='Dont use groups', action='store_true')
@@ -1727,18 +1730,18 @@ def children_over(l, obj):
     n = [o.thresh for o in l if 'parent' in o.__dict__ and o.parent == obj]
     return any(n)
 
-def obj_desc(obj, rest, force=False):
+def obj_desc(obj, rest, force=False, sep="\n\t"):
     # hide description if children are also printed
     if not force and not args.long_desc and children_over(rest, obj):
         desc = ""
     else:
-        desc = obj.desc[1:].replace("\n", "\n\t")
+        desc = obj.desc[1:].replace("\n", sep)
 
     # by default limit to first sentence
     if not args.long_desc and "." in desc:
         desc = desc[:desc.find(".") + 1] + ".."
 
-    if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht and not args.single_thread:
+    if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht and not args.single_thread and not force:
         desc += """
 Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
@@ -2469,14 +2472,25 @@ class Runner:
 
     def list_metric_groups(self):
         print("MetricGroups:")
-        pwrap(" ".join(sorted(self.metricgroups.keys())), indent="        ")
+        mg = sorted(self.metricgroups.keys())
+        if args.csv:
+            print("\n".join(mg))
+        else:
+            pwrap(" ".join(mg), indent="        ")
 
-    def list_nodes(self, title, filt):
-        print("%s:" % title)
+    def list_nodes(self, title, filt, rest):
+        def match(rest, n, fn):
+            return not rest or any([n.startswith(x) or fn.startswith(x) for x in rest])
+
+        if title:
+            print("%s:" % title)
         for obj in self.olist:
-            if filt(obj):
-                print(full_name(obj))
-                print("\t",obj_desc(obj, rest=[], force=True))
+            fn = full_name(obj)
+            sep = args.csv if args.csv else "\n\t"
+            if filt(obj) and match(rest, obj.name, fn):
+                print(fn, end=sep)
+                if not args.no_desc:
+                    print(obj_desc(obj, rest=[], force=True, sep=sep))
 
 def supports_pebs():
     if feat.has_max_precise:
@@ -2804,14 +2818,14 @@ if "model" in model.__dict__:
     model.model = cpu.modelid
 
 if args.list_metrics or args.list_all:
-    runner.list_nodes("Metrics", lambda obj: obj.metric)
+    runner.list_nodes("Metrics", lambda obj: obj.metric, rest)
 if args.list_nodes or args.list_all:
-    runner.list_nodes("Nodes", lambda obj: not obj.metric)
+    runner.list_nodes("Nodes", lambda obj: not obj.metric, rest)
 if args.list_metric_groups or args.list_all:
     runner.list_metric_groups()
 if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_all:
-    if len(rest) > 0:
-        print("Other arguments ignored", file=sys.stderr)
+    if any([x.startswith("-") for x in rest]):
+        sys.exit("Unknown arguments for --list*/--describe")
     sys.exit(0)
 
 def check_root():
