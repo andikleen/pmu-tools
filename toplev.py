@@ -359,7 +359,7 @@ Some caveats:
 toplev defaults to measuring the full system and show data
 for all CPUs. Use taskset to limit the workload to known CPUs if needed.
 In some cases (idle system, single threaded workload) --single-thread
-can also be used.
+can also be used to get less output.
 
 The lower levels of the measurement tree are less reliable
 than the higher levels.  They also rely on counter multi-plexing,
@@ -373,15 +373,16 @@ do the same thing over and over)
 If the program is very reproducible -- such as a simple kernel --
 it is also possible to use --no-multiplex. In this case the
 workload is rerun multiple times until all data is collected.
-Do not use together with sleep.
+
+Only use with sleep if the workload is running in a steady state.
+
+With the --drilldown option toplev can automatically remeasure the workload
+with only the nodes needed to measure the particular bottlenecks
+This also requires a reproducible or steady-state workload.
 
 toplev needs a new enough perf tool and has specific requirements on
 the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
 
-Other CPUs can be forced with FORCECPU=name
-This usually requires setting the correct event map with EVENTMAP=...
-The topology can be overriden with TOPOLOGY=file (sysfs filenames) and CPUINFO=file
-(/proc/cpuinfo replacement)
 Valid CPU names: ''' + " ".join([x[0] for x in known_cpus]),
 formatter_class=argparse.RawDescriptionHelpFormatter)
 g = p.add_argument_group('General operation')
