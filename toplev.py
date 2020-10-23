@@ -231,13 +231,11 @@ def limited_overflow(evlist):
     assigned = Counter([limited_counters[x] for x in evlist if x in limited_counters]).values()
     return any([x > 1 for x in assigned])
 
-limit4_overflow = lambda ev: 0
-
 limit4_events = set()
 
-# limited to first four counters
-def icl_limit4_overflow(evlist):
-    return sum([1 for x in evlist if x in limit4_events]) > 4
+# limited to first four counters on ICL+
+def limit4_overflow(evlist):
+    return sum([x in limit4_events for x in evlist]) > 4
 
 def ismetric(x):
     return x.startswith("topdown-")
@@ -804,7 +802,7 @@ def initialize_event(name, i, e):
             limited_set.add(i)
         if e.name.upper() in constraint_fixes:
             e.counter = constraint_fixes[e.name.upper()]
-        if e.counter == "0,1,2,3":
+        if e.counter == cpu.limit4_counters:
             limit4_events.add(i)
         if e.errata:
             if e.errata not in errata_whitelist:
@@ -2787,7 +2785,6 @@ elif cpu.cpu == "icl":
     icl_client_ratios.smt_enabled = cpu.ht
     model = icl_client_ratios
     setup_metrics(model)
-    limit4_overflow = icl_limit4_overflow
     # work around kernel constraint table bug in some kernel versions
     constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
 elif cpu.cpu == "tgl":
@@ -2796,7 +2793,6 @@ elif cpu.cpu == "tgl":
     icl_client_ratios.smt_enabled = cpu.ht
     model = icl_client_ratios
     setup_metrics(model)
-    limit4_overflow = icl_limit4_overflow
     # work around kernel constraint table bug in some kernel versions
     constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
 elif cpu.cpu == "slm":

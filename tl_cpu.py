@@ -175,6 +175,7 @@ class CPU:
                     if not forced_cpu:
                         self.cpu = i[0]
                     break
+        self.limit4_counters = "none"
         self.standard_counters = ("0,1,2,3",)
         if self.counters == 0:
             if self.cpu == "slm":
@@ -186,6 +187,7 @@ class CPU:
                 if self.cpu in cpus_8gpc or (self.cpu == "simple" and self.realcpu in cpus_8gpc):
                     self.counters = 8
                     self.standard_counters = ("0,1,2,3,4,5,6,7", "0,1,2,3", )
+                    self.limit4_counters = "0,1,2,3"
                 else:
                     self.counters = 4
             else:
@@ -194,6 +196,7 @@ class CPU:
                 self.counters -= reduced_counters()
         elif self.cpu in cpus_8gpc:
             self.standard_counters = ("0,1,2,3,4,5,6,7", "0,1,2,3", )
+            self.limit4_counters = "0,1,2,3"
 
         self.sockets = len(sockets.keys())
         self.modelid = None
