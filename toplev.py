@@ -2481,7 +2481,10 @@ class Runner:
 
     def list_nodes(self, title, filt, rest):
         def match(rest, n, fn):
-            return not rest or any([n.startswith(x) or fn.startswith(x) for x in rest])
+            return not rest or any([n.startswith(x) or fn.startswith(x) if
+                                    not x.endswith("^") else
+                                    n == x[:-1] or fn == x[:-1]
+                                    for x in rest])
 
         if title:
             print("%s:" % title)
@@ -2611,7 +2614,7 @@ def suggest_desc(runner):
     def nummatch(n):
         return sum([x.name.startswith(n) for x in runner.olist])
     print("Run toplev --describe %s to get more information on bottleneck%s" % (
-        " ".join([full_name(x) if nummatch(x.name) > 1 else x.name for x in runner.bottlenecks]),
+        " ".join([full_name(x) + "^" if nummatch(x.name) > 1 else x.name + "^" for x in runner.bottlenecks]),
         "s" if len(runner.bottlenecks) > 1 else ""), file=sys.stderr)
 
 def do_xlsx():
