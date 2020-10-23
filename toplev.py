@@ -2166,6 +2166,35 @@ class Scheduler:
         if args.print_group:
             self.print_group_summary(olist)
 
+def should_print_obj(obj, match):
+    assert not isinstance(obj.val, DummyArith)
+    if obj.val is None:
+        return False
+    if obj.thresh or args.verbose:
+        if not match(obj):
+            pass
+        elif obj.metric:
+            if args.verbose or obj.val != 0:
+                return True
+        elif check_ratio(obj.val):
+            return True
+    return False
+
+def get_uval(ob):
+    u = ob.val if isinstance(ob.val, UVal) else UVal(ob.name, ob.val)
+    u.name = ob.name
+    return u
+
+# pre compute column lengths
+def compute_column_lengths(olist, out):
+    for obj in olist:
+        out.set_hdr(full_name(obj), obj_area(obj))
+        if obj.metric:
+            out.set_unit(metric_unit(obj))
+        else:
+            out.set_unit(node_unit(obj))
+        out.set_below(node_below(obj))
+
 class Runner:
     """Handle measurements of event groups. Map events to groups."""
 
@@ -2424,37 +2453,12 @@ class Runner:
             out.logf.flush()
 
         # determine all objects to print
-        def should_print_obj(obj):
-            assert not isinstance(obj.val, DummyArith)
-            if obj.val is None:
-                return False
-            if obj.thresh or args.verbose:
-                if not match(obj):
-                    pass
-                elif obj.metric:
-                    if args.verbose or obj.val != 0:
-                        return True
-                elif check_ratio(obj.val):
-                    return True
-            return False
-        olist = [o for o in self.olist if should_print_obj(o)]
+        olist = [o for o in self.olist if should_print_obj(o, match)]
 
         # sort by metric group
         olist = olist_by_metricgroup(olist, self.metricgroups)
 
-        # pre compute column lengths
-        for obj in olist:
-            out.set_hdr(full_name(obj), obj_area(obj))
-            if obj.metric:
-                out.set_unit(metric_unit(obj))
-            else:
-                out.set_unit(node_unit(obj))
-            out.set_below(node_below(obj))
-
-        def get_uval(ob):
-            u = ob.val if isinstance(ob.val, UVal) else UVal(ob.name, ob.val)
-            u.name = ob.name
-            return u
+        compute_column_lengths(olist, out)
 
         # step 3: print
         for i, obj in enumerate(olist):
