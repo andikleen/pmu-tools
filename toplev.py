@@ -1727,23 +1727,27 @@ def metric_unit(obj):
         return obj_domain(obj).replace("SystemMetric", "SysMetric")
     return "Metric"
 
-# only check direct children, the rest are handled recursively
-def children_over(l, obj):
-    n = [o.thresh for o in l if 'parent' in o.__dict__ and o.parent == obj]
-    return any(n)
-
-def obj_desc(obj, rest, force=False, sep="\n\t"):
-    # hide description if children are also printed
-    if not force and not args.long_desc and children_over(rest, obj):
-        desc = ""
-    else:
-        desc = obj.desc[1:].replace("\n", sep)
+def obj_desc(obj, sep="\n\t"):
+    desc = obj.desc[1:].replace("\n", sep)
 
     # by default limit to first sentence
     if not args.long_desc and "." in desc:
         desc = desc[:desc.find(".") + 1] + ".."
 
-    if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht and not args.single_thread and not force:
+    return desc
+
+# only check direct children, the rest are handled recursively
+def children_over(l, obj):
+    n = [o.thresh for o in l if 'parent' in o.__dict__ and o.parent == obj]
+    return any(n)
+
+def obj_desc_runtime(obj, rest, sep="\n\t"):
+    # hide description if children are also printed
+    if children_over(rest, obj):
+        desc = ""
+    else:
+        desc = obj_desc(obj)
+    if 'htoff' in obj.__dict__ and obj.htoff and obj.thresh and cpu.ht and not args.single_thread:
         desc += """
 Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
@@ -2451,7 +2455,7 @@ class Runner:
         # step 3: print
         for i, obj in enumerate(olist):
             val = get_uval(obj)
-            desc = obj_desc(obj, olist[i + 1:])
+            desc = obj_desc_runtime(obj, olist[i + 1:])
             if obj.metric:
                 out.metric(obj_area(obj), obj.name, val, timestamp,
                         desc,
@@ -2495,7 +2499,7 @@ class Runner:
             if filt(obj) and match(rest, obj.name, fn):
                 print(fn, end=sep)
                 if not args.no_desc:
-                    print(obj_desc(obj, rest=[], force=True, sep=sep))
+                    print(obj_desc(obj, sep=sep))
 
 def supports_pebs():
     if feat.has_max_precise:
