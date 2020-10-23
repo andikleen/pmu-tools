@@ -19,6 +19,7 @@
 # FORCEHT=0/1      Force SMT mode
 # HYPERVISOR=0/1   Force hypervisor mode (also --force-hypervisor)
 # CPUINFO=file     Read cpu information from file instead of /proc/cpuinfo. Also --force-cpuinfo
+# REDUCED_COUNTERS=n Reduce counters by n
 #
 
 from collections import defaultdict, Counter
@@ -43,12 +44,15 @@ def num_offline_cpus():
     return offline
 
 def reduced_counters():
+    rc = os.getenv("REDUCED_COUNTERS")
+    if rc:
+        return int(rc)
     val = 1
     fn = "/sys/devices/cpu/allow_tsx_force_abort"
     if os.path.exists(fn):
         with open(fn, "r") as f:
             val = int(f.read())
-    return val == 0
+    return 1 if val == 0 else 0
 
 class Env:
     def __init__(self):
@@ -186,8 +190,8 @@ class CPU:
                     self.counters = 4
             else:
                 self.counters = 8
-            if not nocheck and reduced_counters():
-                self.counters -= 1
+            if not nocheck:
+                self.counters -= reduced_counters()
         elif self.cpu in cpus_8gpc:
             self.standard_counters = ("0,1,2,3,4,5,6,7", "0,1,2,3", )
 
