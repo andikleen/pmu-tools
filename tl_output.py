@@ -17,6 +17,8 @@ import locale
 import csv
 import re
 import sys
+import json
+from collections import defaultdict, Counter, OrderedDict
 from tl_stat import isnan
 from tl_uval import UVal, combine_uval
 from tl_io import flex_open_w
@@ -399,3 +401,65 @@ class OutputCSV(Output):
                                   desc, sample, stddev, multiplex, bn, "Y" if idle else ""])
 
     print_footer = Output.print_footer_all
+
+class OutputJSON(Output):
+    """Output data in chrome / trace-viewer JSON format."""
+    def __init__(self, logfile, sep, args, version, cpu):
+        Output.__init__(self, logfile, version, cpu, args)
+        self.nodes = defaultdict(dict)
+        self.headers = OrderedDict()
+        self.count = Counter()
+
+    def print_footer_all(self):
+        if self.logfiles:
+            for f in self.logfiles.values():
+                f.write("\n]\n")
+        else:
+            self.logf.write("\n]\n")
+
+    print_footer = print_footer_all
+
+    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below, idle):
+        self.timestamp = timestamp
+        self.nodes[title][hdr] = val
+        self.headers[hdr] = True
+
+    def flush(self):
+        d = []
+        nodes = OrderedDict()
+        for hdr in self.headers:
+            for title in sorted(self.nodes.keys()):
+                if hdr not in self.nodes[title]:
+                    continue
+                nd = self.nodes[title]
+                val = nd[hdr].value if isinstance(nd[hdr], UVal) else nd[hdr]
+
+                if title:
+                    title += " "
+                if hdr in ("Frontend_Bound", "Backend_Bound", "BadSpeculation", "Retiring"): # XXX
+                    key = title + "Level1"
+                    if key not in nodes:
+                        nodes[key] = dict()
+                    nodes[title + "Level1"][hdr] = val
+                elif hdr.count(".") >= 1:
+                    dot = hdr.rindex(".")
+                    nodes[title + hdr[:dot]] = { hdr: round(val, 2) }
+                else: # assume it's metric
+                    nodes[title + hdr] = {hdr: val}
+
+        for name in nodes.keys():
+            if self.count[self.curname] == 0:
+                self.logf.write("[\n")
+            else:
+                self.logf.write(",\n")
+            json.dump({"name": name,
+                      "ph": "C",
+                      "pid": 0,
+                      "ts": self.timestamp / 1e6 if self.timestamp else 0,
+                      "args": nodes[name]}, self.logf)
+            self.count[self.curname] += 1
+        self.nodes = defaultdict(dict)
+        self.headers = OrderedDict()
+
+    def remark(self, v):
+        pass

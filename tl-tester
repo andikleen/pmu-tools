@@ -274,6 +274,14 @@ rm x$$.xlsx # must exist
 
 fi
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread -x, --columns -l4 $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics -I100 --per-thread --json --all -o j$$.json $LOAD
+python -m json.tool < j$$.json
+rm j$$.json
+
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics -I100 --per-thread --global --per-core --per-socket --json --all -o j$$.json $LOAD
+python -m json.tool < j$$.json
+rm j$$.json
+
 FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global --per-core -x, --columns -l4 $LOAD
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics  --per-thread --per-core --per-socket --summary -a -l4 --filterquals $LOAD

@@ -8,6 +8,7 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev can now support json files for Chrome's about://tracing with --json
 * toplev now supports --no-multiplex in interval mode (-Ixxx)
 * The tools now don't force python 2 anymore to support running out of the box
   on distributions which do not install python 2.

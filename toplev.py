@@ -469,6 +469,7 @@ g.add_argument('--quiet', help='Avoid unnecessary status output', action='store_
 g.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
                 action='store_true')
 g.add_argument('--columns', help='Print CPU output in multiple columns for each node', action='store_true')
+g.add_argument('--json', help='Print output in JSON format for Chrome about://tracing', action='store_true')
 g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
 g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file')
@@ -2966,7 +2967,13 @@ if args.repl:
     sys.exit(0)
 
 runner.collect()
-if args.csv:
+if args.json:
+    if args.csv:
+        sys.exit("Cannot combine --csv with --json")
+    if args.columns:
+        sys.exit("Cannot combine --columns with --json")
+    out = tl_output.OutputJSON(args.output, args.csv, args, version, cpu)
+elif args.csv:
     if args.columns:
         out = tl_output.OutputColumnsCSV(args.output, args.csv, args, version, cpu)
     else:
