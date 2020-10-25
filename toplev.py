@@ -946,10 +946,11 @@ def is_event(l, n):
 def is_number(n):
     return re.match(r'\d+', n) is not None
 
-def set_interval(env, d):
+def set_interval(env, d, interval):
     env['interval-ns'] = d * 1e9
     env['interval-ms'] = d * 1e3
     env['interval-s'] = d
+    env['interval'] = interval
 
 def key_to_coreid(k):
     x = cpu.cputocore[int(k)]
@@ -1381,7 +1382,7 @@ def do_execute(runner, events, out, rest):
                 l = m.group(2)
                 if interval != prev_interval:
                     if res:
-                        set_interval(env, interval - prev_interval)
+                        set_interval(env, interval - prev_interval, prev_interval)
                         yield 0, res, rev, interval, valstats, env
                         res = defaultdict(list)
                         rev = defaultdict(list)
@@ -1487,7 +1488,7 @@ def do_execute(runner, events, out, rest):
                      stddev, multiplex)
     inf.close()
     if 'interval-s' not in env:
-        set_interval(env, time.time() - start)
+        set_interval(env, time.time() - start, start)
     ret = prun.wait()
     print_account(account)
     yield ret, res, rev, interval, valstats, env
@@ -1635,8 +1636,8 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
         try:
             r = rev[index]
         except IndexError:
-            warn_once("Not enough lines in perf output for rev (%d vs %d for %s)" %
-                    (index, len(rev), obj.name))
+            warn_once("Not enough lines in perf output for rev (%d vs %d for %s) at %s" %
+                    (index, len(rev), obj.name, env['interval']))
             return 0
         rmap_ev = event_rmap(r).lower()
         ev = ev.lower()
@@ -1648,8 +1649,8 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     try:
         vv = res[index]
     except IndexError:
-        warn_once("Not enough lines in perf output for res (%d vs %d for %s)" %
-                (index, len(res), obj.name))
+        warn_once("Not enough lines in perf output for res (%d vs %d for %s) at %s" %
+                (index, len(res), obj.name, env['interval']))
         return 0.0
     if isinstance(vv, tuple):
         if cpuoff == -1:
