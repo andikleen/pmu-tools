@@ -278,9 +278,16 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics -I100 --per-thread --
 python -m json.tool < j$$.json
 rm j$$.json
 
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics -I100 --per-thread --global --per-core --per-socket --json --all -o j$$.json $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --summary --per-thread --global --per-core --per-socket --json --all -o j$$.json $LOAD
 python -m json.tool < j$$.json
 rm j$$.json
+
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --split-output -I100 --per-thread --global --per-core --per-socket --json --all -o j$$.json $LOAD
+python -m json.tool < j$$-core.json
+python -m json.tool < j$$-global.json
+python -m json.tool < j$$-socket.json
+python -m json.tool < j$$-thread.json
+rm j$$-core.json j$$-thread.json j$$-socket.json j$$-global.json
 
 FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global --per-core -x, --columns -l4 $LOAD
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
