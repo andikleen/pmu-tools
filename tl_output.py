@@ -425,7 +425,6 @@ class OutputJSON(Output):
         self.headers[hdr] = True
 
     def flush(self):
-        d = []
         nodes = OrderedDict()
         for hdr in self.headers:
             for title in sorted(self.nodes.keys()):
