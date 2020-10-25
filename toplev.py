@@ -1945,12 +1945,12 @@ def quote(s):
     return s
 
 class Group:
-    def __init__(self, evnum, objl, outgroup=False):
+    def __init__(self, evnum, objl, num, outgroup=False):
         self.evnum = evnum
         self.base = -1
         self.objl = set(objl)
         self.outgroup = outgroup
-        self.num = -1
+        self.num = num
 
 class GroupCmp:
     def __init__(self, v):
@@ -2014,6 +2014,7 @@ class Scheduler:
         # list of groups that still have generic counters, for faster
         # duplicate checks
         self.evgroups_nf = []
+        self.nextgnum = 0
 
     # should avoid adding those in the first place instead
     def dummy_unreferenced(self, olist):
@@ -2064,11 +2065,12 @@ class Scheduler:
             # possible. Still keep it as a --tune option to play around.
             if ((any_merge or not evset.isdisjoint(g.evnum)) and
                   needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
-                debug_print("add_duplicate %s %s in %s obj %s" % (
+                debug_print("add_duplicate %s %s in %s obj %s to group %d" % (
                     evnum,
                     list(map(event_rmap, evnum)),
                     g.evnum,
-                    obj.name))
+                    obj.name,
+                    g.num))
                 for k in evnum:
                     if k not in g.evnum:
                         g.evnum.append(k)
@@ -2091,8 +2093,9 @@ class Scheduler:
             return
         evnum = dedup(evnum)
         if not self.add_duplicate(evnum, obj):
-            debug_print("add %s %s" % (evnum, list(map(event_rmap, evnum))))
-            g = Group(evnum, [obj])
+            g = Group(evnum, [obj], self.nextgnum)
+            debug_print("add %s %s to group %d" % (evnum, list(map(event_rmap, evnum)), g.num))
+            self.nextgnum += 1
             self.evgroups.append(g)
             self.evgroups_nf.append(g)
             update_group_map(evnum, obj, g)
@@ -2104,7 +2107,8 @@ class Scheduler:
                 g = self.og_groups[ev]
                 g.objl.add(obj)
             else:
-                g = Group([ev], [obj], True)
+                g = Group([ev], [obj], self.nextgnum, True)
+                self.nextgnum += 1
                 self.og_groups[ev] = g
                 self.evgroups.append(g)
                 self.evgroups_nf.append(g)
@@ -2112,9 +2116,8 @@ class Scheduler:
 
     def allocate_bases(self):
         base = 0
-        for i, g in enumerate(self.evgroups):
+        for g in self.evgroups:
             g.base = base
-            g.num = i
             self.evnum += g.evnum
             base += len(g.evnum)
 
