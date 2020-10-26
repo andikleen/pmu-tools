@@ -34,3 +34,8 @@ def append_dict(a, b):
             a[k] += b[k]
         else:
             a[k] = b[k]
+
+def padlist(l, length, val=0.0):
+    if len(l) < length:
+        return l + (val,)*(length-len(l))
+    return l

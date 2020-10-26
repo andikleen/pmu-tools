@@ -33,7 +33,12 @@ from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby, chain
 import itertools
-from listutils import cat_unique, dedup, filternot, not_list, append_dict
+if sys.version_info.major == 3:
+    from itertools import zip_longest
+else:
+    from itertools import izip_longest
+    zip_longest = izip_longest
+from listutils import cat_unique, dedup, filternot, not_list, append_dict, padlist
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -1280,11 +1285,24 @@ def execute_no_multiplex(runner, out, rest):
         for ret, res, rev, interval, valstats, env in do_execute(runner, outg + [g], out, rest):
             lresults.append([ret, res, rev, interval, valstats, env])
         if n > 0:
-            for r, lr in zip(results, lresults):
+            for r, lr in zip_longest(results, lresults):
+                if lr is None or r is None:
+                    if lr is None:
+                        lr = [None] * 5
+                    if r is None:
+                        r = [None] * 5
+                    print("warning: different number of measurement intervals on rerun. Workload differs in duration?",
+                            file=sys.stderr)
                 r[0] = lr[0]
                 # use interval of first
                 for j in (1, 2, 4, 5):
-                    append_dict(r[j], lr[j])
+                    diff = len(results[0][j]) - len(lr[j])
+                    if diff:
+                        print("warning: %s perf output values on rerun [%d difference] %s" %
+                                ("missing" if diff > 0 else "too few", diff, r[1],
+                                (("at %f" % lr[3]) if lr[3] else "")),
+                                file=sys.stderr)
+                    append_dict(r[j], padlist(lr[j], len(results[0][j])))
         ctx.restore()
         outg = []
         n += 1
@@ -1988,8 +2006,7 @@ def update_group_map(evnum, obj, group):
 def do_distribute_uncore(evgroups):
     cg = [g for g in evgroups if not g.outgroup]
     og = [g for g in evgroups if g.outgroup]
-    z_l = itertools.zip_longest if sys.version_info.major == 3 else itertools.izip_longest
-    return [x for x in chain(*z_l(cg, og)) if x is not None]
+    return [x for x in chain(*zip_longest(cg, og)) if x is not None]
 
 def gen_res_map(solist):
     for obj in solist:
