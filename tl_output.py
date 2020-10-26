@@ -412,15 +412,15 @@ class OutputJSON(Output):
 
     def print_footer_all(self):
         def start(name):
-            if name in self.count:
-                return "[\n" if self.count[name] else ""
-            return "[\n"
+            if name not in self.count:
+                return "[\n"
+            return ""
 
         if self.logfiles:
-            for f in self.logfiles.values():
-                f.write(start(f) + "\n]\n")
+            for n in self.logfiles:
+                self.logfiles[n].write(start(n) + "\n]\n")
         else:
-            self.logf.write(start(self.curname) + "\n]\n")
+            self.logf.write(start("") + "\n]\n")
 
     print_footer = print_footer_all
 
