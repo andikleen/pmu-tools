@@ -749,7 +749,7 @@ def gen_script(r):
     r[i+1] = "'" + r[i+1] + "'"
     print(" ".join(r + ['"$@"']))
 
-class PerfRun:
+class PerfRun(object):
     """Control a perf subprocess."""
     def execute(self, r):
         if import_mode:
