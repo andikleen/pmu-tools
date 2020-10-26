@@ -289,6 +289,10 @@ cat j$$-socket.json | python -m json.tool
 cat j$$-thread.json | python -m json.tool
 rm j$$-core.json j$$-thread.json j$$-socket.json j$$-global.json
 
+$WRAP ./toplev.py --force-cpu $DCPU $OPT -l1 --drilldown --json --all -o j$$.json $LOAD
+cat j$$.json | python -m json.tool
+rm j$$.json
+
 FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global --per-core -x, --columns -l4 $LOAD
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics  --per-thread --per-core --per-socket --summary -a -l4 --filterquals $LOAD
