@@ -32,7 +32,6 @@ import bisect
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby, chain
-import itertools
 if sys.version_info.major == 3:
     from itertools import zip_longest
 else:
@@ -403,6 +402,8 @@ g.add_argument('--import', help='Import specified perf stat output file instead 
                 dest='import_')
 g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later',
                action='store_true')
+g.add_argument('--script-record', help='Use perf stat record in script for faster recording or '
+               'import generated perf.data (requires new perf)', action='store_true')
 g.add_argument('--drilldown', help='Automatically rerun to get more details on bottleneck', action='store_true')
 
 g = p.add_argument_group('Measurement filtering')
@@ -1298,7 +1299,7 @@ def execute_no_multiplex(runner, out, rest):
                 for j in (1, 2, 4, 5):
                     diff = len(results[0][j]) - len(lr[j])
                     if diff:
-                        print("warning: %s perf output values on rerun [%d difference] %s" %
+                        print("warning: %s perf output values on rerun [%d difference(s)] %s %s" %
                                 ("missing" if diff > 0 else "too few", diff, r[1],
                                 (("at %f" % lr[3]) if lr[3] else "")),
                                 file=sys.stderr)
