@@ -1048,11 +1048,12 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
 
     idle_keys = find_idle_keys(res, rev, runner.idle_threshold)
     idle_mark_keys = find_idle_keys(res, rev, IDLE_MARKER_THRESHOLD)
+    printer = runner.printer
     hidden_keys = set()
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
     out.set_cpus(display_keys(runner, keys, mode))
-    runner.numprint = 0
+    runner.printer.numprint = 0
     if smt_mode:
         printed_cores = set()
         printed_sockets = set()
@@ -1111,23 +1112,24 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             bn = find_bn(runner.olist, not_package_node)
 
             if mode == OUTPUT_GLOBAL:
-                runner.print_res(out, interval, "", not_package_node, bn)
+                printer.print_res(runner.olist, out, interval, "", not_package_node, bn)
                 break
             if mode == OUTPUT_SOCKET:
-                runner.print_res(out, interval, socket_fmt(int(j)), not_package_node, bn,
-                                 idle_socket(sid, idle_mark_keys))
+                printer.print_res(runner.olist, out, interval, socket_fmt(int(j)),
+                                  not_package_node, bn, idle_socket(sid, idle_mark_keys))
                 printed_sockets.add(sid)
                 continue
             if mode == OUTPUT_THREAD:
                 runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
-                runner.print_res(out, interval, thread_fmt(int(j)), any_node, bn, j in idle_mark_keys)
+                printer.print_res(runner.olist, out, interval, thread_fmt(int(j)), any_node,
+                                  bn, j in idle_mark_keys)
                 continue
 
             # per core or mixed core/thread mode
 
             # print the SMT aware nodes
             if core not in printed_cores:
-                runner.print_res(out, interval, core_fmt(core), core_node, bn,
+                printer.print_res(runner.olist, out, interval, core_fmt(core), core_node, bn,
                         idle_core(core, idle_mark_keys))
                 printed_cores.add(core)
 
@@ -1138,7 +1140,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             else:
                 fmt = thread_fmt(int(j))
                 idle = j in idle_mark_keys
-            runner.print_res(out, interval, fmt, thread_node, bn, idle)
+            printer.print_res(runner.olist, out, interval, fmt, thread_node, bn, idle)
     elif mode != OUTPUT_GLOBAL:
         env['num_merged'] = 1
         for j in keys:
@@ -1150,7 +1152,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             runner.reset_thresh()
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
-            runner.print_res(out, interval, j, not_package_node, bn, j in idle_mark_keys)
+            printer.print_res(runner.olist, out, interval, j, not_package_node, bn, j in idle_mark_keys)
     if mode == OUTPUT_GLOBAL:
         env['num_merged'] = 1
         cpus = [x for x in keys if not filtered(x)]
@@ -1166,7 +1168,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             runner.reset_thresh()
             runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
                            combined_st, env, nodeselect, stat)
-            runner.print_res(out, interval, "all", nodeselect, None, False)
+            printer.print_res(runner.olist, out, interval, "all", nodeselect, None, False)
     elif mode != OUTPUT_THREAD:
         packages = set()
         for j in keys:
@@ -1187,13 +1189,13 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 continue
             runner.reset_thresh()
             runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
-            runner.print_res(out, interval, jname, package_node, None, j in idle_mark_keys)
+            printer.print_res(runner.olist, out, interval, jname, package_node, None, j in idle_mark_keys)
     # no bottlenecks from package nodes for now
     out.flush()
     stat.referenced_check(res, runner.sched.evnum)
     stat.compute_errors()
     runner.idle_keys |= hidden_keys
-    if runner.numprint == 0 and not args.quiet and runner.olist:
+    if runner.printer.numprint == 0 and not args.quiet and runner.olist:
         print("No node crossed threshold", file=sys.stderr)
 
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
@@ -2200,29 +2202,74 @@ def compute_column_lengths(olist, out):
             out.set_unit(node_unit(obj))
         out.set_below(node_below(obj))
 
-class Runner:
+class Printer(object):
+    """Print measurements while accumulating some metadata."""
+    def __init__(self, metricgroups):
+        self.sample_obj = set()
+        self.bottlenecks = set()
+        self.numprint = 0
+        self.metricgroups = metricgroups
+
+    def print_res(self, olist, out, timestamp, title, match, bn, idlemark=False):
+        if bn:
+            self.bottlenecks.add(bn)
+
+        if safe_ref(out, 'logf') == sys.stderr:
+            out.logf.flush()
+
+        # determine all objects to print
+        olist = [o for o in olist if should_print_obj(o, match)]
+
+        # sort by metric group
+        olist = olist_by_metricgroup(olist, self.metricgroups)
+
+        compute_column_lengths(olist, out)
+
+        # step 3: print
+        for i, obj in enumerate(olist):
+            val = get_uval(obj)
+            desc = obj_desc_runtime(obj, olist[i + 1:])
+            if obj.metric:
+                out.metric(obj_area(obj), obj.name, val, timestamp,
+                        desc,
+                        title,
+                        metric_unit(obj),
+                        idlemark)
+            else:
+                out.ratio(obj_area(obj),
+                        full_name(obj), val, timestamp,
+                        "%" + node_unit(obj),
+                        desc,
+                        title,
+                        sample_desc(obj.sample) if has(obj, 'sample') else None,
+                        "<==" if obj == bn else "",
+                        node_below(obj),
+                        idlemark)
+                if obj.thresh or args.verbose:
+                    self.sample_obj.add(obj)
+            self.numprint += 1
+
+class Runner(object):
     """Handle measurements of event groups. Map events to groups."""
 
     def reset(self):
         self.stat = ComputeStat(args.quiet)
-        self.sample_obj = set()
         self.olist = []
-        self.bottlenecks = set()
         self.idle_keys = set()
         self.summary = None
         if args.summary:
             self.summary = Summary()
         self.sched = Scheduler()
+        self.printer = Printer(self.metricgroups)
 
     def __init__(self, max_level, idle_threshold):
+        # always needs to be filtered by olist:
+        self.metricgroups = defaultdict(list)
         self.reset()
         self.odict = dict()
         self.max_level = max_level
         self.max_node_level = 0
         self.idle_threshold = idle_threshold
-        # always needs to be filtered by olist:
-        self.metricgroups = defaultdict(list)
-        self.numprint = 0
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv, lineterminator='\n')
             self.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
@@ -2450,45 +2497,6 @@ class Runner:
         changed += self.propagate_siblings()
         return changed
 
-    def print_res(self, out, timestamp, title, match, bn, idlemark=False):
-        if bn:
-            self.bottlenecks.add(bn)
-
-        if safe_ref(out, 'logf') == sys.stderr:
-            out.logf.flush()
-
-        # determine all objects to print
-        olist = [o for o in self.olist if should_print_obj(o, match)]
-
-        # sort by metric group
-        olist = olist_by_metricgroup(olist, self.metricgroups)
-
-        compute_column_lengths(olist, out)
-
-        # step 3: print
-        for i, obj in enumerate(olist):
-            val = get_uval(obj)
-            desc = obj_desc_runtime(obj, olist[i + 1:])
-            if obj.metric:
-                out.metric(obj_area(obj), obj.name, val, timestamp,
-                        desc,
-                        title,
-                        metric_unit(obj),
-                        idlemark)
-            else:
-                out.ratio(obj_area(obj),
-                        full_name(obj), val, timestamp,
-                        "%" + node_unit(obj),
-                        desc,
-                        title,
-                        sample_desc(obj.sample) if has(obj, 'sample') else None,
-                        "<==" if obj == bn else "",
-                        node_below(obj),
-                        idlemark)
-                if obj.thresh or args.verbose:
-                    self.sample_obj.add(obj)
-            self.numprint += 1
-
     def list_metric_groups(self):
         print("MetricGroups:")
         mg = sorted(self.metricgroups.keys())
@@ -2605,7 +2613,8 @@ def suggest_bottlenecks(runner):
         if 'sibling' in o.__dict__ and o.sibling:
             return "+%s^" % full_name(o)
         return None
-    children = [gen_bn(o) for o in runner.bottlenecks]
+    printer = runner.printer
+    children = [gen_bn(o) for o in printer.bottlenecks]
     children = list(filter(None, children))
     if children and args.nodes:
         children = [x for x in children if x[:-1] not in args.nodes]
@@ -2631,9 +2640,10 @@ def suggest_bottlenecks(runner):
 def suggest_desc(runner):
     def nummatch(n):
         return sum([x.name.startswith(n) for x in runner.olist])
+    printer = runner.printer
     print("Run toplev --describe %s to get more information on bottleneck%s" % (
-        " ".join([full_name(x) + "^" if nummatch(x.name) > 1 else x.name + "^" for x in runner.bottlenecks]),
-        "s" if len(runner.bottlenecks) > 1 else ""), file=sys.stderr)
+        " ".join([full_name(x) + "^" if nummatch(x.name) > 1 else x.name + "^" for x in printer.bottlenecks]),
+        "s" if len(printer.bottlenecks) > 1 else ""), file=sys.stderr)
 
 def do_xlsx():
     cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s' " % (
@@ -2999,13 +3009,14 @@ def measure_and_sample(count):
             ret = 1
         print_summary(runner, out)
         runner.stat.compute_errors()
-        if runner.bottlenecks and not args.quiet:
+        printer = runner.printer
+        if printer.bottlenecks and not args.quiet:
             suggest_desc(runner)
         repeat = False
-        if args.level < runner.max_node_level and runner.bottlenecks:
+        if args.level < runner.max_node_level and printer.bottlenecks:
             repeat = suggest_bottlenecks(runner)
         if (args.show_sample or args.run_sample) and ret == 0:
-            do_sample(runner.sample_obj, rest, count, ret)
+            do_sample(printer.sample_obj, rest, count, ret)
         if 100 <= ret <= 200 and repeat:
             print("Perf or workload appears to have failed with error %d. Not drilling down" % ret,
                   file=sys.stderr)
