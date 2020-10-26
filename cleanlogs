@@ -9,6 +9,7 @@ rm y*.out
 rm x*.csv.gz
 rm y*.out.gz
 rm x*.csv.xz
+rm j*.json
 rm out*-{core,global,socket,thread}
 rm perf.data.*.old
 rm tlog[0-9]*
