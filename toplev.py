@@ -1288,9 +1288,9 @@ def execute_no_multiplex(runner, out, rest):
             for r, lr in zip_longest(results, lresults):
                 if lr is None or r is None:
                     if lr is None:
-                        lr = [None] * 5
+                        lr = [1, [], [], -1, {}]
                     if r is None:
-                        r = [None] * 5
+                        r = [1, [], [], -1, {}]
                     print("warning: different number of measurement intervals on rerun. Workload differs in duration?",
                             file=sys.stderr)
                 r[0] = lr[0]
