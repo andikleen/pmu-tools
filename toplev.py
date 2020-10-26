@@ -434,14 +434,14 @@ g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of 
 g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
 
 g = p.add_argument_group('Query nodes')
-g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit',
+g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit, ^ for full match',
             action='store_true')
-g.add_argument('--list-nodes', help='List all nodes. Can be followed by prefixes to limit',
+g.add_argument('--list-nodes', help='List all nodes. Can be followed by prefixes to limit, ^ for full match',
             action='store_true')
 g.add_argument('--list-metric-groups', help='List metric groups.', action='store_true')
-g.add_argument('--list-all', help='List every supported node/metric/metricgroup. Can be followed by prefixes to limit',
+g.add_argument('--list-all', help='List every supported node/metric/metricgroup. Can be followed by prefixes to limit, ^ for full match.',
             action='store_true')
-g.add_argument('--describe', help='Print full descriptions for listed node prefixes', action='store_true')
+g.add_argument('--describe', help='Print full descriptions for listed node prefixes. Add ^ to require full match.', action='store_true')
 
 g = p.add_argument_group('Workarounds')
 g.add_argument('--no-group', help='Dont use groups', action='store_true')
