@@ -181,7 +181,7 @@ def test_debug_print(x):
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
-class PerfFeatures:
+class PerfFeatures(object):
     """Adapt to the quirks of various perf versions."""
     def __init__(self, args):
         self.logfd_supported = works(perf + " stat --log-fd 3 3>/dev/null true")
@@ -892,7 +892,7 @@ def setup_perf(evstr, rest):
     inf = prun.execute(perf_args(evstr, rest))
     return inf, prun
 
-class Stat:
+class Stat(object):
     def __init__(self):
         self.total = 0
         self.errors = Counter()
@@ -917,7 +917,7 @@ def print_account(ad):
         print(", ".join(["%d events %s" % (num, e) for e, num in total.items()]),
                 file=sys.stderr)
 
-class ValidEvents:
+class ValidEvents(object):
     def update(self):
         self.string = "|".join(self.valid_events)
 
@@ -1245,7 +1245,7 @@ def print_summary(runner, out):
 def is_outgroup(x):
     return set(x) - outgroup_events == set()
 
-class SaveContext:
+class SaveContext(object):
     """Save (some) environment context, in this case stdin seek offset to make < file work
        when we reexecute the workload multiple times."""
     def __init__(self):
@@ -1496,7 +1496,7 @@ def do_execute(runner, events, out, rest):
 # dummy arithmetic type without any errors, for collecting
 # the events from the model. Otherwise divisions by zero cause
 # early exits
-class DummyArith:
+class DummyArith(object):
     def __sub__(self, o):
         return self
     def __add__(self, o):
@@ -1883,7 +1883,7 @@ def node_unit(obj):
 def node_below(obj):
     return not obj.thresh
 
-class Summary:
+class Summary(object):
     """Accumulate counts for summary."""
     def __init__(self):
         self.res = defaultdict(list)
@@ -1944,7 +1944,7 @@ def quote(s):
         return '"' + s + '"'
     return s
 
-class Group:
+class Group(object):
     def __init__(self, evnum, objl, num, outgroup=False):
         self.evnum = evnum
         self.base = -1
@@ -1952,7 +1952,7 @@ class Group:
         self.outgroup = outgroup
         self.num = num
 
-class GroupCmp:
+class GroupCmp(object):
     def __init__(self, v):
         self.v = v
     def __lt__(self, g):
@@ -2004,7 +2004,7 @@ def print_group(g):
           (" [%d counters]" % needed_counters(g.evnum)) +
           (" [%d]" % g.base if args.debug else ""), 75, "  ")
 
-class Scheduler:
+class Scheduler(object):
     """Schedule events into groups."""
 
     def __init__(self):

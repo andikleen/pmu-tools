@@ -42,7 +42,7 @@ def open_logfile(name, typ):
     except IOError:
         sys.exit("Cannot open logfile %s" % name)
 
-class Output:
+class Output(object):
     """Abstract base class for Output classes."""
     def __init__(self, logfile, version, cpu, args):
         if args.split_output and args.per_thread + args.per_core + args.per_socket + args.global_ > 0:

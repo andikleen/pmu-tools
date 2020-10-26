@@ -54,7 +54,7 @@ def reduced_counters():
             val = int(f.read())
     return 1 if val == 0 else 0
 
-class Env:
+class Env(object):
     def __init__(self):
         self.forcecpu = os.getenv("FORCECPU")
         self.forcecounters = os.getenv("FORCECOUNTERS")
@@ -62,7 +62,7 @@ class Env:
         self.hypervisor = os.getenv("HYPERVISOR")
         self.cpuinfo = os.getenv("CPUINFO")
 
-class CPU:
+class CPU(object):
     """Detect the CPU."""
     # overrides for easy regression tests
     def force_cpu(self, known_cpus):
