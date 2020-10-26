@@ -109,7 +109,7 @@ def warn_once(s):
         print(s, file=sys.stderr)
         warned.add(s)
 
-class PerfVersion:
+class PerfVersion(object):
     def __init__(self):
         minor = 0
         perf = os.getenv("PERF")
@@ -137,7 +137,7 @@ class PerfVersion:
 
 version = PerfVersion()
 
-class MSR:
+class MSR(object):
     def __init__(self):
         self.reg = {}
 
@@ -246,7 +246,7 @@ def gen_name(n, sup):
         n += "_k"
     return n
 
-class Event:
+class Event(object):
     def __init__(self, name, val, desc):
         self.val = val
         self.name = name
@@ -377,7 +377,7 @@ def convert_uncore(flags, extra_map):
                 break
     return o
 
-class UncoreEvent:
+class UncoreEvent(object):
     def __init__(self, name, row):
         self.name = name
         e = self
