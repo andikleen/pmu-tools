@@ -402,8 +402,6 @@ g.add_argument('--import', help='Import specified perf stat output file instead 
                 dest='import_')
 g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later',
                action='store_true')
-g.add_argument('--script-record', help='Use perf stat record in script for faster recording or '
-               'import generated perf.data (requires new perf)', action='store_true')
 g.add_argument('--drilldown', help='Automatically rerun to get more details on bottleneck', action='store_true')
 
 g = p.add_argument_group('Measurement filtering')
