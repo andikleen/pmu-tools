@@ -767,7 +767,7 @@ class PerfRun(object):
         if import_mode:
             if args.script_record:
                 self.perf = subprocess.Popen([perf, "stat", "report", "-x;", "-i", args.import_],
-                                             stderr=subprocess.PIPE)
+                                             stderr=subprocess.PIPE, **popentext)
                 return self.perf.stderr
             self.perf = None
             return flex_open_r(args.import_)
