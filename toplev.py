@@ -32,12 +32,7 @@ import bisect
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby, chain
-if sys.version_info.major == 3:
-    from itertools import zip_longest
-else:
-    from itertools import izip_longest
-    zip_longest = izip_longest
-from listutils import cat_unique, dedup, filternot, not_list, append_dict, padlist
+from listutils import cat_unique, dedup, filternot, not_list, append_dict, padlist, zip_longest
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat

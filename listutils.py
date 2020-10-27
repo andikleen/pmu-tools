@@ -1,6 +1,12 @@
 # generic utilities for lists
-
+import sys
 from itertools import chain
+
+if sys.version_info.major == 3:
+    from itertools import zip_longest
+else:
+    from itertools import izip_longest
+    zip_longest = izip_longest
 
 def flatten(x):
     return list(chain(*x))
