@@ -113,7 +113,6 @@ unsup_events = (
 constraint_fixes = dict()
 
 event_nocheck = False
-import_mode = False
 
 errata_whitelist = []
 
@@ -531,8 +530,7 @@ elif args.csv or args.xlsx: # not for args.graph
 else:
     idle_threshold = 0.05
 
-import_mode = args.import_ is not None
-event_nocheck = import_mode or args.no_check
+event_nocheck = args.import_ or args.no_check
 
 feat = PerfFeatures(args)
 pversion = ocperf.PerfVersion()
@@ -759,7 +757,7 @@ def gen_script(r):
 class PerfRun(object):
     """Control a perf subprocess."""
     def execute(self, r):
-        if import_mode:
+        if args.import_:
             if args.script_record:
                 self.perf = subprocess.Popen([perf, "stat", "report", "-x;", "-i", args.import_],
                                              stderr=subprocess.PIPE, **popentext)
@@ -2910,7 +2908,7 @@ if not args.no_util:
 if args.power and feat.supports_power:
     import power_metrics
     power_metrics.Setup(runner)
-    if not args.quiet and not import_mode and not args.print:
+    if not args.quiet and not args.import_ and not args.print:
         print("Running with --power. Will measure complete system.")
     if args.single_thread:
         print("--single-thread conflicts with --power")
@@ -2952,7 +2950,7 @@ if not smt_mode and not args.single_thread and "-A" not in rest:
 
 full_system = False
 if not args.single_thread and smt_mode:
-    if not args.quiet and not import_mode:
+    if not args.quiet and not args.import_:
         print("Will measure complete system.")
     if smt_mode:
         if args.cpu:
