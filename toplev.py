@@ -402,6 +402,8 @@ g.add_argument('--import', help='Import specified perf stat output file instead 
                 dest='import_')
 g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later',
                action='store_true')
+g.add_argument('--script-record', help='Use perf stat record in script for faster recording or '
+               'import generated perf.data (requires new perf)', action='store_true')
 g.add_argument('--drilldown', help='Automatically rerun to get more details on bottleneck', action='store_true')
 
 g = p.add_argument_group('Measurement filtering')
@@ -731,19 +733,30 @@ def gen_script(r):
     print("# Generated from 'toplev " + " ".join(sys.argv) + " for CPU " + cpu.cpu)
     print("# Show output with toplev.py " +
           " ".join([x for x in sys.argv if x != "--gen-script"]) +
-          " --import toplev_perf.csv --force-cpuinfo toplev_cpuinfo --force-topology toplev_topology --force-cpu " +
-          cpu.cpu)
+          " --import toplev_perf%s --force-cpuinfo toplev_cpuinfo --force-topology toplev_topology --force-cpu " % (
+                ".data" if args.script_record else ".csv") + cpu.cpu)
     print("# print until Ctrl-C or run with command on command line (e.g. -a -I 1000 sleep 10)")
     print("# override output file names with OUT=... script (default toplev_...)")
-    print("# enable compression with POSTFIX=.xz script")
+    if not args.script_record:
+        print("# enable compression with POSTFIX=.xz script")
     print("OUT=${OUT:-toplev}")
+    print("PERF=${PERF:-%s}" % perf)
     print("find /sys/devices > ${OUT}_topology")
     print("cat /proc/cpuinfo > ${OUT}_cpuinfo")
+    r[0] = "$PERF"
     i = r.index('--log-fd')
     r[i] = "-o"
-    r[i + 1] = "${OUT}_perf.csv${POSTFIX}"
+    if args.script_record:
+        r[i + 1] = "${OUT}_perf.data"
+        i = r.index("stat")
+        r[i] = "stat record --quiet"
+    else:
+        r[i + 1] = "${OUT}_perf.csv${POSTFIX}"
     i = r.index('-x;')
-    r[i] = '-x\\;'
+    if args.script_record:
+        del r[i]
+    else:
+        r[i] = '-x\\;'
     i = r.index('-e')
     r[i+1] = "'" + r[i+1] + "'"
     print(" ".join(r + ['"$@"']))
@@ -752,6 +765,10 @@ class PerfRun(object):
     """Control a perf subprocess."""
     def execute(self, r):
         if import_mode:
+            if args.script_record:
+                self.perf = subprocess.Popen([perf, "stat", "report", "-x;", "-i", args.import_],
+                                             stderr=subprocess.PIPE)
+                return self.perf.stderr
             self.perf = None
             return flex_open_r(args.import_)
 

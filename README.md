@@ -8,6 +8,9 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev can now generate scripts to collect data with perf stat record to lower runtime
+  collection overhead, and import the perf.data, using a new --script-record option.
+  This currently requires unreleased perf patches, hopefully in Linux 5.11.
 * toplev can now support json files for Chrome's about://tracing with --json
 * toplev now supports --no-multiplex in interval mode (-Ixxx)
 * The tools now don't force python 2 anymore to support running out of the box

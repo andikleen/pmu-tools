@@ -398,6 +398,14 @@ OUT=tltest$$ ./script$$ $LOAD
 $WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 
+if $PERF stat record --quiet true ; then
+$WRAP ./toplev.py --script-record --all --gen-script > script$$
+chmod +x script$$
+OUT=tltest$$ ./script$$ $LOAD
+$WRAP ./toplev.py --script-record --all --import tltest$$_perf.data --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
+rm tltest$$_perf.data tltest$$_topology tltest$$_cpuinfo script$$
+fi
+
 if python -c 'import xlsxwriter' ; then
 $WRAP ./toplev.py --xlsx dummy.xlsx --all --gen-script > script$$
 chmod +x script$$
