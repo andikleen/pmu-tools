@@ -23,6 +23,7 @@ OPT="${OPT:-}"
 MATCH=${MATCH:-}
 NOGROUP=${NOGROUP:-}
 NORES="${NORES:-}"
+PERF=${PERF:-perf}
 
 OPT="$OPT --perf"
 
@@ -398,7 +399,7 @@ OUT=tltest$$ ./script$$ $LOAD
 $WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 
-if $PERF stat record --quiet true ; then
+if $PERF stat record --quiet true >/dev/null 2>/dev/null ; then
 $WRAP ./toplev.py --script-record --all --gen-script > script$$
 chmod +x script$$
 OUT=tltest$$ ./script$$ $LOAD
