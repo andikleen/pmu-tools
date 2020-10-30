@@ -2992,7 +2992,7 @@ if args.subset:
     if not args.import_:
         sys.exit("--subset requires --import mode")
     if args.script_record:
-        sys.exit("--subset cannot be used with --script-record. Generate temp file with perf stat report -x\;")
+        sys.exit("--subset cannot be used with --script-record. Generate temp file with perf stat report -x\\;")
     if not args.interval:
         sys.exit("--subset requires --interval")
 
