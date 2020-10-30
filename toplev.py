@@ -313,13 +313,14 @@ def event_group(evlist):
         else:
             g = list(g)
             e = ",".join(g)
-            if needed_counters(g) <= cpu.counters:
+            n = needed_counters(g)
+            if n <= cpu.counters:
                 e = "{%s}" % e
                 if args.pinned and all([ismetric(x) or x == "slots" for x in g]):
                     e += ":D"
             else:
                 # the scheduler should have avoided that
-                print("group", e, " does not fit in pmu", file=sys.stderr)
+                warn("group %s with %d does not fit in pmu" % (e, n))
             l.append(e)
     return ",".join(l)
 
