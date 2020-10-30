@@ -24,11 +24,13 @@
 # FORCE_NMI_WATCHDOG=1  Force NMI watchdog mode
 # KERNEL_VERSION=...    Force kernel version (e.g. 5.0)
 # FORCEMETRICS=1    Force fixed metrics and slots
+# TLSEED=n          Set seed for --subset sample: sampling
 
 from __future__ import print_function
 import sys, os, re, textwrap, platform, pty, subprocess
 import argparse, time, types, csv, copy
 import bisect
+import random
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby, chain
@@ -398,6 +400,11 @@ g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumpt
 g.add_argument('--import', help='Import specified perf stat output file instead of running perf. '
                'Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
                 dest='import_')
+g.add_argument('--subset', help="Process only a subset of the input file with --import. "
+        "Valid syntax: a-b. Process from seek offset a to b. b is optional. "
+        "x/n%% process x'th n percent slice. Starts counting at 0. Add - to process to end of input. "
+        "sample:n%% Sample each time stamp in input with n%% (0-100%%) probability. "
+        "toplev will automatically round to the next time stamp boundary.")
 g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later',
                action='store_true')
 g.add_argument('--script-record', help='Use perf stat record in script for faster recording or '
@@ -760,6 +767,79 @@ def gen_script(r):
 
 class PerfRun(object):
     """Control a perf subprocess."""
+    def __init__(self):
+        self.skip_to_next_ts = False
+        self.end_seek_offset = None
+        self.sample_prob = None
+        self.skip_line = False
+        self.crossed_eof = False
+
+    def handle_inputsubset(self, f, iss):
+        m = re.match(r'(\d+)-?(\d+)?$', iss)
+        if m:
+            off = int(m.group(1))
+            f.seek(off)
+            if m.group(2):
+                self.end_seek_offset = int(m.group(2))
+            if off:
+                self.skip_to_next_ts = True
+                self.skip_line = True
+            return
+        m = re.match(r'(\d+)/([0-9.]+)%(-)?$', iss)
+        if m:
+            f.seek(0, 2)
+            size = f.tell()
+            chunk = int(size * (float(m.group(2)) / 100.))
+            nth = int(m.group(1))
+            if (nth+1)*chunk > size:
+                sys.exit("--subset out of range")
+            f.seek(chunk * nth)
+            if m.group(3) is None:
+                self.end_seek_offset = chunk * (1+nth)
+            if chunk * nth != 0:
+                self.skip_to_next_ts = True
+                self.skip_line = True
+            return
+        m = re.match('sample:([0-9.]+)%?$', iss)
+        if m:
+            self.sample_prob = float(m.group(1)) / 100.
+            self.random = random.Random()
+            self.sampling = False
+            return
+        sys.exit("Unparseable --subset %s" % iss)
+
+    def skip_input(self):
+        if self.skip_to_next_ts:
+            return True
+        if self.sample_prob:
+            return not self.sampling
+        return False
+
+    def skip_first_line(self):
+        if self.skip_line:
+            self.skip_line = False
+            return True
+        return False
+
+    def next_timestamp(self):
+        if self.end_seek_offset:
+            off = self.inputf.tell()
+            if self.crossed_eof:
+                return True
+            if self.end_seek_offset <= off:
+                self.crossed_eof = True
+                return False
+        if self.skip_to_next_ts:
+            self.skip_to_next_ts = False
+        if self.sample_prob:
+            # XXX pick some distribution?
+            r = self.random.random()
+            s = os.getenv("TLSEED")
+            if s:
+                self.random.seed(int(s))
+            self.sampling = r < self.sample_prob
+        return False
+
     def execute(self, r):
         if args.import_:
             if args.script_record:
@@ -767,7 +847,14 @@ class PerfRun(object):
                                              stderr=subprocess.PIPE, **popentext)
                 return self.perf.stderr
             self.perf = None
-            return flex_open_r(args.import_)
+            f = flex_open_r(args.import_)
+            if args.subset:
+                try:
+                    self.handle_inputsubset(f, args.subset)
+                except OSError, io.UnsupportedOperation:
+                    sys.exit("--subset not supported on compressed files. Uncompress them first.")
+            self.inputf = f
+            return f
 
         if args.gen_script:
             gen_script(r)
@@ -1388,10 +1475,9 @@ def do_execute(runner, events, out, rest):
     while True:
         try:
             l = inf.readline()
+            origl = l
             if not l:
                 break
-            if args.perf_output:
-                args.perf_output.write(l)
 
             # some perf versions break CSV output lines incorrectly for power events
             if l.endswith("Joules"):
@@ -1409,24 +1495,39 @@ def do_execute(runner, events, out, rest):
         if re.match(r'^(Timestamp|Value|Location)', l):
             # header generated by toplev in import mode. ignore.
             continue
+        if prun.skip_first_line():
+            print("skipping", l, end='')
+            continue
+        if l.strip() == "":
+            continue
         if args.interval:
             m = re.match(r"\s+([0-9.]{9,});(.*)", l)
             if m:
                 interval = float(m.group(1))
                 l = m.group(2)
                 if interval != prev_interval:
+                    # skip the first because we can't tell when it started
+                    if prev_interval != 0.0 and prun.next_timestamp():
+                        break
                     if res:
-                        set_interval(env, interval - prev_interval, prev_interval)
+                        interval_dur = interval - prev_interval
+                        set_interval(env, interval_dur, prev_interval)
                         yield 0, res, rev, interval, valstats, env
                         res = defaultdict(list)
                         rev = defaultdict(list)
                         valstats = defaultdict(list)
                         env = dict()
                     prev_interval = interval
+                    start = interval
             elif not l[:1].isspace():
                 # these are likely bogus summary lines printed by v5.8 perf stat
                 # just ignore
                 continue
+
+        if prev_interval != 0.0 and prun.skip_input():
+            continue
+        if args.perf_output:
+            args.perf_output.write(origl)
 
         n = l.split(";")
 
@@ -2880,6 +2981,17 @@ model.Setup(runner)
 
 if args.gen_script:
     args.quiet = True
+
+if args.import_ and args.interval is None:
+    args.interval = 1000
+
+if args.subset:
+    if not args.import_:
+        sys.exit("--subset requires --import mode")
+    if args.script_record:
+        sys.exit("--subset cannot be used with --script-record. Generate temp file with perf stat report -x\;")
+    if not args.interval:
+        sys.exit("--subset requires --interval")
 
 if "Errata_Whitelist" in model.__dict__:
     errata_whitelist += model.Errata_Whitelist.split(";")

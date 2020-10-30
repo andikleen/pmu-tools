@@ -8,6 +8,9 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now supports a --subset argument that can process parts of --import input files,
+  either by splitting them or by sampling. This is a building block for more efficient
+  processing of large input files.
 * toplev can now generate scripts to collect data with perf stat record to lower runtime
   collection overhead, and import the perf.data, using a new --script-record option.
   This currently requires unreleased perf patches, hopefully in Linux 5.11.
