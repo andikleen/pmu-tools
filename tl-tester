@@ -27,6 +27,10 @@ PERF=${PERF:-perf}
 
 OPT="$OPT --perf"
 
+case "$PERF" in
+*fake-perf.py) NORES=1 ;;
+esac
+
 export TL_TESTER=1
 
 failed() {
