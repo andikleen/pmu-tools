@@ -159,14 +159,17 @@ perf = os.getenv("PERF")
 if not perf:
     perf = "perf"
 
+def warn(msg):
+    print("warning: " + msg, file=sys.stderr)
+    if test_mode:
+        assert 0
+
 warned = set()
 
 def warn_once(msg):
     if msg not in warned:
-        print(msg, file=sys.stderr)
+        warn(msg)
         warned.add(msg)
-    if test_mode:
-        assert 0
 
 def debug_print(x):
     if args.debug:
@@ -1438,8 +1441,7 @@ def do_execute(runner, events, out, rest):
         elif is_event(n, 2):
             title, count, event, off = n[0], n[1], n[2], 3
         else:
-            print("unparseable perf output", file=sys.stderr)
-            sys.stdout.write(l)
+            warn("unparseable perf output\n%s" % l.rstrip())
             continue
 
         # dummy event used as separator to avoid merging problems
@@ -1459,8 +1461,7 @@ def do_execute(runner, events, out, rest):
             multiplex = 0.
             val = 0
         else:
-            print("unparseable perf count", file=sys.stderr)
-            sys.stdout.write(l)
+            warn("unparseable perf count\n%s" % l.rstrip())
             continue
 
         # post fixes:
@@ -2700,7 +2701,7 @@ def do_xlsx():
                 print(ncmd)
             ret = os.system(ncmd)
             if ret:
-                print("interval-normalize failed: %d" % ret, file=sys.stderr)
+                warn("interval-normalize failed: %d" % ret)
                 return ret
             extrafiles.append(nname)
             extranames.append("n" + n)
