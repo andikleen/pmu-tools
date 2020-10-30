@@ -265,7 +265,9 @@ def resource_split(evlist):
     return False
 
 def num_generic_counters(evset):
-    return len(evset - set(add_filter(fixed_events)) - outgroup_events - sched_ignore_events)
+    # XXX does not handle formulas having different u/k qualifiers, but we would need to fix the
+    # callers to be consistent to handle that
+    return len(evset - set(add_filter(fixed_events)) - fixed_events - outgroup_events - sched_ignore_events)
 
 FORCE_SPLIT = 100
 
