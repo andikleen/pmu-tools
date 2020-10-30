@@ -32,7 +32,7 @@ import bisect
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby, chain
-from listutils import cat_unique, dedup, filternot, not_list, append_dict, padlist, zip_longest
+from listutils import cat_unique, dedup, filternot, not_list, append_dict, zip_longest
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -1295,24 +1295,21 @@ def execute_no_multiplex(runner, out, rest):
         for ret, res, rev, interval, valstats, env in do_execute(runner, outg + [g], out, rest):
             lresults.append([ret, res, rev, interval, valstats, env])
         if n > 0:
-            for r, lr in zip_longest(results, lresults):
-                if lr is None or r is None:
-                    if lr is None:
-                        lr = [1, [], [], -1, {}]
-                    if r is None:
-                        r = [1, [], [], -1, {}]
-                    print("warning: different number of measurement intervals on rerun. Workload differs in duration?",
-                            file=sys.stderr)
+            if len(lresults) > len(results):
+                print("different number of intervals on rerun. Workload run time not stable?", file=sys.stderr)
+                while len(lresults) > len(results):
+                    lresults.pop()
+            # XXX handle results > lresults
+            for r, lr in zip(results, lresults):
                 r[0] = lr[0]
                 # use interval of first
                 for j in (1, 2, 4, 5):
                     diff = len(results[0][j]) - len(lr[j])
                     if diff:
-                        print("warning: %s perf output values on rerun [%d difference(s)] %s %s" %
+                        warn("%s perf output values on rerun [%d difference(s)] %s %s" %
                                 ("missing" if diff > 0 else "too few", diff, r[1],
-                                (("at %f" % lr[3]) if lr[3] else "")),
-                                file=sys.stderr)
-                    append_dict(r[j], padlist(lr[j], len(results[0][j])))
+                                (("at %f" % lr[3]) if lr[3] else "")))
+                    append_dict(r[j], lr[j])
         ctx.restore()
         outg = []
         n += 1
