@@ -43,5 +43,5 @@ def append_dict(a, b):
 
 def padlist(l, length, val=0.0):
     if len(l) < length:
-        return l + (val,)*(length-len(l))
+        return l + [val]*(length-len(l))
     return l
