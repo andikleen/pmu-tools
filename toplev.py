@@ -1381,8 +1381,10 @@ def do_execute(runner, events, out, rest):
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
     interval = None
-    start = time.time()
+    interval_dur = 0.0
     init_res = copy.deepcopy(res)
+    if not args.import_ and not args.interval:
+        start = time.time()
     while True:
         try:
             l = inf.readline()
@@ -1518,7 +1520,14 @@ def do_execute(runner, events, out, rest):
                      stddev, multiplex)
     inf.close()
     if 'interval-s' not in env:
-        set_interval(env, time.time() - start, start)
+        if not args.import_ and not args.interval:
+            set_interval(env, time.time() - start, start)
+        elif args.interval:
+            set_interval(env, interval_dur, 0.0)
+        else:
+            print("warning: cannot determine time duration. Per second metrics may be wrong. Use -Ixxx.",
+                    file=sys.stderr)
+            set_interval(env, 0, 0)
     ret = prun.wait()
     print_account(account)
     yield ret, res, rev, interval, valstats, env
