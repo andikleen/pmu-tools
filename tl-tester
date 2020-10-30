@@ -119,6 +119,8 @@ FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu icl --pinned --print --all | tee lo
 grep :D log$$
 rm log$$
 
+$WRAP ./toplev -h > /dev/null
+
 # test L1 uses a single group
 onegroup() {
 	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
