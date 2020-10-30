@@ -33,9 +33,17 @@ esac
 
 export TL_TESTER=1
 
+dumplogs() {
+	[ -f nflog$$ ] && (
+		sort nflog$$ | uniq > logsum$$
+		echo -n "unreferenced: " ; grep -c "unreferenced" logsum$$
+		egrep -v "missing (PMU|umask)|event_download|unreferenced" logsum$$
+	) && rm nflog$$ logsum$$
+}
+
 failed() {
 	echo FAILED
-	[ -f nflog$$ ] && ( sort nflog$$ | uniq ) && rm nflog$$
+	dumplogs
 }
 trap failed ERR 0
 
@@ -455,7 +463,7 @@ for i in $ALLCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$cpu" ] && continue
 	rm log$$.$i ;
 done
-[ -f nflog$$ ] && ( sort nflog$$ | uniq ) && rm nflog$$
+dumplogs
 times
 echo
 echo "SUCCEEDED"
