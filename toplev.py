@@ -259,7 +259,7 @@ def resource_split(evlist):
     return False
 
 def num_generic_counters(evset):
-    return len(evset - fixed_events - outgroup_events - sched_ignore_events)
+    return len(evset - set(add_filter(fixed_events)) - outgroup_events - sched_ignore_events)
 
 FORCE_SPLIT = 100
 
