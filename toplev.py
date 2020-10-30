@@ -31,6 +31,7 @@ import sys, os, re, textwrap, platform, pty, subprocess
 import argparse, time, types, csv, copy
 import bisect
 import random
+import io
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby, chain
@@ -851,7 +852,9 @@ class PerfRun(object):
             if args.subset:
                 try:
                     self.handle_inputsubset(f, args.subset)
-                except OSError, io.UnsupportedOperation:
+                except OSError:
+                    sys.exit("--subset not supported on compressed files. Uncompress them first.")
+                except io.UnsupportedOperation:
                     sys.exit("--subset not supported on compressed files. Uncompress them first.")
             self.inputf = f
             return f
