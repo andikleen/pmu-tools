@@ -799,6 +799,8 @@ def separator(x):
 def add_filter_event(e):
     if "/" in e and not e.startswith("cpu"):
         return e
+    if e == "dummy" or e == "emulation-faults":
+        return e
     if ":" in e:
         s = ""
     else:
