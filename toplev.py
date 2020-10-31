@@ -492,6 +492,7 @@ g.add_argument('--perf', help='Print perf command line', action='store_true')
 g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
 g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5%% of busiest if not CSV, specify percent)",
                default=None, type=float)
+g.add_argument('--no-output', help="Don't print computed output. Does not affect --summary.", action='store_true')
 
 g = p.add_argument_group('Environment')
 g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
@@ -1347,7 +1348,8 @@ def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
         interval = float('nan')
     if runner.summary:
         runner.summary.add(res, rev, valstats, env)
-    print_and_split_keys(runner, res, rev, valstats, out, interval, env)
+    if not args.no_output:
+       print_and_split_keys(runner, res, rev, valstats, out, interval, env)
 
 def print_summary(runner, out):
     if not args.summary:
