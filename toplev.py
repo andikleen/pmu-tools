@@ -1519,7 +1519,7 @@ def do_execute(runner, events, out, rest):
                 # just ignore
                 continue
 
-        if prev_interval != 0.0 and prun.skip_input():
+        if prun.skip_input():
             continue
         if args.perf_output:
             args.perf_output.write(origl)
@@ -2977,16 +2977,11 @@ model.Setup(runner)
 if args.gen_script:
     args.quiet = True
 
-if args.import_ and args.interval is None:
-    args.interval = 1000
-
 if args.subset:
     if not args.import_:
         sys.exit("--subset requires --import mode")
     if args.script_record:
         sys.exit("--subset cannot be used with --script-record. Generate temp file with perf stat report -x\\;")
-    if not args.interval:
-        sys.exit("--subset requires --interval")
 
 if "Errata_Whitelist" in model.__dict__:
     errata_whitelist += model.Errata_Whitelist.split(";")
