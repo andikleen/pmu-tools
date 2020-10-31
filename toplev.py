@@ -1441,15 +1441,6 @@ def dump_raw(interval, title, event, val, index, stddev, multiplex):
     if args.valcsv:
         runner.valcsv.writerow((interval, title, g.num, ename, val, event, index,
                                 stddev, multiplex, nodes))
-perf_fields = [
-    r"[0-9.]+",
-    r"<.*?>",
-    r"S\d+-C\d+?",
-    r"S\d+",
-    r"raw 0x[0-9a-f]+",
-    r"Joules",
-    ""]
-
 def group_join(events):
     e = ""
     last = None
