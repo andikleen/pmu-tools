@@ -1521,7 +1521,7 @@ def do_execute(runner, events, out, rest):
         if prun.skip_input():
             continue
         if args.perf_output:
-            args.perf_output.write(origl)
+            args.perf_output.write(origl.rstrip() + "\n")
 
         n = l.split(";")
 
