@@ -229,7 +229,7 @@ def unsup_event(e, table, min_kernel=None):
     return False
 
 def remove_qual(ev):
-    return re.sub(r':[ku]', '', re.sub(r'/[ku+]', '/', ev))
+    return re.sub(r':[ku]+', '', re.sub(r'/[ku]+', '/', ev))
 
 def limited_overflow(evlist):
     assigned = Counter([limited_counters[x] for x in evlist if x in limited_counters]).values()
@@ -1550,7 +1550,7 @@ def do_execute(runner, events, out, rest):
 
         title = title.replace("CPU", "")
         # code later relies on stripping ku flags
-        event = event.replace("/k", "/").replace("/u", "/")
+        event = remove_qual(event)
 
         multiplex = float('nan')
         event = event.rstrip()
