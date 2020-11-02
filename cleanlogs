@@ -1,7 +1,10 @@
 #!/bin/sh
 # clean up tl-tester logs after failures
 rm log[0-9]*
-rm val[0-9]*
+rm log-[0-9]*
+rm log-all*
+rm log-combined*
+rm val[0-9]*.csv
 rm x*.png
 rm x*.csv
 rm y*.csv
@@ -15,4 +18,7 @@ rm perf.data.*.old
 rm tlog[0-9]*
 rm tltest*_*
 rm perf.data*
-rm perfo*.csv
+rm perf[os]*.csv
+rm val.[0-9]*.csv
+rm x*.xlsx
+rm script[0-9]*
