@@ -268,12 +268,12 @@ $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-o
 rm log$$ val$$.csv perfo$$.csv
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --no-uncore --perf-output x$$.csv --all $LOADLONG
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --no-uncore --import x$$.csv --all -o log-all.$$
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --subset 0/50% --valcsv v0.$$.csv --no-uncore --import x$$.csv --all -o log-1.$$
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --subset 1/50% --valcsv v1.$$.csv --no-uncore --import x$$.csv --all -o log-2.$$
-cat log-{1,2}.$$ | sed '/^#/d' > log-combined.$$
-sed '/^#/d' log-all.$$ > log-allf.$$
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --subset 0/50% --valcsv val.0.$$.csv --no-uncore --import x$$.csv --all -o log-1.$$
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --subset 1/50% --valcsv val.1.$$.csv --no-uncore --import x$$.csv --all -o log-2.$$
+cat log-{1,2}.$$ | sed -e '/^#/d' > log-combined.$$
+sed -e '/^#/d' log-all.$$ > log-allf.$$
 diff -u log-combined.$$ log-allf.$$
-rm log-{1,2,combined,all,allf}.$$ v{0,1}.$$.csv
+rm log-{1,2,combined,all,allf}.$$ val.{0,1}.$$.csv
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --subset 0-1000 --no-uncore --import x$$.csv --all
 TLSEED=1 \
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --subset 'sample:10%' --no-uncore --import x$$.csv --all
