@@ -3145,7 +3145,7 @@ runner.sched.schedule(runner.olist)
 def measure_and_sample(count):
     while True:
         try:
-            if args.no_multiplex:
+            if args.no_multiplex and not args.import_:
                 ret = execute_no_multiplex(runner, out, rest)
             else:
                 ret = execute(runner, out, rest)
