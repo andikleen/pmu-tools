@@ -1401,7 +1401,6 @@ def execute_no_multiplex(runner, out, rest):
             # XXX handle results > lresults
             for r, lr in zip(results, lresults):
                 r[0] = lr[0]
-                # use interval of first
                 for j in (1, 2, 4, 5):
                     diff = len(results[0][j]) - len(lr[j])
                     if diff:
