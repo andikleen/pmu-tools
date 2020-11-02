@@ -35,7 +35,7 @@ import io
 from fnmatch import fnmatch
 from collections import defaultdict, Counter
 from itertools import compress, groupby, chain
-from listutils import cat_unique, dedup, filternot, not_list, append_dict, zip_longest
+from listutils import cat_unique, dedup, filternot, not_list, append_dict, zip_longest, flatten
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -1462,6 +1462,7 @@ def do_execute(runner, events, out, rest):
     valstats = defaultdict(list)
     env = dict()
     evstr = group_join(events)
+    flat_events = flatten(events)
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
@@ -1548,8 +1549,11 @@ def do_execute(runner, events, out, rest):
             continue
 
         title = title.replace("CPU", "")
+
         # code later relies on stripping ku flags
         event = remove_qual(event)
+
+        assert event == remove_qual(flat_events[len(res[title])])
 
         multiplex = float('nan')
         event = event.rstrip()
