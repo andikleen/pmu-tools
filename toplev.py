@@ -28,7 +28,7 @@
 
 from __future__ import print_function
 import sys, os, re, textwrap, platform, pty, subprocess
-import argparse, time, types, csv, copy
+import argparse, time, types, csv
 import bisect
 import random
 import io
@@ -338,6 +338,10 @@ def exe_dir():
     if d:
         return d
     return "."
+
+def add_args(rest, *args):
+    a = [x for x in args if x not in rest]
+    return a + rest
 
 p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
 description='''
@@ -2906,10 +2910,6 @@ def ht_warning():
         print("WARNING: HT enabled", file=sys.stderr)
         print("Measuring multiple processes/threads on the same core may is not reliable.",
                 file=sys.stderr)
-
-def add_args(rest, *args):
-    a = [x for x in args if x not in rest]
-    return a + rest
 
 def setup_metrics(model):
     force_metrics = os.getenv("FORCEMETRICS") is not None
