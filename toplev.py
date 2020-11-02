@@ -1495,9 +1495,9 @@ def do_execute(runner, events, out, rest):
         if prun.skip_first_line():
             continue
         if args.interval:
-            m = re.match(r"\s+([0-9.]{9,});(.*)", l)
+            m = re.match(r"\s+([0-9.]{9,}|SUMMARY);(.*)", l)
             if m:
-                interval = float(m.group(1))
+                interval = float(m.group(1)) if m.group(1) != "SUMMARY" else 0.0
                 l = m.group(2)
                 if interval != prev_interval:
                     # skip the first because we can't tell when it started
