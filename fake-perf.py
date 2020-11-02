@@ -18,6 +18,5 @@ while j < len(sys.argv):
         out = open(av[j], "w")
     elif av[j] == "--":
         process = False
-    print(av[j], file=out, end=' ')
     j += 1
 out.write("\n")
