@@ -1467,7 +1467,6 @@ def do_execute(runner, events, out, rest):
     prev_interval = 0.0
     interval = None
     interval_dur = 0.0
-    init_res = copy.deepcopy(res)
     if not args.import_ and not args.interval:
         start = time.time()
     while True:
@@ -1612,7 +1611,7 @@ def do_execute(runner, events, out, rest):
                      title,
                      event,
                      val,
-                     len(res[title]) - len(init_res[title]) - 1,
+                     len(res[title]) - 1,
                      stddev, multiplex)
     inf.close()
     if 'interval-s' not in env:
