@@ -33,7 +33,7 @@ import bisect
 import random
 import io
 from fnmatch import fnmatch
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, OrderedDict
 from itertools import compress, groupby, chain
 from listutils import cat_unique, dedup, filternot, not_list, append_dict, zip_longest, flatten
 from objutils import has, safe_ref, map_fields
@@ -487,6 +487,7 @@ g.add_argument('--json', help='Print output in JSON format for Chrome about://tr
 g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
 g.add_argument('--no-area', help='Hide area column', action='store_true')
 g.add_argument('--perf-output', help='Save perf stat output in specified file')
+g.add_argument('--perf-summary', help='Save summarized perf stat output in specified file')
 g.add_argument('--no-perf', help=argparse.SUPPRESS, action='store_true') # noop, for compatibility
 g.add_argument('--perf', help='Print perf command line', action='store_true')
 g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
@@ -651,6 +652,13 @@ if args.perf_output:
         args.perf_output = flex_open_w(args.perf_output)
     except IOError as e:
         sys.exit("Cannot open perf output file %s: %s" % (args.perf_output, e))
+
+if args.perf_summary:
+    try:
+        args.perf_summary = flex_open_w(args.perf_summary)
+    except IOError as e:
+        sys.exit("Cannot open perf summary file %s: %s" % (args.perf_summary, e))
+    # XXX force no_uncore because the resulting file cannot be imported otherwise?
 
 if args.all:
     args.tsx = True
@@ -1352,6 +1360,22 @@ def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
        print_and_split_keys(runner, res, rev, valstats, out, interval, env)
 
 def print_summary(runner, out):
+    if args.perf_summary:
+        p = runner.summary_perf
+        for sv in zip_longest(*p.values()):
+            for ind, title in enumerate(p.keys()):
+                r = sv[ind]
+                l = []
+                if args.interval:
+                    l.append("\tSUMMARY")
+                if full_system:
+                    l.append(("CPU" + title) if re.match(r'\d+$', title) else title)
+                if output_numcpus:
+                    l.append("0") # XXX
+                args.perf_summary.write(";".join(l + ["%f" % r[0], r[1],
+                                                      r[2], "%f" % r[3],
+                                                      "%.2f" % r[4], "", ""]) + "\n")
+
     if not args.summary:
         return
     print_and_split_keys(runner, runner.summary.res, runner.summary.rev,
@@ -1383,6 +1407,7 @@ def execute_no_multiplex(runner, out, rest):
     outg = []
     n = 0
     ctx = SaveContext()
+    resoff = Counter()
     # runs could be further reduced by tweaking
     # the scheduler to avoid any duplicated events
     for g, gg in zip(groups, runner.sched.evgroups):
@@ -1391,8 +1416,12 @@ def execute_no_multiplex(runner, out, rest):
             continue
         print("RUN #%d of %d: %s" % (n, num_runs, " ".join([quote(o.name) for o in gg.objl])))
         lresults = results if n == 0 else []
-        for ret, res, rev, interval, valstats, env in do_execute(runner, outg + [g], out, rest):
+        res = None
+        for ret, res, rev, interval, valstats, env in do_execute(runner, outg + [g], out, rest, resoff):
             lresults.append([ret, res, rev, interval, valstats, env])
+        if res:
+            for t in res.keys():
+                resoff[t] += len(res[t])
         if n > 0:
             if len(lresults) > len(results):
                 print("different number of intervals on rerun. Workload run time not stable?", file=sys.stderr)
@@ -1455,7 +1484,19 @@ def group_join(events):
         last = j[-1]
     return e
 
-def do_execute(runner, events, out, rest):
+def update_perf_summary(runner, off, title, val, event, unit, multiplex):
+    if title not in runner.summary_perf:
+        runner.summary_perf[title] = []
+    if len(runner.summary_perf[title]) <= off:
+        runner.summary_perf[title].append([val, unit, event, 0, multiplex])
+    else:
+        r = runner.summary_perf[title][off]
+        r[0] += val
+        assert r[1] == unit
+        assert r[2] == event or event == "dummy"
+        r[3] = min(r[3], multiplex)
+
+def do_execute(runner, events, out, rest, resoff = Counter()):
     res = defaultdict(list)
     rev = defaultdict(list)
     valstats = defaultdict(list)
@@ -1616,6 +1657,11 @@ def do_execute(runner, events, out, rest):
                      val,
                      len(res[title]) - 1,
                      stddev, multiplex)
+
+        if args.perf_summary:
+            # XXX add unit, enabled, num-cpus
+            update_perf_summary(runner, resoff[title] + len(res[title]) - 1, title, val, event, "", multiplex)
+
     inf.close()
     if 'interval-s' not in env:
         if not args.import_ and not args.interval:
@@ -2398,6 +2444,7 @@ class Runner(object):
             self.summary = Summary()
         self.sched = Scheduler()
         self.printer = Printer(self.metricgroups)
+        self.summary_perf = OrderedDict()
 
     def __init__(self, max_level, idle_threshold):
         # always needs to be filtered by olist:
@@ -3091,16 +3138,21 @@ if ("Slots" not in core_domains and
     else:
         rest = ["--percore-show-thread"] + rest
 
-if args.perf_output:
+output_numcpus = False
+if args.perf_output or args.perf_summary:
     ph = []
     if args.interval:
         ph.append("Timestamp")
     if full_system:
         ph.append("Location")
-        if ("--per-socket" in rest or "--per-core" in rest) and "-A" not in rest:
+        if ("--per-socket" in rest or "--per-core" in rest) and not args.no_aggr:
             ph.append("Num-CPUs")
-    ph += ["Value", "Unit", "Event", "Run-Time", "Enabled"]
-    args.perf_output.write(";".join(ph) + "\n")
+            output_numcpus = True
+    ph += ["Value", "Unit", "Event", "Run-Time", "Enabled", "", ""]
+    if args.perf_output:
+        args.perf_output.write(";".join(ph) + "\n")
+    if args.perf_summary:
+        args.perf_summary.write(";".join(ph) + "\n")
 
 if args.core:
     runner.allowed_threads = [x for x in cpu.allcpus if display_core(x, False)]

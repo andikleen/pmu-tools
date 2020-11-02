@@ -309,6 +309,18 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --per-thread --json --all -o j$$.
 cat j$$.json | python -m json.tool
 rm j$$.json
 
+for MODE in -l3 "-a -A --all --no-uncore" ; do
+# exclude MUX for now because it has small variances, as well as /sec nodes
+COMMON="--force-cpu $DCPU $OPT -I100 --no-desc --summary --no-output --nodes=-MUX,-*_BW"
+
+$WRAP ./toplev.py $COMMON $MODE --perf-summary perfs$$.csv --perf-output perfo$$.csv -o log$$ --valcsv val.1.$$.csv $LOADLONG
+$WRAP ./toplev.py $COMMON $MODE --import perfs$$.csv --perf-output perfo.1.$$.csv --valcsv val.2.$$.csv -o log2.$$
+diff -u log$$ log2.$$
+$WRAP ./toplev $COMMON $MODE --import perfo$$.csv --perf-output perfo.2.$$.csv --valcsv val.3.$$.csv -o log3.$$
+diff -u log$$ log3.$$
+rm log{,2.,3.}$$ perf{s,o}$$.csv perfo.{1,2}.$$.csv val.{1,2,3}.$$.csv
+done
+
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --summary --per-thread --global --per-core --per-socket --json --all -o j$$.json $LOAD
 cat j$$.json | python -m json.tool
 rm j$$.json
