@@ -638,7 +638,7 @@ if args.xlsx:
         args.global_ = True
 
 if args.no_aggr:
-    rest = ["-A"] + rest
+    rest = add_args(rest, "-A")
 
 if args.valcsv:
     try:
@@ -3052,12 +3052,12 @@ if smt_mode and not os.getenv('FORCEHT'):
     if not any(map(core_node, runner.olist)):
         smt_mode = False
 
-if not smt_mode and not args.single_thread and "-A" not in rest:
+if not smt_mode and not args.single_thread and not args.no_aggr:
     multi = args.per_socket + args.per_core + args.per_thread + args.global_
     if multi > 0:
         rest = add_args(rest, "-a")
     if multi > 1 or args.per_thread:
-        rest = add_args(rest, "-A")
+        args.no_aggr = True
     if args.per_socket and multi == 1:
         rest = add_args(rest, "--per-socket")
     if args.per_core and multi == 1:
@@ -3074,10 +3074,11 @@ if not args.single_thread and smt_mode:
         if args.pid:
             sys.exit("-p/--pid mode not compatible with SMT. Use sleep in global mode.")
     check_root()
-    rest = add_args(rest, "-a", "-A")
+    rest = add_args(rest, "-a")
+    args.no_aggr = True
     full_system = True
 else:
-    full_system = "-A" in rest or "--per-core" in rest or "--per-socket" in rest
+    full_system = args.no_aggr or "--per-core" in rest or "--per-socket" in rest
 
 if ("Slots" not in core_domains and
         cpu.ht and
