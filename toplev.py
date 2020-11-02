@@ -1361,7 +1361,7 @@ def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
     if runner.summary:
         runner.summary.add(res, rev, valstats, env)
     if not args.no_output:
-       print_and_split_keys(runner, res, rev, valstats, out, interval, env)
+        print_and_split_keys(runner, res, rev, valstats, out, interval, env)
 
 def print_summary(runner, out):
     if args.perf_summary:
