@@ -2039,7 +2039,10 @@ class Summary(object):
                 self.res[j] = [a+b for a, b in zip(self.res[j], res[j])]
         self.rev = rev
         for j in valstats.keys():
-            self.valstats[j] = self.valstats[j] + valstats[j]
+            if len(self.valstats[j]) == 0:
+                self.valstats[j] = valstats[j]
+            else:
+                self.valstats[j] = [deprecated_combine_valstat([a,b]) for a, b in zip(self.valstats[j], valstats[j])]
         for j in env.keys():
             self.env[j] += env[j]
 
