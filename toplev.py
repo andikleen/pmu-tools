@@ -32,10 +32,11 @@ import argparse, time, types, csv
 import bisect
 import random
 import io
+import tempfile
 from fnmatch import fnmatch
 from collections import defaultdict, Counter, OrderedDict
 from itertools import compress, groupby, chain
-from listutils import cat_unique, dedup, filternot, not_list, append_dict, zip_longest, flatten
+from listutils import cat_unique, dedup, filternot, not_list, append_dict, zip_longest, flatten, findprefix
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
@@ -343,6 +344,52 @@ def add_args(rest, *args):
     a = [x for x in args if x not in rest]
     return a + rest
 
+def output_to_tmp(arg):
+    tmp = tempfile.mkstemp(prefix="toplev")
+    if not args.output:
+        arg.insert(1, "-o" + tmp[1])
+        return tmp
+    i = findprefix(arg, "--output")
+    if i >= 0:
+        if arg[i] == "--output":
+            arg[i+1] = tmp[1]
+        else:
+            arg[i] = "--output=" + tmp[1]
+        return tmp
+    i = findprefix(arg, "-o")
+    if i >= 0:
+        if arg[i] == "-o":
+            arg[i+1] = tmp[1]
+        else:
+            arg[i] = "-o" + tmp[1]
+        return tmp
+    # does not handle -o combined with other one letter options
+    sys.exit("Use plain -o / --output argument with --parallel")
+
+def run_parallel(args):
+    procs = []
+    for cpu in range(args.parallel):
+        arg = [x for x in sys.argv]
+        tmp = output_to_tmp(arg)
+        i = findprefix(arg, "--parallel")
+        if arg[i] == "--parallel":
+            del arg[i+1]
+        arg[i] = "--subset=%d/%.2f%%" % (cpu, 1.0/args.parallel*100.)
+        if not args.quiet:
+            print(" ".join(arg))
+        p = subprocess.Popen(arg, stdout=subprocess.PIPE, **popentext)
+        procs.append((p, tmp[0], tmp[1]))
+    for p in procs:
+        ret = p[0].wait()
+        f = os.fdopen(p[1])
+        while True:
+            s = f.read(1024*64)
+            if len(s) == 0:
+                break
+            sys.stderr.write(s)
+        os.remove(p[2])
+    return 0
+
 p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
 description='''
 Estimate on which part of the CPU pipeline a workload bottlenecks using the TopDown model.
@@ -412,6 +459,9 @@ g.add_argument('--subset', help="Process only a subset of the input file with --
         "x/n%% process x'th n percent slice. Starts counting at 0. Add - to process to end of input. "
         "sample:n%% Sample each time stamp in input with n%% (0-100%%) probability. "
         "toplev will automatically round to the next time stamp boundary.")
+g.add_argument('--parallel',
+        help="Run toplev --import in parallel in N processes, or the system's number of CPUs if 0 is specified",
+        type=int, default=-1)
 g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later',
                action='store_true')
 g.add_argument('--script-record', help='Use perf stat record in script for faster recording or '
@@ -542,6 +592,19 @@ p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true') # r
 p.add_argument('--tune', nargs='+', help=argparse.SUPPRESS) # override global variables with python expression
 p.add_argument('--force-bn', action='append', help=argparse.SUPPRESS) # force bottleneck for testing
 args, rest = p.parse_known_args()
+
+if args.parallel >= 0:
+    if not args.import_:
+        sys.exit("--parallel requires --import")
+    if args.import_.endswith(".xz") or args.import_.endswith(".gz"):
+        sys.exit("Uncompress input file first") # XXX
+    if args.subset:
+        # XXX support sample
+        sys.exit("--parallel does not support --subset")
+    if args.parallel == 0:
+        import multiprocessing
+        args.parallel = multiprocessing.cpu_count()
+    sys.exit(run_parallel(args))
 
 if args.idle_threshold:
     idle_threshold = args.idle_threshold / 100.

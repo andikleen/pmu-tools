@@ -45,3 +45,9 @@ def padlist(l, length, val=0.0):
     if len(l) < length:
         return l + [val]*(length-len(l))
     return l
+
+def findprefix(l, prefix):
+    for i, v in enumerate(l):
+        if v.startswith(prefix):
+            return i
+    return -1
