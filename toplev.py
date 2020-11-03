@@ -642,9 +642,6 @@ if args.xlsx:
         args.no_aggr = True
         args.global_ = True
 
-if args.no_aggr:
-    rest = add_args(rest, "-A")
-
 if args.valcsv:
     try:
         args.valcsv = flex_open_w(args.valcsv)
@@ -3128,6 +3125,9 @@ if not args.single_thread and smt_mode:
     full_system = True
 else:
     full_system = args.no_aggr or "--per-core" in rest or "--per-socket" in rest
+
+if args.no_aggr:
+    rest = add_args(rest, "-A")
 
 if ("Slots" not in core_domains and
         cpu.ht and
