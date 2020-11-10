@@ -12,6 +12,7 @@
 # LOAD=...  override test load
 # LOADLONG= override longer running test load
 # LOAD0=..  override test load on cpu 0 (taskset)
+# NOCPUS=1  skip individual CPU tests
 
 set -e
 set -o pipefail
@@ -162,6 +163,7 @@ notfound() {
 	egrep "not found|missing|unreferenced" log$$.$1 || true
 	egrep "not found|missing|unreferenced" log$$.$1 | sed "s/^/$1:/" >> nflog$$ || true
 }
+if [ -z "$NOCPUS" ] ; then
 for j in $SMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$j" ] && continue
 if ! grep -q hypervisor /proc/cpuinfo ; then
@@ -242,6 +244,7 @@ $WRAP ./toplev.py --force-cpu $j $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
 done
+fi
 
 # misc features
 $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --ignore-errata --stats --metrics --force-events --no-multiplex -l4 $LOAD
