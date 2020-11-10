@@ -9,6 +9,7 @@
 # t1,num1,num2
 # t2,num3,,
 # when the input has CPU generate separate lines for each CPU (may need post filtering)
+from __future__ import print_function
 import sys
 import csv
 import argparse
@@ -37,11 +38,15 @@ res = []
 writer = csv.writer(args.output, lineterminator='\n')
 lastcpu = None
 cpu = None
+lineno = 1
 for row in rc:
-    if len(row) > 0 and row[0] == "Timestamp":
+    if len(row) > 0 and (row[0] == "Timestamp" or row[0].startswith("#")):
+        lineno += 1
         continue
     r = csv_formats.parse_csv_row(row, error_exit=args.error_exit)
     if r is None:
+        print("at line %d" % lineno, file=sys.stderr)
+        lineno += 1
         continue
     ts, cpu, ev, val = r.ts, r.cpu, r.ev, r.val
 
@@ -69,6 +74,7 @@ for row in rc:
     if ind >= len(res):
         res += [None] * ((ind + 1) - len(res))
     res[ind] = val
+    lineno += 1
 if res and not (args.cpu and cpu != args.cpu):
     out.append(res)
     times.append(timestamp)
