@@ -18,8 +18,8 @@ rm perf.data.*.old
 rm tlog[0-9]*
 rm tltest*_*
 rm perf.data*
-rm perf[os]*.csv
+rm perf[osv]*.csv
 rm val.[0-9]*.csv
 rm x*.xlsx
 rm script[0-9]*
-rm toplev[ospv]*.csv
+rm toplev[ospv]*.csv toplevm[0-9]*
