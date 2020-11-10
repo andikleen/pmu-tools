@@ -8,6 +8,9 @@ analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index
 
 # Recent new features:
 
+* toplev now has a --parallel argument to can process large --import input files
+  with multiple threads. There is a new interval-merge tool that can merge
+  multiple perf-output files.
 * toplev now supports a --subset argument that can process parts of --import input files,
   either by splitting them or by sampling. This is a building block for more efficient
   processing of large input files.

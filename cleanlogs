@@ -22,3 +22,4 @@ rm perf[os]*.csv
 rm val.[0-9]*.csv
 rm x*.xlsx
 rm script[0-9]*
+rm toplev[ospv]*.csv

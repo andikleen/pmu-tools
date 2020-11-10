@@ -70,10 +70,10 @@ class ComputeStat:
         if self.errcount > 0 and self.errors != self.prev_errors:
             if not self.quiet:
                 print("%d nodes had zero counts: " % (self.errcount), end='', file=sys.stderr)
-                print(" ".join(self.errors), file=sys.stderr)
+                print(" ".join(sorted(self.errors)), file=sys.stderr)
             self.errcount = 0
             self.prev_errors = self.errors
             self.errors = set()
         if self.mismeasured and self.mismeasured > self.prev_mismeasured and not self.quiet:
-            print("Mismeasured (out of bound values):", " ".join(self.mismeasured))
+            print("Mismeasured (out of bound values):", " ".join(sorted(self.mismeasured)))
             self.prev_mismeasured = self.mismeasured

@@ -18,6 +18,7 @@ import csv
 import re
 import sys
 import json
+import os
 from collections import defaultdict, Counter, OrderedDict
 from tl_stat import isnan
 from tl_uval import UVal, combine_uval
@@ -42,22 +43,45 @@ def open_logfile(name, typ):
     except IOError:
         sys.exit("Cannot open logfile %s" % name)
 
+def open_all_logfiles(args, logfile):
+    if args.split_output and args.per_thread + args.per_core + args.per_socket + args.global_ > 0:
+        logfiles = dict()
+        if args.per_thread:
+            logfiles['thread'] = open_logfile(logfile, "thread")
+        if args.per_core:
+            logfiles['core'] = open_logfile(logfile, "core")
+        if args.per_socket:
+            logfiles['socket'] = open_logfile(logfile, "socket")
+        if args.global_:
+            logfiles['global'] = open_logfile(logfile, "global")
+        return logfiles, None
+    else:
+        return None, open_logfile(logfile, None)
+
+BUFS = 1024*1024
+
+def catrmfile(infn, outf, keep):
+    with open(infn, "r") as inf:
+        while True:
+            buf = inf.read(BUFS)
+            if len(buf) == 0:
+                break
+            outf.write(buf)
+    outf.flush()
+    if not keep:
+        os.remove(infn)
+
+def catrmoutput(infn, logf, logfiles, keep):
+    if logfiles:
+        for j in logfiles.keys():
+            catrmfile(output_name(infn, j), logfiles[j], keep)
+    else:
+        catrmfile(infn, logf, keep)
+
 class Output(object):
     """Abstract base class for Output classes."""
     def __init__(self, logfile, version, cpu, args):
-        if args.split_output and args.per_thread + args.per_core + args.per_socket + args.global_ > 0:
-            self.logfiles = dict()
-            if args.per_thread:
-                self.logfiles['thread'] = open_logfile(logfile, "thread")
-            if args.per_core:
-                self.logfiles['core'] = open_logfile(logfile, "core")
-            if args.per_socket:
-                self.logfiles['socket'] = open_logfile(logfile, "socket")
-            if args.global_:
-                self.logfiles['global'] = open_logfile(logfile, "global")
-        else:
-            self.logfiles = None
-            self.logf = open_logfile(logfile, None)
+        self.logfiles, self.logf = open_all_logfiles(args, args.output)
         self.printed_descs = set()
         self.hdrlen = 30
         self.version = version
@@ -68,6 +92,8 @@ class Output(object):
         self.curname = ""
         self.curname_nologf = ""
         self.printedversion = set()
+        self.no_header = args.no_csv_header
+        self.no_footer = args.no_csv_footer
 
     def flushfiles(self):
         if self.logfiles:
@@ -124,6 +150,8 @@ class Output(object):
         self.curname_nologf = name
 
     def print_version(self):
+        if self.no_header:
+            return
         if self.curname not in self.printedversion:
             if self.logfiles:
                 self.logfiles[self.curname].write("# " + self.version + "\n")
@@ -137,6 +165,8 @@ class Output(object):
         pass
 
     def print_footer_all(self):
+        if self.no_footer:
+            return
         if self.logfiles:
             for f in self.logfiles.values():
                 f.write("# %s\n" % self.version)
@@ -321,7 +351,7 @@ class OutputColumnsCSV(OutputColumns):
 
     def flush(self):
         cpunames = sorted(self.cpunames)
-        if not self.printed_header:
+        if not self.printed_header and not self.no_header:
             ts = ["Timestamp"] if self.timestamp else []
             header = ts + ["Area", "Node"] + cpunames + ["Description", "Sample", "Stddev", "Multiplex"]
             self.writer[self.curname].writerow([x.encode() for x in header])
@@ -373,6 +403,8 @@ class OutputCSV(Output):
         self.printed_headers = set()
 
     def print_header(self, timestamp, title):
+        if self.no_header:
+            return
         if self.curname_nologf not in self.printed_headers:
             l = []
             if timestamp:
@@ -409,18 +441,25 @@ class OutputJSON(Output):
         self.nodes = defaultdict(dict)
         self.headers = OrderedDict()
         self.count = Counter()
+        self.no_header = args.no_json_header
+        self.no_footer = args.no_json_footer
 
     def print_footer_all(self):
-        def start(name):
-            if name not in self.count:
-                return "[\n"
-            return ""
+        def write_all(s):
+            if self.logfiles:
+                for n in self.logfiles:
+                    self.logfiles[n].write(s(n))
+            else:
+                self.logf.write(s(""))
 
-        if self.logfiles:
-            for n in self.logfiles:
-                self.logfiles[n].write(start(n) + "\n]\n")
+        if self.no_footer:
+            write_all(lambda x: ",\n")
         else:
-            self.logf.write(start("") + "\n]\n")
+            def start(name):
+                if name not in self.count:
+                    return "[\n"
+                return ""
+            write_all(lambda n: start(n) + "\n]\n")
 
     print_footer = print_footer_all
 
@@ -453,13 +492,14 @@ class OutputJSON(Output):
 
         for name in nodes.keys():
             if self.count[self.curname] == 0:
-                self.logf.write("[\n")
+                if not self.no_header:
+                    self.logf.write("[\n")
             else:
                 self.logf.write(",\n")
             json.dump({"name": name,
                       "ph": "C",
                       "pid": 0,
-                      "ts": self.timestamp / 1e6 if self.timestamp else 0,
+                      "ts": self.timestamp / 1e6 if self.timestamp and not isnan(self.timestamp) else 0,
                       "args": nodes[name]}, self.logf)
             self.count[self.curname] += 1
         self.nodes = defaultdict(dict)

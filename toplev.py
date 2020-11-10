@@ -32,7 +32,7 @@ import argparse, time, types, csv
 import bisect
 import random
 import io
-import tempfile
+from copy import copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter, OrderedDict
 from itertools import compress, groupby, chain
@@ -344,51 +344,19 @@ def add_args(rest, *args):
     a = [x for x in args if x not in rest]
     return a + rest
 
-def output_to_tmp(arg):
-    tmp = tempfile.mkstemp(prefix="toplev")
-    if not args.output:
-        arg.insert(1, "-o" + tmp[1])
-        return tmp
-    i = findprefix(arg, "--output")
+def update_arg(arg, flag, sep, newval):
+    i = findprefix(arg, flag, "--")
     if i >= 0:
-        if arg[i] == "--output":
-            arg[i+1] = tmp[1]
+        if arg[i] == flag:
+            arg[i+1] = newval
         else:
-            arg[i] = "--output=" + tmp[1]
-        return tmp
-    i = findprefix(arg, "-o")
-    if i >= 0:
-        if arg[i] == "-o":
-            arg[i+1] = tmp[1]
-        else:
-            arg[i] = "-o" + tmp[1]
-        return tmp
-    # does not handle -o combined with other one letter options
-    sys.exit("Use plain -o / --output argument with --parallel")
+            arg[i] = flag + sep + newval
+        return True
+    return False
 
-def run_parallel(args):
-    procs = []
-    for cpu in range(args.parallel):
-        arg = [x for x in sys.argv]
-        tmp = output_to_tmp(arg)
-        i = findprefix(arg, "--parallel")
-        if arg[i] == "--parallel":
-            del arg[i+1]
-        arg[i] = "--subset=%d/%.2f%%" % (cpu, 1.0/args.parallel*100.)
-        if not args.quiet:
-            print(" ".join(arg))
-        p = subprocess.Popen(arg, stdout=subprocess.PIPE, **popentext)
-        procs.append((p, tmp[0], tmp[1]))
-    for p in procs:
-        ret = p[0].wait()
-        f = os.fdopen(p[1])
-        while True:
-            s = f.read(1024*64)
-            if len(s) == 0:
-                break
-            sys.stderr.write(s)
-        os.remove(p[2])
-    return 0
+def del_arg_val(arg, flag):
+    i = findprefix(arg, flag, "--")
+    del arg[i:i+2 if arg[i] == flag else i+1]
 
 p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
 description='''
@@ -461,7 +429,9 @@ g.add_argument('--subset', help="Process only a subset of the input file with --
         "toplev will automatically round to the next time stamp boundary.")
 g.add_argument('--parallel',
         help="Run toplev --import in parallel in N processes, or the system's number of CPUs if 0 is specified",
-        type=int, default=-1)
+        action='store_true')
+g.add_argument('--pjobs', type=int, default=0,
+        help='Number of threads to run with parallel. Default is number of CPUs.')
 g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later',
                action='store_true')
 g.add_argument('--script-record', help='Use perf stat record in script for faster recording or '
@@ -569,9 +539,11 @@ g = p.add_argument_group('xlsx output')
 g.add_argument('--xlsx', help='Generate xlsx spreadsheet output with data for '
                'socket/global/thread/core/summary/raw views with 1s interval. '
                'Add --single-thread to only get program output.')
+g.add_argument('--set-xlsx', help=argparse.SUPPRESS, action='store_true') # set arguments for xlsx only
 g.add_argument('--xnormalize', help='Add extra sheets with normalized data in xlsx files', action='store_true')
 g.add_argument('--xchart', help='Chart data in xlsx files', action='store_true')
-g.add_argument('--xkeep', help='Keep temporary CSV files', action='store_true')
+g.add_argument('--keep', help='Keep temporary files', action='store_true')
+g.add_argument('--xkeep', dest='keep', action='store_true', help=argparse.SUPPRESS)
 
 g = p.add_argument_group('Sampling')
 g.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
@@ -591,24 +563,244 @@ p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS) # start py
 p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true') # remove events not supported by perf
 p.add_argument('--tune', nargs='+', help=argparse.SUPPRESS) # override global variables with python expression
 p.add_argument('--force-bn', action='append', help=argparse.SUPPRESS) # force bottleneck for testing
+p.add_argument('--no-json-header', action='store_true', help=argparse.SUPPRESS) # no [ for json
+p.add_argument('--no-json-footer', action='store_true', help=argparse.SUPPRESS) # no ] for json
+p.add_argument('--no-csv-header', action='store_true', help=argparse.SUPPRESS) # no header/version for CSV
+p.add_argument('--no-csv-footer', action='store_true', help=argparse.SUPPRESS) # no version for CSV
 args, rest = p.parse_known_args()
 
-if args.parallel >= 0:
-    if not args.import_:
-        sys.exit("--parallel requires --import")
-    if args.import_.endswith(".xz") or args.import_.endswith(".gz"):
-        sys.exit("Uncompress input file first") # XXX
-    if args.subset:
-        # XXX support sample
-        sys.exit("--parallel does not support --subset")
-    if args.parallel == 0:
-        import multiprocessing
-        args.parallel = multiprocessing.cpu_count()
-    sys.exit(run_parallel(args))
+def output_count():
+    return args.per_core + args.global_ + args.per_thread + args.per_socket
+
+def multi_output():
+    return output_count() > 1
+
+def open_output_files():
+    if args.valcsv:
+        try:
+            args.valcsv = flex_open_w(args.valcsv)
+        except IOError as e:
+            sys.exit("Cannot open valcsv file %s: %s" % (args.valcsv, e))
+
+    if args.perf_output:
+        try:
+            args.perf_output = flex_open_w(args.perf_output)
+        except IOError as e:
+            sys.exit("Cannot open perf output file %s: %s" % (args.perf_output, e))
+
+def init_xlsx(args):
+    args.set_xlsx = True
+    if args.output:
+        sys.exit("-o / --output not allowed with --xlsx")
+    if args.valcsv:
+        sys.exit("--valcsv not allowed with --xlsx")
+    if args.perf_output:
+        sys.exit("--perf-output not allowed with --xlsx")
+    if args.csv:
+        sys.exit("-c / --csv not allowed with --xlsx")
+    if not args.xlsx.endswith(".xlsx"):
+        sys.exit("--xlsx must end in .xlsx")
+    xlsx_base = re.sub(r'\.xlsx$', '.csv', args.xlsx)
+    args.valcsv = re.sub(r'\.csv$', '-valcsv.csv', xlsx_base)
+    args.perf_output = re.sub(r'\.csv$', '-perf.csv', xlsx_base)
+    args.output = xlsx_base
+    if args.xchart:
+        args.xnormalize = True
+        args.verbose = True
+
+forced_per_socket = False
+forced_per_core = False
+
+def set_xlsx(args):
+    if not args.interval:
+        args.interval = 1000
+    args.csv = ','
+    if args.xlsx:
+        args.summary = True
+    if not args.single_thread:
+        args.per_thread = True
+        args.split_output = True
+        global forced_per_socket
+        if args.per_socket:
+            forced_per_socket = True
+        global forced_per_core
+        if args.per_core:
+            forced_per_core = True
+        args.per_socket = True
+        args.per_core = True
+        args.no_aggr = True
+        args.global_ = True
+
+def do_xlsx(env):
+    cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s' " % (
+        sys.executable,
+        exe_dir(),
+        args.valcsv.name,
+        args.perf_output.name,
+        env.cpuinfo if env.cpuinfo else "/proc/cpuinfo")
+    if args.single_thread:
+        names = ["program"]
+        files = [out.logf.name]
+    else:
+        names = ((["socket"] if args.per_socket else []) +
+                 (["core"] if args.per_core else []) +
+                 ["global", "thread"])
+        files = [tl_output.output_name(args.output, p) for p in names]
+
+    extrafiles = []
+    extranames = []
+    charts = []
+    if args.xnormalize:
+        for j, n in zip(files, names):
+            nname = j.replace(".csv", "-norm.csv")
+            ncmd = "%s %s/interval-normalize.py --normalize-cpu --error-exit < '%s' > '%s'" % (
+                    sys.executable,
+                    exe_dir(),
+                    j,
+                    nname)
+            if not args.quiet:
+                print(ncmd)
+            ret = os.system(ncmd)
+            if ret:
+                warn("interval-normalize failed: %d" % ret)
+                return ret
+            extrafiles.append(nname)
+            extranames.append("n" + n)
+            if args.xchart:
+                charts.append("n" + n)
+
+    cmd += " ".join(["--%s '%s'" % (n, f) for n, f in zip(names, files)])
+    cmd += " " + " ".join(["--add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
+    cmd += " " + " ".join(["--chart '%s'" % f for f in charts])
+    cmd += " '%s'" % args.xlsx
+    if not args.quiet:
+        print(cmd)
+    ret = os.system(cmd)
+    if not args.keep:
+        for fn in files + extrafiles:
+            os.remove(fn)
+    return ret
+
+def gentmp(o, cpu):
+    o = o.replace(".xz", "").replace(".gz", "")
+    if not o.endswith(".csv"):
+        o += ".csv"
+    return o.replace(".csv", "-cpu%d.csv" % cpu)
+
+def output_to_tmp(arg, outfn):
+    if not args.output or args.xlsx:
+        arg.insert(1, "-o" + outfn)
+    elif update_arg(arg, "--output", "=", outfn):
+        pass
+    elif update_arg(arg, "-o", "", outfn):
+        pass
+    else:
+        # does not handle -o combined with other one letter options
+        sys.exit("Use plain -o / --output argument with --parallel")
+
+def merge_files(files, outf, args):
+    for j in files:
+        tl_output.catrmfile(j, outf, args.keep)
+
+# run multiple subset toplevs in parallel and merge the results
+def run_parallel(args, env):
+    procs = []
+    pofns = []
+    valfns = []
+    sums = []
+    targ = copy(sys.argv)
+    del targ[targ.index("--parallel")]
+    for cpu in range(args.pjobs):
+        arg = copy(targ)
+        if args.xlsx:
+            del_arg_val(arg, "--xlsx")
+            arg = [arg[0], "--set-xlsx", "--perf-output=X", "--valcsv=X"] + arg[1:]
+        outfn = gentmp(args.output if args.output else "toplevo%d" % os.getpid(), cpu)
+        output_to_tmp(arg, outfn)
+        if args.perf_output or args.xlsx:
+            pofn = gentmp(args.perf_output if args.perf_output else "toplevp", cpu)
+            update_arg(arg, "--perf-output", "=", pofn)
+            pofns.append(pofn)
+        if args.valcsv or args.xlsx:
+            valfn = gentmp(args.valcsv if args.valcsv else "toplevv", cpu)
+            update_arg(arg, "--valcsv", "=", valfn)
+            valfns.append(valfn)
+        arg.insert(1, "--subset=%d/%.2f%%" % (cpu, 1.0/args.pjobs*100.))
+        if args.json and args.pjobs > 1:
+            if cpu > 0:
+                arg.insert(1, "--no-json-header")
+            if cpu < args.pjobs - 1 or args.summary:
+                arg.insert(1, "--no-json-footer")
+        sumfn = None
+        if args.summary:
+            del arg[arg.index("--summary")]
+            sumfn = gentmp("toplevs%d" % os.getpid(), cpu)
+            arg.insert(1, "--perf-summary=" + sumfn)
+            sums.append(sumfn)
+        if args.pjobs > 1:
+            if cpu > 0:
+                arg.insert(1, "--no-csv-header")
+            if cpu < args.pjobs - 1 or args.summary:
+                arg.insert(1, "--no-csv-footer")
+        if not args.quiet:
+            print(" ".join(arg))
+        p = subprocess.Popen(arg, stdout=subprocess.PIPE, **popentext)
+        procs.append((p, outfn))
+    if args.xlsx:
+        init_xlsx(args)
+        set_xlsx(args)
+    logfiles, logf = tl_output.open_all_logfiles(args, args.output)
+    for p in procs:
+        ret = p[0].wait()
+        if ret:
+            return ret
+        tl_output.catrmoutput(p[1], logf, logfiles, args.keep)
+    ret = 0
+    if sums:
+        cmd = [sys.executable, "%s/interval-merge.py" % exe_dir()] + sums
+        if not args.quiet:
+            print(" ".join(cmd))
+        inp = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        outfn = "toplevm%d" % os.getpid()
+        output_to_tmp(targ, outfn)
+        if args.xlsx:
+            del_arg_val(targ, "--xlsx")
+        if args.perf_output:
+            del_arg_val(targ, "--perf-output")
+        if args.valcsv:
+            del_arg_val(targ, "--valcsv")
+        if args.xlsx:
+            targ.insert(1, "--set-xlsx")
+        update_arg(targ, "--import", "=", "/dev/stdin")
+        targ.insert(1, "--no-output")
+        if args.json:
+            targ.insert(1, "--no-json-header")
+        else:
+            targ.insert(1, "--no-csv-header")
+        if not args.quiet:
+            print(" ".join(targ))
+        outp = subprocess.Popen(targ, stdin=inp.stdout)
+        ret = inp.wait()
+        if ret:
+            sys.exit("interval-merge failed")
+        ret = outp.wait()
+        if ret:
+            sys.exit("summary toplev failed")
+        tl_output.catrmoutput(outfn, logf, logfiles, args.keep)
+        if not args.keep:
+            for j in sums:
+                os.remove(j)
+    open_output_files()
+    merge_files(valfns, args.valcsv, args)
+    merge_files(pofns, args.perf_output, args)
+    if args.xlsx:
+        ret = do_xlsx(env)
+    # XXX graph
+    return ret
 
 if args.idle_threshold:
     idle_threshold = args.idle_threshold / 100.
-elif args.csv or args.xlsx: # not for args.graph
+elif args.csv or args.xlsx or args.set_xlsx: # not for args.graph
     idle_threshold = 0  # avoid breaking programs that rely on the CSV output
 else:
     idle_threshold = 0.05
@@ -652,6 +844,25 @@ if args.force_cpuinfo:
 if args.force_hypervisor:
     env.hypervisor = True
 
+if args.parallel:
+    if not args.import_:
+        sys.exit("--parallel requires --import")
+    if args.import_.endswith(".xz") or args.import_.endswith(".gz"):
+        sys.exit("Uncompress input file first") # XXX
+    if args.perf_summary:
+        sys.exit("--parallel does not support --perf-summary") # XXX
+    if args.subset:
+        # XXX support sample
+        sys.exit("--parallel does not support --subset")
+    if args.json and multi_output() and not args.split_output:
+        sys.exit("--parallel does not support multi-output --json without --split-output")
+    if args.graph:
+        sys.exit("--parallel does not support --graph") # XXX
+    if args.pjobs == 0:
+        import multiprocessing
+        args.pjobs = multiprocessing.cpu_count()
+    sys.exit(run_parallel(args, env))
+
 emap = ocperf.find_emap()
 if not emap:
     sys.exit("Unknown CPU or CPU event map not found.")
@@ -669,53 +880,12 @@ if args.pid:
 if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
 
-forced_per_socket = False
-forced_per_core = False
-if args.xchart:
-    args.xnormalize = True
-    args.verbose = True
 if args.xlsx:
-    if args.output:
-        sys.exit("-o / --output not allowed with --xlsx")
-    if args.valcsv:
-        sys.exit("--valcsv not allowed with --xlsx")
-    if args.perf_output:
-        sys.exit("--perf-output not allowed with --xlsx")
-    if args.csv:
-        sys.exit("-c / --csv not allowed with --xlsx")
-    if not args.xlsx.endswith(".xlsx"):
-        sys.exit("--xlsx must end in .xlsx")
-    if not args.interval:
-        args.interval = 1000
-    args.csv = ','
-    xlsx_base = re.sub(r'\.xlsx$', '.csv', args.xlsx)
-    args.valcsv = re.sub(r'\.csv$', '-valcsv.csv', xlsx_base)
-    args.output = xlsx_base
-    args.summary = True
-    args.perf_output = re.sub(r'\.csv$', '-perf.csv', xlsx_base)
-    if not args.single_thread:
-        args.per_thread = True
-        args.split_output = True
-        if args.per_socket:
-            forced_per_socket = True
-        if args.per_core:
-            forced_per_core = True
-        args.per_socket = True
-        args.per_core = True
-        args.no_aggr = True
-        args.global_ = True
+    init_xlsx(args)
+if args.set_xlsx:
+    set_xlsx(args)
 
-if args.valcsv:
-    try:
-        args.valcsv = flex_open_w(args.valcsv)
-    except IOError as e:
-        sys.exit("Cannot open valcsv file %s: %s" % (args.valcsv, e))
-
-if args.perf_output:
-    try:
-        args.perf_output = flex_open_w(args.perf_output)
-    except IOError as e:
-        sys.exit("Cannot open perf output file %s: %s" % (args.perf_output, e))
+open_output_files()
 
 if args.perf_summary:
     try:
@@ -1383,7 +1553,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
         print("No node crossed threshold", file=sys.stderr)
 
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
-    if args.per_core + args.per_thread + args.per_socket + args.global_ > 1:
+    if multi_output():
         if args.per_thread:
             out.remark("Per thread")
             out.reset("thread")
@@ -1435,6 +1605,8 @@ def print_summary(runner, out):
                     l.append(("CPU" + title) if re.match(r'\d+$', title) else title)
                 if output_numcpus:
                     l.append("0") # XXX
+                if r is None:
+                    continue
                 args.perf_summary.write(";".join(l + ["%f" % r[0], r[1],
                                                       r[2], "%f" % r[3],
                                                       "%.2f" % r[4], "", ""]) + "\n")
@@ -1525,7 +1697,7 @@ def find_group(num):
 def dump_raw(interval, title, event, val, index, stddev, multiplex):
     ename = event_rmap(event)
     g = find_group(index)
-    nodes = " ".join([o.name.replace(" ", "_") for o in g.objl if event in o.evnum])
+    nodes = " ".join(sorted([o.name.replace(" ", "_") for o in g.objl if event in o.evnum]))
     if args.raw:
         print("raw", title, "event", event, "val", val, "ename", ename, "index",
                 index, "group", g.num, "nodes", nodes)
@@ -1656,7 +1828,16 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
         # code later relies on stripping ku flags
         event = remove_qual(event)
 
-        assert event == remove_qual(flat_events[len(res[title])])
+        expected_ev = remove_qual(flat_events[len(res[title])])
+        if event != expected_ev:
+            # XXX handle this better
+            print("Event in input does not match schedule (%s vs %s [%d/%s/%f])." % (
+                    event, expected_ev, len(res[title]), title, prev_interval),
+                    file=sys.stderr)
+            sys.stdout.write(l)
+            if args.import_:
+                sys.exit("Different arguments than original toplev?")
+            sys.exit("Input corruption")
 
         multiplex = float('nan')
         event = event.rstrip()
@@ -2519,8 +2700,9 @@ class Runner(object):
         self.idle_threshold = idle_threshold
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv, lineterminator='\n')
-            self.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
-                                  "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
+            if not args.no_csv_header:
+                self.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
+                                      "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
 
     def do_run(self, obj):
         obj.res = None
@@ -2892,56 +3074,6 @@ def suggest_desc(runner):
         " ".join([full_name(x) + "^" if nummatch(x.name) > 1 else x.name + "^" for x in printer.bottlenecks]),
         "s" if len(printer.bottlenecks) > 1 else ""), file=sys.stderr)
 
-def do_xlsx():
-    cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s' " % (
-        sys.executable,
-        exe_dir(),
-        args.valcsv.name,
-        args.perf_output.name,
-        env.cpuinfo if env.cpuinfo else "/proc/cpuinfo")
-    if args.single_thread:
-        names = ["program"]
-        files = [out.logf.name]
-    else:
-        names = ((["socket"] if args.per_socket else []) +
-                 (["core"] if args.per_core else []) +
-                 ["global", "thread"])
-        files = [tl_output.output_name(args.output, p) for p in names]
-
-    extrafiles = []
-    extranames = []
-    charts = []
-    if args.xnormalize:
-        for j, n in zip(files, names):
-            nname = j.replace(".csv", "-norm.csv")
-            ncmd = "%s %s/interval-normalize.py --normalize-cpu --error-exit < '%s' > '%s'" % (
-                    sys.executable,
-                    exe_dir(),
-                    j,
-                    nname)
-            if not args.quiet:
-                print(ncmd)
-            ret = os.system(ncmd)
-            if ret:
-                warn("interval-normalize failed: %d" % ret)
-                return ret
-            extrafiles.append(nname)
-            extranames.append("n" + n)
-            if args.xchart:
-                charts.append("n" + n)
-
-    cmd += " ".join(["--%s '%s'" % (n, f) for n, f in zip(names, files)])
-    cmd += " " + " ".join(["--add '%s' '%s'" % (f, n) for n, f in zip(extranames, extrafiles)])
-    cmd += " " + " ".join(["--chart '%s'" % f for f in charts])
-    cmd += " '%s'" % args.xlsx
-    if not args.quiet:
-        print(cmd)
-    ret = os.system(cmd)
-    if not args.xkeep:
-        for fn in files + extrafiles:
-            os.remove(fn)
-    return ret
-
 def sysctl(name):
     try:
         with open("/proc/sys/" + name.replace(".","/"), "r") as f:
@@ -3161,7 +3293,7 @@ if smt_mode and not os.getenv('FORCEHT'):
         smt_mode = False
 
 if not smt_mode and not args.single_thread and not args.no_aggr:
-    multi = args.per_socket + args.per_core + args.per_thread + args.global_
+    multi = output_count()
     if multi > 0:
         rest = add_args(rest, "-a")
     if multi > 1 or args.per_thread:
@@ -3201,7 +3333,7 @@ if ("Slots" not in core_domains and
         rest = ["--percore-show-thread"] + rest
 
 output_numcpus = False
-if args.perf_output or args.perf_summary:
+if (args.perf_output or args.perf_summary) and not args.no_csv_header:
     ph = []
     if args.interval:
         ph.append("Timestamp")
@@ -3309,7 +3441,7 @@ out.print_footer()
 out.flushfiles()
 
 if args.xlsx and ret == 0:
-    ret = do_xlsx()
+    ret = do_xlsx(env)
 
 if runner.idle_keys and not args.quiet:
     print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" %

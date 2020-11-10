@@ -313,7 +313,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --per-thread --json --all -o j$$.
 cat j$$.json | python -m json.tool
 rm j$$.json
 
-for MODE in -l3 "-a -A --all --no-uncore" ; do
+for MODE in -l3 "-a -A --all --no-uncore" ; do # XXX get rid of --no-uncore
 # exclude MUX for now because it has small variances, as well as /sec nodes
 COMMON="--force-cpu $DCPU $OPT -I100 --no-desc --summary --no-output --nodes=-MUX,-*_BW"
 
@@ -464,6 +464,23 @@ rm x$$.xlsx
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 fi
 
+ARG="-a -A --all -I100 --summary --no-desc --no-uncore --nodes=-MUX,-L*_BW" # XXX get rid of --no-uncore, fix *_BW intervals
+$WRAP ./toplev.py $ARG -o log0.$$ --perf-output perfo0.$$.csv --valcsv perfv0.$$.csv $LOADLONG
+$WRAP ./toplev.py --import perfo0.$$.csv $ARG -o log1.$$ --perf-output perfo1.$$.csv --valcsv perfv1.$$.csv
+diff -u perfo0.$$.csv perfo1.$$.csv
+diff -u perfv0.$$.csv perfv1.$$.csv
+diff -wu log0.$$ log1.$$
+$WRAP ./toplev.py --parallel --import perfo0.$$.csv $ARG -o log2.$$ --perf-output perfo2.$$.csv --valcsv perfv2.$$.csv
+diff -u perfo1.$$.csv perfo2.$$.csv
+diff -u perfv1.$$.csv perfv2.$$.csv
+diff -wu log1.$$ log2.$$
+$WRAP ./toplev.py --parallel --import perfo0.$$.csv $ARG --json -o j$$.json
+cat j$$.json | python -m json.tool
+if python -c 'import xlsxwriter' ; then
+$WRAP ./toplev.py --parallel --import perfo0.$$.csv $ARG --xlsx x$$.xlsx
+rm x$$.xlsx
+fi
+rm log[012].$$ perf[ov][012].$$.csv j$$.json
 
 # check current platform
 $WRAP ./toplev.py -o /dev/null $OPT --no-desc -v --all --run-sample $LOAD
