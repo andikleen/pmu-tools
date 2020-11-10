@@ -26,6 +26,7 @@ NOGROUP=${NOGROUP:-}
 NORES="${NORES:-}"
 PERF=${PERF:-perf}
 NMPI="" # XXX fix
+NOCPUS="${NOCPUS:-}"
 
 OPT="$OPT --perf"
 
