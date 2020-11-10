@@ -919,7 +919,10 @@ class PerfRun(object):
                                              stderr=subprocess.PIPE, **popentext)
                 return self.perf.stderr
             self.perf = None
-            f = flex_open_r(args.import_)
+            try:
+                f = flex_open_r(args.import_)
+            except IOError as e:
+                sys.exit("Cannot open file %s: %s" % (args.import_, e))
             if args.subset:
                 try:
                     self.handle_inputsubset(f, args.subset)
