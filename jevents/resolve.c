@@ -82,7 +82,7 @@ static bool try_parse(char *format, char *fmt, __u64 val, __u64 *config)
 	int start, end;
 	int n = sscanf(format, fmt, &start, &end);
 	if (n == 1)
-		end = start + 1;
+		end = start;
 	if (n == 0)
 		return false;
 	*config |= (val & BITS(end - start + 1)) << start;
