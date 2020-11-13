@@ -453,7 +453,8 @@ class OutputJSON(Output):
                 self.logf.write(s(""))
 
         if self.no_footer:
-            write_all(lambda x: ",\n")
+            if self.nodes:
+                write_all(lambda x: ",\n")
         else:
             def start(name):
                 if name not in self.count:
