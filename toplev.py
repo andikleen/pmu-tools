@@ -757,7 +757,7 @@ def run_parallel(args, env):
         tl_output.catrmoutput(p[1], logf, logfiles, args.keep)
     ret = 0
     if sums:
-        cmd = [sys.executable, "%s/interval-merge.py" % exe_dir()] + sums
+        cmd = [sys.executable, exe_dir() + "/interval-merge.py"] + sums
         if not args.quiet:
             print(" ".join(cmd))
         inp = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -765,12 +765,11 @@ def run_parallel(args, env):
         output_to_tmp(targ, outfn)
         if args.xlsx:
             del_arg_val(targ, "--xlsx")
+            targ.insert(1, "--set-xlsx")
         if args.perf_output:
             del_arg_val(targ, "--perf-output")
         if args.valcsv:
             del_arg_val(targ, "--valcsv")
-        if args.xlsx:
-            targ.insert(1, "--set-xlsx")
         update_arg(targ, "--import", "=", "/dev/stdin")
         targ.insert(1, "--no-output")
         if args.json:
