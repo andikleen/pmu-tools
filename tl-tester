@@ -28,6 +28,12 @@ PERF=${PERF:-perf}
 NMPI="" # XXX fix
 NOCPUS="${NOCPUS:-}"
 
+if [ -n "$WRAP" ] ; then
+	PYTHON=$WRAP
+else
+	PYTHON=$PYTHON
+fi
+
 OPT="$OPT --perf"
 
 case "$PERF" in
@@ -296,7 +302,7 @@ $WRAP ./toplev.py --force-cpu bdw $OPT --force-cpuinfo bdw-cpuinfo --stats --met
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD
-if python -c 'import xlsxwriter' ; then
+if $PYTHON -c 'import xlsxwriter' ; then
 $WRAP ./toplev.py --xlsx x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOAD
 rm x$$.xlsx
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --all $LOAD
@@ -311,7 +317,7 @@ rm x$$.xlsx # must exist
 fi
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread -x, --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --per-thread --json --all -o j$$.json $LOAD
-cat j$$.json | python -m json.tool
+cat j$$.json | $PYTHON -m json.tool
 rm j$$.json
 
 for MODE in -l3 "-a -A --all --no-uncore" ; do # XXX get rid of --no-uncore
@@ -327,18 +333,18 @@ rm log{,2.,3.}$$ perf{s,o}$$.csv perfo.{1,2}.$$.csv val.{1,2,3}.$$.csv
 done
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --summary --per-thread --global --per-core --per-socket --json --all -o j$$.json $LOAD
-cat j$$.json | python -m json.tool
+cat j$$.json | $PYTHON -m json.tool
 rm j$$.json
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --split-output -I100 --per-thread --global --per-core --per-socket --json --all -o j$$.json $LOAD
-cat j$$-core.json | python -m json.tool
-cat j$$-global.json | python -m json.tool
-cat j$$-socket.json | python -m json.tool
-cat j$$-thread.json | python -m json.tool
+cat j$$-core.json | $PYTHON -m json.tool
+cat j$$-global.json | $PYTHON -m json.tool
+cat j$$-socket.json | $PYTHON -m json.tool
+cat j$$-thread.json | $PYTHON -m json.tool
 rm j$$-core.json j$$-thread.json j$$-socket.json j$$-global.json
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -l1 --drilldown --json --all -o j$$.json $LOAD
-cat j$$.json | python -m json.tool
+cat j$$.json | $PYTHON -m json.tool
 rm j$$.json
 
 FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global --per-core -x, --columns -l4 $LOAD
@@ -383,7 +389,7 @@ echo >> log$$
 [ -z "$NORES" ] && grep Backend_Bound.Memory_Bound.L3_Bound log$$
 [ -z "$NORES" ] && grep -v Backend_Bound.Core_Bound.Ports_Utilization.Ports_Utilized_0 log$$
 rm log$$
-if python -c 'import matplotlib.pyplot' ; then
+if $PYTHON -c 'import matplotlib.pyplot' ; then
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --graph -o x$$.png --all $LOAD
 [ `stat -c %s x$$.png` -gt 1000 ]
 fi
@@ -411,7 +417,7 @@ rm val$$.csv.xz val$$.csv.gz val$$.csv
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --sample-basename perf$$.data --sample-repeat 5 --filterqual -a sleep 0.1  | tee log$$
 # do all perf.data exist?
 rm perf$$.data.{1,2,3,4,5}
-if python -c 'import xlsxwriter' ; then
+if $PYTHON -c 'import xlsxwriter' ; then
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --sample-basename perf$$.data --xlsx x$$.xlsx --sample-repeat 3 --filterqual -a $LOAD | tee log$$
 rm perf$$.data.{1,2,3}
 rm x$$.xlsx
@@ -456,7 +462,7 @@ $WRAP ./toplev.py --script-record --all --import tltest$$_perf.data --force-cpui
 rm tltest$$_perf.data tltest$$_topology tltest$$_cpuinfo script$$
 fi
 
-if python -c 'import xlsxwriter' ; then
+if $PYTHON -c 'import xlsxwriter' ; then
 $WRAP ./toplev.py --xlsx dummy.xlsx --all --gen-script > script$$
 chmod +x script$$
 OUT=tltest$$ ./script$$ $LOAD
@@ -468,16 +474,16 @@ fi
 ARG="-a -A --all -I100 --summary --no-desc --no-uncore --nodes=-MUX,-L*_BW" # XXX get rid of --no-uncore, fix *_BW intervals
 $WRAP ./toplev.py $ARG -o log0.$$ --perf-output perfo0.$$.csv --valcsv perfv0.$$.csv $LOADLONG
 $WRAP ./toplev.py --import perfo0.$$.csv $ARG -o log1.$$ --perf-output perfo1.$$.csv --valcsv perfv1.$$.csv
-diff -u perfo0.$$.csv perfo1.$$.csv
-diff -u perfv0.$$.csv perfv1.$$.csv
+diff -u perfo0.$$.csv perfo1.$$.csv | head
+diff -u perfv0.$$.csv perfv1.$$.csv | head
 diff -wu log0.$$ log1.$$
 $WRAP ./toplev.py --parallel --import perfo0.$$.csv $ARG -o log2.$$ --perf-output perfo2.$$.csv --valcsv perfv2.$$.csv
-diff -u perfo1.$$.csv perfo2.$$.csv
-diff -u perfv1.$$.csv perfv2.$$.csv
+diff -u perfo1.$$.csv perfo2.$$.csv | head
+diff -u perfv1.$$.csv perfv2.$$.csv | head
 diff -wu log1.$$ log2.$$
 $WRAP ./toplev.py --parallel --import perfo0.$$.csv $ARG --json -o j$$.json
-cat j$$.json | python -m json.tool
-if python -c 'import xlsxwriter' ; then
+cat j$$.json | $PYTHON -m json.tool
+if $PYTHON -c 'import xlsxwriter' ; then
 $WRAP ./toplev.py --parallel --import perfo0.$$.csv $ARG --xlsx x$$.xlsx
 rm x$$.xlsx
 fi
