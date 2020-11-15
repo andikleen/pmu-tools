@@ -725,7 +725,7 @@ def run_parallel(args, env):
             valfn = gentmp(args.valcsv if args.valcsv else "toplevv", cpu)
             update_arg(arg, "--valcsv", "=", valfn)
             valfns.append(valfn)
-        arg.insert(1, "--subset=%d/%.2f%%" % (cpu, 1.0/args.pjobs*100.))
+        arg.insert(1, "--subset=%d/%.2f%%" % (cpu, 1.0//args.pjobs*100.))
         if args.json and args.pjobs > 1:
             if cpu > 0:
                 arg.insert(1, "--no-json-header")
@@ -1036,7 +1036,7 @@ class PerfRun(object):
             chunk = int(size * (float(m.group(2)) / 100.))
             nth = int(m.group(1))
             if (nth+1)*chunk > size:
-                sys.exit("--subset out of range")
+                sys.exit("--subset %s out of range" % iss)
             f.seek(chunk * nth)
             if m.group(3) is None:
                 self.end_seek_offset = chunk * (1+nth)
