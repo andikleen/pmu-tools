@@ -292,7 +292,7 @@ class Event(object):
            flags when set add perf flags (e.g. u for user, p for pebs)."""
         val = self.val
         newe = []
-        extra = "".join(merge_extra(extra_set(self.extra), extra_set(flags)))
+        extra = "".join(sorted(merge_extra(extra_set(self.extra), extra_set(flags))))
         extra, val = convert_extra(":" + extra, val, newe)
         if version.direct or use_raw:
             if self.pname:
@@ -692,7 +692,7 @@ class EmapNativeJSON(object):
             ev_extra = extra_set(ev.extra)
             if extra and merge_extra(ev_extra, extra) > ev_extra:
                 ev = copy.deepcopy(self.events[e])
-                ev.extra = "".join(merge_extra(ev_extra, extra))
+                ev.extra = "".join(sorted(merge_extra(ev_extra, extra)))
                 return ev
             return self.events[e]
         elif e.endswith("_ps"):
@@ -991,7 +991,7 @@ def process_events(event, print_only, period, noexplode):
             ev = emap.getevent(m.group(2))
             end = m.group(3) + "/"
             if ev:
-                qual = "".join(merge_extra(extra_set(ev.extra), extra_set(m.group(4))))
+                qual = "".join(sorted(merge_extra(extra_set(ev.extra), extra_set(m.group(4)))))
                 end += qual
                 i = ev.output_newstyle(period=period, noexplode=noexplode)
             else:
