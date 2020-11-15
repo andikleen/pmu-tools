@@ -277,28 +277,32 @@ $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-o
 [ -z "$NORES" ] && grep Turbo_Utilization log$$
 [ -z "$NORES" ] && grep -q -v "not supported" perfo$$.csv
 rm log$$ val$$.csv perfo$$.csv
-$WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --no-uncore --perf-output x$$.csv --all $LOADLONG
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --no-uncore --import x$$.csv --all -o log-all.$$
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --subset 0/50% --valcsv val.0.$$.csv --no-uncore --import x$$.csv --all -o log-1.$$
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --subset 1/50% --valcsv val.1.$$.csv --no-uncore --import x$$.csv --all -o log-2.$$
+
+SHOPT="-I100 -a -A --force-cpu $DCPU $OPT --all --no-uncore --no-desc"
+$WRAP ./toplev.py $SHOPT --perf-output x$$.csv -o log-all0.$$ $LOADLONG
+$WRAP ./toplev.py $SHOPT --import x$$.csv -o log-all.$$
+diff -u log-all0.$$ log-all.$$
+$WRAP ./toplev.py $SHOPT --subset 0/50% --valcsv val.0.$$.csv --import x$$.csv -o log-1.$$
+$WRAP ./toplev.py $SHOPT --subset 1/50% --valcsv val.1.$$.csv --import x$$.csv -o log-2.$$
 cat log-{1,2}.$$ | sed -e '/^#/d' > log-combined.$$
 sed -e '/^#/d' log-all.$$ > log-allf.$$
 diff -u log-combined.$$ log-allf.$$
-rm log-{1,2,combined,all,allf}.$$ val.{0,1}.$$.csv
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --subset 0-1000 --no-uncore --import x$$.csv --all
+rm log-{1,2,combined,all,allf,all0}.$$ val.{0,1}.$$.csv
+$WRAP ./toplev.py $SHOPT --subset 0-1000 --import x$$.csv
 TLSEED=1 \
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --subset 'sample:10%' --no-uncore --import x$$.csv --all
+$WRAP ./toplev.py $SHOPT --subset 'sample:10%' --import x$$.csv
 
 xz x$$.csv
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --import x$$.csv.xz --all -o y$$.out
+$WRAP ./toplev.py $SHOPT --import x$$.csv.xz -o y$$.out
 [ -z "$NORES" ] && grep IPC y$$.out
 xz -d x$$.csv.xz
 gzip x$$.csv
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-uncore --import x$$.csv.gz --all -o y$$.out.gz
+$WRAP ./toplev.py $SHOPT --import x$$.csv.gz -o y$$.out.gz
 [ -z "$NORES" ] && zgrep IPC y$$.out.gz
 rm x$$.csv.gz y$$.out.gz
+
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --no-multiplex --columns -l4 $LOAD
-$WRAP ./toplev.py --force-cpu bdw $OPT --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns -l4 $LOAD
+$WRAP ./toplev.py --force-cpu bdw $OPT --cpu 0,1,2,3 --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD
