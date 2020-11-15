@@ -4,7 +4,7 @@
 # should cover near all code in toplev, except for specific error paths.
 # for non root set kernel.perf_event_paranoid = -1
 
-# WRAP=... to run toplev with specific python (e.g. WRAP=python3 or WRAP="coverage run --append" or WRAP="./fake-perf.py")
+# WRAP=... to run toplev with specific python (e.g. WRAP=python3 or WRAP="coverage run --append")
 # DCPU=cpu to do more test on specific CPU
 # NOGROUP=1 disable testing for single top level group
 # NORES=1   disable checking for results
