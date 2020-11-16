@@ -1781,7 +1781,7 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
                     if res:
                         interval_dur = interval - prev_interval
                         set_interval(env, interval_dur, prev_interval)
-                        yield 0, res, rev, interval, valstats, env
+                        yield 0, res, rev, prev_interval, valstats, env
                         res = defaultdict(list)
                         rev = defaultdict(list)
                         valstats = defaultdict(list)
