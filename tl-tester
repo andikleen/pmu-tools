@@ -278,7 +278,7 @@ $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-o
 [ -z "$NORES" ] && grep -q -v "not supported" perfo$$.csv
 rm log$$ val$$.csv perfo$$.csv
 
-SHOPT="-I100 -a -A --force-cpu $DCPU $OPT --all --no-uncore --no-desc"
+SHOPT="-I100 -a -A --force-cpu $DCPU $OPT -l3 --metric-group +Summary --no-uncore --no-desc"
 $WRAP ./toplev.py $SHOPT --perf-output x$$.csv -o log-all0.$$ $LOADLONG
 $WRAP ./toplev.py $SHOPT --import x$$.csv -o log-all.$$
 diff -u log-all0.$$ log-all.$$
