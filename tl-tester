@@ -281,12 +281,12 @@ rm log$$ val$$.csv perfo$$.csv
 SHOPT="-I100 -a -A --force-cpu $DCPU $OPT -l3 --metric-group +Summary --no-uncore --no-desc"
 $WRAP ./toplev.py $SHOPT --perf-output x$$.csv -o log-all0.$$ $LOADLONG
 $WRAP ./toplev.py $SHOPT --import x$$.csv -o log-all.$$
-diff -u log-all0.$$ log-all.$$
+diff -wu log-all0.$$ log-all.$$
 $WRAP ./toplev.py $SHOPT --subset 0/50% --valcsv val.0.$$.csv --import x$$.csv -o log-1.$$
 $WRAP ./toplev.py $SHOPT --subset 1/50% --valcsv val.1.$$.csv --import x$$.csv -o log-2.$$
 cat log-{1,2}.$$ | sed -e '/^#/d' > log-combined.$$
 sed -e '/^#/d' log-all.$$ > log-allf.$$
-diff -u log-combined.$$ log-allf.$$
+diff -wu log-combined.$$ log-allf.$$
 rm log-{1,2,combined,all,allf,all0}.$$ val.{0,1}.$$.csv
 $WRAP ./toplev.py $SHOPT --subset 0-1000 --import x$$.csv
 TLSEED=1 \
