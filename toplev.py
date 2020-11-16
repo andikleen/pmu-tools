@@ -682,10 +682,10 @@ def do_xlsx(env):
     return ret
 
 def gentmp(o, cpu):
-    o = o.replace(".xz", "").replace(".gz", "")
-    if not o.endswith(".csv"):
-        o += ".csv"
-    return o.replace(".csv", "-cpu%d.csv" % cpu)
+    o = re.sub(r'\.(xz|gz)', '', o)
+    if o.endswith(".csv"):
+        return o.replace(".csv", "-cpu%d.csv" % cpu)
+    return o + "-cpu%d" % cpu
 
 def output_to_tmp(arg, outfn):
     if not args.output or args.xlsx:
