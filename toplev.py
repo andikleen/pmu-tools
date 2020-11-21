@@ -3182,6 +3182,7 @@ elif cpu.cpu == "tgl":
     model = icl_client_ratios
     setup_metrics(model)
     # work around kernel constraint table bug in some kernel versions
+    # XXX check version
     ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
 elif cpu.cpu == "slm":
     import slm_ratios
