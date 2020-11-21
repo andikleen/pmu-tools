@@ -1773,15 +1773,16 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
                 if interval != prev_interval:
                     # skip the first because we can't tell when it started
                     if prev_interval != 0.0 and prun.next_timestamp():
+                        interval_dur = interval - prev_interval
+                        interval = prev_interval
                         break
                     if res:
                         interval_dur = interval - prev_interval
                         set_interval(env, interval_dur, prev_interval)
-                        yield 0, res, rev, interval, valstats, env
+                        yield 0, res, rev, prev_interval, valstats, env
                         res = defaultdict(list)
                         rev = defaultdict(list)
                         valstats = defaultdict(list)
-                        env = dict()
                     prev_interval = interval
                     start = interval
             elif not l[:1].isspace():
@@ -1902,15 +1903,14 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
             update_perf_summary(runner, resoff[title] + len(res[title]) - 1, title, val, event, "", multiplex)
 
     inf.close()
-    if 'interval-s' not in env:
-        if not args.import_ and not args.interval:
-            set_interval(env, time.time() - start, start)
-        elif args.interval:
-            set_interval(env, interval_dur, 0.0)
-        else:
-            print("warning: cannot determine time duration. Per second metrics may be wrong. Use -Ixxx.",
-                    file=sys.stderr)
-            set_interval(env, 0, 0)
+    if not args.import_ and not args.interval:
+        set_interval(env, time.time() - start, start)
+    elif args.interval:
+        set_interval(env, interval_dur, interval)
+    else:
+        print("warning: cannot determine time duration. Per second metrics may be wrong. Use -Ixxx.",
+                file=sys.stderr)
+        set_interval(env, 0, 0)
     ret = prun.wait()
     print_account(account)
     yield ret, res, rev, interval, valstats, env
