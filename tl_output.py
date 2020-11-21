@@ -443,6 +443,7 @@ class OutputJSON(Output):
         self.count = Counter()
         self.no_header = args.no_json_header
         self.no_footer = args.no_json_footer
+        self.num = 0
 
     def print_footer_all(self):
         def write_all(s):
@@ -453,14 +454,15 @@ class OutputJSON(Output):
                 self.logf.write(s(""))
 
         if self.no_footer:
-            if self.nodes:
+            if self.num > 0:
                 write_all(lambda x: ",\n")
         else:
             def start(name):
+                n = ""
                 if name not in self.count:
-                    return "[\n"
-                return ""
-            write_all(lambda n: start(n) + "\n]\n")
+                    n += "[\n"
+                return n + "\n]\n"
+            write_all(start)
 
     print_footer = print_footer_all
 
@@ -468,6 +470,7 @@ class OutputJSON(Output):
         self.timestamp = timestamp
         self.nodes[title][hdr] = val
         self.headers[hdr] = True
+        self.num += 1
 
     def flush(self):
         nodes = OrderedDict()
