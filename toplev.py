@@ -1049,6 +1049,9 @@ class PerfRun(object):
         if m:
             self.sample_prob = float(m.group(1)) / 100.
             self.random = random.Random()
+            s = os.getenv("TLSEED")
+            if s:
+                self.random.seed(int(s))
             self.sampling = False
             return
         sys.exit("Unparseable --subset %s" % iss)
@@ -1074,11 +1077,7 @@ class PerfRun(object):
         if self.skip_to_next_ts:
             self.skip_to_next_ts = False
         if self.sample_prob:
-            # XXX pick some distribution?
             r = self.random.random()
-            s = os.getenv("TLSEED")
-            if s:
-                self.random.seed(int(s))
             self.sampling = r < self.sample_prob
         return False
 
