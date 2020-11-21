@@ -760,7 +760,7 @@ def run_parallel(args, env):
     for p in procs:
         ret = p[0].wait()
         if ret:
-            return ret
+            sys.exit("Subprocess toplev failed %d" % ret)
         tl_output.catrmoutput(p[1], logf, logfiles, args.keep)
     ret = 0
     if sums:
