@@ -1584,7 +1584,7 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
         print_keys(runner, res, rev, valstats, out, interval, env, mode)
 
 def print_and_sum_keys(runner, res, rev, valstats, out, interval, env):
-    if res and all([sum(res[k]) == 0.0 for k in res.keys()]):
+    if res and all([sum(res[k]) == 0.0 for k in res.keys()]) and cpu.cpu == cpu.realcpu:
         sys.exit("All measured values 0. perf broken?")
     if args.interval and interval is None:
         interval = float('nan')
