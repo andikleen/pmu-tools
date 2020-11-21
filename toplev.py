@@ -223,11 +223,11 @@ def unsup_event(e, table, min_kernel=None):
     else:
         return False
     v = j[1]
-    if v[1] and kv_to_key(kernel_version) < kv_to_key(v[1]):
+    if v[1] and kernel_version < kv_to_key(v[1]):
         if min_kernel:
             min_kernel.append(v[1])
         return True
-    if v[2] and kv_to_key(kernel_version) >= kv_to_key(v[2]):
+    if v[2] and kernel_version >= kv_to_key(v[2]):
         return False
     return False
 
@@ -3085,7 +3085,7 @@ if cpu.cpu is None:
 kv = os.getenv("KERNEL_VERSION")
 if not kv:
     kv = platform.release()
-kernel_version = list(map(int, kv.split(".")[:2]))
+kernel_version = kv_to_key(list(map(int, kv.split(".")[:2])))
 
 def ht_warning():
     if cpu.ht and not args.quiet:
@@ -3180,16 +3180,16 @@ elif cpu.cpu == "icl":
     model = icl_client_ratios
     setup_metrics(model)
     # work around kernel constraint table bug in some kernel versions
-    ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
+    if kernel_version < 510:
+        ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
 elif cpu.cpu == "tgl":
     # FIXME use the icl model for now until we have a full TGL model
     import icl_client_ratios
     icl_client_ratios.smt_enabled = cpu.ht
     model = icl_client_ratios
     setup_metrics(model)
-    # work around kernel constraint table bug in some kernel versions
-    # XXX check version
-    ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
+    if kernel_version < 510:
+        ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
 elif cpu.cpu == "slm":
     import slm_ratios
     model = slm_ratios
