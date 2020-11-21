@@ -281,12 +281,12 @@ rm log$$ val$$.csv perfo$$.csv
 SHOPT="-I100 -a -A --force-cpu $DCPU $OPT --all --no-uncore --no-desc"
 $WRAP ./toplev.py $SHOPT --perf-output x$$.csv -o log-all0.$$ $LOADLONG
 $WRAP ./toplev.py $SHOPT --import x$$.csv -o log-all.$$
-diff -u log-all0.$$ log-all.$$
+diff -uw log-all0.$$ log-all.$$
 $WRAP ./toplev.py $SHOPT --subset 0/50% --valcsv val.0.$$.csv --import x$$.csv -o log-1.$$
 $WRAP ./toplev.py $SHOPT --subset 1/50% --valcsv val.1.$$.csv --import x$$.csv -o log-2.$$
 cat log-{1,2}.$$ | sed -e '/^#/d' > log-combined.$$
 sed -e '/^#/d' log-all.$$ > log-allf.$$
-diff -u log-combined.$$ log-allf.$$
+diff -uw log-combined.$$ log-allf.$$
 rm log-{1,2,combined,all,allf,all0}.$$ val.{0,1}.$$.csv
 $WRAP ./toplev.py $SHOPT --subset 0-1000 --import x$$.csv
 TLSEED=1 \
@@ -330,9 +330,9 @@ COMMON="--force-cpu $DCPU $OPT -I100 --no-desc --summary --no-output --nodes=-MU
 
 $WRAP ./toplev.py $COMMON $MODE --perf-summary perfs$$.csv --perf-output perfo$$.csv -o log$$ --valcsv val.1.$$.csv $LOADLONG
 $WRAP ./toplev.py $COMMON $MODE --import perfs$$.csv --perf-output perfo.1.$$.csv --valcsv val.2.$$.csv -o log2.$$
-diff -u log$$ log2.$$
+diff -uw log$$ log2.$$
 $WRAP ./toplev $COMMON $MODE --import perfo$$.csv --perf-output perfo.2.$$.csv --valcsv val.3.$$.csv -o log3.$$
-diff -u log$$ log3.$$
+diff -uw log$$ log3.$$
 rm log{,2.,3.}$$ perf{s,o}$$.csv perfo.{1,2}.$$.csv val.{1,2,3}.$$.csv
 done
 
