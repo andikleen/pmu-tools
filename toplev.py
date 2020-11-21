@@ -726,7 +726,7 @@ def run_parallel(args, env):
             valfn = gentmp(args.valcsv if args.valcsv else "toplevv", cpu)
             update_arg(arg, "--valcsv", "=", valfn)
             valfns.append(valfn)
-        arg.insert(1, "--subset=%d/%.2f%%" % (cpu, 1.0//args.pjobs*100.))
+        arg.insert(1, "--subset=%d/%.2f%%" % (cpu, 1.0/args.pjobs*100.))
         if args.json and args.pjobs > 1:
             if cpu > 0:
                 arg.insert(1, "--no-json-header")
