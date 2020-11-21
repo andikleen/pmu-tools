@@ -1875,7 +1875,7 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
         # also -C xxx causes them to be duplicated too, unless single thread
         if (re.match(r'power|uncore', event) and
                 title != "" and is_number(title) and
-                (not (args.core and not args.single_thread))):
+                (not ((args.core or args.cpu) and not args.single_thread))):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
             dup_val(cpu.sockettocpus[socket], val, event, st)
