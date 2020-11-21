@@ -26,7 +26,7 @@
 # FORCEMETRICS=1    Force fixed metrics and slots
 # TLSEED=n          Set seed for --subset sample: sampling
 
-from __future__ import print_function
+from __future__ import print_function, division
 import sys, os, re, textwrap, platform, pty, subprocess
 import argparse, time, types, csv
 import bisect
@@ -711,6 +711,8 @@ def run_parallel(args, env):
     sums = []
     targ = copy(sys.argv)
     del targ[targ.index("--parallel")]
+    ichunk = os.path.getsize(args.import_) / args.pjobs
+    fileoff = 0
     for cpu in range(args.pjobs):
         arg = copy(targ)
         if args.xlsx:
@@ -726,7 +728,11 @@ def run_parallel(args, env):
             valfn = gentmp(args.valcsv if args.valcsv else "toplevv", cpu)
             update_arg(arg, "--valcsv", "=", valfn)
             valfns.append(valfn)
-        arg.insert(1, "--subset=%d/%.2f%%" % (cpu, 1.0/args.pjobs*100.))
+        end = ""
+        if cpu < args.pjobs-1:
+            end = "%d" % (fileoff + ichunk)
+        arg.insert(1, ("--subset=%d-" % fileoff) + end)
+        fileoff += ichunk
         if args.json and args.pjobs > 1:
             if cpu > 0:
                 arg.insert(1, "--no-json-header")
