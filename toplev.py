@@ -1074,8 +1074,7 @@ class PerfRun(object):
             off = self.inputf.tell()
             if self.end_seek_offset <= off:
                 return True
-        if self.skip_to_next_ts:
-            self.skip_to_next_ts = False
+        self.skip_to_next_ts = False
         if self.sample_prob:
             r = self.random.random()
             self.sampling = r < self.sample_prob
