@@ -58,6 +58,51 @@ Measure program running on core 0 with all nodes and metrics enables
 	toplev --all --xlsx x.xlsx -a sleep 10
 Generate spreadsheet with full system measurement for 10 seconds
 
+For more details on toplev please see the [toplev tutorial](https://github.com/andikleen/pmu-tools/wiki/toplev-manual)
+
+# What tool to use for what?
+
+You want to:
+
+- understand CPU bottlenecks on the high-level: use toplev.
+- display toplev output graphically: use tl-server or toplev --graph
+- know what CPU events to run, but want to use symbolic names: use ocperf.
+- measure interconnect/caches/memory/power management on Xeon E5+: use ucevent
+- Use perf events from a C program: use jevents
+- Query CPU topology or disable HyperThreading: use cputop
+- Change Model Specific Registers: use msr
+- Change PCI config space: use PCI
+
+For more details on the tools see [TOOLS](TOOLS.md)
+
+# All features:
+
+## Major tools/libraries
+
+* The "ocperf" wrapper to "perf" that provides a full core performance
+counter event list for common Intel CPUs. This allows to use all the
+Intel events, not just the builtin events of perf. Can be also used
+as a library from other python programs
+* The "toplev.py" tool to identify the micro-architectural bottleneck for a workload.
+This implements the [TopDown](https://sites.google.com/site/analysismethods/yasin-pubs) or [TopDown2](http://software.intel.com/en-us/articles/how-to-tune-applications-using-a-top-down-characterization-of-microarchitectural-issues)
+methodology.
+* The "ucevent" tool to manage and compute uncore performance events. Uncore is the part of the CPU that is not core.  Supports many metrics for power management, IO, QPI (interconnect), caches, and others.  ucevent automatically generates event descriptions
+for the perf uncore driver and pretty prints the output. It also supports
+computing higher level metrics derived from multiple events.
+* A library to resolve named intel events (like INST_RETIRED.ANY)
+to perf_event_attr ([jevents](http://halobates.de/jevents.html))
+and provide higher level function for using the Linux perf API
+for self profiling or profiling other programs.
+It also has a "perf stat" clone called "jestat"
+* A variety of tools for plotting and post processing perf stat -I1000 -x,
+or toplev.py -I1000 -x, interval measurements.
+* Some utility libraries and functions for MSR access, CPU topology
+and other functionality,as well as example programs how to program the Intel PMU.
+
+There are some obsolete tools which are not supported anymore, like simple-pebs.
+These are kept as PMU programming reference, but may need some updates to build
+on newer Linux kernels.
+
 # Recent new features:
 
 * toplev now has a --parallel argument to can process large --import input files
@@ -96,55 +141,10 @@ Generate spreadsheet with full system measurement for 10 seconds
 
 Older changes in [CHANGES](CHANGES.md)
 
-# All features:
-
-## Major tools/libraries
-
-* The "ocperf" wrapper to "perf" that provides a full core performance 
-counter event list for common Intel CPUs. This allows to use all the
-Intel events, not just the builtin events of perf. Can be also used
-as a library from other python programs
-* The "toplev.py" tool to identify the micro-architectural bottleneck for a workload. 
-This implements the [TopDown](https://sites.google.com/site/analysismethods/yasin-pubs) or [TopDown2](http://software.intel.com/en-us/articles/how-to-tune-applications-using-a-top-down-characterization-of-microarchitectural-issues)
-methodology.
-* The "ucevent" tool to manage and compute uncore performance events. Uncore is the part of the CPU that is not core.  Supports many metrics for power management, IO, QPI (interconnect), caches, and others.  ucevent automatically generates event descriptions
-for the perf uncore driver and pretty prints the output. It also supports
-computing higher level metrics derived from multiple events. 
-* A library to resolve named intel events (like INST_RETIRED.ANY) 
-to perf_event_attr ([jevents](http://halobates.de/jevents.html))
-and provide higher level function for using the Linux perf API
-for self profiling or profiling other programs.
-It also has a "perf stat" clone called "jestat"
-* A variety of tools for plotting and post processing perf stat -I1000 -x, 
-or toplev.py -I1000 -x, interval measurements.
-* Some utility libraries and functions for MSR access, CPU topology
-and other functionality,as well as example programs how to program the Intel PMU.
-
-There are some obsolete tools which are not supported anymore, like simple-pebs.
-These are kept as PMU programming reference, but may need some updates to build
-on newer Linux kernels.
-
----
-
 # Help wanted
 
 - The plotting tools could use a lot of improvements. Both tl-serve and tl-barplot.
 If you're good in python or JS plotting any help improving those would be appreciated.
-
-# What tool to use for what?
-
-You want to:
-
-- understand CPU bottlenecks on the high-level: use toplev.
-- display toplev output graphically: use tl-server or toplev --graph
-- know what CPU events to run, but want to use symbolic names: use ocperf.
-- measure interconnect/caches/memory/power management on Xeon E5+: use ucevent
-- Use perf events from a C program: use jevents
-- Query CPU topology or disable HyperThreading: use cputop
-- Change Model Specific Registers: use msr
-- Change PCI config space: use PCI
-
-For more details on the tools see (TOOLS)[TOOLS.md]
 
 # Mailing list
 
