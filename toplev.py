@@ -26,7 +26,7 @@
 # FORCEMETRICS=1    Force fixed metrics and slots
 # TLSEED=n          Set seed for --subset sample: sampling
 
-from __future__ import print_function
+from __future__ import print_function, division
 import sys, os, re, textwrap, platform, pty, subprocess
 import argparse, time, types, csv
 import bisect
@@ -223,11 +223,11 @@ def unsup_event(e, table, min_kernel=None):
     else:
         return False
     v = j[1]
-    if v[1] and kv_to_key(kernel_version) < kv_to_key(v[1]):
+    if v[1] and kernel_version < kv_to_key(v[1]):
         if min_kernel:
             min_kernel.append(v[1])
         return True
-    if v[2] and kv_to_key(kernel_version) >= kv_to_key(v[2]):
+    if v[2] and kernel_version >= kv_to_key(v[2]):
         return False
     return False
 
@@ -711,6 +711,8 @@ def run_parallel(args, env):
     sums = []
     targ = copy(sys.argv)
     del targ[targ.index("--parallel")]
+    ichunk = os.path.getsize(args.import_) / args.pjobs
+    fileoff = 0
     for cpu in range(args.pjobs):
         arg = copy(targ)
         if args.xlsx:
@@ -726,7 +728,11 @@ def run_parallel(args, env):
             valfn = gentmp(args.valcsv if args.valcsv else "toplevv", cpu)
             update_arg(arg, "--valcsv", "=", valfn)
             valfns.append(valfn)
-        arg.insert(1, "--subset=%d/%.2f%%" % (cpu, 1.0/args.pjobs*100.))
+        end = ""
+        if cpu < args.pjobs-1:
+            end = "%d" % (fileoff + ichunk)
+        arg.insert(1, ("--subset=%d-" % fileoff) + end)
+        fileoff += ichunk
         if args.json and args.pjobs > 1:
             if cpu > 0:
                 arg.insert(1, "--no-json-header")
@@ -1906,7 +1912,7 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
     if not args.import_ and not args.interval:
         set_interval(env, time.time() - start, start)
     elif args.interval:
-        set_interval(env, interval_dur, interval)
+        set_interval(env, interval_dur, interval if interval else float('NaN'))
     else:
         print("warning: cannot determine time duration. Per second metrics may be wrong. Use -Ixxx.",
                 file=sys.stderr)
@@ -3079,7 +3085,7 @@ if cpu.cpu is None:
 kv = os.getenv("KERNEL_VERSION")
 if not kv:
     kv = platform.release()
-kernel_version = list(map(int, kv.split(".")[:2]))
+kernel_version = kv_to_key(list(map(int, kv.split(".")[:2])))
 
 def ht_warning():
     if cpu.ht and not args.quiet:
@@ -3174,16 +3180,16 @@ elif cpu.cpu == "icl":
     model = icl_client_ratios
     setup_metrics(model)
     # work around kernel constraint table bug in some kernel versions
-    ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
+    if kernel_version < 510:
+        ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
 elif cpu.cpu == "tgl":
     # FIXME use the icl model for now until we have a full TGL model
     import icl_client_ratios
     icl_client_ratios.smt_enabled = cpu.ht
     model = icl_client_ratios
     setup_metrics(model)
-    # work around kernel constraint table bug in some kernel versions
-    # XXX check version
-    ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
+    if kernel_version < 510:
+        ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
 elif cpu.cpu == "slm":
     import slm_ratios
     model = slm_ratios
