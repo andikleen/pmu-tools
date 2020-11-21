@@ -521,10 +521,12 @@ trap "" ERR 0
 set +x +e
 echo
 echo "$badschedules bad schedules: $badschedlist"
+if [ -z "$NOCPUS" ] ; then
 for i in $ALLCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$cpu" ] && continue
 	rm log$$.$i ;
 done
+fi
 dumplogs
 times
 echo
