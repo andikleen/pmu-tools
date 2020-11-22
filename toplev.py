@@ -25,10 +25,20 @@
 # KERNEL_VERSION=...    Force kernel version (e.g. 5.0)
 # FORCEMETRICS=1    Force fixed metrics and slots
 # TLSEED=n          Set seed for --subset sample: sampling
+# DURATION_TIME=0   Force not using duration_time
 
 from __future__ import print_function, division
-import sys, os, re, textwrap, platform, pty, subprocess
-import argparse, time, types, csv
+import sys
+import os
+import re
+import textwrap
+import platform
+import pty
+import subprocess
+import argparse
+import time
+import types
+import csv
 import bisect
 import random
 import io
