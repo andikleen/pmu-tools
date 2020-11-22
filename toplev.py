@@ -1906,7 +1906,6 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
                      len(res[title]) - 1,
                      stddev, multiplex)
 
-
     inf.close()
     if not args.import_ and not args.interval:
         set_interval(env, time.time() - start, start)
