@@ -1608,6 +1608,9 @@ def print_summary(runner, out):
                     l.append("0") # XXX
                 if r is None:
                     continue
+                if (r[2].startswith("uncore") or r[2].startswith("power")) and is_number(title) and (
+                        int(title) != cpu.sockettocpus[cpu.cputosocket[int(title)]][0]):
+                    continue
                 args.perf_summary.write(";".join(l + ["%f" % r[0], r[1],
                                                       r[2], "%f" % r[3],
                                                       "%.2f" % r[4], "", ""]) + "\n")
@@ -1884,7 +1887,7 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
 
         # power/uncore events are only output once for every socket
         if (re.match(r'power|uncore', event) and
-                title != "" and is_number(title) and
+                is_number(title) and
                 (not ((args.core or args.cpu) and not args.single_thread))):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
