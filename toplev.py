@@ -1913,7 +1913,8 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
     if not args.import_ and not args.interval:
         set_interval(env, time.time() - start, start)
     elif args.interval:
-        set_interval(env, interval_dur, interval if interval else float('NaN'))
+        set_interval(env, interval_dur if interval_dur else args.interval/1000.,
+                     interval if interval else float('NaN'))
     else:
         print("warning: cannot determine time duration. Per second metrics may be wrong. Use -Ixxx.",
                 file=sys.stderr)
