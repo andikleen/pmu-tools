@@ -1869,32 +1869,34 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
 
         account[event].total += 1
 
-        def dup_val(l, val, event, st):
-            for j in l:
-                res["%d" % (j)].append(val)
-                rev["%d" % (j)].append(event)
-                valstats["%d" % (j)].append(st)
+        def add(t):
+            res[t].append(val)
+            rev[t].append(event)
+            valstats[t].append(st)
+            if args.perf_summary:
+                # XXX add unit, enabled, num-cpus
+                assert len(res[t]) == len(rev[t])
+                update_perf_summary(runner, resoff[t] + len(res[t]) - 1, t, val, event, "", multiplex)
 
-        # power/uncore events are only output once for every socket. duplicate them
-        # to all cpus in the socket to make the result lists match
-        # unless we use -A ??
-        # also -C xxx causes them to be duplicated too, unless single thread
+        def dup_val(l):
+            for j in l:
+                add("%d" % j)
+
+        # power/uncore events are only output once for every socket
         if (re.match(r'power|uncore', event) and
                 title != "" and is_number(title) and
                 (not ((args.core or args.cpu) and not args.single_thread))):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
-            dup_val(cpu.sockettocpus[socket], val, event, st)
+            dup_val(cpu.sockettocpus[socket])
         # per core events are only output once. duplicate them.
         elif re.match(r'(S\d+-)?(D\d+-)?C\d+', title) and (smt_mode or args.no_aggr):
             m = re.match(r'(?:S(\d+)-)?(?:D(\d+)-)?C(\d+)', title)
             # ignore die for now (XXX)
             socket, core = int(m.group(1)), int(m.group(3))
-            dup_val(cpu.coreids[(socket, core)], val, event, st)
+            dup_val(cpu.coreids[(socket, core)])
         else:
-            res[title].append(val)
-            rev[title].append(event)
-            valstats[title].append(st)
+            add(title)
 
         if args.raw or args.valcsv:
             dump_raw(interval if args.interval else "",
@@ -1904,9 +1906,6 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
                      len(res[title]) - 1,
                      stddev, multiplex)
 
-        if args.perf_summary:
-            # XXX add unit, enabled, num-cpus
-            update_perf_summary(runner, resoff[title] + len(res[title]) - 1, title, val, event, "", multiplex)
 
     inf.close()
     if not args.import_ and not args.interval:
