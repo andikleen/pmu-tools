@@ -39,7 +39,7 @@ from itertools import compress, groupby, chain
 from listutils import cat_unique, dedup, filternot, not_list, append_dict, zip_longest, flatten, findprefix
 from objutils import has, safe_ref, map_fields
 
-from tl_stat import ComputeStat, ValStat, deprecated_combine_valstat
+from tl_stat import ComputeStat, ValStat, combine_valstat
 import tl_cpu
 import tl_output
 import ocperf
@@ -1437,7 +1437,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             else:
                 cpus = [x for x in keys if key_to_coreid(x) == core and not filtered(x)]
             combined_res = list(zip(*[res[x] for x in cpus]))
-            combined_st = [deprecated_combine_valstat(z)
+            combined_st = [combine_valstat(z)
                   for z in zip(*[valstats[x] for x in cpus])]
             env['num_merged'] = len(cpus)
 
@@ -1512,7 +1512,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
         if cpus:
             combined_res = [sum([res[j][i] for j in cpus])
                             for i in range(len(res[cpus[0]]))]
-            combined_st = [deprecated_combine_valstat([valstats[j][i] for j in cpus])
+            combined_st = [combine_valstat([valstats[j][i] for j in cpus])
                            for i in range(len(valstats[cpus[0]]))]
             if smt_mode:
                 nodeselect = package_node
@@ -2325,7 +2325,7 @@ class Summary(object):
             if len(self.valstats[j]) == 0:
                 self.valstats[j] = valstats[j]
             else:
-                self.valstats[j] = [deprecated_combine_valstat([a,b]) for a, b in zip(self.valstats[j], valstats[j])]
+                self.valstats[j] = [combine_valstat([a,b]) for a, b in zip(self.valstats[j], valstats[j])]
         for j in env.keys():
             self.env[j] += env[j]
 
