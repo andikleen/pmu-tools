@@ -332,7 +332,7 @@ rm j$$.json
 
 for MODE in -l3 "-a -A --all" ; do
 # exclude MUX for now because it has small variances, as well as /sec nodes
-COMMON="--force-cpu $DCPU $OPT -I100 --no-desc --summary --no-output --nodes=-MUX,-*_BW"
+COMMON="--force-cpu $DCPU $OPT -I100 --no-desc --summary --no-output --nodes=-MUX"
 
 $WRAP ./toplev.py $COMMON $MODE --perf-summary perfs$$.csv --perf-output perfo$$.csv -o log$$ --valcsv val.1.$$.csv $LOADLONG
 $WRAP ./toplev.py $COMMON $MODE --import perfs$$.csv --perf-output perfo.1.$$.csv --valcsv val.2.$$.csv -o log2.$$
@@ -481,7 +481,7 @@ rm x$$.xlsx
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 fi
 
-ARG="-a -A --all -I100 --summary --no-desc --nodes=-MUX,-L*_BW" # XXX fix *_BW intervals
+ARG="-a -A --all -I100 --summary --no-desc --nodes=-MUX"
 $WRAP ./toplev.py $ARG -o log0.$$ --perf-output perfo0.$$.csv --valcsv perfv0.$$.csv $LOADLONG
 $WRAP ./toplev.py --import perfo0.$$.csv $ARG -o log1.$$ --perf-output perfo1.$$.csv --valcsv perfv1.$$.csv
 diff -u perfo0.$$.csv perfo1.$$.csv | head
