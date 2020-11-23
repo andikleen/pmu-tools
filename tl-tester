@@ -279,7 +279,7 @@ $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-o
 rm log$$ val$$.csv perfo$$.csv
 
 test_subset() {
-SHOPT="-I100 -a -A --force-cpu $DCPU $OPT -l3 --metric-group +Summary --no-uncore --no-desc $1"
+SHOPT="-I100 -a -A --force-cpu $DCPU $OPT -l3 --metric-group +Summary --no-desc $1"
 $WRAP ./toplev.py $SHOPT --perf-output x$$.csv -o log-all0.$$ $LOADLONG
 $WRAP ./toplev.py $SHOPT --import x$$.csv -o log-all.$$
 diff -wu log-all0.$$ log-all.$$
@@ -330,7 +330,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --per-thread --json --all -o j$$.
 cat j$$.json | $PYTHON -m json.tool
 rm j$$.json
 
-for MODE in -l3 "-a -A --all --no-uncore" ; do # XXX get rid of --no-uncore
+for MODE in -l3 "-a -A --all" ; do
 # exclude MUX for now because it has small variances, as well as /sec nodes
 COMMON="--force-cpu $DCPU $OPT -I100 --no-desc --summary --no-output --nodes=-MUX,-*_BW"
 
@@ -481,7 +481,7 @@ rm x$$.xlsx
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 fi
 
-ARG="-a -A --all -I100 --summary --no-desc --no-uncore --nodes=-MUX,-L*_BW" # XXX get rid of --no-uncore, fix *_BW intervals
+ARG="-a -A --all -I100 --summary --no-desc --nodes=-MUX,-L*_BW" # XXX fix *_BW intervals
 $WRAP ./toplev.py $ARG -o log0.$$ --perf-output perfo0.$$.csv --valcsv perfv0.$$.csv $LOADLONG
 $WRAP ./toplev.py --import perfo0.$$.csv $ARG -o log1.$$ --perf-output perfo1.$$.csv --valcsv perfv1.$$.csv
 diff -u perfo0.$$.csv perfo1.$$.csv | head
