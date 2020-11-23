@@ -1920,7 +1920,7 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
             dup_val(cpu.sockettocpus[socket])
-        # per core events are only output once. duplicate them.
+        # per core events are only output once per core
         elif re.match(r'(S\d+-)?(D\d+-)?C\d+', title) and (smt_mode or args.no_aggr):
             m = re.match(r'(?:S(\d+)-)?(?:D(\d+)-)?C(\d+)', title)
             # ignore die for now (XXX)
