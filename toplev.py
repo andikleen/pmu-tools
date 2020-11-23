@@ -1923,7 +1923,8 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
         # per core events are only output once per core
         elif re.match(r'(S\d+-)?(D\d+-)?C\d+', title) and (smt_mode or args.no_aggr):
             m = re.match(r'(?:S(\d+)-)?(?:D(\d+)-)?C(\d+)', title)
-            # ignore die for now (XXX)
+            if m.group(2): # XXX
+                warn_once("die topology not supported currently")
             socket, core = int(m.group(1)), int(m.group(3))
             dup_val(cpu.coreids[(socket, core)])
         # duration time is only output once, except with --cpu/-C (???)
