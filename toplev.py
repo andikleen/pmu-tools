@@ -3359,12 +3359,16 @@ if (args.perf_output or args.perf_summary) and not args.no_csv_header:
     if args.perf_summary:
         args.perf_summary.write(";".join(ph) + "\n")
 
+if args.cpu:
+    allcpus = [int(x) for x in args.cpu.split(",")]
+else:
+    allcpus = cpu.allcpus
 if args.core:
-    runner.allowed_threads = [x for x in cpu.allcpus if display_core(x, False)]
-    allowed_cores = [x for x in cpu.allcpus if display_core(x, True)]
+    runner.allowed_threads = [x for x in allcpus if display_core(x, False)]
+    allowed_cores = [x for x in allcpus if display_core(x, True)]
     rest = ["-C", ",".join(["%d" % x for x in allowed_cores])] + rest
 else:
-    runner.allowed_threads = cpu.allcpus
+    runner.allowed_threads = allcpus
 
 if not args.quiet and not args.print:
     print("Using level %d." % (args.level), end='')
