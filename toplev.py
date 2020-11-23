@@ -1856,7 +1856,7 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
         expected_ev = remove_qual(flat_events[len(res[title])])
         if event != expected_ev:
             # XXX handle this better
-            print("Event in input does not match schedule (%s vs %s [%d/%s/%f])." % (
+            print("Event in input does not match schedule (%s vs expected %s [ind:%d/tit:%s/int:%f])." % (
                     event, expected_ev, len(res[title]), title, prev_interval),
                     file=sys.stderr)
             sys.stdout.write(l)
