@@ -278,7 +278,8 @@ $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-o
 [ -z "$NORES" ] && grep -q -v "not supported" perfo$$.csv
 rm log$$ val$$.csv perfo$$.csv
 
-SHOPT="-I100 -a -A --force-cpu $DCPU $OPT -l3 --metric-group +Summary --no-uncore --no-desc"
+test_subset() {
+SHOPT="-I100 -a -A --force-cpu $DCPU $OPT -l3 --metric-group +Summary --no-uncore --no-desc $1"
 $WRAP ./toplev.py $SHOPT --perf-output x$$.csv -o log-all0.$$ $LOADLONG
 $WRAP ./toplev.py $SHOPT --import x$$.csv -o log-all.$$
 diff -wu log-all0.$$ log-all.$$
@@ -291,6 +292,10 @@ rm log-{1,2,combined,all,allf,all0}.$$ val.{0,1}.$$.csv
 $WRAP ./toplev.py $SHOPT --subset 0-1000 --import x$$.csv
 TLSEED=1 \
 $WRAP ./toplev.py $SHOPT --subset 'sample:10%' --import x$$.csv
+}
+
+test_subset ""
+test_subset "--setvar DURATION_TIME=0"
 
 xz x$$.csv
 $WRAP ./toplev.py $SHOPT --import x$$.csv.xz -o y$$.out
@@ -303,6 +308,7 @@ rm x$$.csv.gz y$$.out.gz
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --no-multiplex --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu bdw $OPT --cpu 0,1,2,3 --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns -l4 $LOAD
+DURATION_TIME=0 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD

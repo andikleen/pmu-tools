@@ -78,7 +78,7 @@ known_cpus = (
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl")
 
-non_json_events = set(("dummy",))
+non_json_events = set(("dummy", "duration_time"))
 
 # handle kernels that don't support all events
 unsup_pebs = (
@@ -148,9 +148,8 @@ class EventContext(object):
     def __init__(self):
         self.constraint_fixes = dict()
         self.errata_whitelist = []
-        self.outgroup_events = set(["dummy"])
+        self.outgroup_events = set(["dummy", "duration_time"])
         self.sched_ignore_events = set([])
-        self.nonperf_events = set(["interval-ns", "interval-s", "interval-ms", "mux"])
         self.require_pebs_events = set([])
         self.core_domains = set(["Slots", "CoreClocks", "CoreMetric"])
         self.limited_counters = dict(limited_counters_base)
@@ -209,6 +208,11 @@ class PerfFeatures(object):
                 and not args.force_hypervisor
                 and works(perf + " stat -e power/energy-cores/ -a true"))
         self.supports_percore = works(perf + " stat --percore-show-thread true")
+        dt = os.getenv("DURATION_TIME")
+        if dt:
+            self.supports_duration_time = int(dt)
+        else:
+            self.supports_duration_time = works(perf + " list duration_time | grep duration_time")
         # guests don't support offcore response
         if event_nocheck:
             self.supports_ocr = True
@@ -1157,7 +1161,7 @@ def separator(x):
 def add_filter_event(e):
     if "/" in e and not e.startswith("cpu"):
         return e
-    if e == "dummy" or e == "emulation-faults":
+    if e == "dummy" or e == "emulation-faults" or e == "duration_time":
         return e
     if ":" in e:
         s = ""
@@ -1173,7 +1177,7 @@ def add_filter(s):
     return s
 
 def initialize_event(name, i, e):
-    if "." in name or "_" in name:
+    if "." in name or "_" in name and name not in non_json_events:
         ectx.emap.update_event(e.output(noname=True), e)
         if (e.counter not in cpu.standard_counters and not name.startswith("UNC_")):
             if e.counter.startswith("Fixed"):
@@ -1209,7 +1213,7 @@ def initialize_event(name, i, e):
 def raw_event(i, name="", period=False, nopebs=True, initialize=False):
     e = None
     orig_i = i
-    if "." in i or "_" in i:
+    if "." in i or "_" in i and i not in non_json_events:
         if re.match(r'^(OCR|OFFCORE_RESPONSE).*', i) and not feat.supports_ocr:
             if not args.quiet:
                 print("%s not supported in guest" % i, file=sys.stderr)
@@ -1628,9 +1632,13 @@ def print_summary(runner, out):
                     l.append("0") # XXX
                 if r is None:
                     continue
-                if (r[2].startswith("uncore") or r[2].startswith("power")) and is_number(title) and (
-                        int(title) != cpu.sockettocpus[cpu.cputosocket[int(title)]][0]):
-                    continue
+                if is_number(title):
+                    cpunum = int(title)
+                    if (r[2].startswith("uncore") or r[2].startswith("power")) and (
+                            cpunum != cpu.sockettocpus[cpu.cputosocket[cpunum]][0]):
+                        continue
+                    if r[2] == "duration_time" and cpunum != 0 and not args.cpu:
+                        continue
                 args.perf_summary.write(";".join(l + ["%f" % r[0], r[1],
                                                       r[2], "%f" % r[3],
                                                       "%.2f" % r[4], "", ""]) + "\n")
@@ -1827,7 +1835,7 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
         n = l.split(";")
 
         # filter out the empty unit field added by 3.14
-        n = list(filter(lambda x: x not in ('', 'Joules'), n))
+        n = [x for x in n if x not in ('', 'Joules', 'ns')]
 
         # timestamp is already removed
         # -a --per-socket socket,numcpus,count,event,...
@@ -1918,6 +1926,9 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
             # ignore die for now (XXX)
             socket, core = int(m.group(1)), int(m.group(3))
             dup_val(cpu.coreids[(socket, core)])
+        # duration time is only output once, except with --cpu/-C (???)
+        elif event == "duration_time" and is_number(title) and not args.cpu:
+            dup_val(runner.allowed_threads)
         else:
             add(title)
 
@@ -1996,11 +2007,16 @@ def adjust_ev(ev, level):
         ev = "TOPDOWN.SLOTS_P"
     return ev
 
-def ev_append(ev, level, obj):
+def ev_collect(ev, level, obj):
     if isinstance(ev, types.LambdaType):
-        return ev(lambda ev, level: ev_append(ev, level, obj), level)
-    if ev in ectx.nonperf_events:
+        return ev(lambda ev, level: ev_collect(ev, level, obj), level)
+    if ev == "mux":
         return DummyArith()
+    if ev.startswith("interval-"):
+        if not feat.supports_duration_time:
+            return DummyArith()
+        ev = "duration_time"
+
     ev = adjust_ev(ev, level)
 
     key = (ev, level, obj.name)
@@ -2011,7 +2027,7 @@ def ev_append(ev, level, obj):
             obj.evlevels.insert(ins + (0 if ev == "TOPDOWN.SLOTS" else 1), key)
         else:
             obj.evlevels.append(key)
-        if safe_ref(obj, 'nogroup'):
+        if safe_ref(obj, 'nogroup') or ev == "duration_time":
             ectx.outgroup_events.add(ev.lower())
     return DummyArith()
 
@@ -2049,9 +2065,15 @@ def compare_event(aname, bname):
     return map_fields(a, fields) == map_fields(b, fields)
 
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
-    """get measurement result and wrap in UVal"""
+    """get measurement result, possibly wrapping in UVal"""
 
     ev = adjust_ev(ev, level)
+
+    if isinstance(ev, str) and ev.startswith("interval") and feat.supports_duration_time:
+        scale = { "interval-s":  1e9,
+                  "interval-ns": 1,
+                  "interval-ms": 1e6 }[ev]
+        return lookup_res(res, rev, "duration_time", obj, env, level, referenced, cpuoff, st)/scale
 
     if ev in env:
         return env[ev]
@@ -2833,7 +2855,7 @@ class Runner(object):
         min_kernel = []
         for obj in self.olist:
             obj.evlevels = []
-            obj.compute(lambda ev, level: ev_append(ev, level, obj))
+            obj.compute(lambda ev, level: ev_collect(ev, level, obj))
             obj.val = None
             obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist, initialize=True)
