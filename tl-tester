@@ -433,19 +433,19 @@ $WRAP ./toplev.py $OPT -v -o log$$ --single-thread -r3 $LOAD
 rm log$$
 
 # test other perf output formats
-FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -mvl5 -I 1000 -a --per-core $LOAD
+FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -v -I 1000 -a --per-core $LOAD
 checklog0
-FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -l4 -I 1000 -a --per-core $LOAD
+FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --per-core $LOAD
 checklog0
-FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -l4 -I 1000 -a --per-socket $LOAD
+FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --per-socket $LOAD
 checklog0
-FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -l4 -I 1000 -a --per-socket --filterquals $LOAD
+FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --per-socket --filterquals $LOAD
 checklog0
-FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --no-desc -l4 -I 1000 -a -A --idle-threshold 20 $LOAD
+FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --no-desc --all -I 1000 -a -A --idle-threshold 20 $LOAD
 checklog0
-FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --summary --no-desc --no-area -l4 -I 1000 -a -A $LOAD
+FORCEHT=0 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --summary --no-desc --no-area --all -I 1000 -a -A $LOAD
 checklog0
-FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -l4 -I 1000 -a --per-thread --filterquals $LOAD
+FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --per-thread --filterquals $LOAD
 checklog0
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --no-output $LOAD
 
