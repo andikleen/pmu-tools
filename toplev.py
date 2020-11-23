@@ -1142,7 +1142,12 @@ class PerfRun(object):
         ret = 0
         if self.perf:
             ret = self.perf.wait()
+            self.perf = None
         return ret
+
+    def __del__(self):
+        if self.perf:
+            self.perf.kill()
 
 def separator(x):
     if x.startswith("cpu"):
