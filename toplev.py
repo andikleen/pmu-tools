@@ -1043,6 +1043,7 @@ class PerfRun(object):
         self.end_seek_offset = None
         self.sample_prob = None
         self.skip_line = False
+        self.perf = None
 
     def handle_inputsubset(self, f, iss):
         m = re.match(r'(\d+)-?(\d+)?$', iss)
