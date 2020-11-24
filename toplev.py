@@ -224,6 +224,9 @@ class PerfFeatures(object):
             self.has_max_precise = os.path.exists("/sys/devices/cpu/caps/max_precise")
             if self.has_max_precise:
                 self.max_precise = int(open("/sys/devices/cpu/caps/max_precise").read())
+        if args.exclusive and not works(perf + " stat -e '{branches,branches,branches,branches}:e' true"):
+            sys.exit("perf binary does not support :e exclusive modifier")
+
 
 def kv_to_key(v):
     return v[0] * 100 + v[1]
@@ -340,7 +343,9 @@ def event_group(evlist):
             n = needed_counters(g)
             if n <= cpu.counters:
                 e = "{%s}" % e
-                if args.pinned and all([ismetric(x) or x == "slots" for x in g]):
+                if args.exclusive:
+                    e += ":e"
+                elif args.pinned and all([ismetric(x) or x == "slots" for x in g]):
                     e += ":D"
             else:
                 # the scheduler should have avoided that
@@ -480,6 +485,7 @@ g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', a
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
                'comma separated list from --list-metric-groups.', default=None)
 g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
+g.add_argument('--exclusive', help='Use exclusive groups. Requires new kernel and new perf', action='store_true')
 
 g = p.add_argument_group('Query nodes')
 g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit, ^ for full match',
@@ -829,6 +835,9 @@ elif args.csv or args.xlsx or args.set_xlsx: # not for args.graph
     idle_threshold = 0  # avoid breaking programs that rely on the CSV output
 else:
     idle_threshold = 0.05
+
+if args.exclusive and args.pinned:
+    sys.exit("--exclusive and --pinned cannot be combined")
 
 event_nocheck = args.import_ or args.no_check
 
@@ -3131,6 +3140,9 @@ kv = os.getenv("KERNEL_VERSION")
 if not kv:
     kv = platform.release()
 kernel_version = kv_to_key(list(map(int, kv.split(".")[:2])))
+
+if args.exclusive and kernel_version < 510:
+    sys.exit("--exclusive needs kernel 5.10+")
 
 def ht_warning():
     if cpu.ht and not args.quiet:

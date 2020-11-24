@@ -136,9 +136,21 @@ $WRAP ./toplev --force-cpu skl $OPT --force-bn=Mispredicts_Resteers --force-bn=F
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
 rm log$$
 
+case "$OPT" in
+	*--pinned*) ;;
+	*)
+PERF=./fake-perf.py KERNEL_VERSION=5.10 $WRAP ./toplev.py --force-cpu $DCPU $OPT --exclusive --all --no-desc $LOAD | tee log$$
+grep :e log$$
+rm log$$
+esac
+
+case "$OPT" in
+	*--exclusive*) ;;
+	*)
 FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu icl --pinned --print --all | tee log$$
 grep :D log$$
 rm log$$
+esac
 
 $WRAP ./toplev -h > /dev/null
 
@@ -200,10 +212,14 @@ FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-eve
 checklog log$$.$j
 notfound $j
 
+case "$OPT" in
+*--exclusive*) ;;
+*)
 FORCEHT=1 FORCE_NMI_WATCHDOG=1 \
 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
+esac
 
 FORCEHT=0 \
 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
