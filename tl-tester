@@ -139,7 +139,7 @@ rm log$$
 case "$OPT" in
 	*--pinned*) ;;
 	*)
-PERF=./fake-perf.py KERNEL_VERSION=5.10 $WRAP ./toplev.py --force-cpu $DCPU $OPT --exclusive --all --no-desc $LOAD | tee log$$
+KERNEL_VERSION=5.10 $WRAP ./toplev.py --force-cpu $DCPU $OPT --exclusive --all --no-desc --print $LOAD | tee log$$
 grep :e log$$
 rm log$$
 esac

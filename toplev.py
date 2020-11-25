@@ -224,7 +224,7 @@ class PerfFeatures(object):
             self.has_max_precise = os.path.exists("/sys/devices/cpu/caps/max_precise")
             if self.has_max_precise:
                 self.max_precise = int(open("/sys/devices/cpu/caps/max_precise").read())
-        if args.exclusive and not works(perf + " stat -e '{branches,branches,branches,branches}:e' true"):
+        if args.exclusive and not args.print and not works(perf + " stat -e '{branches,branches,branches,branches}:e' true"):
             sys.exit("perf binary does not support :e exclusive modifier")
 
 
@@ -3141,8 +3141,11 @@ if not kv:
     kv = platform.release()
 kernel_version = kv_to_key(list(map(int, kv.split(".")[:2])))
 
-if args.exclusive and kernel_version < 510:
-    sys.exit("--exclusive needs kernel 5.10+")
+if args.exclusive:
+    if kernel_version < 510:
+        sys.exit("--exclusive needs kernel 5.10+")
+    metrics_own_group = False
+    run_l1_parallel = False
 
 def ht_warning():
     if cpu.ht and not args.quiet:
