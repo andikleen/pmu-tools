@@ -2168,6 +2168,9 @@ def sample_desc(s):
         #return "Unknown sample event %s" % (e.event)
         return ""
 
+def get_level(x):
+    return x[1]
+
 def get_levels(evlev):
     return [x[1] for x in evlev]
 
@@ -2507,26 +2510,20 @@ class Scheduler(object):
             if len(ref) < len(g.evnum):
                 for i in range(len(g.evnum)):
                     if i not in ref:
-                        test_debug_print("unreferenced %s  [%d]" % (g.evnum[i], i))
+                        test_debug_print("unreferenced %s %s [%d] %s" % (g.evnum[i],
+                                         event_rmap(g.evnum[i]), i,
+                                         " ".join([o.name for o in g.objl])))
                         g.evnum[i] = "dummy"
 
     def split_groups(self, obj, evlev):
-        levels = set(get_levels(evlev))
-        if len(levels) == 1:
-            # when there is only a single left just fill groups
-            evnum = list(map(raw_event, get_names(evlev)))
+        for lev, evl in groupby(sorted(evlev, key=get_level), get_level):
+            evlev = list(evl)
+            evnum = [raw_event(x[0]) for x in evlev]
             while evlev:
                 n = grab_group(evnum)
                 self.add(obj, evnum[:n], None)
                 evlev = evlev[n:]
                 evnum = evnum[n:]
-        else:
-            for l in sorted(levels):
-                evl = [x for x in evlev if x[1] == l]
-                # don't filter objects, the lower level functions
-                # have to handle missing entries
-                if evl:
-                    self.add(obj, raw_events(get_names(evl)), evl)
 
     def add_duplicate(self, evnum, obj):
         evset = set(evnum)
