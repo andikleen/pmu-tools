@@ -65,7 +65,7 @@ For more details on toplev please see the [toplev tutorial](https://github.com/a
 You want to:
 
 - understand CPU bottlenecks on the high-level: use toplev.
-- display toplev output graphically: toplev --xlsx (or --graph) 
+- display toplev output graphically: toplev --xlsx (or --graph)
 - know what CPU events to run, but want to use symbolic names for a new CPU: use ocperf.
 - measure interconnect/caches/memory/power management on Xeon E5+: use ucevent or toplev
 - Use perf events from a C program: use jevents

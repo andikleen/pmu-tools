@@ -2,15 +2,15 @@
 
 ## ocperf:
 
-ocperf is a wrapper to "perf" that provides a full core event list for 
+ocperf is a wrapper to "perf" that provides a full core event list for
 common Intel CPUs. This allows to use all the Intel defined events,
-not just the builtin events of perf. 
+not just the builtin events of perf.
 
 A more detailed introduction is in [Andi's blog](http://halobates.de/blog/p/245)
 
 List all the events perf and ocperf supports on the current CPU
 
-	ocperf.py stat -e eventname ... 
+	ocperf.py stat -e eventname ...
 
 	ocperf.py record -c default -e eventname ...
 
@@ -22,8 +22,8 @@ that does not support offcore events natively, ocperf has to run
 as root and only one such profiling can be active on a machine.
 
 When "-c default" is specified for record, the default sampling overflow value will be
-filled in for the sampling period. This option needs to be specified before 
-the events and is not supported for all CPUs. By default perf uses 
+filled in for the sampling period. This option needs to be specified before
+the events and is not supported for all CPUs. By default perf uses
 a dynamic sampling period, which can cause varying (and sometimes
 large) overhead. The fixed period minimizes this problem.
 
@@ -61,11 +61,11 @@ For example to set the MSR 0x123 on all CPUs to value 1 use:
 
 	$ sudo ./msr.py 0x123 1
 
-To read MSR 0x123 on CPU 0 
+To read MSR 0x123 on CPU 0
 
 	$ sudo ./msr.py 0x123
 
-To read MSR 0x123 on CPU 3: 
+To read MSR 0x123 on CPU 3:
 
 	$ sudo python
 	>>> import msr
@@ -77,7 +77,7 @@ To set bit 0 in MSR 0x123 on all CPUs:
 	>>> import msr
 	>>> msr.writemsr(0x123, msr.readmsr(0x123) | 1)
 
-(this assumes the MSR has the same value on all CPUs, otherwise iterate the readmsr 
+(this assumes the MSR has the same value on all CPUs, otherwise iterate the readmsr
 over the CPUs)
 
 ## toplev.py:
@@ -91,7 +91,7 @@ prints meaningful ratios, unless -v is specified.
 
 This follows the "Top Down" methodology. The best description of the method
 is in the "A top-down method for performance analysis and counter architecture"
-paper (ISPASS 2014, available [here](https://sites.google.com/site/analysismethods/yasin-pubs)) 
+paper (ISPASS 2014, available [here](https://sites.google.com/site/analysismethods/yasin-pubs))
 I didn't invent it, I'm just implementing it.
 
 A more gentle introduction is in [andi's blog](http://halobates.de/blog/p/262)
@@ -136,9 +136,9 @@ Note that tl-barplot below is normally better to plot toplev output.
 
 ## interval-normalize:
 
-This converts the output of perf stat -Ixxx -x, / toplev.py -Ixxx -x, 
+This converts the output of perf stat -Ixxx -x, / toplev.py -Ixxx -x,
 to a normalized output (one column for each event). This allows
-easier plotting and processing with other tools (spreadsheets, R, JMP, 
+easier plotting and processing with other tools (spreadsheets, R, JMP,
 gnuplot etc.)
 
 ## plot-normalized:
@@ -177,9 +177,9 @@ Download dygraphs. Only needs to be done once.
 
 Run toplev:
 
-	toplev.py --all -I 100 -o x.csv ... 
+	toplev.py --all -I 100 -o x.csv ...
 	tl-serve.py x.csv
-	
+
 Then browse http://localhost:9001/ in your web browser.
 
 ## cputop
@@ -225,13 +225,13 @@ that log the complete PEBS record. When the CPU supports PEBSv2
 (Haswell) the additional fields will be logged in pebs_v2.
 
 	  make [KDIR=/my/kernel/build/dir]
-	  insmod pebs-grabber.ko 
+	  insmod pebs-grabber.ko
 	  # needs to record as root
 	  perf record -e cycles:p,pebs_v1,pebs\_v2 [command, -a for all etc.]
 	  perf report
 	  perf script to display pebs data
 	  # alternatively trace-cmd and kernelshark can be also used to dump
-   	  # the pebs data
+	  # the pebs data
 
 See http://download.intel.com/products/processor/manual/253669.pdf
 18.10.2 for a description of the PEBS fields.
