@@ -53,7 +53,7 @@ measure single threaded program. system must be idle.
 measure whole system for X seconds every 100ms, outputting in CSV format.
 
 	toplev --all --core C0 taskset -c 0,1 program
-Measure program running on core 0 with all nodes and metrics enables
+Measure program running on core 0 with all nodes and metrics enabled.
 
 	toplev --all --xlsx x.xlsx -a sleep 10
 Generate spreadsheet with full system measurement for 10 seconds
