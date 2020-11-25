@@ -190,6 +190,10 @@ def debug_print(x):
     if args.debug:
         print(x, file=sys.stderr)
 
+def obj_debug_print(obj, x):
+    if args.debug or obj.name in args.dfilter:
+        print(x, file=sys.stderr)
+
 def test_debug_print(x):
     if args.debug or test_mode:
         print(x, file=sys.stderr)
@@ -580,6 +584,7 @@ g.add_argument('-d', help=argparse.SUPPRESS, action='help') # prevent passing th
 
 p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
 p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true') # enable scheduler debugging
+p.add_argument('--dfilter', help=argparse.SUPPRESS, action='append')
 p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS) # start python repl after initialization
 p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true') # remove events not supported by perf
 p.add_argument('--setvar', help=argparse.SUPPRESS, action='append') # set env variable (for test suite iterating options)
@@ -2540,10 +2545,10 @@ class Scheduler(object):
             # possible. Still keep it as a --tune option to play around.
             if ((any_merge or not evset.isdisjoint(g.evnum)) and
                   needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
-                debug_print("add_duplicate %s %s in %s obj %s to group %d" % (
-                    evnum,
-                    list(map(event_rmap, evnum)),
-                    g.evnum,
+                obj_debug_print(obj, "add_duplicate %s %s in %s obj %s to group %d" % (
+                    " ".join(evnum),
+                    " ".join(list(map(event_rmap, evnum))),
+                    " ".join(g.evnum),
                     obj.name,
                     g.num))
                 for k in evnum:
@@ -2569,14 +2574,14 @@ class Scheduler(object):
         evnum = dedup(evnum)
         if not self.add_duplicate(evnum, obj):
             g = Group(evnum, [obj], self.nextgnum)
-            debug_print("add %s %s to group %d" % (evnum, list(map(event_rmap, evnum)), g.num))
+            obj_debug_print(obj, "add %s %s to group %d" % (evnum, list(map(event_rmap, evnum)), g.num))
             self.nextgnum += 1
             self.evgroups.append(g)
             self.evgroups_nf.append(g)
             update_group_map(evnum, obj, g)
 
     def add_outgroup(self, obj, evnum):
-        debug_print("add_outgroup %s" % evnum)
+        obj_debug_print(obj, "add_outgroup %s" % evnum)
         for ev in evnum:
             if ev in self.og_groups:
                 g = self.og_groups[ev]
@@ -2614,7 +2619,7 @@ class Scheduler(object):
         # try to fit each objects events into groups
         # that fit into the available CPU counters
         for obj in solist:
-            debug_print("schedule %s " % obj.name)
+            obj_debug_print(obj, "schedule %s " % obj.name)
             evnum = obj.evnum
             evlevels = obj.evlevels
             oe = [e in ectx.outgroup_events for e in obj.evnum]
