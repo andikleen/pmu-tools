@@ -191,7 +191,7 @@ def debug_print(x):
         print(x, file=sys.stderr)
 
 def obj_debug_print(obj, x):
-    if args.debug or obj.name in args.dfilter:
+    if args.debug or (args.dfilter and obj.name in args.dfilter):
         print(x, file=sys.stderr)
 
 def test_debug_print(x):
