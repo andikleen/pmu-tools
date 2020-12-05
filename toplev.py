@@ -172,7 +172,7 @@ class EventContext(object):
         self.slots_available = False
         self.emap = None
 
-ectx = EventContext() # XXX
+ectx = None
 
 smt_mode = False
 
@@ -1333,7 +1333,7 @@ class Stat(object):
 
 def print_not(a, count, msg, j):
     print(("%s %s %s %.2f%% in %d measurements"
-                % (ectx.emap.getperf(j), j, msg,
+                % (j, j, msg, # XXX rmap again with ectx
                     100.0 * (float(count) / float(a.total)),
                     a.total)),
                 file=sys.stderr)
@@ -1479,6 +1479,8 @@ def num_key(s):
 def print_keys(runner, allowed_threads, res, rev, valstats, out, interval, env, mode):
     def filtered(j):
         return j != "" and is_number(j) and int(j) not in allowed_threads
+    core_node = lambda obj: safe_ref(obj, 'domain') in runner.ectx.core_domains
+    thread_node = lambda obj: not (core_node(obj) or package_node(obj))
 
     idle_keys = find_idle_keys(res, rev, runner.idle_threshold)
     idle_mark_keys = find_idle_keys(res, rev, IDLE_MARKER_THRESHOLD)
@@ -1742,7 +1744,14 @@ def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
         print("RUN #%d of %d: %s" % (n, num_runs, " ".join([quote(o.name) for o in gg.objl])))
         lresults = results if n == 0 else []
         res = None
-        for ret, res, rev, interval, valstats, env in do_execute(summary, allowed_threads, outg + [g], out, rest, resoff):
+        events = outg + [g]
+        runner_list[0].set_ectx() # XXX
+        evstr = group_join(events)
+        flat_events = flatten(events)
+        flat_rmap = [event_rmap(e) for e in flat_events]
+        runner_list[0].clear_ectx() # XXX
+        for ret, res, rev, interval, valstats, env in do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap,
+                                                                 out, rest, resoff):
             for runner, res in runner_split(runner_list, res):
                 lresults.append([ret, res, rev, interval, valstats, env, runner])
         if res:
@@ -1781,8 +1790,13 @@ def runner_split(runner_list, res):
 
 def execute(runner_list, allowed_threads, out, rest, summary):
     events = [x.evnum for x in runner_list[0].sched.evgroups if len(x.evnum) > 0] # XXX
+    runner_list[0].set_ectx() # XXX
+    evstr = group_join(events)
+    flat_events = flatten(events)
+    flat_rmap = [event_rmap(e) for e in flat_events]
+    runner_list[0].clear_ectx() # XXX
     ctx = SaveContext()
-    for ret, res, rev, interval, valstats, env in do_execute(summary, allowed_threads, events, out, rest):
+    for ret, res, rev, interval, valstats, env in do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, rest):
         for runner, res in runner_split(runner_list, res):
             print_and_sum_keys(runner, summary, allowed_threads, res, rev, valstats, out, interval, env)
     ctx.restore()
@@ -1794,8 +1808,7 @@ def find_group(num):
     assert g.base <= num < g.base + len(g.evnum)
     return g
 
-def dump_raw(interval, title, event, val, index, stddev, multiplex):
-    ename = event_rmap(event)
+def dump_raw(interval, title, event, ename, val, index, stddev, multiplex):
     g = find_group(index)
     nodes = " ".join(sorted([o.name.replace(" ", "_") for o in g.objl if event in o.evnum]))
     if args.raw:
@@ -1831,13 +1844,11 @@ def update_perf_summary(summary, off, title, val, event, unit, multiplex):
         assert r[2] == event or event == "dummy"
         r[3] = min(r[3], multiplex)
 
-def do_execute(summary, allowed_threads, events, out, rest, resoff = Counter()):
+def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, rest, resoff = Counter()):
     res = defaultdict(list)
     rev = defaultdict(list)
     valstats = defaultdict(list)
     env = dict()
-    evstr = group_join(events)
-    flat_events = flatten(events)
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
@@ -2005,6 +2016,7 @@ def do_execute(summary, allowed_threads, events, out, rest, resoff = Counter()):
             dump_raw(interval if args.interval else "",
                      title,
                      event,
+                     flat_rmap[len(res[title])-1],
                      val,
                      len(res[title]) - 1,
                      stddev, multiplex)
@@ -2203,8 +2215,8 @@ class BadEvent(Exception):
         self.event = name
 
 # XXX check for errata
-def sample_event(e):
-    ev = ectx.emap.getevent(e, nocheck=event_nocheck)
+def sample_event(e, emap):
+    ev = emap.getevent(e, nocheck=event_nocheck)
     if not ev:
         raise BadEvent(e)
     postfix = ring_filter
@@ -2214,9 +2226,9 @@ def sample_event(e):
         postfix = ":" + postfix
     return ev.name + postfix
 
-def sample_desc(s):
+def sample_desc(s, emap):
     try:
-        return " ".join([sample_event(x) for x in s])
+        return " ".join([sample_event(x, emap) for x in s])
     except BadEvent as e:
         warn_once_no_assert("Unknown sample event %s" % (e.event))
         return ""
@@ -2738,6 +2750,7 @@ class Printer(object):
         self.bottlenecks = set()
         self.numprint = 0
         self.metricgroups = metricgroups
+        self.emap = None
 
     def print_res(self, olist, out, timestamp, title, match, bn, idlemark=False):
         if bn:
@@ -2770,7 +2783,7 @@ class Printer(object):
                         "%" + node_unit(obj),
                         desc,
                         title,
-                        sample_desc(obj.sample) if has(obj, 'sample') else None,
+                        sample_desc(obj.sample, self.emap) if has(obj, 'sample') else None,
                         "<==" if obj == bn else "",
                         node_below(obj),
                         idlemark)
@@ -2796,11 +2809,24 @@ class Runner(object):
         self.max_level = max_level
         self.max_node_level = 0
         self.idle_threshold = idle_threshold
+        self.ectx = EventContext()
         if args.valcsv:
             self.valcsv = csv.writer(args.valcsv, lineterminator='\n')
             if not args.no_csv_header:
                 self.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
                                       "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
+
+    def set_ectx(self):
+        #print("set_ectx", sys._getframe(1).f_code.co_name, file=sys.stderr)
+        global ectx
+        assert ectx is None
+        ectx = self.ectx
+
+    def clear_ectx(self):
+        #print("clear_ectx", sys._getframe(1).f_code.co_name, file=sys.stderr)
+        global ectx
+        assert ectx is not None
+        ectx = None
 
     def do_run(self, obj):
         obj.res = None
@@ -2908,6 +2934,7 @@ class Runner(object):
 
     # collect the events by pre-computing the equation
     def collect(self):
+        self.set_ectx()
         bad_nodes = set()
         bad_events = set()
         unsup_nodes = set()
@@ -2963,6 +2990,7 @@ class Runner(object):
                         " ".join(errata_warn_names))
         if len(self.olist) == 0:
             sys.exit("No usable events found")
+        self.clear_ectx()
 
     def propagate_siblings(self):
         changed = [0]
@@ -2988,6 +3016,7 @@ class Runner(object):
             print("Nothing measured?", file=sys.stderr)
             return False
 
+        self.set_ectx()
         changed = 0
 
         # step 1: compute
@@ -3022,6 +3051,7 @@ class Runner(object):
 
         # step 2: propagate siblings
         changed += self.propagate_siblings()
+        self.clear_ectx()
         return changed
 
     def list_metric_groups(self):
@@ -3050,14 +3080,18 @@ class Runner(object):
                     print(obj_desc(obj, sep=sep))
 
 def runner_restart(runner):
+    emap = runner.printer.emap
     runner.reset()
+    runner.printer.emap = emap
     runner.olist = runner.full_olist
     for o in runner.olist:
         o.group_map = dict()
         o.res_map = dict()
     runner.filter_nodes()
     runner.collect()
+    runner.set_ectx()
     runner.sched.schedule(runner.olist)
+    runner.clear_ectx()
 
 def runner_init(runner):
     if args.nodes:
@@ -3358,7 +3392,13 @@ def model_setup(runner):
 
 version = ""
 for runner in runner_list:
+    runner.set_ectx()
+    ectx.emap = ocperf.find_emap()
+    runner.printer.emap = ectx.emap
+    if not ectx.emap:
+        sys.exit("Unknown CPU or CPU event map not found.")
     version += model_setup(runner)
+    runner.clear_ectx()
 
 if args.gen_script:
     args.quiet = True
@@ -3388,6 +3428,22 @@ if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_
     if any([x.startswith("-") for x in rest]):
         sys.exit("Unknown arguments for --list*/--describe")
     sys.exit(0)
+
+def has_core_node(runner):
+    res = False
+    runner.set_ectx()
+    for o in runner.olist:
+        if core_node(o):
+            res = True
+            break
+    runner.clear_ectx()
+    return res
+
+def any_core_node():
+    for r in runner_list:
+        if has_core_node(r):
+            return True
+    return False
 
 def check_root():
     if not (os.geteuid() == 0 or sysctl("kernel.perf_event_paranoid") == -1) and not args.quiet:
@@ -3432,9 +3488,8 @@ for runner in runner_list:
 
 if smt_mode and not os.getenv('FORCEHT'):
     # do not need SMT mode if no objects have Core scope
-    for runner in runner_list:
-        if not any(map(core_node, runner.olist)):
-            smt_mode = False
+    if not any_core_node():
+        smt_mode = False
 
 if not smt_mode and not args.single_thread and not args.no_aggr:
     multi = output_count()
@@ -3467,10 +3522,9 @@ else:
 if args.no_aggr:
     rest = add_args(rest, "-A")
 
-if ("Slots" not in ectx.core_domains and
+if ("Slots" not in flatten([r.ectx.core_domains for r in runner_list]) and
         cpu.ht and
-        not args.single_thread and
-        any(map(core_node, runner.olist))):
+        not args.single_thread and any_core_node()):
     if not feat.supports_percore:
         runner.olist = filternot(core_node, runner.olist)
     else:
@@ -3542,7 +3596,9 @@ else:
     out = tl_output.OutputHuman(args.output, args, version, cpu)
 
 for runner in runner_list:
+    runner.set_ectx()
     runner.sched.schedule(runner.olist)
+    runner.clear_ectx()
 
 def suggest(runner):
     printer = runner.printer
@@ -3626,7 +3682,10 @@ if runner.idle_keys and not args.quiet:
 
 report_idle(runner_list)
 
-if ectx.notfound_cache and any(["not supported" not in x for x in ectx.notfound_cache.values()]) and not args.quiet:
+notfound_caches = dict()
+for r in runner_list:
+    notfound_caches.update(r.ectx.notfound_cache)
+if notfound_caches and any(["not supported" not in x for x in notfound_caches.values()]) and not args.quiet:
     print("Some events not found. Consider running event_download to update event lists", file=sys.stderr)
 
 if args.graph:
