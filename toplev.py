@@ -256,7 +256,6 @@ class PerfFeatures(object):
         if args.exclusive and not args.print and not works(self.perf + " stat -e '{branches,branches,branches,branches}:e' true"):
             sys.exit("perf binary does not support :e exclusive modifier")
 
-
 def kv_to_key(v):
     return v[0] * 100 + v[1]
 
@@ -283,7 +282,6 @@ def remove_qual(ev):
 def limited_overflow(evlist):
     assigned = Counter([ectx.limited_counters[x] for x in evlist if x in ectx.limited_counters]).values()
     return any([x > 1 for x in assigned])
-
 
 # limited to first four counters on ICL+
 def limit4_overflow(evlist):
