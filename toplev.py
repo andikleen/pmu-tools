@@ -190,6 +190,11 @@ def warn_once(msg):
         warn(msg)
         warned.add(msg)
 
+def warn_once_no_assert(msg):
+    if msg not in warned:
+        print("warning: " + msg, file=sys.stderr)
+        warned.add(msg)
+
 def debug_print(x):
     if args.debug:
         print(x, file=sys.stderr)
@@ -2212,8 +2217,8 @@ def sample_event(e):
 def sample_desc(s):
     try:
         return " ".join([sample_event(x) for x in s])
-    except BadEvent:
-        #return "Unknown sample event %s" % (e.event)
+    except BadEvent as e:
+        warn_once_no_assert("Unknown sample event %s" % (e.event))
         return ""
 
 def get_level(x):
