@@ -1008,6 +1008,7 @@ def check_ratio(l):
         return True
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
+# XXX move into ectx
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
 
 if args.show_cpu:
@@ -3631,7 +3632,9 @@ def measure_and_sample(runner_list, allowed_threads, count):
             repeat |= suggest(runner)
         if (args.show_sample or args.run_sample) and ret == 0:
             for runner in runner_list:
+                runner.set_ectx()
                 do_sample(runner.printer.sample_obj, rest, count, ret)
+                runner.clear_ectx()
         if 100 <= ret <= 200 and repeat:
             print("Perf or workload appears to have failed with error %d. Not drilling down" % ret,
                   file=sys.stderr)
