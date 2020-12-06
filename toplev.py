@@ -1727,53 +1727,58 @@ class SaveContext(object):
 
 def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
     results = []
-    groups = [g.evnum for g in runner_list[0].sched.evgroups]
-    num_runs = len(groups) - sum([g.outgroup for g in runner_list[0].sched.evgroups]) # XXX
+    groups = []
+    num_outg = 0
+    for runner in runner_list:
+        groups += [g.evnum for g in runner.sched.evgroups]
+        num_outg += sum([g.outgroup for g in runner.sched.evgroups])
+    num_runs = len(groups) - num_outg
     outg = []
     n = 0
     ctx = SaveContext()
     resoff = Counter()
     # runs could be further reduced by tweaking
     # the scheduler to avoid any duplicated events
-    for g, gg in zip(groups, runner_list[0].sched.evgroups): # XXX
-        if gg.outgroup:
-            outg.append(g)
-            continue
-        print("RUN #%d of %d: %s" % (n, num_runs, " ".join([quote(o.name) for o in gg.objl])))
-        lresults = results if n == 0 else []
-        res = None
-        events = outg + [g]
-        runner_list[0].set_ectx() # XXX
-        evstr = group_join(events)
-        flat_events = flatten(events)
-        flat_rmap = [event_rmap(e) for e in flat_events]
-        runner_list[0].clear_ectx() # XXX
-        for ret, res, rev, interval, valstats, env in do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap,
-                                                                 out, rest, resoff):
-            for runner, res in runner_split(runner_list, res):
-                lresults.append([ret, res, rev, interval, valstats, env, runner])
-        if res:
-            for t in res.keys():
-                resoff[t] += len(res[t])
-        if n > 0:
-            if len(lresults) > len(results):
-                print("different number of intervals on rerun. Workload run time not stable?", file=sys.stderr)
-                while len(lresults) > len(results):
-                    lresults.pop()
-            # XXX handle results > lresults
-            for r, lr in zip(results, lresults):
-                r[0] = lr[0]
-                r[6] = lr[6]
-                for j in (1, 2, 4, 5):
-                    diff = len(results[0][j]) - len(lr[j])
-                    if diff:
-                        warn("%s perf output values on rerun [%d difference(s)] %s %s" %
-                                ("missing" if diff > 0 else "too few", diff, r[1],
-                                (("at %f" % lr[3]) if lr[3] else "")))
-                    append_dict(r[j], lr[j])
-        ctx.restore()
-        outg = []
-        n += 1
+    for runner in runner_list:
+        for g, gg in zip(groups, runner.sched.evgroups):
+            if gg.outgroup:
+                outg.append(g)
+                continue
+            print("RUN #%d of %d: %s" % (n, num_runs, " ".join([quote(o.name) for o in gg.objl])))
+            lresults = results if n == 0 else []
+            res = None
+            events = outg + [g]
+            runner.set_ectx()
+            evstr = group_join(events)
+            flat_events = flatten(events)
+            flat_rmap = [event_rmap(e) for e in flat_events]
+            runner.clear_ectx()
+            for ret, res, rev, interval, valstats, env in do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap,
+                                                                     out, rest, resoff):
+                for inner_runner, res in runner_split(runner_list, res):
+                    lresults.append([ret, res, rev, interval, valstats, env, inner_runner])
+            if res:
+                for t in res.keys():
+                    resoff[t] += len(res[t])
+            if n > 0:
+                if len(lresults) > len(results):
+                    print("different number of intervals on rerun. Workload run time not stable?", file=sys.stderr)
+                    while len(lresults) > len(results):
+                        lresults.pop()
+                # XXX handle results > lresults
+                for r, lr in zip(results, lresults):
+                    r[0] = lr[0]
+                    r[6] = lr[6]
+                    for j in (1, 2, 4, 5):
+                        diff = len(results[0][j]) - len(lr[j])
+                        if diff:
+                            warn("%s perf output values on rerun [%d difference(s)] %s %s" %
+                                    ("missing" if diff > 0 else "too few", diff, r[1],
+                                    (("at %f" % lr[3]) if lr[3] else "")))
+                        append_dict(r[j], lr[j])
+            ctx.restore()
+            outg = []
+            n += 1
     assert num_runs == n
     for ret, res, rev, interval, valstats, env, runner in results:
         print_and_sum_keys(runner, summary, allowed_threads, res, rev, valstats, out, interval, env)
@@ -1787,12 +1792,14 @@ def runner_split(runner_list, res):
             yield r, res
 
 def execute(runner_list, allowed_threads, out, rest, summary):
-    events = [x.evnum for x in runner_list[0].sched.evgroups if len(x.evnum) > 0] # XXX
-    runner_list[0].set_ectx() # XXX
-    evstr = group_join(events)
-    flat_events = flatten(events)
-    flat_rmap = [event_rmap(e) for e in flat_events]
-    runner_list[0].clear_ectx() # XXX
+    events, evstr, flat_events, flat_rmap = [], "", [], []
+    for runner in runner_list:
+        events += [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
+        runner.set_ectx()
+        evstr += group_join(events)
+        flat_events += flatten(events)
+        flat_rmap += [event_rmap(e) for e in flat_events]
+        runner.clear_ectx()
     ctx = SaveContext()
     for ret, res, rev, interval, valstats, env in do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, rest):
         for runner, res in runner_split(runner_list, res):
