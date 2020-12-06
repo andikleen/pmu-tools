@@ -1745,7 +1745,8 @@ def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
             if gg.outgroup:
                 outg.append(g)
                 continue
-            print("RUN #%d of %d: %s" % (n, num_runs, " ".join([quote(o.name) for o in gg.objl])))
+            print("RUN #%d of %d: %s" % (n, num_runs,
+                " ".join([quote(o.name) for o in gg.objl])))
             lresults = results if n == 0 else []
             res = None
             events = outg + [g]
@@ -1754,8 +1755,9 @@ def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
             flat_events = flatten(events)
             flat_rmap = [event_rmap(e) for e in flat_events]
             runner.clear_ectx()
-            for ret, res, rev, interval, valstats, env in do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap,
-                                                                     out, rest, resoff):
+            for ret, res, rev, interval, valstats, env in do_execute(
+                    summary, allowed_threads, evstr, flat_events, flat_rmap,
+                    out, rest, resoff):
                 for inner_runner, res in runner_split(runner_list, res):
                     lresults.append([ret, res, rev, interval, valstats, env, inner_runner])
             if res:
@@ -1763,7 +1765,8 @@ def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
                     resoff[t] += len(res[t])
             if n > 0:
                 if len(lresults) > len(results):
-                    print("different number of intervals on rerun. Workload run time not stable?", file=sys.stderr)
+                    print("different number of intervals on rerun. "
+                          "Workload run time not stable?", file=sys.stderr)
                     while len(lresults) > len(results):
                         lresults.pop()
                 # XXX handle results > lresults
@@ -1782,7 +1785,8 @@ def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
             n += 1
     assert num_runs == n
     for ret, res, rev, interval, valstats, env, runner in results:
-        print_and_sum_keys(runner, summary, allowed_threads, res, rev, valstats, out, interval, env)
+        print_and_sum_keys(runner, summary, allowed_threads, res, rev, valstats,
+                           out, interval, env)
     return ret
 
 def runner_split(runner_list, res):
@@ -1802,9 +1806,11 @@ def execute(runner_list, allowed_threads, out, rest, summary):
         flat_rmap += [event_rmap(e) for e in flat_events]
         runner.clear_ectx()
     ctx = SaveContext()
-    for ret, res, rev, interval, valstats, env in do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, rest):
+    for ret, res, rev, interval, valstats, env in do_execute(summary,
+            allowed_threads, evstr, flat_events, flat_rmap, out, rest):
         for runner, res in runner_split(runner_list, res):
-            print_and_sum_keys(runner, summary, allowed_threads, res, rev, valstats, out, interval, env)
+            print_and_sum_keys(runner, summary, allowed_threads, res, rev, valstats,
+                               out, interval, env)
     ctx.restore()
     return ret
 
