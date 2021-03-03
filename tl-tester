@@ -122,14 +122,14 @@ grep :k log$$
 grep /k log$$
 EVENTMAP=${cpus[$DCPU]} FORCECPU=simple $WRAP ./toplev.py $OPT --no-desc -l1 $LOAD
 # check errata handling
-EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py $OPT --handle-errata --force-events --no-desc --all $LOAD 2>&1 | tee log$$
+EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py $OPT --filterquals --handle-errata --force-events --no-desc --all $LOAD 2>&1 | tee log$$
 grep BDE70 log$$
-$WRAP ./toplev.py --force-cpu skl $OPT --nodes '!+Bad_Speculation.Branch_Mispredicts^' -o log$$ -v $LOAD
+$WRAP ./toplev.py --force-cpu skl $OPT --filterquals --nodes '!+Bad_Speculation.Branch_Mispredicts^' -o log$$ -v $LOAD
 [ -z "$NORES" ] && grep Branch_Misprediction_Cost log$$
 [ -z "$NORES" ] && grep IpMispredict log$$
 [ -z "$NORES" ] && grep Branch_Mispredicts log$$
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
-$WRAP ./toplev --force-cpu skl $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $LOADLONG
+$WRAP ./toplev --force-cpu skl --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $LOADLONG
 [ -z "$NORES" ] && grep Branch_Misprediction_Cost log$$
 [ -z "$NORES" ] && grep IpMispredict log$$
 [ -z "$NORES" ] && grep Branch_Mispredicts log$$
@@ -244,11 +244,11 @@ fi
 
 if [ $j == "icl" -o $j == "tgl" ] ; then
 
-FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $j --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
+FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $j --filterquals --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
 grep topdown- log$$
 rm log$$
 
-FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $j --pinned --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
+FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $j --filterquals --pinned --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
 grep topdown- log$$
 grep :D log$$
 rm log$$
@@ -323,7 +323,7 @@ $WRAP ./toplev.py $SHOPT --import x$$.csv.gz -o y$$.out.gz
 rm x$$.csv.gz y$$.out.gz
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --no-multiplex --columns -l4 $LOAD
-$WRAP ./toplev.py --force-cpu bdw $OPT --cpu 0,1,2,3 --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns -l4 $LOAD
+$WRAP ./toplev.py --force-cpu bdw $OPT --cpu 0,1,2,3 --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns --filterquals -l4 $LOAD
 DURATION_TIME=0 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
@@ -471,7 +471,7 @@ FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --p
 checklog0
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --no-output $LOAD
 
-$WRAP ./toplev.py --force-cpu hsx $OPT -l4 true
+$WRAP ./toplev.py --force-cpu hsx --filterquals $OPT -l4 true
 
 # test gen-script / import
 $WRAP ./toplev.py --all --gen-script > script$$
