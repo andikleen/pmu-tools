@@ -18,8 +18,11 @@ set -e
 set -o pipefail
 set -u
 
+DEFAULTCPU=skl
+[ ! -r /sys/devices/cpu/format/any ] && DEFAULTCPU=icl
+
 WRAP=${WRAP:-}
-DCPU=${DCPU:-skl}
+DCPU=${DCPU:-$DEFAULTCPU}
 OPT="${OPT:-}"
 MATCH=${MATCH:-}
 NOGROUP=${NOGROUP:-}
