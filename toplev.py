@@ -877,11 +877,11 @@ env = tl_cpu.Env()
 
 if args.force_cpu:
     env.forcecpu = args.force_cpu
-    cpu = gen_cpu_name(args.force_cpu)
+    cpuname = gen_cpu_name(args.force_cpu)
     if not os.getenv("EVENTMAP"):
-        os.environ["EVENTMAP"] = cpu
+        os.environ["EVENTMAP"] = cpuname
     if not os.getenv("UNCORE"):
-        os.environ["UNCORE"] = cpu
+        os.environ["UNCORE"] = cpuname
 if args.force_topology:
     if not os.getenv("TOPOLOGY"):
         os.environ["TOPOLOGY"] = args.force_topology
