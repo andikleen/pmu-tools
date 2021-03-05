@@ -76,6 +76,12 @@ known_cpus = (
     ("tgl", (140, )),
 )
 
+eventlist_alias = {
+    140: "GenuineIntel-6-7E", # use ICL list for TGL for now
+    141: "GenuineIntel-6-7E", # use ICL list for TGL for now
+    167: "GenuineIntel-6-7E", # use ICL list for RKL for now
+}
+
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl")
 
 non_json_events = set(("dummy", "duration_time"))
@@ -857,6 +863,8 @@ def gen_cpu_name(cpu):
             if isinstance(j[1][0], tuple):
                 return "GenuineIntel-6-%02X-%d" % j[1][0]
             else:
+                if j[1][0] in eventlist_alias:
+                    return eventlist_alias[j[1][0]]
                 return "GenuineIntel-6-%02X" % j[1][0]
     assert False
     return None
@@ -901,10 +909,6 @@ if args.parallel:
         import multiprocessing
         args.pjobs = multiprocessing.cpu_count()
     sys.exit(run_parallel(args, env))
-
-ectx.emap = ocperf.find_emap()
-if not ectx.emap:
-    sys.exit("Unknown CPU or CPU event map not found.")
 
 rest = [x for x in rest if x != "--"]
 
@@ -985,6 +989,18 @@ def check_ratio(l):
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
+
+# XXX FORCECPU
+if not args.force_cpu and cpu.model in eventlist_alias:
+    r = eventlist_alias[cpu.model]
+    if not os.getenv("EVENTMAP"):
+        os.setenv("EVENTMAP", r)
+    if not os.getenv("UNCORE"):
+        os.setenv("UNCORE", r)
+
+ectx.emap = ocperf.find_emap()
+if not ectx.emap:
+    sys.exit("Unknown CPU or CPU event map not found.")
 
 if cpu.pmu_name and cpu.pmu_name.startswith("generic") and not args.quiet:
     print("warning: kernel is in architectural mode and might mismeasure events", file=sys.stderr)
