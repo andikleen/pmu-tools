@@ -461,6 +461,8 @@ g.add_argument('--gen-script', help='Generate script to collect perfmon informat
 g.add_argument('--script-record', help='Use perf stat record in script for faster recording or '
                'import generated perf.data (requires new perf)', action='store_true')
 g.add_argument('--drilldown', help='Automatically rerun to get more details on bottleneck', action='store_true')
+g.add_argument('--show-cpu', help='Print current CPU type and exit',
+            action='store_true')
 
 g = p.add_argument_group('Measurement filtering')
 g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
@@ -985,6 +987,10 @@ def check_ratio(l):
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
+
+if args.show_cpu:
+    print("%s %s %s" % (cpu.true_name, cpu.pmu_name, cpu.name))
+    sys.exit(0)
 
 if cpu.pmu_name and cpu.pmu_name.startswith("generic") and not args.quiet:
     print("warning: kernel is in architectural mode and might mismeasure events", file=sys.stderr)

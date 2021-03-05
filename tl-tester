@@ -135,6 +135,7 @@ $WRAP ./toplev --force-cpu skl $OPT --force-bn=Mispredicts_Resteers --force-bn=F
 [ -z "$NORES" ] && grep Branch_Mispredicts log$$
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
 rm log$$
+$WRAP ./toplev.py --show-cpu
 
 case "$OPT" in
 	*--pinned*) ;;
