@@ -1669,7 +1669,7 @@ def print_summary(runner, out):
                     if (r[2].startswith("uncore") or r[2].startswith("power")) and (
                             cpunum != cpu.sockettocpus[cpu.cputosocket[cpunum]][0]):
                         continue
-                    if r[2].startswith("duration_time") and cpunum != 0 and not args.cpu:
+                    if r[2].startswith("duration_time") and cpunum != 0 and not args.cpu and not args.core:
                         continue
                 args.perf_summary.write(";".join(l + ["%f" % r[0], r[1],
                                                       r[2], "%f" % r[3],
@@ -1960,7 +1960,7 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
             socket, core = int(m.group(1)), int(m.group(3))
             dup_val(cpu.coreids[(socket, core)])
         # duration time is only output once, except with --cpu/-C (???)
-        elif event.startswith("duration_time") and is_number(title) and not args.cpu:
+        elif event.startswith("duration_time") and is_number(title) and not args.cpu and not args.core:
             dup_val(runner.allowed_threads)
         else:
             add(title)
