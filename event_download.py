@@ -259,7 +259,7 @@ if __name__ == '__main__':
             found += download(j, link=args.link, onlyprint=args.print_)
 
     if found == 0 and not args.print_:
-        print("Nothing found", file=sys.stderr, onlyprint=args.print_)
+        print("Nothing found", file=sys.stderr)
 
     el = eventlist_name()
     if os.path.exists(el) and not args.print_:

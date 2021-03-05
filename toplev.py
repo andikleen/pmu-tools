@@ -68,13 +68,20 @@ known_cpus = (
     ("bdw", (61, 71, )),
     ("bdx", (79, 86, )),
     ("simple", ()),
-    ("skl", (94, 78, 142, 158, )),
+    ("skl", (94, 78, 142, 158, 165, 166, )),
     ("knl", (87, )),
     ("skx", ((85, 4,), )),
     ("clx", ((85, 5,), (85, 6,), (85, 7,), )),
-    ("icl", (126, )),
-    ("tgl", (140, )),
+    ("icl", (126, 125, 157,
+             167, )), # RKL as ICL for now
+    ("tgl", (140, 141, )),
 )
+
+eventlist_alias = {
+    140: "GenuineIntel-6-7E", # use ICL list for TGL for now
+    141: "GenuineIntel-6-7E", # use ICL list for TGL for now
+    167: "GenuineIntel-6-7E", # use ICL list for RKL for now
+}
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl")
 
@@ -859,8 +866,10 @@ def gen_cpu_name(cpu):
             if isinstance(j[1][0], tuple):
                 return "GenuineIntel-6-%02X-%d" % j[1][0]
             else:
+                if j[1][0] in eventlist_alias:
+                    return eventlist_alias[j[1][0]]
                 return "GenuineIntel-6-%02X" % j[1][0]
-    assert False
+    sys.exit("Unknown cpu %s" % cpu)
     return None
 
 if args.tune:
@@ -871,11 +880,11 @@ env = tl_cpu.Env()
 
 if args.force_cpu:
     env.forcecpu = args.force_cpu
-    cpu = gen_cpu_name(args.force_cpu)
+    cpuname = gen_cpu_name(args.force_cpu)
     if not os.getenv("EVENTMAP"):
-        os.environ["EVENTMAP"] = cpu
+        os.environ["EVENTMAP"] = cpuname
     if not os.getenv("UNCORE"):
-        os.environ["UNCORE"] = cpu
+        os.environ["UNCORE"] = cpuname
 if args.force_topology:
     if not os.getenv("TOPOLOGY"):
         os.environ["TOPOLOGY"] = args.force_topology
@@ -903,10 +912,6 @@ if args.parallel:
         import multiprocessing
         args.pjobs = multiprocessing.cpu_count()
     sys.exit(run_parallel(args, env))
-
-ectx.emap = ocperf.find_emap()
-if not ectx.emap:
-    sys.exit("Unknown CPU or CPU event map not found.")
 
 rest = [x for x in rest if x != "--"]
 
@@ -991,6 +996,18 @@ cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
 if args.show_cpu:
     print("%s %s %s" % (cpu.true_name, cpu.pmu_name, cpu.name))
     sys.exit(0)
+
+# XXX FORCECPU
+if not args.force_cpu and cpu.model in eventlist_alias:
+    r = eventlist_alias[cpu.model]
+    if not os.getenv("EVENTMAP"):
+        os.setenv("EVENTMAP", r)
+    if not os.getenv("UNCORE"):
+        os.setenv("UNCORE", r)
+
+ectx.emap = ocperf.find_emap()
+if not ectx.emap:
+    sys.exit("Unknown CPU or CPU event map not found.")
 
 if cpu.pmu_name and cpu.pmu_name.startswith("generic") and not args.quiet:
     print("warning: kernel is in architectural mode and might mismeasure events", file=sys.stderr)
@@ -1658,7 +1675,7 @@ def print_summary(runner, out):
                     if (r[2].startswith("uncore") or r[2].startswith("power")) and (
                             cpunum != cpu.sockettocpus[cpu.cputosocket[cpunum]][0]):
                         continue
-                    if r[2] == "duration_time" and cpunum != 0 and not args.cpu:
+                    if r[2].startswith("duration_time") and cpunum != 0 and not args.cpu and not args.core:
                         continue
                 args.perf_summary.write(";".join(l + ["%f" % r[0], r[1],
                                                       r[2], "%f" % r[3],
@@ -1874,7 +1891,7 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
             continue
 
         # dummy event used as separator to avoid merging problems
-        if event == "emulation-faults":
+        if event.startswith("emulation-faults"):
             continue
 
         title = title.replace("CPU", "")
@@ -1949,7 +1966,7 @@ def do_execute(runner, events, out, rest, resoff = Counter()):
             socket, core = int(m.group(1)), int(m.group(3))
             dup_val(cpu.coreids[(socket, core)])
         # duration time is only output once, except with --cpu/-C (???)
-        elif event == "duration_time" and is_number(title) and not args.cpu:
+        elif event.startswith("duration_time") and is_number(title) and not args.cpu and not args.core:
             dup_val(runner.allowed_threads)
         else:
             add(title)
