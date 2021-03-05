@@ -866,7 +866,7 @@ def gen_cpu_name(cpu):
                 if j[1][0] in eventlist_alias:
                     return eventlist_alias[j[1][0]]
                 return "GenuineIntel-6-%02X" % j[1][0]
-    assert False
+    sys.exit("Unknown cpu %s" % cpu)
     return None
 
 if args.tune:
