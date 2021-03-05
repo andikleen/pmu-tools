@@ -77,15 +77,22 @@ static int read_file(char **val, const char *fmt, ...)
 
 #define BITS(x) ((x) == 64 ? -1ULL : (1ULL << (x)) - 1)
 
-static bool try_parse(char *format, char *fmt, __u64 val, __u64 *config)
+static bool try_parse(char *format, char *fmt, __u64 val, __u64 *config, int *err)
 {
 	int start, end;
+	unsigned long long mask;
 	int n = sscanf(format, fmt, &start, &end);
 	if (n == 1)
 		end = start;
 	if (n == 0)
 		return false;
-	*config |= (val & BITS(end - start + 1)) << start;
+	mask = BITS(end - start + 1);
+	if (val & ~mask) {
+		fprintf(stderr, "Value %llu too big for format %s", val, format);
+		*err = 1;
+		return false;
+	}
+	*config |= (val & mask) << start;
 	return true;
 }
 
@@ -230,13 +237,14 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 				fprintf(stderr, "Cannot open kernel format %s for %s\n", name, term);
 			break;
 		}
-		bool ok = try_parse(format, "config:%d-%d", val, &attr->config) ||
-			try_parse(format, "config:%d", val, &attr->config) ||
-			try_parse(format, "config1:%d-%d", val, &attr->config1) ||
-			try_parse(format, "config1:%d", val, &attr->config1);
-		bool ok2 = try_parse(format, "config2:%d-%d", val, &attr->config2) ||
-			try_parse(format, "config2:%d", val, &attr->config2);
-		if (!ok && !ok2) {
+		int err = 0;
+		bool ok = try_parse(format, "config:%d-%d", val, &attr->config, &err) ||
+			try_parse(format, "config:%d", val, &attr->config, &err) ||
+			try_parse(format, "config1:%d-%d", val, &attr->config1, &err) ||
+			try_parse(format, "config1:%d", val, &attr->config1, &err);
+		bool ok2 = try_parse(format, "config2:%d-%d", val, &attr->config2, &err) ||
+			try_parse(format, "config2:%d", val, &attr->config2, &err);
+		if ((!ok && !ok2) || err) {
 			fprintf(stderr, "Cannot parse kernel format %s: %s for %s\n",
 					name, format, term);
 			break;

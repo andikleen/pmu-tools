@@ -1001,9 +1001,9 @@ if args.show_cpu:
 if not args.force_cpu and cpu.model in eventlist_alias:
     r = eventlist_alias[cpu.model]
     if not os.getenv("EVENTMAP"):
-        os.setenv("EVENTMAP", r)
+        os.putenv("EVENTMAP", r)
     if not os.getenv("UNCORE"):
-        os.setenv("UNCORE", r)
+        os.putenv("UNCORE", r)
 
 ectx.emap = ocperf.find_emap()
 if not ectx.emap:
