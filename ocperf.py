@@ -837,13 +837,6 @@ class EmapNativeJSON(object):
         td_event("perf_metrics.backend_bound", "topdown-be-bound", "Number of slots the pipeline was backend bound.", "35")
         td_event("topdown.slots", "slots", "Number of slots", "36")
 
-def handle_io_error(f, name, warn=False):
-    try:
-        f(name)
-    except IOError:
-        if warn:
-            print("Cannot open", name, file=sys.stderr)
-
 def json_with_extra(el, eventmap_is_file):
     name = event_download.eventlist_name(el, "core")
     emap = EmapNativeJSON(name)
