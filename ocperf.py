@@ -89,7 +89,7 @@ def file_exists(s):
             try:
                 topology = {x.strip() for x in open(top).readlines()}
             except OSError:
-                print("Cannot open", top, file=sys.stderr)
+                print("Cannot open topology", top, file=sys.stderr)
     if s in topology:
         return True
     found = os.path.exists(s)
@@ -768,7 +768,7 @@ class EmapNativeJSON(object):
         try:
             data = json_open(name)
         except ValueError as e:
-            print("Cannot open", name + ":", e.message, file=sys.stderr)
+            print("Cannot parse", name + ":", e.message, file=sys.stderr)
             self.error = True
             return
         if u'PublicDescription' not in data[0]:
@@ -874,7 +874,7 @@ def add_extra_env(emap, el, eventmap_is_file):
                 if os.path.exists(oc) and oc != el:
                     emap.add_offcore(oc)
     except IOError:
-        print("Cannot open", oc, file=sys.stderr)
+        print("Cannot open offcore", oc, file=sys.stderr)
     try:
         uc = os.getenv("UNCORE")
         if uc:
@@ -890,7 +890,7 @@ def add_extra_env(emap, el, eventmap_is_file):
                 if os.path.exists(uc) and uc != el:
                     emap.add_uncore(uc)
     except IOError:
-        print("Cannot open", uc, file=sys.stderr)
+        print("Cannot open uncore", uc, file=sys.stderr)
     def read_map(env, typ, r):
         try:
             e2 = os.getenv(env)
@@ -899,7 +899,7 @@ def add_extra_env(emap, el, eventmap_is_file):
                 r(e2)
                 # don't try to download for now
         except IOError:
-            print("Cannot open", e2, file=sys.stderr)
+            print("Cannot open " + env, e2, file=sys.stderr)
     read_map("EVENTMAP2", "core", emap.read_events)
     read_map("EVENTMAP3", "core", emap.read_events)
     read_map("UNCORE2", "uncore", emap.add_uncore)
