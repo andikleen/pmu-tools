@@ -3269,7 +3269,6 @@ elif cpu.cpu == "icl":
     if kernel_version < 510:
         ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
 elif cpu.cpu == "tgl":
-    # FIXME use the icl model for now until we have a full TGL model
     import icl_client_ratios
     icl_client_ratios.smt_enabled = cpu.ht
     model = icl_client_ratios

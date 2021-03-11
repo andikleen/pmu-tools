@@ -105,6 +105,26 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev updated to Ahmad Yasin's TMA 4.2:
+    Bottlenecks Info group, Tuned memory access costs
+    New Metrics
+    * New Info.Bottlenecks group aggregating total performance-issue costs in SLOTS across the tree: [SKL onwards]
+    ** Memory_Latency, Memory_Bandwidth, Memory_Data_TLBs
+    ** Big_Code, Instruction_Fetch_BW, Branching_Overheads and
+    ** Mispredictions (introduced in 4.1 release)
+    * New tree node for Streaming_Stores [ICL onwards]
+    Key Enhancements & fixes
+    ** The Average_Frequency is calculated using the TSC (TimeStamp Counter) value
+    ** With this key enhancement #Mem costs become NanoSecond- (was Constant), DurationTimeInMilliSeconds becomes ExternalParameter CountDomain and #Base_Frequency is deprecated
+    * Fixed Ports_Utilization for detection of serializing operations [SKL onwards]
+    * Tuned MITE, DSB, LSD and move to Slots_Estimated domain [all]
+    * Capping DTLB_Load and STLB_Hit_Load cost using events in Clocks CountDomain [SKL onwards]
+    * Tuned Pause latency using default setting [CLX]
+    * Fixed average Assists cost [IVB onwards]
+    * Fixed Mispredicts_Resteers Clears_Resteers Branch_Mispredicts Machine_Clears and Mispredictions [ICL+]
+    * A parameter to avoid using PERF_METRICS MSR e.g. for older OS kernels (implies higher event multiplexing)
+    * Reduced # events for select nodes collections (lesser event multiplexing): Backend_Bound/Core_Bound, Clear_Resteers/Unknwon_Branches, Kernel_Utilization
+    * Other fixes: Thresholds, Tagging (e.g. Ports_Utilized_2), Locate-with, etc
 * toplev now has a --parallel argument to can process large --import input files
   with multiple threads. There is a new interval-merge tool that can merge
   multiple perf-output files.
