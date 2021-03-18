@@ -1,6 +1,6 @@
 
 #
-# auto generated TopDown/TMAM 4.19-full-perf description for Intel Xeon Scalable Processors 2nd gen (code named Cascade Lake)
+# auto generated TopDown/TMA 4.2-full-perf description for Intel Xeon Scalable Processors 2nd gen (code named Cascade Lake)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -16,7 +16,7 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.19-full-perf"
+version = "4.2-full-perf"
 base_frequency = -1.0
 Memory = 1
 Average_Frequency = 0.0
