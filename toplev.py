@@ -1517,9 +1517,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             used_stat = stat
             for _ in range(3):
                 changed = runner.compute(merged_res, rev[j], merged_st, env, thread_node, used_stat)
-                if core not in printed_cores:
-                    verify_rev(rev, cpus)
-                    changed += runner.compute(combined_res, rev[cpus[0]], combined_st, env, core_node, used_stat)
+                verify_rev(rev, cpus)
+                changed += runner.compute(combined_res, rev[cpus[0]], combined_st, env, core_node, used_stat)
                 if changed == 0:
                     break
                 used_stat = None
