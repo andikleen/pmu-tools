@@ -177,10 +177,6 @@ smt_mode = False
 
 test_mode = os.getenv("TL_TESTER")
 
-perf = os.getenv("PERF")
-if not perf:
-    perf = "perf"
-
 def warn(msg):
     print("warning: " + msg, file=sys.stderr)
     if test_mode:
@@ -211,31 +207,47 @@ def works(x):
 class PerfFeatures(object):
     """Adapt to the quirks of various perf versions."""
     def __init__(self, args):
-        self.logfd_supported = works(perf + " stat --log-fd 3 3>/dev/null true")
-        if not self.logfd_supported:
-            sys.exit("perf binary is too old or perf is disabled in /proc/sys/kernel/perf_event_paranoid")
+        self.perf = os.getenv("PERF")
+        if not self.perf:
+            self.perf = "perf"
+        ret = os.system(self.perf + " stat --log-fd 3 3>/dev/null true")
+        if ret:
+            # work around the insane perf setup on Debian derivates
+            # it fails if the perf isn't the same as the kernel
+            # look for the underlying perf installs, if any
+            # perf is compatible, so just pick the newest
+            if ret == 512:
+                import glob
+                l = sorted(glob.glob("/usr/lib/linux-tools*/perf"),
+                          key=lambda x: [int(t) if t.isdigit() else t for t in re.split('(\d+)', x)])
+                if len(l) > 0:
+                    self.perf = l[0]
+                    ret = os.system(self.perf + " stat --log-fd 3 3>/dev/null true")
+                if ret:
+                    sys.exit("perf binary is too old/not installed or perf is disabled in /proc/sys/kernel/perf_event_paranoid")
+        self.logfd_supported = ret == 0
         self.supports_power = (
                 not args.no_uncore
                 and not args.force_hypervisor
-                and works(perf + " stat -e power/energy-cores/ -a true"))
-        self.supports_percore = works(perf + " stat --percore-show-thread true")
+                and works(self.perf + " stat -e power/energy-cores/ -a true"))
+        self.supports_percore = works(self.perf + " stat --percore-show-thread true")
         dt = os.getenv("DURATION_TIME")
         if dt:
             self.supports_duration_time = int(dt)
         else:
-            self.supports_duration_time = works(perf + " list duration_time | grep duration_time")
+            self.supports_duration_time = works(self.perf + " list duration_time | grep duration_time")
         # guests don't support offcore response
         if event_nocheck:
             self.supports_ocr = True
             self.has_max_precise = True
             self.max_precise = 3
         else:
-            self.supports_ocr = works(perf +
+            self.supports_ocr = works(self.perf +
                     " stat -e '{cpu/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true")
             self.has_max_precise = os.path.exists("/sys/devices/cpu/caps/max_precise")
             if self.has_max_precise:
                 self.max_precise = int(open("/sys/devices/cpu/caps/max_precise").read())
-        if args.exclusive and not args.print and not works(perf + " stat -e '{branches,branches,branches,branches}:e' true"):
+        if args.exclusive and not args.print and not works(self.perf + " stat -e '{branches,branches,branches,branches}:e' true"):
             sys.exit("perf binary does not support :e exclusive modifier")
 
 
@@ -1301,7 +1313,7 @@ def perf_args(evstr, rest):
     add = []
     if args.interval:
         add += ['-I', str(args.interval)]
-    return [perf, "stat", "-x;", "--log-fd", "X"] + add + ["-e", evstr] + rest
+    return [feat.perf, "stat", "-x;", "--log-fd", "X"] + add + ["-e", evstr] + rest
 
 def setup_perf(evstr, rest):
     prun = PerfRun()
@@ -3087,7 +3099,7 @@ def do_sample(sample_obj, rest, count, ret):
     perf_data = args.sample_basename
     if count is not None:
         perf_data += ".%d" % count
-    sperf = ([perf, "record"] +
+    sperf = ([feat.perf, "record"] +
              extra_args +
              ["-e", sample, "-o", perf_data] +
              [x for x in rest if x not in ("-A", "--percore-show-thread")])
@@ -3100,7 +3112,7 @@ def do_sample(sample_obj, rest, count, ret):
             print("Sampling failed")
             sys.exit(1)
         if not args.quiet:
-            print("Run `" + perf + " report%s%s' to show the sampling results" % (
+            print("Run `" + feat.perf + " report%s%s' to show the sampling results" % (
                 (" -i %s" % perf_data) if perf_data != "perf.data" else "",
                 " --no-branch-history" if "-b" in extra_args else ""))
 
