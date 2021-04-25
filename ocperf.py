@@ -116,14 +116,16 @@ class PerfVersion(object):
         if not perf:
             perf = "perf"
         try:
-            version = subprocess.Popen([perf, "--version"], stdout=subprocess.PIPE).communicate()[0]
+            version = subprocess.Popen([perf, "--version"],
+                    stderr=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE).communicate()[0]
         except OSError:
             print("Cannot run", perf)
             version = ""
         if not isinstance(version, str):
             version = version.decode('utf-8')
         m = re.match(r"perf version (\d+)\.(\d+)\.", version)
-        version = 0
+        version = 412 # assume that no match is new enough
         if m:
             major = int(m.group(1))
             minor = int(m.group(2))
