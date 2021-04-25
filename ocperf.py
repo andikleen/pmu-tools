@@ -117,7 +117,6 @@ class PerfVersion(object):
             perf = "perf"
         try:
             version = subprocess.Popen([perf, "--version"],
-                    stderr=subprocess.DEVNULL,
                     stdout=subprocess.PIPE).communicate()[0]
         except OSError:
             print("Cannot run", perf)
