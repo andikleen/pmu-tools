@@ -1065,7 +1065,7 @@ def gen_script(r):
     if not args.script_record:
         print("# enable compression with POSTFIX=.xz script")
     print("OUT=${OUT:-toplev}")
-    print("PERF=${PERF:-%s}" % perf)
+    print("PERF=${PERF:-perf}")
     print("find /sys/devices > ${OUT}_topology")
     print("cat /proc/cpuinfo > ${OUT}_cpuinfo")
     r[0] = "$PERF"
