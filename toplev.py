@@ -1159,7 +1159,7 @@ class PerfRun(object):
     def execute(self, r):
         if args.import_:
             if args.script_record:
-                self.perf = subprocess.Popen([perf, "stat", "report", "-x;", "-i", args.import_],
+                self.perf = subprocess.Popen([feat.perf, "stat", "report", "-x;", "-i", args.import_],
                                              stderr=subprocess.PIPE, **popentext)
                 return self.perf.stderr
             self.perf = None
