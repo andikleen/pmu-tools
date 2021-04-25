@@ -3533,9 +3533,20 @@ out.flushfiles()
 if args.xlsx and ret == 0:
     ret = do_xlsx(env)
 
+def idle_range_list(l):
+    if all([x.isdigit() for x in l]):
+        # adapted from https://stackoverflow.com/questions/2154249/identify-groups-of-continuous-numbers-in-a-list
+        def get_range(g):
+            group = [x[1] for x in g]
+            if len(group) == 1:
+                return "%d" % group[0]
+            return "%d-%d" % (group[0], group[-1])
+        l = [get_range(g) for k, g in groupby(enumerate(sorted([int(x) for x in l])), lambda x: x[0] - x[1])]
+    return ",".join(l)
+
 if runner.idle_keys and not args.quiet:
     print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" %
-            (",".join(runner.idle_keys)), file=sys.stderr)
+            idle_range_list(runner.idle_keys), file=sys.stderr)
 
 if ectx.notfound_cache and any(["not supported" not in x for x in ectx.notfound_cache.values()]) and not args.quiet:
     print("Some events not found. Consider running event_download to update event lists", file=sys.stderr)
