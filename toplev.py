@@ -219,7 +219,7 @@ class PerfFeatures(object):
             if ret == 512:
                 import glob
                 l = sorted(glob.glob("/usr/lib/linux-tools*/perf"),
-                          key=lambda x: [int(t) if t.isdigit() else t for t in re.split('(\d+)', x)])
+                          key=lambda x: [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', x)])
                 if len(l) > 0:
                     self.perf = l[0]
                     ret = os.system(self.perf + " stat --log-fd 3 3>/dev/null true")
