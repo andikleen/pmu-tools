@@ -78,4 +78,4 @@ class Setup:
         r.force_metric(TransactionalCycles())
         r.force_metric(AbortedCycles())
         r.force_metric(AverageRTM())
-        r.force_metric(AverageHLE())
+        #r.force_metric(AverageHLE())
