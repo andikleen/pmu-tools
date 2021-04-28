@@ -75,6 +75,7 @@ known_cpus = (
     ("icl", (126, 125, 157,
              167, )), # RKL as ICL for now
     ("tgl", (140, 141, )),
+    ("icx", (106, 108, )),
 )
 
 eventlist_alias = {
@@ -83,7 +84,7 @@ eventlist_alias = {
     167: "GenuineIntel-6-7E", # use ICL list for RKL for now
 }
 
-tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl")
+tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx")
 
 non_json_events = set(("dummy", "duration_time"))
 
@@ -3271,6 +3272,14 @@ elif cpu.cpu == "clx":
     clx_server_ratios.smt_enabled = cpu.ht
     smt_mode = cpu.ht
     model = clx_server_ratios
+elif cpu.cpu == "icx":
+    import icx_server_ratios
+    icx_server_ratios.smt_enabled = cpu.ht
+    model = icx_server_ratios
+    setup_metrics(model)
+    # work around kernel constraint table bug in some kernel versions
+    if kernel_version < 510:
+        ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
 elif cpu.cpu == "icl":
     import icl_client_ratios
     icl_client_ratios.smt_enabled = cpu.ht

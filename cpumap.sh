@@ -21,3 +21,4 @@ cpus[knl]=GenuineIntel-6-57
 cpus[skx]=GenuineIntel-6-55-4
 cpus[clx]=GenuineIntel-6-55-5
 cpus[icl]=GenuineIntel-6-7E
+cpus[icx]=GenuineIntel-6-6A

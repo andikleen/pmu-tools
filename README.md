@@ -105,6 +105,7 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev now supports Icelake Server
 * toplev updated to Ahmad Yasin's TMA 4.2:
     Bottlenecks Info group, Tuned memory access costs
     New Metrics
