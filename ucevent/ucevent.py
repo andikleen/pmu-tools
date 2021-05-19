@@ -512,7 +512,11 @@ class PerfRun:
             self.mock(logfile, evl)
             self.perf = None
         else:
-            self.perf = subprocess.Popen(s, close_fds=False)
+            if sys.version_info.major == 3 and sys.version_info.minor >= 2:
+                # close_fds mysteriously doesn't work anymore with python 3.7
+                self.perf = subprocess.Popen(s, pass_fds=(int(s[s.index('--log-fd')+1]),))
+            else:
+                self.perf = subprocess.Popen(s, close_fds=False)
 
 def perf_box(x):
     m = re.match(r"uncore_([^/]+)(_\d+)?/", x)
