@@ -758,8 +758,7 @@ def measure(evl, argl, equations, evnames):
                     r = "#NA"
             res[socket].append(r)
             p = m.group(3)
-            if p.find("/,") >= 0:
-                p = re.sub(r"/,.*", "", p) + "/"
+            p = re.sub(r"/u?,.*", "", p) + "/"
             if p.startswith(","):
                 p = p[1:]
             evp[socket].append(p)
