@@ -731,6 +731,8 @@ def measure(evl, argl, equations, evnames):
             dbg("perf", l)
             if l.startswith('#') or l == "":
                 continue
+            if l.startswith("S"): # bogus summary lines. ignore
+                continue
             if per_socket:
                 ts, socket, _, rest = l.split(",", 3)
                 l = ts + "," + rest
