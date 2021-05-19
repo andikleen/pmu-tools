@@ -47,6 +47,8 @@ cpu_mapping = {
     86: "bdxde",
     79: "bdx",
     85: "skx",
+    106: "icx",
+    108: "icx",
 }
 
 args = None
@@ -117,6 +119,9 @@ elif cputype == "ivt":
 elif cputype == "jkt":
     import jkt_uc as uc
     import jkt_extra as extra
+elif cputype == "icx":
+    import icx_uc as uc
+    import icx_extra as extra
 else:
     sys.exit("Unknown CPU " + cputype)
 
