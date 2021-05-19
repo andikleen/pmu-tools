@@ -3723,13 +3723,15 @@ def idle_range_list(l):
         l = [get_range(g) for k, g in groupby(enumerate(sorted([int(x) for x in l])), lambda x: x[0] - x[1])]
     return ",".join(l)
 
-if runner.idle_keys and not args.quiet:
+if any([r.idle_keys for r in runner_list]) and not args.quiet:
+    ik = set()
+    for r in runner_list:
+        ik |= r.idle_keys
     print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" %
-            idle_range_list(runner.idle_keys), file=sys.stderr)
+            idle_range_list(ik), file=sys.stderr)
 
 report_idle(runner_list)
 report_not_supported(runner_list)
-
 
 if args.graph:
     args.output.close()
