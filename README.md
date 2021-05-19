@@ -105,6 +105,7 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* ucevent now supports Icelake Server
 * toplev now supports Icelake Server
 * toplev updated to Ahmad Yasin's TMA 4.2:
     Bottlenecks Info group, Tuned memory access costs
