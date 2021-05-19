@@ -1023,10 +1023,6 @@ if not args.force_cpu and cpu.model in eventlist_alias:
     if not os.getenv("UNCORE"):
         os.putenv("UNCORE", r)
 
-ectx.emap = ocperf.find_emap()
-if not ectx.emap:
-    sys.exit("Unknown CPU or CPU event map not found.")
-
 if cpu.pmu_name and cpu.pmu_name.startswith("generic") and not args.quiet:
     print("warning: kernel is in architectural mode and might mismeasure events", file=sys.stderr)
     print("Consider a kernel update. See https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support", file=sys.stderr)
