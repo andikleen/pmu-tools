@@ -244,7 +244,11 @@ def get_pager():
     f = sys.stdout
     if f.isatty():
         try:
-            sp = subprocess.Popen(["less", "-F"], stdin=subprocess.PIPE)
+            if sys.version_info.major == 3:
+                sp = subprocess.Popen(["less", "-F"], stdin=subprocess.PIPE,
+                        universal_newlines=True)
+            else:
+                sp = subprocess.Popen(["less", "-F"], stdin=subprocess.PIPE)
             return sp.stdin, sp
         except OSError:
             f = sys.stdout
@@ -257,7 +261,7 @@ def print_events(cat, desc, equation):
     if (args.unsupported or args.broken) and not args.name_only:
         print("\nNot all of these events have been tested and they may be broken", file=f)
         print("USE AT YOUR OWN RISK!", file=f)
-    for c in sorted(uc.categories, cmp_cat):
+    for c in sorted(uc.categories, key=lambda x: x.lower()):
         if cat and expand_acronyms(c).lower().find(cat.lower()) < 0:
             continue
         ehdr = EventsHeader(c, f)
