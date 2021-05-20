@@ -13,6 +13,7 @@
 # LOADLONG= override longer running test load
 # LOAD0=..  override test load on cpu 0 (taskset)
 # NOCPUS=1  skip individual CPU tests
+# MATCH=cpu in cpu loops only run for CPU cpu
 
 set -e
 set -o pipefail
