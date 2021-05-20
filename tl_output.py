@@ -235,7 +235,7 @@ class OutputHuman(Output):
             write("%-*s" % (self.titlelen, title))
         self.print_line_header(area, hdr)
         vals = "{:<{unitlen}} {:>} {:<{belowlen}}".format(
-                    ("  " if unit[0] != "%" else "") + unit,
+                    ("  " if unit and unit[0] != "%" else "") + unit,
                     val.format_value(),
                     fmt_below(below),
                     unitlen=self.unitlen + 1,
