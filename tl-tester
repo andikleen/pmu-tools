@@ -162,6 +162,7 @@ $WRAP ./toplev -h > /dev/null
 onegroup() {
 	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
 	if [ -n "$NOGROUP" ] ; then return ; fi
+	if [ -n "$NUM_RUNNERS" -a "$NUM_RUNNERS" -gt 1 ] ; then return ; fi
 	case "$OPT" in *--drilldown*) return ;; esac
 	grep perf $1 |
 		 sed -E -e 's/topdown-retiring,?//;s/topdown-be-bound,?//;s/topdown-fe-bound,?//;s/slots,?//;s/topdown-bad-spec,?//;s/\{\}//' |
