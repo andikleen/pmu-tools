@@ -335,15 +335,15 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --column
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD
 if $PYTHON -c 'import xlsxwriter' ; then
-$WRAP ./toplev.py --xlsx x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOAD
+$WRAP ./toplev.py --xlsx x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOADLONG
 rm x$$.xlsx
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --all $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --all $LOADLONG
 rm x$$.xlsx # must exist
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -l6 --metrics --single-thread $LOAD
 rm x$$.xlsx # must exist
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --xnormalize --all $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --xnormalize --all $LOADLONG
 rm x$$.xlsx # must exist
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -I100 --xchart --all $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -I100 --xchart --all $LOADLONG
 rm x$$.xlsx # must exist
 
 fi
