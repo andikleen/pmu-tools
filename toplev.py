@@ -26,6 +26,7 @@
 # FORCEMETRICS=1    Force fixed metrics and slots
 # TLSEED=n          Set seed for --subset sample: sampling
 # DURATION_TIME=0   Force not using duration_time
+# NUM_RUNNERS=n     Use n runners to fake hybrid
 
 from __future__ import print_function, division
 import sys
