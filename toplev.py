@@ -1625,9 +1625,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             printer.print_res(runner.olist, out, interval, jname, package_node, None, j in idle_mark_keys)
     # no bottlenecks from package nodes for now
     out.flush()
-    for inner_runner, inner_res in runner_split([runner], res):
-        if inner_runner == runner:
-            stat.referenced_check(inner_res, runner.sched.evnum)
+    stat.referenced_check(res, runner.sched.evnum)
     stat.compute_errors()
     runner.idle_keys |= hidden_keys
     if runner.printer.numprint == 0 and not args.quiet and runner.olist:
@@ -1669,7 +1667,10 @@ def print_and_sum_keys(runner, summary, res, rev, valstats, out, interval, env):
     if res and all([sum(res[k]) == 0.0 for k in res.keys()]) and cpu.cpu == cpu.realcpu:
         if args.subset:
             return
-        sys.exit("All measured values 0. perf broken?")
+        if len(runner_list) == 1:
+            sys.exit("All measured values 0. perf broken?")
+        else:
+            print("Measured values in a runner all 0", file=sys.stderr)
     if args.interval and interval is None:
         interval = float('nan')
     if summary:
@@ -1759,8 +1760,7 @@ def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
             for ret, res, rev, interval, valstats, env in do_execute(
                     summary, allowed_threads, evstr, flat_events, flat_rmap,
                     out, rest, resoff):
-                for inner_runner, res in runner_split(runner_list, res):
-                    lresults.append([ret, res, rev, interval, valstats, env, inner_runner])
+                lresults.append([ret, res, rev, interval, valstats, env, runner])
             if res:
                 for t in res.keys():
                     resoff[t] += len(res[t])
@@ -3589,11 +3589,16 @@ def setup_cpus(rest):
     else:
         allowed_threads = allcpus
 
-    if len(runner_list) == 2 and args.no_aggr: # XXX
-        runner_list[0].cpu_list = allowed_threads[:len(allowed_threads)//2]
-        runner_list[1].cpu_list = allowed_threads[len(allowed_threads)//2:]
+    if len(runner_list) > 2 and args.no_aggr: # XXX
+        part = len(allowed_threads)//len(runner_list)
+        start = 0
+        for r in runner_list:
+            r.cpu_list = allowed_threads[start:start + part]
+            start += part
+        assert start == len(allowed_threads)
     elif args.no_aggr:
-        runner_list[0].cpu_list = list(allowed_threads)
+        for r in runner_list:
+            r.cpu_list = list(allowed_threads)
     else:
         for r in runner_list:
             r.cpu_list = []
