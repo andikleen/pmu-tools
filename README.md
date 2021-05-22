@@ -15,9 +15,9 @@ and run the respective tool (like toplev or ocperf) out of the source directory.
 To run it from other directories you can use
    export PATH=$PATH:/path/to/pmu-tools
 or symlink the tool you're interested in to /usr/local/bin or ~/bin. The tools automatically
-handle finding the python dependencies.
+find their python dependencies.
 
-When first run toplev / ocperf will automatically download the Intel event lists from
+When first run, toplev / ocperf will automatically download the Intel event lists from
 https://download.01.org. This requires working internet access. Later runs can
 be done offline. It's also possible to download the event lists ahead, see
 [pmu-tools offline](https://github.com/andikleen/pmu-tools/wiki/Running-ocperf-toplev-when-not-on-the-internet)
@@ -36,7 +36,7 @@ If you want to use those run
 
 once, or follow the command suggested in error messages.
 
-jevents is a C library. It has no dependencies other than gcc and can be built with
+jevents is a C library. It has no dependencies other than gcc/make and can be built with
 
 	cd jevents
 	make
@@ -67,7 +67,7 @@ You want to:
 - understand CPU bottlenecks on the high-level: use toplev.
 - display toplev output graphically: toplev --xlsx (or --graph)
 - know what CPU events to run, but want to use symbolic names for a new CPU: use ocperf.
-- measure interconnect/caches/memory/power management on Xeon E5+: use ucevent or toplev
+- measure interconnect/caches/memory/power management on Xeon E5+: use ucevent (or toplev)
 - Use perf events from a C program: use jevents
 - Query CPU topology or disable HyperThreading: use cputop
 - Change Model Specific Registers: use msr
