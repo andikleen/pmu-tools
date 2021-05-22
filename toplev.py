@@ -3289,7 +3289,14 @@ def setup_metrics(model):
     ectx.core_domains = set(["CoreClocks", "CoreMetric"])
     ectx.slots_available = force_metrics or os.path.exists("/sys/devices/cpu/events/slots")
 
-runner_list = [Runner(args.level, idle_threshold), Runner(args.level, idle_threshold)]
+nr = os.getenv("NUMRUNNERS")
+if nr:
+    num_runners = int(nr)
+    runner_list = []
+    for j in range(num_runners):
+        runner_list.append(Runner(args.level, idle_threshold))
+else:
+    runner_list = [Runner(args.level, idle_threshold)]
 
 pe = lambda x: None
 if args.debug:
