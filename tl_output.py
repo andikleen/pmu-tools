@@ -94,6 +94,7 @@ class Output(object):
         self.printedversion = set()
         self.no_header = args.no_csv_header
         self.no_footer = args.no_csv_footer
+        self.valcsv = None
 
     def flushfiles(self):
         if self.logfiles:

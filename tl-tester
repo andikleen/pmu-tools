@@ -163,6 +163,7 @@ $WRAP ./toplev -h > /dev/null
 onegroup() {
 	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
 	if [ -n "$NOGROUP" ] ; then return ; fi
+	if [ -n "$NUM_RUNNERS" -a "$NUM_RUNNERS" -gt 1 ] ; then return ; fi
 	case "$OPT" in *--drilldown*) return ;; esac
 	grep perf $1 |
 		 sed -E -e 's/topdown-retiring,?//;s/topdown-be-bound,?//;s/topdown-fe-bound,?//;s/slots,?//;s/topdown-bad-spec,?//;s/\{\}//' |
@@ -330,19 +331,20 @@ rm x$$.csv.gz y$$.out.gz
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --no-multiplex --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu bdw $OPT --cpu 0,1,2,3 --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns --filterquals -l4 $LOAD
 DURATION_TIME=0 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
+NUM_RUNNERS=2 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD
 if $PYTHON -c 'import xlsxwriter' ; then
-$WRAP ./toplev.py --xlsx x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOAD
+$WRAP ./toplev.py --xlsx x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOADLONG
 rm x$$.xlsx
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --all $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --all $LOADLONG
 rm x$$.xlsx # must exist
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -l6 --metrics --single-thread $LOAD
 rm x$$.xlsx # must exist
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --xnormalize --all $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --xnormalize --all $LOADLONG
 rm x$$.xlsx # must exist
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -I100 --xchart --all $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -I100 --xchart --all $LOADLONG
 rm x$$.xlsx # must exist
 
 fi
