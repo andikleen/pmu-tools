@@ -14,6 +14,7 @@
 # LOAD0=..  override test load on cpu 0 (taskset)
 # NOCPUS=1  skip individual CPU tests
 # MATCH=cpu in cpu loops only run for CPU cpu
+# NUM_RUNNERS=n Run toplev with multiple runners for hybrid testing
 
 set -e
 set -o pipefail
@@ -31,6 +32,7 @@ NORES="${NORES:-}"
 PERF=${PERF:-perf}
 NMPI="" # XXX fix
 NOCPUS="${NOCPUS:-}"
+NUM_RUNNERS="${NUM_RUNNERS:-}"
 
 if [ -n "$WRAP" ] ; then
 	PYTHON=$WRAP
