@@ -1664,7 +1664,7 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
         print_keys(runner, res, rev, valstats, out, interval, env, mode)
 
 def print_and_sum_keys(runner, summary, res, rev, valstats, out, interval, env):
-    if res and all([sum(res[k]) == 0.0 for k in res.keys()]) and cpu.cpu == cpu.realcpu:
+    if res and all([sum(res[k]) == 0.0 and len(res[k]) > 0 for k in res.keys()]) and cpu.cpu == cpu.realcpu:
         if args.subset:
             return
         if len(runner_list) == 1:
@@ -1792,7 +1792,7 @@ def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
 
 def runner_split(runner_list, res):
     for r in runner_list:
-        if r.cpu_list:
+        if r.cpu_list and len(runner_list) > 1:
             yield r, { "%d" % k: res["%d" % k] for k in r.cpu_list }
         else:
             yield r, res
