@@ -23,3 +23,4 @@ rm val.[0-9]*.csv
 rm x*.xlsx
 rm script[0-9]*
 rm toplev[ospv]*.csv toplevm[0-9]*
+rm nflog*
