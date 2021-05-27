@@ -1173,9 +1173,9 @@ class PerfRun(object):
                 try:
                     self.handle_inputsubset(f, args.subset)
                 except OSError:
-                    sys.exit("--subset not supported on compressed files. Uncompress them first.")
+                    sys.exit("--subset not supported on compressed or unseekable files.")
                 except io.UnsupportedOperation:
-                    sys.exit("--subset not supported on compressed files. Uncompress them first.")
+                    sys.exit("--subset not supported on compressed or unseekable files.")
             self.inputf = f
             return f
 
