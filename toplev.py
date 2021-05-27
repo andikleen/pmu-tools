@@ -1473,7 +1473,18 @@ def idle_socket(socket, idle_keys):
 def num_key(s):
     return [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', s)]
 
+def invalid_res(res, key, nothing):
+    if len(res) == 0:
+        if isinstance(key, list):
+            for j in key:
+                nothing.add(j)
+        else:
+            nothing.add(key)
+        return True
+    return False
+
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
+    nothing = set()
     allowed_threads = runner.cpu_list
     def filtered(j):
         return j != "" and is_number(j) and int(j) not in allowed_threads
@@ -1529,6 +1540,9 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 merged_res = res[j]
                 merged_st = valstats[j]
 
+            if invalid_res(merged_res, cpus, nothing):
+                continue
+
             # may need to repeat to get stable threshold values
             # in case of mutual dependencies between SMT and non SMT
             # but don't loop forever (?)
@@ -1582,6 +1596,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             if j in idle_keys:
                 hidden_keys.add(j)
                 continue
+            if invalid_res(res[j], j, nothing):
+                continue
             runner.reset_thresh()
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
@@ -1598,10 +1614,11 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 nodeselect = package_node
             else:
                 nodeselect = any_node
-            runner.reset_thresh()
-            runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
-                           combined_st, env, nodeselect, stat)
-            printer.print_res(runner.olist, out, interval, "all", nodeselect, None, False)
+            if not invalid_res(combined_res, cpus, nothing):
+                runner.reset_thresh()
+                runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
+                               combined_st, env, nodeselect, stat)
+                printer.print_res(runner.olist, out, interval, "all", nodeselect, None, False)
     elif mode != OUTPUT_THREAD:
         packages = set()
         for j in keys:
@@ -1621,6 +1638,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 hidden_keys.add(j)
                 continue
             runner.reset_thresh()
+            if invalid_res(res[j], j, nothing):
+                continue
             runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
             printer.print_res(runner.olist, out, interval, jname, package_node, None, j in idle_mark_keys)
     # no bottlenecks from package nodes for now
@@ -1628,6 +1647,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat.referenced_check(res, runner.sched.evnum)
     stat.compute_errors()
     runner.idle_keys |= hidden_keys
+    if nothing:
+        print("Nothing measured for", " ".join(sorted(nothing)), file=sys.stderr)
     if runner.printer.numprint == 0 and not args.quiet and runner.olist:
         print("No node crossed threshold", file=sys.stderr)
 
@@ -3031,9 +3052,6 @@ class Runner(object):
         return changed[0]
 
     def compute(self, res, rev, valstats, env, match, stat):
-        if len(res) == 0:
-            print("Nothing measured?", file=sys.stderr)
-            return False
 
         self.set_ectx()
         changed = 0
