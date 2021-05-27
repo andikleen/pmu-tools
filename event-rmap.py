@@ -23,7 +23,7 @@ if len(sys.argv) > 1:
 
 emap = ocperf.find_emap()
 if not emap:
-    sys.exit("Unknown CPU or cannot find CPU event table")
+    print("Unknown CPU or cannot find CPU event table")
 found = 0
 try:
     pebs_enable = msr.readmsr(MSR_PEBS_ENABLE, cpu)
@@ -38,7 +38,9 @@ for i in range(0, 8):
     if evsel & EVENTSEL_ENABLE:
         print("%d: %016x: " % (i, evsel), end="")
         evsel &= EVMASK
-        if evsel in emap.codes:
+        if emap is None:
+            name = "r%04x", evsel & 0xffff
+        elif evsel in emap.codes:
             ev = emap.codes[evsel]
             if ev.msr:
                 try:
