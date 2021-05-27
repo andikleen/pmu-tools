@@ -2034,7 +2034,8 @@ def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, res
 
         def dup_val(l):
             for j in l:
-                add("%d" % j)
+                if j in allowed_threads:
+                    add("%d" % j)
 
         # power/uncore events are only output once for every socket
         if (re.match(r'power|uncore', event) and
