@@ -4,6 +4,7 @@
 from __future__ import print_function
 import glob
 import struct
+import os
 
 def writemsr(msr, val):
     n = glob.glob('/dev/cpu/[0-9]*/msr')
