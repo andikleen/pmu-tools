@@ -1813,7 +1813,7 @@ def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
 
 def runner_split(runner_list, res):
     for r in runner_list:
-        if r.cpu_list: # and len(runner_list) > 1:
+        if r.cpu_list and not args.single_thread:
             d = defaultdict(list)
             d.update({ "%d" % k: res["%d" % k] for k in r.cpu_list })
             yield r, d
