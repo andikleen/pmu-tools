@@ -40,7 +40,7 @@ def changebit(msr, bit, val):
         raise OSError("msr module not loaded (run modprobe msr)")
 
 if __name__ == '__main__':
-    import argparse, os
+    import argparse
 
     def parse_hex(s):
         try:
