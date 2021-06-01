@@ -19,6 +19,7 @@
 #
 # env:
 # CPUINFO=... override /proc/cpuinfo file
+# MAPFILE=... override mapfile.csv
 from __future__ import print_function
 import sys
 import re
@@ -120,14 +121,18 @@ def parse_map_file(match, key=None, link=True, onlyprint=False, acceptfile=False
     files = []
     dir = getdir()
     try:
-        mapfn = os.path.join(dir, "mapfile.csv")
-        if onlyprint and not os.path.exists(mapfn):
+        mfn = os.getenv("MAPFILE")
+        if mfn:
+            mapfn = mfn
+        else:
+            mapfn = os.path.join(dir, mapfile)
+        if onlyprint and not os.path.exists(mapfn) and not mfn:
             print("Download", mapfn, "first for --print")
             return []
         if acceptfile and os.path.exists(mapfn):
             pass
-        elif not onlyprint:
-            getfile(modelpath, dir, "mapfile.csv")
+        elif not onlyprint and not mfn:
+            getfile(modelpath, dir, mapfile)
         models = open(mapfn)
         for j in models:
             if j.startswith("Family-model"):
