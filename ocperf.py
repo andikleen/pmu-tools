@@ -840,8 +840,14 @@ class EmapNativeJSON(object):
         td_event("perf_metrics.backend_bound", "topdown-be-bound", "Number of slots the pipeline was backend bound.", "35")
         td_event("topdown.slots", "slots", "Number of slots", "36")
 
+pmu_to_type = {
+    "cpu_core": "hybrid core",
+    "cpu_atom": "hybrid atom",
+    "cpu": "core",
+}
+
 def json_with_extra(el, eventmap_is_file, pmu):
-    name = event_download.eventlist_name(el, "core")
+    name = event_download.eventlist_name(el, pmu_to_type[pmu])
     emap = EmapNativeJSON(name, pmu)
     if not emap or emap.error:
         print("parsing", name, "failed", file=sys.stderr)
