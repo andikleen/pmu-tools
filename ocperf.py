@@ -311,7 +311,7 @@ class Event(object):
                 if extra:
                     ename += ":" + extra
             else:
-                ename = "cpu/%s/" % (p) + extra
+                ename = "%s/%s/" % (self.pmu, p) + extra
         return ename
 
     def filter_qual(self):
@@ -572,7 +572,7 @@ def json_open(name):
 class EmapNativeJSON(object):
     """Read an event table."""
 
-    def __init__(self, name):
+    def __init__(self, name, pmu):
         self.events = {}
         self.perf_events = {}
         self.codes = {}
@@ -581,6 +581,7 @@ class EmapNativeJSON(object):
         self.latego = False
         self.uncore_events = {}
         self.error = False
+        self.pmu = pmu
         self.read_events(name)
 
     def add_event(self, e):
@@ -588,6 +589,7 @@ class EmapNativeJSON(object):
         self.perf_events[e.name.replace('.', '_')] = e  # workaround for perf-style naming
         self.codes[e.val] = e
         self.desc[e.name] = e.desc
+        e.pmu = self.pmu
 
     def read_table(self, r, m):
         for row in r:
@@ -838,9 +840,9 @@ class EmapNativeJSON(object):
         td_event("perf_metrics.backend_bound", "topdown-be-bound", "Number of slots the pipeline was backend bound.", "35")
         td_event("topdown.slots", "slots", "Number of slots", "36")
 
-def json_with_extra(el, eventmap_is_file):
+def json_with_extra(el, eventmap_is_file, pmu):
     name = event_download.eventlist_name(el, "core")
-    emap = EmapNativeJSON(name)
+    emap = EmapNativeJSON(name, pmu)
     if not emap or emap.error:
         print("parsing", name, "failed", file=sys.stderr)
         return None
@@ -910,16 +912,18 @@ def canon_emapvar(el, typ):
                 el = l[0]
     return el
 
-def find_emap():
+def find_emap(eventvar="EVENTMAP", pmu="cpu"):
     """Search and read a perfmon event map.
        When the EVENTMAP environment variable is set read that, otherwise
        read the map for the current CPU. EVENTMAP can be a CPU specifier
        in the map file or a path name.
        Dito for the OFFCORE and UNCORE environment variables.
 
+       Optionally pass the name of the EVENTMAP variable, and the cpu pmu name.
+
        Return an emap object that contains the events and can be queried
        or None if nothing is found or the current CPU is unknown."""
-    el = os.getenv("EVENTMAP")
+    el = os.getenv(eventvar)
     if not el:
         eventmap_is_file = False
         el = event_download.get_cpustr()
@@ -928,7 +932,7 @@ def find_emap():
     el = canon_emapvar(el, "core")
     if "/" in el:
         try:
-            emap = EmapNativeJSON(el)
+            emap = EmapNativeJSON(el, pmu)
             if not emap or emap.error:
                 return None
             add_extra_env(emap, el, eventmap_is_file)
@@ -937,7 +941,7 @@ def find_emap():
             return None
     try:
         if not force_download:
-            return json_with_extra(el, eventmap_is_file)
+            return json_with_extra(el, eventmap_is_file, pmu)
     except IOError:
         pass
     try:
@@ -949,7 +953,7 @@ def find_emap():
         if experimental:
             toget += [x + " experimental" for x in toget]
         event_download.download(el, toget)
-        return json_with_extra(el, eventmap_is_file)
+        return json_with_extra(el, eventmap_is_file, pmu)
     except IOError:
         pass
     return None
@@ -1123,7 +1127,7 @@ def perf_cmd(cmd):
             for i in pipe:
                 i = re.sub("[rR]aw 0x([0-9a-f]{4,})", raw, i)
                 i = re.sub("r([0-9a-f]{4,})", raw, i)
-                i = re.sub("(cpu/.*?/)", lambda e: emap.getperf(e.group(1)), i)
+                i = re.sub("(cpu(_core|_atom)?/.*?/)", lambda e: emap.getperf(e.group(1)), i)
                 print(i, end='')
         except IOError:
             pass
