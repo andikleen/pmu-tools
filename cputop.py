@@ -2,14 +2,21 @@
 # query cpu topology and print all matching cpu numbers
 # cputop "query" ["format"]
 # query is a python expression, using variables:
-# socket, core, thread
+# socket, core, thread, type, cpu
 # or "offline" to query all offline cpus
+# type can be "atom" or "core"
+# cpu is the cpu number
 # format is a printf format with %d
 # %d will be replaced with the cpu number
 # format can be offline to offline the cpu or online to online
 # Author: Andi Kleen
 from __future__ import print_function
-import sys, os, re, argparse
+import sys
+import os
+import re
+import argparse
+import glob
+import re
 
 def numfile(fn):
     f = open(fn, "r")
@@ -27,7 +34,9 @@ ap = argparse.ArgumentParser(description='''
 query cpu topology and print all matching cpu numbers
 cputop "query" ["format"]
 query is a python expression, using variables:
-socket, core, thread
+socket, core, thread, type, cpu
+type is "core" or "atom" on a hybrid system
+cpu is the cpu number
 or "offline" to query all offline cpus
 format is a printf format with %d
 %d will be replaced with the cpu number''',
@@ -59,6 +68,18 @@ special = {
 if args.fmt in special:
     args.fmt = special[args.fmt]
 
+types = dict()
+for fn in glob.glob("/sys/devices/cpu_*/cpus"):
+    type = os.path.basename(fn.replace("/cpus", ""))
+    cpus = open(fn).read()
+    for j in cpus.split(","):
+        m = re.match(r'(\d+)(-\d)?', j)
+        if m.group(2):
+            for k in range(int(m.group(1)), int(m.group(2))+1):
+                types[k] = type
+        else:
+            types[int(m.group(1))] = type
+
 base = "/sys/devices/system/cpu/"
 p = {}
 l = os.listdir(base)
@@ -84,5 +105,9 @@ if args.expr == "offline":
 
 for j in sorted(p.keys()):
     socket, core, thread = j
+    cpu = p[j]
+    type = "any"
+    if cpu in types:
+        type = types[cpu]
     if eval(args.expr):
         output(p[j], args.fmt)
