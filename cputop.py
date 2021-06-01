@@ -70,12 +70,12 @@ if args.fmt in special:
 
 types = dict()
 for fn in glob.glob("/sys/devices/cpu_*/cpus"):
-    type = os.path.basename(fn.replace("/cpus", ""))
+    type = os.path.basename(fn.replace("/cpus", "")).replace("cpu_","")
     cpus = open(fn).read()
     for j in cpus.split(","):
-        m = re.match(r'(\d+)(-\d)?', j)
+        m = re.match(r'(\d+)(-\d+)?', j)
         if m.group(2):
-            for k in range(int(m.group(1)), int(m.group(2))+1):
+            for k in range(int(m.group(1)), int(m.group(2)[1:])+1):
                 types[k] = type
         else:
             types[int(m.group(1))] = type
