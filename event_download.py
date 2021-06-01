@@ -53,7 +53,11 @@ def get_cpustr():
             cpu[3] = int(n[2])
         if all(v is not None for v in cpu):
             break
-    return "%s-%d-%X-%X" % tuple(cpu)
+    # stepping for SKX only
+    stepping = cpu[0] == "GenuineIntel" and cpu[1] == 6 and cpu[2] == 0x55
+    if stepping:
+        return "%s-%d-%X-%X" % tuple(cpu)
+    return "%s-%d-%X" % tuple(cpu)[:3]
 
 def sanitize(s, a):
     o = ""
@@ -243,9 +247,8 @@ if __name__ == '__main__':
     p.add_argument('cpus', help='CPU identifiers to download', nargs='*')
     args = p.parse_args()
 
-    cpustr = get_cpustr()
     if args.verbose or args.mine:
-        print("My CPU", cpustr)
+        print(get_cpustr())
     if args.mine:
         sys.exit(0)
     d = getdir()
