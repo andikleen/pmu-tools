@@ -105,6 +105,7 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* cputop now supports hybrid types (type=="core"/"atom")
 * ucevent now supports Icelake Server
 * toplev now supports Icelake Server
 * toplev updated to Ahmad Yasin's TMA 4.2:
