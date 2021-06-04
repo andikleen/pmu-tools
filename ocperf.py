@@ -714,6 +714,9 @@ class EmapNativeJSON(object):
             return ev
         elif e in self.perf_events:
             return self.perf_events[e]
+        elif e in self.pevents:
+            return self.pevents[e]
+
         extramsg.append("not found")
         return None
 
