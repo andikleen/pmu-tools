@@ -1838,13 +1838,14 @@ def execute(runner_list, out, rest, summary):
     allowed_threads = []
     seen_cpus = set()
     for runner in runner_list:
-        events += [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
+        new_events = [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
         runner.set_ectx()
         if evstr:
             evstr += ","
-        evstr += group_join(events)
-        flat_events += flatten(events)
-        flat_rmap += [event_rmap(e) for e in flat_events]
+        evstr += group_join(new_events)
+        new_flat_events = flatten(new_events)
+        flat_events += new_flat_events
+        flat_rmap += [event_rmap(e) for e in new_flat_events]
         runner.clear_ectx()
         for cpu in runner.cpu_list:
             if cpu not in seen_cpus:
