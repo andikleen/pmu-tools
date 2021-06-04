@@ -832,7 +832,10 @@ class EmapNativeJSON(object):
         def td_event(name, pname, desc, counter):
             e = Event(name, 0, desc)
             e.counter = counter
-            e.pname = pname
+            if self.pmu != "cpu":
+                e.pname = "%s/%s/" % (self.pmu, pname)
+            else:
+                e.pname = pname
             self.add_event(e)
         td_event("perf_metrics.retiring", "topdown-retiring", "Number of slots the pipeline was frontend bound.", "32")
         td_event("perf_metrics.bad_speculation", "topdown-bad-spec", "Number of slots the pipeline was doing bad speculation.", "33")
