@@ -6,7 +6,6 @@ from __future__ import print_function
 import sys
 import msr
 import ocperf
-import os
 from pmudef import (MSR_PEBS_ENABLE, MSR_EVNTSEL, EVENTSEL_ENABLE, EVMASK,
                     EVENTSEL_CMASK,
                     EVENTSEL_EDGE, EVENTSEL_ANY, EVENTSEL_INV, EVENTSEL_PC,
