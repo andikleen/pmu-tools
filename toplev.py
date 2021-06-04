@@ -143,11 +143,16 @@ limited_counters_base = {
     "cycles": FIXED_BASE + 1,
     "ref-cycles": FIXED_BASE + 2,
     "slots": FIXED_BASE + 3,
+    "cpu_core/slots/": FIXED_BASE + 3,
     "topdown.slots": FIXED_BASE + 3,
     "topdown-fe-bound": METRICS_BASE + 0,
+    "cpu_core/topdown-fe-bound/": METRICS_BASE + 0,
     "topdown-be-bound": METRICS_BASE + 1,
+    "cpu_core/topdown-be-bound/": METRICS_BASE + 1,
     "topdown-bad-spec": METRICS_BASE + 2,
+    "cpu_core/topdown-bad-spec/": METRICS_BASE + 2,
     "topdown-retiring": METRICS_BASE + 3,
+    "cpu_core/topdown-retiring/": METRICS_BASE + 3,
     "cpu/cycles-ct/": 2,
     "cpu_core/cycles-ct/": 2,
 }
@@ -326,6 +331,9 @@ FORCE_SPLIT = 100
 # Force metrics into own group
 metrics_own_group = True
 
+def is_slots(x):
+    return x in ("slots", "cpu_core/slots/")
+
 def needed_counters(evlist):
     evset = set(evlist)
     num = num_generic_counters(evset)
@@ -336,7 +344,7 @@ def needed_counters(evlist):
 
     if any(metrics):
         # slots must be first if metrics are present
-        if "slots" in evlist and evlist[0] != "slots":
+        if not is_slots(evlist[0]) and any(map(is_slots, evlist)):
             debug_print("split for slots %s" % evlist)
             return FORCE_SPLIT
         # force split if there are other events.
@@ -378,7 +386,7 @@ def event_group(evlist):
                 e = "{%s}" % e
                 if args.exclusive:
                     e += ":e"
-                elif args.pinned and all([ismetric(x) or x == "slots" for x in g]):
+                elif args.pinned and all([ismetric(x) or is_slots(x) for x in g]):
                     e += ":D"
             else:
                 # the scheduler should have avoided that
