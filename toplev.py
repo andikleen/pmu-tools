@@ -2008,7 +2008,9 @@ def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, res
         event = remove_qual(event)
 
         expected_ev = remove_qual(flat_events[len(res[title])])
-        if event != expected_ev:
+        # XXX this doesn't work with hybrid where the events per key don't match
+        # need a better data structure indexed by key
+        if len(runner_list) == 1 and event != expected_ev: # XXX
             # XXX handle this better
             print("Event in input does not match schedule (%s vs expected %s [ind:%d/tit:%s/int:%f])." % (
                     event, expected_ev, len(res[title]), title, prev_interval),
