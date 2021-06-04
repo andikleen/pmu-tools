@@ -718,6 +718,8 @@ class EmapNativeJSON(object):
     def update_event(self, e, ev):
         if e not in self.pevents:
             self.pevents[e] = ev
+        if ev.pname not in self.pevents:
+            self.pevents[ev.pname] = ev
 
     def getraw(self, r):
         e = "r%x" % (r)
