@@ -3333,11 +3333,10 @@ def setup_metrics(model, pmu):
     ectx.slots_available = (force_metrics or
             os.path.exists("/sys/devices/%s/events/slots" % pmu))
 
-hybrid_pmus = []
 nr = os.getenv("NUM_RUNNERS")
 runner_list = []
-cpu_pmus = glob.glob("/sys/devices/cpu_*/cpus")
-if nr and not cpu_pmus:
+hybrid_pmus = glob.glob("/sys/devices/cpu_*")
+if nr and not hybrid_pmus:
     num_runners = int(nr)
     for j in range(num_runners):
         runner_list.append(Runner(args.level, idle_threshold))
@@ -3345,7 +3344,7 @@ else:
     if hybrid_pmus:
         for j in hybrid_pmus:
             runner_list.append(Runner(args.level, idle_threshold,
-                os.path.basename(j.replace("/cpus"))))
+                os.path.basename(j)))
     else:
         runner_list = [Runner(args.level, idle_threshold)]
 
@@ -3479,16 +3478,16 @@ def model_setup(runner, cpuname):
     return init_model(model, runner)
 
 version = ""
-for r in runner_list:
-    r.set_ectx()
-    ectx.emap = ocperf.find_emap()
-    r.printer.emap = ectx.emap
+for runner in runner_list:
+    runner.set_ectx()
+    ectx.emap = ocperf.find_emap(pmu=runner.pmu)
+    runner.printer.emap = ectx.emap
     if not ectx.emap:
         sys.exit("Unknown CPU or CPU event map not found.")
     if version:
         version += ", "
-    version += model_setup(r, cpu.cpu)
-    r.clear_ectx()
+    version += model_setup(runner, cpu.cpu)
+    runner.clear_ectx()
 
 if args.gen_script:
     args.quiet = True
