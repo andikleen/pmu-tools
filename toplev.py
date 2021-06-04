@@ -1436,7 +1436,7 @@ OUTPUT_THREAD = 2
 OUTPUT_SOCKET = 3
 OUTPUT_GLOBAL = 4
 
-def display_keys(runner, keys, mode):
+def display_keys(runner, keys, mode, post=""):
     allowed_threads = runner.cpu_list
     if mode == OUTPUT_GLOBAL:
         return ("",)
@@ -1446,12 +1446,12 @@ def display_keys(runner, keys, mode):
         else:
             cores = [key_to_coreid(x) for x in keys if int(x) in allowed_threads]
             if mode != OUTPUT_CORE:
-                threads = list(map(thread_fmt, allowed_threads))
+                threads = [thread_fmt(x) + post for x in allowed_threads]
             else:
                 threads = []
-            all_cpus = list(set(map(core_fmt, cores))) + threads
+            all_cpus = [core_fmt(x)+post for x in cores] + threads
     else:
-        all_cpus = list(keys)
+        all_cpus = [x + post for x in keys]
     if any(map(package_node, runner.olist)):
         all_cpus += ["S%d" % x for x in range(cpu.sockets)]
     return all_cpus
@@ -1510,7 +1510,10 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     hidden_keys = set()
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
-    out.set_cpus(display_keys(runner, keys, mode))
+    post = ""
+    if runner.pmu:
+        post = runner.pmu.replace("cpu_", "-")
+    out.set_cpus(display_keys(runner, keys, mode, post))
     runner.printer.numprint = 0
     if smt_mode:
         printed_cores = set()
@@ -1581,7 +1584,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 continue
             if mode == OUTPUT_THREAD:
                 runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
-                printer.print_res(runner.olist, out, interval, thread_fmt(int(j)), any_node,
+                printer.print_res(runner.olist, out, interval, thread_fmt(int(j))+post, any_node,
                                   bn, j in idle_mark_keys)
                 continue
 
@@ -1589,7 +1592,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
 
             # print the SMT aware nodes
             if core not in printed_cores:
-                printer.print_res(runner.olist, out, interval, core_fmt(core), core_node, bn,
+                printer.print_res(runner.olist, out, interval, core_fmt(core)+post, core_node, bn,
                         idle_core(core, idle_mark_keys))
                 printed_cores.add(core)
 
@@ -1600,7 +1603,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             else:
                 fmt = thread_fmt(int(j))
                 idle = j in idle_mark_keys
-            printer.print_res(runner.olist, out, interval, fmt, thread_node, bn, idle)
+            printer.print_res(runner.olist, out, interval, fmt+post, thread_node, bn, idle)
     elif mode != OUTPUT_GLOBAL:
         env['num_merged'] = 1
         for j in keys:
@@ -1614,7 +1617,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             runner.reset_thresh()
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
-            printer.print_res(runner.olist, out, interval, j, not_package_node, bn, j in idle_mark_keys)
+            printer.print_res(runner.olist, out, interval, j+post, not_package_node, bn, j in idle_mark_keys)
     if mode == OUTPUT_GLOBAL:
         env['num_merged'] = 1
         cpus = [x for x in keys if not filtered(x)]
