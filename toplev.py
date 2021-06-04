@@ -2087,7 +2087,7 @@ def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, res
                      interval if args.interval else "",
                      title,
                      event,
-                     flat_rmap[len(res[title])-1],
+                     flat_rmap[len(res[title])-1] if len(runner_list) == 1 else event_rmap(event), # XXX
                      val,
                      len(res[title]) - 1,
                      stddev, multiplex)
