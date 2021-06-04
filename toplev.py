@@ -3097,7 +3097,6 @@ class Runner(object):
         return changed[0]
 
     def compute(self, res, rev, valstats, env, match, stat):
-
         self.set_ectx()
         changed = 0
 
