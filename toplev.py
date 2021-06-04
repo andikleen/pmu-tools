@@ -2189,20 +2189,38 @@ def canon_event(e):
         e = m.group(1)
     return e.lower()
 
-def do_event_rmap(e):
-    n = canon_event(ectx.emap.getperf(e))
-    if ectx.emap.getevent(n, nocheck=event_nocheck):
+def find_runner_by_pmu(pmu):
+    for r in runner_list:
+        if r.pmu == pmu:
+            return r
+    return None
+
+def event_pmu(ev):
+    m = re.match(r'(.*?)/', ev)
+    if m:
+        return m.group(1)
+    return None
+
+def do_event_rmap(e, ectx_):
+    n = canon_event(ectx_.emap.getperf(e))
+    if ectx_.emap.getevent(n, nocheck=event_nocheck):
         return n
     if e in non_json_events:
         return e
-    debug_print("rmap: cannot find %s, using dummy" % e)
+    print("rmap: cannot find %s, using dummy" % e)
     return "dummy"
 
 def event_rmap(e):
-    if e in ectx.rmap_cache:
-        return ectx.rmap_cache[e]
-    n = do_event_rmap(e)
-    ectx.rmap_cache[e] = n
+    ectx_ = ectx
+    pmu = event_pmu(e)
+    if pmu:
+        r = find_runner_by_pmu(pmu)
+        if r:
+            ectx_ = runner.ectx
+    if e in ectx_.rmap_cache:
+        return ectx_.rmap_cache[e]
+    n = do_event_rmap(e, ectx_)
+    ectx_.rmap_cache[e] = n
     return n
 
 # compare events to handle name aliases
