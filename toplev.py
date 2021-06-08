@@ -3434,6 +3434,8 @@ def init_runner_list():
             r.cpu_list = None
     else:
         if hybrid_pmus:
+            # XXX cannot be duplicated into multiple runners
+            feat.supports_duration_time = False
             for j in hybrid_pmus:
                 r = Runner(args.level, idle_threshold, os.path.basename(j))
                 runner_list.append(r)
