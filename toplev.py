@@ -88,6 +88,8 @@ eventlist_alias = {
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx")
 
+hybrid_cpus = ("adl")
+
 non_json_events = set(("dummy", "duration_time"))
 
 # handle kernels that don't support all events
@@ -1835,14 +1837,18 @@ def execute_no_multiplex(runner_list, out, rest, summary):
                            out, interval, env)
     return ret
 
-def runner_split(runner_list, res):
+def runner_split(runner_list, res, rev):
     for r in runner_list:
-        if r.cpu_list and not args.single_thread:
+        if len(res.keys()) == 1 and "" in res:
+            off = r.sched.offset
+            end = off + len(r.sched.evnum)
+            yield r, { "": res[""][off:end]}, { "": rev[""][off:end] }
+        elif r.cpu_list:
             d = defaultdict(list)
             d.update({ "%d" % k: res["%d" % k] for k in r.cpu_list })
-            yield r, d
+            yield r, d, rev
         else:
-            yield r, res
+            yield r, res, rev
 
 def execute(runner_list, out, rest, summary):
     events, evstr, flat_events, flat_rmap = [], "", [], []
@@ -1865,7 +1871,7 @@ def execute(runner_list, out, rest, summary):
     ctx = SaveContext()
     for ret, res, rev, interval, valstats, env in do_execute(summary,
             allowed_threads, evstr, flat_events, flat_rmap, out, rest):
-        for runner, res in runner_split(runner_list, res):
+        for runner, res, rev in runner_split(runner_list, res, rev):
             print_and_sum_keys(runner, summary, res, rev, valstats,
                                out, interval, env)
     ctx.restore()
@@ -3178,7 +3184,7 @@ class Runner(object):
             rest = add_args(rest, "--percore-show-thread")
         return rest
 
-def runner_restart(runner):
+def runner_restart(runner, offset):
     emap = runner.printer.emap
     runner.reset()
     runner.printer.emap = emap
@@ -3191,6 +3197,9 @@ def runner_restart(runner):
     runner.set_ectx()
     runner.sched.schedule(runner.olist)
     runner.clear_ectx()
+    runner.sched.offset = offset
+    offset += len(runner.sched.evnum)
+    return offset
 
 def runner_init(runner):
     if args.nodes:
@@ -3375,23 +3384,30 @@ def parse_cpus(base):
                 l.append(int(m.group(1)))
     return l
 
-nr = os.getenv("NUM_RUNNERS")
-runner_list = []
-hybrid_pmus = glob.glob("/sys/devices/cpu_*")
-if nr and not hybrid_pmus:
-    num_runners = int(nr)
-    for j in range(num_runners):
-        r = Runner(args.level, idle_threshold)
-        runner_list.append(r)
-        r.cpu_list = None
-else:
-    if hybrid_pmus:
-        for j in hybrid_pmus:
-            r = Runner(args.level, idle_threshold, os.path.basename(j))
+def init_runner_list():
+    nr = os.getenv("NUM_RUNNERS")
+    runner_list = []
+    hybrid_pmus = []
+    hybrid_pmus = glob.glob("/sys/devices/cpu_*")
+    if args.force_cpu and args.force_cpu not in hybrid_cpus:
+        hybrid_pmus = hybrid_pmus[:1]
+    if nr and not hybrid_pmus:
+        num_runners = int(nr)
+        for j in range(num_runners):
+            r = Runner(args.level, idle_threshold)
             runner_list.append(r)
-            r.cpu_list = parse_cpus(j)
+            r.cpu_list = None
     else:
-        runner_list = [Runner(args.level, idle_threshold)]
+        if hybrid_pmus:
+            for j in hybrid_pmus:
+                r = Runner(args.level, idle_threshold, os.path.basename(j))
+                runner_list.append(r)
+                r.cpu_list = parse_cpus(j)
+        else:
+            runner_list = [Runner(args.level, idle_threshold)]
+    return runner_list
+
+runner_list = init_runner_list()
 
 pe = lambda x: None
 if args.debug:
@@ -3721,9 +3737,6 @@ if args.repl:
     code.interact(banner='toplev repl', local=locals())
     sys.exit(0)
 
-for r in runner_list:
-    runner_init(r)
-
 if args.json:
     if args.csv:
         sys.exit("Cannot combine --csv with --json")
@@ -3746,9 +3759,14 @@ if args.valcsv:
         out.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
                              "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
 
+# XXX use runner_restart
+offset = 0
 for r in runner_list:
+    runner_init(r)
     r.set_ectx()
     r.sched.schedule(r.olist)
+    r.sched.offset = offset
+    offset += len(r.sched.evnum)
     r.clear_ectx()
 
 def suggest(runner):
@@ -3789,8 +3807,9 @@ def measure_and_sample(runner_list, count):
         if repeat:
             if not args.quiet:
                 print("Rerunning workload", file=sys.stderr)
+            offset = 0
             for r in runner_list:
-                runner_restart(r)
+                offset = runner_restart(r, offset)
         else:
             break
     return ret, count
