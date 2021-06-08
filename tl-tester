@@ -15,6 +15,7 @@
 # NOCPUS=1  skip individual CPU tests
 # MATCH=cpu in cpu loops only run for CPU cpu
 # NUM_RUNNERS=n Run toplev with multiple runners for hybrid testing
+# ALLCPUS=... cpus to test
 
 set -e
 set -o pipefail
@@ -84,7 +85,7 @@ set -o pipefail
 
 SMTCPUS="snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl icx"
 NOSMTCPUS="slm simple"
-ALLCPUS="$SMTCPUS $NOSMTCPUS"
+ALLCPUS="${ALLCPUS:-$SMTCPUS $NOSMTCPUS}"
 
 ALL=--all
 
