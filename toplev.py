@@ -1805,7 +1805,7 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             flat_rmap = [event_rmap(e) for e in flat_events]
             runner.clear_ectx()
             for ret, res, rev, interval, valstats, env in do_execute(
-                    summary, runner.cpu_list, evstr, flat_events, flat_rmap,
+                    summary, runner.cpu_list, evstr, flat_rmap,
                     out, rest, resoff):
                 lresults.append([ret, res, rev, interval, valstats, env, runner])
             if res:
@@ -1870,7 +1870,7 @@ def execute(runner_list, out, rest, summary):
                 seen_cpus.add(cpu)
     ctx = SaveContext()
     for ret, res, rev, interval, valstats, env in do_execute(summary,
-            allowed_threads, evstr, flat_events, flat_rmap, out, rest):
+            allowed_threads, evstr, flat_rmap, out, rest):
         for runner, res, rev in runner_split(runner_list, res, rev):
             print_and_sum_keys(runner, summary, res, rev, valstats,
                                out, interval, env)
@@ -1925,7 +1925,39 @@ def update_perf_summary(summary, off, title, val, event, unit, multiplex):
         assert r[2] == event or event == "dummy"
         r[3] = min(r[3], multiplex)
 
-def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, rest, resoff = Counter()):
+def find_runner(off, title):
+    for r in runner_list:
+        if title == "":
+            if r.sched.offset <= off < r.sched.offset+len(r.sched.evnum):
+                return r, off - r.sched.offset
+        elif r.cpu_list:
+            for k in r.cpu_list:
+                if title == "%d" % k:
+                    return r, off
+        else:
+            return r, off
+    assert False
+
+def check_event(event, res, title, prev_interval, l):
+    off = len(res)
+    r, off = find_runner(off, title)
+    expected_ev = remove_qual(r.sched.evnum[off])
+    if event != expected_ev:
+        # these events do not follow the cpu assignments for hybrid
+        # so ignore them if they mismatch
+        if len(runner_list) > 1 and event in ("dummy", "msr/tsc/"):
+            return None
+
+        print("Event in input does not match schedule (%s vs expected %s [pmu:%s/ind:%d/tit:%s/int:%f])." % (
+                event, expected_ev, r.pmu, off, title, prev_interval),
+                file=sys.stderr)
+        sys.stdout.write(l)
+        if args.import_:
+            sys.exit("Different arguments than original toplev?")
+        sys.exit("Input corruption")
+    return r
+
+def do_execute(summary, allowed_threads, evstr, flat_rmap, out, rest, resoff = Counter()):
     res = defaultdict(list)
     rev = defaultdict(list)
     valstats = defaultdict(list)
@@ -2021,18 +2053,9 @@ def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, res
         # code later relies on stripping ku flags
         event = remove_qual(event)
 
-        expected_ev = remove_qual(flat_events[len(res[title])])
-        # XXX this doesn't work with hybrid where the events per key don't match
-        # need a better data structure indexed by key
-        if len(runner_list) == 1 and event != expected_ev: # XXX
-            # XXX handle this better
-            print("Event in input does not match schedule (%s vs expected %s [ind:%d/tit:%s/int:%f])." % (
-                    event, expected_ev, len(res[title]), title, prev_interval),
-                    file=sys.stderr)
-            sys.stdout.write(l)
-            if args.import_:
-                sys.exit("Different arguments than original toplev?")
-            sys.exit("Input corruption")
+        runner = check_event(event, res[title], title, prev_interval, l)
+        if runner is None:
+            continue
 
         multiplex = float('nan')
         event = event.rstrip()
@@ -2063,6 +2086,9 @@ def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, res
         account[event].total += 1
 
         def add(t):
+            if runner.cpu_list and is_number(title) and int(title) not in runner.cpu_list:
+                return
+
             res[t].append(val)
             rev[t].append(event)
             valstats[t].append(st)
