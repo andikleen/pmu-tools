@@ -2545,15 +2545,12 @@ class Summary(object):
         self.summary_perf = OrderedDict()
 
     def add(self, res, rev, valstats, env):
-        # assume perf always outputs the same
-        if self.rev:
-            assert rev == self.rev
         for j in res.keys():
             if len(self.res[j]) == 0:
                 self.res[j] = res[j]
             else:
                 self.res[j] = [a+b for a, b in zip(self.res[j], res[j])]
-        self.rev = rev
+        self.rev.update(rev)
         for j in valstats.keys():
             if len(self.valstats[j]) == 0:
                 self.valstats[j] = valstats[j]
