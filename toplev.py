@@ -2215,6 +2215,14 @@ def event_pmu(ev):
         return m.group(1)
     return None
 
+def event_ectx(ev):
+    pmu = event_pmu(ev)
+    if pmu:
+        r = find_runner_by_pmu(pmu)
+        if r:
+            return r.ectx
+    return ectx if ectx else runner_list[0].ectx
+
 def do_event_rmap(e, ectx_):
     n = canon_event(ectx_.emap.getperf(e))
     if ectx_.emap.getevent(n, nocheck=event_nocheck):
@@ -2225,12 +2233,7 @@ def do_event_rmap(e, ectx_):
     return "dummy"
 
 def event_rmap(e):
-    ectx_ = ectx
-    pmu = event_pmu(e)
-    if pmu:
-        r = find_runner_by_pmu(pmu)
-        if r:
-            ectx_ = r.ectx
+    ectx_ = event_ectx(e)
     if e in ectx_.rmap_cache:
         return ectx_.rmap_cache[e]
     n = do_event_rmap(e, ectx_)
