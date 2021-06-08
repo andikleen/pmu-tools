@@ -854,6 +854,12 @@ class EmapNativeJSON(object):
         td_event("perf_metrics.backend_bound", "topdown-be-bound", "Number of slots the pipeline was backend bound.", "35")
         td_event("topdown.slots", "slots", "Number of slots", "36")
 
+        if "topdown.memory_bound_slots" in self.events:
+            td_event("perf_metrics.heavy_operations", "topdown-heavy-ops", "Number of slots pipeline retired microcode instructions with >2 uops", "36")
+            td_event("perf_metrics.branch_mispredicts", "topdown-br-mispredict", "Number of slots frontend was bound by branch mispredictions", "37")
+            td_event("perf_metrics.memory_bound", "topdown-mem-bound", "Number of slots backend was bound by memory", "38")
+            td_event("perf_metrics.fetch_latency", "topdown-fetch-lat", "Number of slots frontend was bound by memory fetch latency", "39")
+
 pmu_to_type = {
     "cpu_core": "hybrid core",
     "cpu_atom": "hybrid atom",
