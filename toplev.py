@@ -2836,6 +2836,9 @@ def get_uval(ob):
     u.name = ob.name
     return u
 
+def do_warn(p):
+    print(p, file=sys.stderr)
+
 # pre compute column lengths
 def compute_column_lengths(olist, out):
     for obj in olist:
@@ -3006,7 +3009,13 @@ class Runner(object):
             return False
         valid = map(valid_node, options)
         if not all(valid):
-            sys.exit("Unknown node(s) in --nodes: " +
+            # XXX fix for hybrid
+            extra = ""
+            do_output = sys.exit
+            if len(runner_list) > 1:
+                extra = " for " + self.pmu
+                do_output = do_warn
+            do_output("Unknown node(s) in --nodes" + extra + ": " +
                      " ".join([o for o, v in zip(options, valid) if not v]))
 
     def reset_thresh(self):
