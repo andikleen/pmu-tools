@@ -1242,6 +1242,9 @@ def add_filter(s):
         s = list(map(add_filter_event, s))
     return s
 
+def is_cpu_event(s):
+    return re.match(r'cpu(_atom|_core)?/', s) is not None
+
 def initialize_event(name, i, e):
     if "." in name or "_" in name and name not in non_json_events:
         ectx.emap.update_event(e.output(noname=True), e)
@@ -1268,7 +1271,7 @@ def initialize_event(name, i, e):
             ectx.require_pebs_events.add(name)
     else:
         non_json_events.add(i)
-    if not re.match(r'cpu(_core|_atom)?/', i) and i not in ectx.fixed_events:
+    if not is_cpu_event(i) and i not in ectx.fixed_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
         if i.startswith("msr/"):
