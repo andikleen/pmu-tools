@@ -164,7 +164,7 @@ class EventContext(object):
     def __init__(self):
         self.constraint_fixes = dict()
         self.errata_whitelist = []
-        self.outgroup_events = set(["dummy", "duration_time"])
+        self.outgroup_events = set(["dummy", "duration_time", "msr/tsc/"])
         self.sched_ignore_events = set([])
         self.require_pebs_events = set([])
         self.core_domains = set(["Slots", "CoreClocks", "CoreMetric"])
@@ -299,7 +299,7 @@ def limit4_overflow(evlist):
     return sum([x in ectx.limit4_events for x in evlist]) > 4
 
 def ismetric(x):
-    return x.startswith("topdown-")
+    return x.startswith("topdown-") or x.startswith("cpu_core/topdown-")
 
 resources = ("frontend=", "offcore_rsp=", "ldlat=", "in_tx_cp=", "cycles-ct")
 
@@ -1496,6 +1496,9 @@ def invalid_res(res, key, nothing):
         return True
     return False
 
+def runner_name(r):
+    return r.pmu.replace("cpu_", "")
+
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     nothing = set()
     allowed_threads = runner.cpu_list
@@ -1511,8 +1514,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
     post = ""
-    if runner.pmu:
-        post = runner.pmu.replace("cpu_", "-")
+    if len(res.keys()) > 1:
+        post = "-" + runner_name(runner)
     out.set_cpus(display_keys(runner, keys, mode, post))
     runner.printer.numprint = 0
     if smt_mode:
@@ -1666,7 +1669,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     if nothing:
         print("Nothing measured for", " ".join(sorted(nothing)), file=sys.stderr)
     if runner.printer.numprint == 0 and not args.quiet and runner.olist:
-        print("No node crossed threshold", file=sys.stderr)
+        print("No node %scrossed threshold" % (
+                "for %s " % runner_name(runner) if len(runner_list) > 1 else ""),file=sys.stderr)
 
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
     if multi_output():
@@ -1707,7 +1711,8 @@ def print_and_sum_keys(runner, summary, res, rev, valstats, out, interval, env):
         if len(runner_list) == 1:
             sys.exit("All measured values 0. perf broken?")
         else:
-            print("Measured values in a runner all 0", file=sys.stderr)
+            print("Measured values for %s all 0" % runner_name(runner), file=sys.stderr)
+            return
     if args.interval and interval is None:
         interval = float('nan')
     if summary:
