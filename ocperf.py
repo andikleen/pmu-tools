@@ -517,9 +517,11 @@ def merge_extra(a, b):
     m = m - set([':'])
     return m
 
-def print_event(name, desc, f, human, wrap):
+def print_event(name, desc, f, human, wrap, pmu=""):
     desc = "".join([y for y in desc if y < chr(127)])
     print("  %-42s" % (name,), end='', file=f)
+    if pmu:
+        print(" [%s]" % pmu, end='', file=f)
     if human:
         print("\n%s" % (wrap.fill(desc),), file=f)
     else:
@@ -589,6 +591,7 @@ class EmapNativeJSON(object):
     def add_event(self, e):
         self.events[e.name] = e
         self.perf_events[e.name.replace('.', '_')] = e  # workaround for perf-style naming
+        self.pevents[e.pname] = e
         self.codes[e.val] = e
         self.desc[e.name] = e.desc
         e.pmu = self.pmu
@@ -717,7 +720,7 @@ class EmapNativeJSON(object):
         elif e in self.pevents:
             return self.pevents[e]
 
-        extramsg.append("not found")
+        extramsg.append("event not found")
         return None
 
     def update_event(self, e, ev):
@@ -749,7 +752,7 @@ class EmapNativeJSON(object):
             wrap = textwrap.TextWrapper(initial_indent="     ",
                                         subsequent_indent="     ")
         for k in sorted(self.events.keys()):
-            print_event(k, self.desc[k], f, human, wrap)
+            print_event(k, self.desc[k], f, human, wrap, self.pmu)
         if uncore:
             for k in sorted(self.uncore_events.keys()):
                 print_event(k, self.uncore_events[k].desc, f, human, wrap)
