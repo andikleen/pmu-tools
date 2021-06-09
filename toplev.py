@@ -3707,14 +3707,15 @@ for r in runner_list:
     rest = r.filter_per_core(args.single_thread, rest)
 
 if not smt_mode and not args.single_thread and not args.no_aggr:
+    hybrid = cpu.cpu in hybrid_cpus
     multi = output_count()
     if multi > 0:
         rest = add_args(rest, "-a")
-    if multi > 1 or args.per_thread:
+    if (multi > 1 or args.per_thread) and not hybrid:
         args.no_aggr = True
-    if args.per_socket and multi == 1:
+    if args.per_socket and multi == 1 and not hybrid:
         rest = add_args(rest, "--per-socket")
-    if args.per_core and multi == 1:
+    if args.per_core and multi == 1 and not hybrid:
         rest = add_args(rest, "--per-core")
 
 full_system = False
