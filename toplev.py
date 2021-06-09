@@ -3380,9 +3380,10 @@ def suggest_desc(runner):
     def nummatch(n):
         return sum([x.name.startswith(n) for x in runner.olist])
     printer = runner.printer
-    print("Run toplev --describe %s to get more information on bottleneck%s" % (
+    print("Run toplev --describe %s to get more information on bottleneck%s%s" % (
         " ".join([full_name(x) + "^" if nummatch(x.name) > 1 else x.name + "^" for x in printer.bottlenecks]),
-        "s" if len(printer.bottlenecks) > 1 else ""), file=sys.stderr)
+        "s" if len(printer.bottlenecks) > 1 else "",
+        (" for " + runner.pmu.replace("cpu_", "")) if runner.pmu else ""), file=sys.stderr)
 
 def sysctl(name):
     try:
