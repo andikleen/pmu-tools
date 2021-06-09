@@ -1936,12 +1936,17 @@ def update_perf_summary(summary, off, title, val, event, unit, multiplex):
         assert r[2] == event or event == "dummy"
         r[3] = min(r[3], multiplex)
 
-def find_runner(off, title):
+def find_runner(off, title, event):
     for r in runner_list:
         if title == "":
             if r.sched.offset <= off < r.sched.offset+len(r.sched.evnum):
                 return r, off - r.sched.offset
         elif r.cpu_list:
+            if not event.startswith("cpu"):
+                if event == r.sched.evnum[off]:
+                    return r, off
+                else:
+                    return None, -1
             for k in r.cpu_list:
                 if title == "%d" % k:
                     return r, off
@@ -1949,16 +1954,13 @@ def find_runner(off, title):
             return r, off
     assert False
 
-def check_event(event, res, title, prev_interval, l):
-    off = len(res)
-    r, off = find_runner(off, title)
+def check_event(event, res, title, prev_interval, l, resoff):
+    off = len(res) + resoff[title]
+    r, off = find_runner(off, title, event)
+    if r is None:
+        return r
     expected_ev = remove_qual(r.sched.evnum[off])
     if event != expected_ev:
-        # these events do not follow the cpu assignments for hybrid
-        # so ignore them if they mismatch
-        if len(runner_list) > 1 and event in ("dummy", "msr/tsc/"):
-            return None
-
         print("Event in input does not match schedule (%s vs expected %s [pmu:%s/ind:%d/tit:%s/int:%f])." % (
                 event, expected_ev, r.pmu, off, title, prev_interval),
                 file=sys.stderr)
@@ -2064,7 +2066,7 @@ def do_execute(summary, allowed_threads, evstr, flat_rmap, out, rest, resoff = C
         # code later relies on stripping ku flags
         event = remove_qual(event)
 
-        runner = check_event(event, res[title], title, prev_interval, l)
+        runner = check_event(event, res[title], title, prev_interval, l, resoff)
         if runner is None:
             continue
 
