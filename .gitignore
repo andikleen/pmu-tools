@@ -6,6 +6,7 @@ jevents/examples/jestat
 jevents/examples/rtest
 jevents/examples/rtest2
 jevents/examples/rtest3
+jevents/examples/ptself
 jevents/libjevents.a
 jevents/listevents
 jevents/showevent
