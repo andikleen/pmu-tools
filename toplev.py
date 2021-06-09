@@ -1293,6 +1293,8 @@ def initialize_event(name, i, e):
 def raw_event(i, name="", period=False, nopebs=True, initialize=False):
     e = None
     orig_i = i
+    if i == "cycles" and cpu.cpu != "simple":
+        i = "cpu_clk_unhalted.thread"
     if "." in i or "_" in i and i not in non_json_events:
         if re.match(r'^(OCR|OFFCORE_RESPONSE).*', i) and not feat.supports_ocr:
             if not args.quiet:
@@ -2275,8 +2277,14 @@ def event_rmap(e):
     ectx_.rmap_cache[e] = n
     return n
 
+def iscycles(ev):
+    return ev == "cycles" or ev == "cpu_clk_unhalted.thread"
+
 # compare events to handle name aliases
 def compare_event(aname, bname):
+    # XXX this should be handled in ocperf
+    if iscycles(aname) and iscycles(bname):
+        return True
     a = ectx.emap.getevent(aname, nocheck=event_nocheck)
     if a is None:
         return False
