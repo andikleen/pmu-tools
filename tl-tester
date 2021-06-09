@@ -38,6 +38,7 @@ NOCPUS="${NOCPUS:-}"
 NUM_RUNNERS="${NUM_RUNNERS:-}"
 HYBRID="${HYBRID:-}"
 NOMULTIPLEX="${NOMULTIPLEX:---no-multiplex}"
+ONLYCPU="${ONLYCPU:-}"
 
 if [ -n "$WRAP" ] ; then
 	PYTHON=$WRAP
