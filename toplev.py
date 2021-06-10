@@ -3073,8 +3073,8 @@ class Runner(object):
             # XXX fix for hybrid
             extra = ""
             do_output = sys.exit
-            if len(runner_list) > 1:
-                extra = " for " + self.pmu
+            if len(runner_list) > 1 or cpu.cpu == "adl":
+                extra = " for " + self.pmu if self.pmu else "cpu"
                 do_output = do_warn
             do_output("Unknown node(s) in --nodes" + extra + ": " +
                      " ".join([o for o, v in zip(options, valid) if not v]))
