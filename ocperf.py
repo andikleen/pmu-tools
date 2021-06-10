@@ -591,7 +591,8 @@ class EmapNativeJSON(object):
     def add_event(self, e):
         self.events[e.name] = e
         self.perf_events[e.name.replace('.', '_')] = e  # workaround for perf-style naming
-        self.pevents[e.pname] = e
+        if e.pname:
+            self.pevents[e.pname] = e
         self.codes[e.val] = e
         self.desc[e.name] = e.desc
         e.pmu = self.pmu
@@ -726,8 +727,6 @@ class EmapNativeJSON(object):
     def update_event(self, e, ev):
         if e not in self.pevents:
             self.pevents[e] = ev
-        if ev.pname not in self.pevents:
-            self.pevents[ev.pname] = ev
 
     def getraw(self, r):
         e = "r%x" % (r)
