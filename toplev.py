@@ -2111,11 +2111,11 @@ def do_execute(summary, allowed_threads, evstr, flat_rmap, out, rest, resoff = C
 
         account[event].total += 1
 
-	def ignored_cpu(num):
-	    return num not in runner.cpu_list and not any([k in runner.cpu_list for k in cpu.coreids[cpu.cputocore[num]]])
+        def ignored_cpu(num):
+            return num not in runner.cpu_list and not any([k in runner.cpu_list for k in cpu.coreids[cpu.cputocore[num]]])
 
         def add(t):
-	    if runner.cpu_list and is_number(title) and ignored_cpu(int(title)):
+            if runner.cpu_list and is_number(title) and ignored_cpu(int(title)):
                 return
 
             res[t].append(val)
