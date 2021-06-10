@@ -637,15 +637,19 @@ class EmapNativeJSON(object):
                     e.extra += "u"
                 if other & (1 << 17):
                     e.extra += "k"
+            e.perfqual = None
             if (m['msr_index'] in row and get('msr_index') and get('msr_value')):
                 msrnum = gethex('msr_index')
                 msrval = gethex('msr_value')
                 if version.offcore and msrnum in (0x1a6, 0x1a7):
                     e.newextra = ",offcore_rsp=0x%x" % (msrval, )
+                    e.perfqual = "offcore_rsp"
                 elif version.ldlat and msrnum in (0x3f6,):
                     e.newextra = ",ldlat=0x%x" % (msrval, )
+                    e.perfqual = "ldlat"
                 elif msrnum == 0x3f7:
                     e.newextra = ",frontend=%#x" % (msrval, )
+                    e.perfqual = "frontend"
                 # add new msr here
                 else:
                     e.msrval = msrval
