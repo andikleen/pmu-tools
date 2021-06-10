@@ -88,7 +88,7 @@ eventlist_alias = {
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx")
 
-hybrid_cpus = ("adl")
+hybrid_cpus = ("adl", )
 
 non_json_events = set(("dummy", "duration_time"))
 
@@ -3445,7 +3445,7 @@ def setup_metrics(model, pmu):
     ectx.slots_available = (force_metrics or
             os.path.exists("/sys/devices/%s/events/slots" % pmu))
 
-def parse_cpus(base):
+def read_cpus(base):
     l = []
     with open(base + "/cpus") as cpus:
         for j in cpus.readline().split(","):
@@ -3471,15 +3471,20 @@ def init_runner_list():
             runner_list.append(r)
             r.cpu_list = None
     else:
-        if hybrid_pmus:
+        if hybrid_pmus and cpu.cpu in hybrid_cpus:
             # XXX cannot be duplicated into multiple runners
             feat.supports_duration_time = False
             for j in hybrid_pmus:
+                cpu_list = [k for k in read_cpus(j) if not args.core or display_core(k, True)]
+                if len(cpu_list) == 0:
+                    continue
                 r = Runner(args.level, idle_threshold, os.path.basename(j))
                 runner_list.append(r)
-                r.cpu_list = [j for j in parse_cpus(j) if not args.core or display_core(f, True)]
+                r.cpu_list = cpu_list
         else:
-            runner_list = [Runner(args.level, idle_threshold)]
+            runner_list = [Runner(args.level, idle_threshold,
+                pmu="cpu_core" if hybrid_cpus else "cpu")]
+
     return runner_list
 
 runner_list = init_runner_list()
