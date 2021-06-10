@@ -2,6 +2,7 @@
 # clean up tl-tester logs after failures
 rm log[0-9]*
 rm log-[0-9]*
+rm logsum[0-9]*
 rm log-all*
 rm log-combined*
 rm val[0-9]*.csv
