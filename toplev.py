@@ -204,11 +204,15 @@ def warn_once(msg):
     if msg not in warned:
         warn(msg)
         warned.add(msg)
+    if test_mode:
+        assert 0
 
 def warn_once_no_assert(msg):
     if msg not in warned:
         print("warning: " + msg, file=sys.stderr)
         warned.add(msg)
+    if test_mode:
+        assert 0
 
 def debug_print(x):
     if args.debug:
