@@ -1261,6 +1261,9 @@ def initialize_event(name, i, e):
             if e.counter.startswith("Fixed"):
                 ectx.limited_counters[i] = int(e.counter.split()[2]) + FIXED_BASE
                 ectx.fixed_events.add(i)
+	    elif is_number(e.counter) and int(e.counter) >= 32:
+		ectx.limited_counters[i] = int(e.counter)
+		ectx.fixed_events.add(i)
             else:
                 # for now use the first counter only to simplify
                 # the assignment. This is sufficient for current
