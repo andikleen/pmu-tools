@@ -225,6 +225,15 @@ def test_debug_print(x):
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
+exists_cache = dict()
+
+def cached_exists(fn):
+    if fn in exists_cache:
+        return exists_cache[fn]
+    found = os.path.exists(fn)
+    exists_cache[fn] = found
+    return found
+
 class PerfFeatures(object):
     """Adapt to the quirks of various perf versions."""
     def __init__(self, args):
@@ -261,13 +270,9 @@ class PerfFeatures(object):
             self.supports_duration_time = works(self.perf + " list duration_time | grep duration_time")
         # guests don't support offcore response
         if event_nocheck:
-            self.supports_ocr = True
             self.has_max_precise = True
             self.max_precise = 3
         else:
-            # XXX hybrid
-            self.supports_ocr = works(self.perf +
-                    " stat -e '{%s/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true" % pmu)
             self.has_max_precise = os.path.exists("/sys/devices/%s/caps/max_precise" % pmu)
             if self.has_max_precise:
                 self.max_precise = int(open("/sys/devices/%s/caps/max_precise" % pmu).read())
@@ -1058,7 +1063,6 @@ if args.xlsx and not forced_per_core and cpu.threads == 1:
 if cpu.hypervisor:
     feat.max_precise = 0
     feat.has_max_precise = True
-    feat.supports_ocr = False
 
 if not pversion.has_uncore_expansion:
     # XXX reenable power
@@ -1297,10 +1301,6 @@ def raw_event(i, name="", period=False, nopebs=True, initialize=False):
     if i == "cycles" and cpu.cpu != "simple":
         i = "cpu_clk_unhalted.thread"
     if "." in i or "_" in i and i not in non_json_events:
-        if re.match(r'^(OCR|OFFCORE_RESPONSE).*', i) and not feat.supports_ocr:
-            if not args.quiet:
-                print("%s not supported in guest" % i, file=sys.stderr)
-            return "dummy"
         if not cpu.ht:
             i = i.replace(":percore", "")
         extramsg = []
@@ -1310,6 +1310,10 @@ def raw_event(i, name="", period=False, nopebs=True, initialize=False):
                 ectx.notfound_cache[i] = extramsg[0]
                 print("%s %s" % (i, extramsg[0]), file=sys.stderr)
             return "dummy"
+        if has(e, 'perfqual') and not cached_exists("/sys/devices/%s/format/%s"  % (ectx.emap.pmu, e.perfqual)):
+            print("%s event not supported in hypervisor or architectural mode" % i, file=sys.stderr)
+            return "dummy"
+
         if re.match("^[0-9]", name):
             name = "T" + name
         if args.filterquals:
