@@ -1441,7 +1441,7 @@ def thread_fmt(j):
 def display_core(cpunum, ignore_thread=False):
     for match in args.core.split(","):
         m = re.match(r'(?P<socket>S\d+)?-?(?P<core>C\d+)?-?(?P<thread>T\d+)?', match, re.I)
-        if not m:
+        if not m or not any((m.group('core'), m.group('socket'),)):
             sys.exit("Bad core match %s" % match)
 
         def matching(name, mapping):
