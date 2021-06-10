@@ -1269,9 +1269,9 @@ def initialize_event(name, i, e):
             if e.counter.startswith("Fixed"):
                 ectx.limited_counters[i] = int(e.counter.split()[2]) + FIXED_BASE
                 ectx.fixed_events.add(i)
-	    elif is_number(e.counter) and int(e.counter) >= 32:
-		ectx.limited_counters[i] = int(e.counter)
-		ectx.fixed_events.add(i)
+            elif is_number(e.counter) and int(e.counter) >= 32:
+                ectx.limited_counters[i] = int(e.counter)
+                ectx.fixed_events.add(i)
             else:
                 # for now use the first counter only to simplify
                 # the assignment. This is sufficient for current
@@ -1412,7 +1412,7 @@ def is_event(l, n):
     return re.match(valid_events.string, l[n])
 
 def is_number(n):
-    return re.match(r'\d+', n) is not None
+    return re.match(r'\d+$', n) is not None
 
 def set_interval(env, d, interval):
     env['interval-ns'] = d * 1e9
