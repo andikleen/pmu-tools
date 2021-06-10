@@ -3445,10 +3445,9 @@ def setup_metrics(model, pmu):
     ectx.slots_available = (force_metrics or
             os.path.exists("/sys/devices/%s/events/slots" % pmu))
 
-def read_cpus(base):
+def parse_cpu_list(s):
     l = []
-    with open(base + "/cpus") as cpus:
-        for j in cpus.readline().split(","):
+    for j in s.split(","):
             m = re.match(r'(\d+)(-\d+)?', j)
             if m.group(2):
                 for k in range(int(m.group(1)), int(m.group(2)[1:])+1):
@@ -3456,6 +3455,18 @@ def read_cpus(base):
             else:
                 l.append(int(m.group(1)))
     return l
+
+def read_cpus(base):
+    with open(base + "/cpus") as cpus:
+        return parse_cpu_list(cpus.readline())
+    return []
+
+def use_cpu(cpu):
+    if args.core:
+        return display_core(cpu, True)
+    if args.cpu:
+        return cpu in parse_cpu_list(args.cpu)
+    return True
 
 def init_runner_list():
     nr = os.getenv("NUM_RUNNERS")
@@ -3472,10 +3483,10 @@ def init_runner_list():
             r.cpu_list = None
     else:
         if hybrid_pmus and cpu.cpu in hybrid_cpus:
-            # XXX cannot be duplicated into multiple runners
+            # cannot be duplicated into multiple runners
             feat.supports_duration_time = False
             for j in hybrid_pmus:
-                cpu_list = [k for k in read_cpus(j) if not args.core or display_core(k, True)]
+                cpu_list = [k for k in read_cpus(j) if use_cpu(k)]
                 if len(cpu_list) == 0:
                     continue
                 r = Runner(args.level, idle_threshold, os.path.basename(j))
