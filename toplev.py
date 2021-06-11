@@ -1812,6 +1812,7 @@ def execute_no_multiplex(runner_list, out, rest, summary):
     # runs could be further reduced by tweaking
     # the scheduler to avoid any duplicated events
     for runner in runner_list:
+        groups = [g.evnum for g in runner.sched.evgroups]
         for g, gg in zip(groups, runner.sched.evgroups):
             if gg.outgroup:
                 outg.append(g)
@@ -1827,9 +1828,10 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             flat_rmap = [event_rmap(e) for e in flat_events]
             runner.clear_ectx()
             for ret, res, rev, interval, valstats, env in do_execute(
+                    [runner],
                     summary, runner.cpu_list, evstr, flat_rmap,
-                    out, rest, resoff):
-                lresults.append([ret, res, rev, interval, valstats, env, runner])
+                    out, rest, resoff, flat_events):
+                lresults.append([ret, res, rev, interval, valstats, env])
             if res:
                 for t in res.keys():
                     resoff[t] += len(res[t])
@@ -1842,7 +1844,6 @@ def execute_no_multiplex(runner_list, out, rest, summary):
                 # XXX handle results > lresults
                 for r, lr in zip(results, lresults):
                     r[0] = lr[0]
-                    r[6] = lr[6]
                     for j in (1, 2, 4, 5):
                         diff = len(results[0][j]) - len(lr[j])
                         if diff:
@@ -1854,8 +1855,9 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             outg = []
             n += 1
     assert num_runs == n
-    for ret, res, rev, interval, valstats, env, runner in results:
-        print_and_sum_keys(runner, summary, res, rev, valstats,
+    for ret, res, rev, interval, valstats, env in results:
+        for runner, res, rev in runner_split(runner_list, res, rev):
+            print_and_sum_keys(runner, summary, res, rev, valstats,
                            out, interval, env)
     return ret
 
@@ -1891,8 +1893,9 @@ def execute(runner_list, out, rest, summary):
                 allowed_threads.append(cpu)
                 seen_cpus.add(cpu)
     ctx = SaveContext()
-    for ret, res, rev, interval, valstats, env in do_execute(summary,
-            allowed_threads, evstr, flat_rmap, out, rest):
+    for ret, res, rev, interval, valstats, env in do_execute(
+            runner_list, summary,
+            allowed_threads, evstr, flat_rmap, out, rest, Counter(), None):
         for runner, res, rev in runner_split(runner_list, res, rev):
             print_and_sum_keys(runner, summary, res, rev, valstats,
                                out, interval, env)
@@ -1947,10 +1950,10 @@ def update_perf_summary(summary, off, title, val, event, unit, multiplex):
         assert r[2] == event or event == "dummy"
         r[3] = min(r[3], multiplex)
 
-def find_runner(off, title, event):
-    if len(runner_list) == 1:
-        return runner_list[0], off
-    for r in runner_list:
+def find_runner(rlist, off, title, event):
+    if len(rlist) == 1:
+        return rlist[0], off
+    for r in rlist:
         if title == "":
             if r.sched.offset <= off < r.sched.offset+len(r.sched.evnum):
                 return r, off - r.sched.offset
@@ -1967,12 +1970,14 @@ def find_runner(off, title, event):
             return r, off
     assert False
 
-def check_event(event, res, title, prev_interval, l, resoff):
-    off = len(res) + resoff[title]
-    r, off = find_runner(off, title, event)
+def check_event(rlist, event, res, title, prev_interval, l, resoff, revnum):
+    off = len(res) # + resoff[title]
+    r, off = find_runner(rlist, off, title, event)
     if r is None:
         return r
-    expected_ev = remove_qual(r.sched.evnum[off])
+    if revnum is None:
+        revnum = r.sched.evnum
+    expected_ev = remove_qual(revnum[off])
     if event != expected_ev:
         print("Event in input does not match schedule (%s vs expected %s [pmu:%s/ind:%d/tit:%s/int:%f])." % (
                 event, expected_ev, r.pmu, off, title, prev_interval),
@@ -1983,7 +1988,7 @@ def check_event(event, res, title, prev_interval, l, resoff):
         sys.exit("Input corruption")
     return r
 
-def do_execute(summary, allowed_threads, evstr, flat_rmap, out, rest, resoff = Counter()):
+def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, resoff, revnum):
     res = defaultdict(list)
     rev = defaultdict(list)
     valstats = defaultdict(list)
@@ -2079,7 +2084,7 @@ def do_execute(summary, allowed_threads, evstr, flat_rmap, out, rest, resoff = C
         # code later relies on stripping ku flags
         event = remove_qual(event)
 
-        runner = check_event(event, res[title], title, prev_interval, l, resoff)
+        runner = check_event(rlist, event, res[title], title, prev_interval, l, resoff, revnum)
         if runner is None:
             continue
 
