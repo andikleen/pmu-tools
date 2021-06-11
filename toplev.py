@@ -1732,6 +1732,8 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
         print_keys(runner, res, rev, valstats, out, interval, env, mode)
 
 def print_and_sum_keys(runner, summary, res, rev, valstats, out, interval, env):
+    if summary:
+        summary.add(res, rev, valstats, env, runner.sched.offset)
     if res and all([sum(res[k]) == 0.0 and len(res[k]) > 0 for k in res.keys()]) and cpu.cpu == cpu.realcpu:
         if args.subset:
             return
@@ -1742,12 +1744,10 @@ def print_and_sum_keys(runner, summary, res, rev, valstats, out, interval, env):
             return
     if args.interval and interval is None:
         interval = float('nan')
-    if summary:
-        summary.add(res, rev, valstats, env)
     if not args.no_output:
         print_and_split_keys(runner, res, rev, valstats, out, interval, env)
 
-def print_summary(runner, allowed_threads, summary, out):
+def print_summary(summary, out):
     if args.perf_summary:
         p = summary.summary_perf
         for sv in zip_longest(*p.values()):
@@ -1775,7 +1775,8 @@ def print_summary(runner, allowed_threads, summary, out):
 
     if not args.summary:
         return
-    print_and_split_keys(runner, summary.res, summary.rev,
+    for runner, res, rev in runner_split(runner_list, summary.res, summary.rev):
+        print_and_split_keys(runner, res, rev,
                          summary.valstats, out,
                          float('nan'), summary.env)
 
@@ -2611,18 +2612,19 @@ class Summary(object):
         self.valstats = defaultdict(list)
         self.summary_perf = OrderedDict()
 
-    def add(self, res, rev, valstats, env):
+    def add(self, res, rev, valstats, env, off):
         for j in res.keys():
-            if len(self.res[j]) == 0:
-                self.res[j] = res[j]
-            else:
-                self.res[j] = [a+b for a, b in zip(self.res[j], res[j])]
-        self.rev.update(rev)
-        for j in valstats.keys():
-            if len(self.valstats[j]) == 0:
-                self.valstats[j] = valstats[j]
-            else:
-                self.valstats[j] = [combine_valstat([a,b]) for a, b in zip(self.valstats[j], valstats[j])]
+            for ind, val in enumerate(res[j]):
+                if ind + off < len(self.res[j]):
+                    self.res[j][ind + off] += val
+                    self.valstats[j][ind + off] = combine_valstat([self.valstats[j][ind + off], valstats[j][ind]])
+                else:
+                    self.res[j].append(val)
+                    self.valstats[j].append(valstats[j][ind])
+        if len(rev.keys()) == 1:
+            append_dict(self.rev, rev)
+        else:
+            self.rev.update(rev)
         for j in env.keys():
             self.env[j] += env[j]
 
@@ -3885,8 +3887,7 @@ def measure_and_sample(runner_list, count):
                 ret = execute(runner_list, out, rest, summary)
         except KeyboardInterrupt:
             ret = 1
-        for runner in runner_list:
-            print_summary(runner, runner.cpu_list, summary, out)
+        print_summary(summary, out)
         repeat = False
         for runner in runner_list:
             runner.stat.compute_errors()
