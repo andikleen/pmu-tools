@@ -2970,6 +2970,33 @@ class Printer(object):
                     self.sample_obj.add(obj)
             self.numprint += 1
 
+# check nodes argument for typos
+def check_nodes(runner_list, nodesarg):
+    def opt_obj_name(s):
+        if s[:1] in ('+', '^', '-'):
+            s = s[1:]
+        if "/" in s:
+            s = s[:s.index("/")]
+        if s.endswith("^"):
+            s = s[:-1]
+        return s
+
+    if nodesarg[:1] == "!":
+        nodesarg = nodesarg[1:]
+    options = [opt_obj_name(s) for s in nodesarg.split(",")]
+    def valid_node(s):
+        for r in runner_list:
+            if s in r.odict:
+                return True
+            for k in r.olist:
+                if fnmatch(k.name, s) or fnmatch(full_name(k), s):
+                    return True
+        return False
+    valid = map(valid_node, options)
+    if not all(valid):
+        sys.exit("Unknown node(s) in --nodes: " +
+                 " ".join([o for o, v in zip(options, valid) if not v]))
+
 class Runner(object):
     """Handle measurements of event groups. Map events to groups."""
 
@@ -3058,38 +3085,6 @@ class Runner(object):
             if not obj.metric and 'parent' in obj.__dict__ and obj.parent:
                 obj.parent.children.append(obj)
 
-    # check nodes argument for typos
-    def check_nodes(self, nodesarg):
-
-        def opt_obj_name(s):
-            if s[:1] in ('+', '^', '-'):
-                s = s[1:]
-            if "/" in s:
-                s = s[:s.index("/")]
-            if s.endswith("^"):
-                s = s[:-1]
-            return s
-
-        if nodesarg[:1] == "!":
-            nodesarg = nodesarg[1:]
-        options = [opt_obj_name(s) for s in nodesarg.split(",")]
-        def valid_node(s):
-            if s in self.odict:
-                return True
-            for k in self.olist:
-                if fnmatch(k.name, s) or fnmatch(full_name(k), s):
-                    return True
-            return False
-        valid = map(valid_node, options)
-        if not all(valid):
-            # XXX fix for hybrid
-            extra = ""
-            do_output = sys.exit
-            if len(runner_list) > 1 or cpu.cpu == "adl":
-                extra = " for " + self.pmu if self.pmu else "cpu"
-                do_output = do_warn
-            do_output("Unknown node(s) in --nodes" + extra + ": " +
-                     " ".join([o for o, v in zip(options, valid) if not v]))
 
     def reset_thresh(self):
         for obj in self.olist:
@@ -3284,8 +3279,6 @@ def runner_restart(runner, offset):
     return offset
 
 def runner_init(runner):
-    if args.nodes:
-        runner.check_nodes(args.nodes)
     runner.setup_children()
     runner.filter_nodes()
     runner.collect()
@@ -3738,9 +3731,11 @@ if args.power and feat.supports_power:
 
 for r in runner_list:
     extra_setup(r, rest)
-    if args.nodes:
-        r.check_nodes(args.nodes)
 
+if args.nodes:
+    check_nodes(runner_list, args.nodes)
+
+for r in runner_list:
     r.setup_children()
 
 if smt_mode and not os.getenv('FORCEHT'):
@@ -3867,6 +3862,11 @@ if args.valcsv:
 offset = 0
 for r in runner_list:
     runner_init(r)
+
+if args.nodes:
+    check_nodes(runner_list, args.nodes)
+
+for r in runner_list:
     r.set_ectx()
     r.sched.schedule(r.olist)
     r.sched.offset = offset
