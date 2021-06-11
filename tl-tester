@@ -118,7 +118,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 --single-thread $LOAD | t
 checklog0
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 --single-thread --columns $LOAD | tee log$$
 checklog0
-[ -z "$HYBRID" ] && $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --all --core S0-C0-T0 $LOAD0 | tee log$$
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --all --core S0-C0-T0 $LOAD0 | tee log$$
 #checklog0
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -v -l4 $LOAD | tee log$$
 checklog0
