@@ -1817,7 +1817,8 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             if gg.outgroup:
                 outg.append(g)
                 continue
-            print("RUN #%d of %d: %s" % (n, num_runs,
+            print("RUN #%d of %d for %s: %s" % (n, num_runs,
+                runner.pmu,
                 " ".join([quote(o.name) for o in gg.objl])))
             lresults = results if n == 0 else []
             res = None
