@@ -1882,6 +1882,8 @@ def execute(runner_list, out, rest, summary):
     seen_cpus = set()
     for runner in runner_list:
         new_events = [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
+        if len(new_events) == 0:
+            continue
         runner.set_ectx()
         if evstr:
             evstr += ","
