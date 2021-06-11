@@ -2488,7 +2488,7 @@ def node_filter(obj, default, sibmatch):
         def _match(m):
             return (fnmatch(name, m) or
                     fnmatch(fname, m) or
-                    fnmatch(fname, "*" + m))
+                    fnmatch(fname, "*." + m))
 
         def match(m, checklevel=True):
             if m.endswith("^"):
