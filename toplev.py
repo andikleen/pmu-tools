@@ -2721,6 +2721,8 @@ def gen_res_map(solist):
 def print_group(g):
     evkeys = [k for o in g.objl for k in o.group_map.keys() if o.group_map[k][0] == g]
     objnames = {("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys}
+    if len(objnames) == 0:
+        return
     evnames = {mark_fixed(x[0]) for x in evkeys}
     pwrap(" ".join(objnames) + ":", 78)
     pwrap(" ".join(evnames).lower() +
