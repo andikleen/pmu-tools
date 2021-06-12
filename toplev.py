@@ -2294,7 +2294,7 @@ def do_event_rmap(e, ectx_):
         return n
     if e in non_json_events:
         return e
-    print("rmap: cannot find %s, using dummy" % e)
+    print("rmap: cannot find %s, using dummy" % e, file=sys.stderr)
     return "dummy"
 
 def event_rmap(e):
@@ -3821,13 +3821,6 @@ def setup_cpus(rest):
     return rest
 
 rest = setup_cpus(rest)
-
-if not args.quiet and not args.print:
-    print("Using level %d." % (args.level), end='')
-    if not args.level and cpu.cpu != "slm":
-        print("Change level with -lX")
-    print()
-    sys.stdout.flush()
 
 if args.pinned:
     run_l1_parallel = True
