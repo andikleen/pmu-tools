@@ -138,9 +138,9 @@ checklog0
 grep :k log$$
 grep /k log$$
 if [ -z "$ONLYCPU" ] ; then
-EVENTMAP=${cpus[$DCPU]} FORCECPU=simple $WRAP ./toplev.py $OPT --no-desc -l1 $LOAD
+$WRAP ./toplev.py --force-cpu simple $OPT --no-desc -l1 $LOAD
 # check errata handling
-EVENTMAP=GenuineIntel-6-56 FORCECPU=bdw $WRAP ./toplev.py $OPT --filterquals --handle-errata --force-events --no-desc --all $LOAD 2>&1 | tee log$$
+$WRAP ./toplev.py --force-cpu bdw $OPT --filterquals --handle-errata --force-events --no-desc --all $LOAD 2>&1 | tee log$$
 grep BDE70 log$$
 $WRAP ./toplev.py --force-cpu skl $OPT --filterquals --nodes '!+Bad_Speculation.Branch_Mispredicts^' -o log$$ -v $LOAD
 [ -z "$NORES" ] && grep Branch_Misprediction_Cost log$$
