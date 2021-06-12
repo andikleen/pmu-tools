@@ -1982,8 +1982,13 @@ def check_event(rlist, event, res, title, prev_interval, l, resoff, revnum):
         return r
     if revnum is None:
         revnum = r.sched.evnum
+    if event.startswith("uncore"):
+        event = re.sub(r'_[0-9]+', '', event)
     expected_ev = remove_qual(revnum[off])
     if event != expected_ev:
+        # work around perf bug that incorrectly expands uncore events in some versions
+        if off > 0 and event == remove_qual(revnum[off - 1]):
+            return None
         print("Event in input does not match schedule (%s vs expected %s [pmu:%s/ind:%d/tit:%s/int:%f])." % (
                 event, expected_ev, r.pmu, off, title, prev_interval),
                 file=sys.stderr)
