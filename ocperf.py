@@ -98,11 +98,11 @@ def file_exists(s):
     exists_cache[s] = found
     return found
 
-def has_format(s, pmu="cpu"):
+def has_format(s, pmu):
     return file_exists("/sys/devices/%s/format/%s" % (pmu, s))
 
-def has_format_any(f, u):
-    return has_format(f, u) or has_format(f, u + "_0")
+def has_format_any(f, pmu):
+    return has_format(f, pmu) or has_format(f, pmu + "_0")
 
 warned = set()
 
@@ -132,9 +132,11 @@ class PerfVersion(object):
             minor = int(m.group(2))
             version = major * 100 + minor
 
+        pmu = "cpu_core" if os.path.exists("/sys/devices/cpu_core") else "cpu"
+
         self.direct = os.getenv("DIRECT_MSR") or version < 400
-        self.offcore = has_format("offcore_rsp") and not self.direct
-        self.ldlat = has_format("ldlat") and not self.direct
+        self.offcore = has_format("offcore_rsp", pmu) and not self.direct
+        self.ldlat = has_format("ldlat", pmu) and not self.direct
         self.has_name = version >= 304
         self.has_uncore_expansion = version >= 412
 
@@ -322,9 +324,9 @@ class Event(object):
                 return True
             if "=" in q:
                 q, _ = q.split("=")
-            if has_format_any(q, "cpu"):
+            if has_format_any(q, self.pmu):
                 return True
-            warn_once("cpu: format %s not supported. Filtering out" % q)
+            warn_once("%s: format %s not supported. Filtering out" % (self. pmu, q))
             return False
         self.newextra = ",".join(filter(check_qual, self.newextra.split(",")))
 
