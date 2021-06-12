@@ -16,7 +16,6 @@
 # MATCH=cpu in cpu loops only run for CPU cpu
 # NUM_RUNNERS=n Run toplev with multiple runners for hybrid testing
 # ONLYCPU=cpu  Only test cpu
-# HYBRID=1    disable tests that are hybrid unfriendly
 # NOMULTIPLEX=" " Disable no multiplex 
 
 set -e
@@ -36,7 +35,6 @@ PERF=${PERF:-perf}
 NMPI="" # XXX fix
 NOCPUS="${NOCPUS:-}"
 NUM_RUNNERS="${NUM_RUNNERS:-}"
-HYBRID="${HYBRID:-}"
 NOMULTIPLEX="${NOMULTIPLEX:---no-multiplex}"
 ONLYCPU="${ONLYCPU:-}"
 
@@ -111,7 +109,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 # test with a locale that outputs FP numbers with , (github issue #43)
 LC_ALL=pl_PL.utf8 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 
-[ -z "$HYBRID" ] && DIRECT_MSR=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
+[ -r /sys/devices/cpu ] && DIRECT_MSR=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 $LOAD | tee log$$
 checklog0
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 --single-thread $LOAD | tee log$$
@@ -166,15 +164,10 @@ grep :e log$$
 rm log$$
 esac
 
-if [ -z "$HYBRID" ] ; then
-	MCPU=icl
-else
-	MCPU=adl
-fi
 case "$OPT" in
 	*--exclusive*) ;;
 	*)
-FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $MCPU --pinned --print --all | tee log$$
+FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu icl --pinned --print --all | tee log$$
 grep :D log$$
 rm log$$
 esac
