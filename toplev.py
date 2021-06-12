@@ -1962,17 +1962,18 @@ def find_runner(rlist, off, title, event):
             if r.sched.offset <= off < r.sched.offset+len(r.sched.evnum):
                 return r, off - r.sched.offset
         elif r.cpu_list:
-            if not event.startswith("cpu"):
-                if event == r.sched.evnum[off]:
-                    return r, off
-                else:
-                    return None, -1
             for k in r.cpu_list:
                 if title == "%d" % k:
+                    # For hybrid, non cpu events like msr/tsc/ get expanded over all CPUs.
+                    # and leak into the other runner who doesn't know anything about them.
+                    if (not event.startswith("cpu") and
+                        (off >= len(r.sched.evnum) or
+                        event != r.sched.evnum[off])):
+                            return None, 0
                     return r, off
         else:
             return r, off
-    assert False
+    assert 0
 
 def check_event(rlist, event, res, title, prev_interval, l, resoff, revnum):
     off = len(res) # + resoff[title]
