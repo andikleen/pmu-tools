@@ -24,9 +24,19 @@ def numfile(fn):
     f.close()
     return v
 
+outstr = ""
+
 def output(p, fmt):
     if fmt:
-        print(fmt % (p,))
+        if fmt == "taskset":
+            global outstr
+            if outstr:
+                outstr += ","
+            else:
+                outstr += "taskset -c "
+            outstr += "%d" % p
+        else:
+            print(fmt % (p,))
     else:
         print(p)
 
@@ -39,7 +49,8 @@ type is "core" or "atom" on a hybrid system
 cpu is the cpu number
 or "offline" to query all offline cpus
 format is a printf format with %d
-%d will be replaced with the cpu number''',
+%d will be replaced with the cpu number, or online/offline
+to generate online/offline commands, or taskset to generate taskset command line''',
 epilog='''
 Examples:
 print all cores on socket 0
@@ -111,3 +122,6 @@ for j in sorted(p.keys()):
         type = types[cpu]
     if eval(args.expr):
         output(p[j], args.fmt)
+
+if outstr:
+    print(outstr)
