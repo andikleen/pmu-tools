@@ -3505,7 +3505,7 @@ def init_runner_list():
                 r.cpu_list = cpu_list
         else:
             runner_list = [Runner(args.level, idle_threshold,
-                pmu="cpu_core" if hybrid_cpus else "cpu")]
+                pmu="cpu_core" if hybrid_pmus else "cpu")]
 
     return runner_list
 
