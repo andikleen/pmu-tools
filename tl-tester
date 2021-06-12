@@ -474,6 +474,12 @@ fi
 $WRAP ./toplev.py $OPT -v -o log$$ --single-thread -r3 $LOAD
 [ -z "$NORES" ] && grep 'Backend_Bound.*[0-9][0-9]' log$$
 
+if [ -f /sys/devices/cpu_core ] ; then
+# XXX set affinity
+$WRAP ./toplev.py $OPT --cputype atom true
+$WRAP ./toplev.py $OPT --cputype core true
+fi
+
 rm log$$
 
 # test other perf output formats

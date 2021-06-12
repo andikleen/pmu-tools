@@ -524,6 +524,7 @@ g.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 g.add_argument('--pid', '-p', help=argparse.SUPPRESS)
 g.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
 g.add_argument('--no-aggr', '-A', help='Measure every CPU', action='store_true')
+g.add_argument('--cputype', help='Limit to hybrid cpu type (atom or core)', choices=['atom', 'core'])
 
 g = p.add_argument_group('Select events')
 g.add_argument('--level', '-l', help='Measure upto level N (max 6)',
@@ -3487,6 +3488,8 @@ def init_runner_list():
     if args.force_cpu and args.force_cpu not in hybrid_cpus:
         hybrid_pmus = hybrid_pmus[:1]
     if nr and not hybrid_pmus:
+        if args.cputype:
+            sys.exit("--cputype specified on non hybrid")
         num_runners = int(nr)
         for j in range(num_runners):
             r = Runner(args.level, idle_threshold)
@@ -3497,6 +3500,8 @@ def init_runner_list():
             # cannot be duplicated into multiple runners
             feat.supports_duration_time = False
             for j in hybrid_pmus:
+                if args.cputype and os.path.basename(j).replace("cpu_", "") != args.cputype:
+                    continue
                 cpu_list = [k for k in read_cpus(j) if use_cpu(k)]
                 if len(cpu_list) == 0:
                     continue
