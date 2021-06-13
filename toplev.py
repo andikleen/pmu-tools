@@ -3431,8 +3431,9 @@ if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
     # XXX should probe if nmi watchdog runs on fixed or generic counter
     for j in cpu.counters.keys():
         cpu.counters[j] -= 1 # FIXME
-    print("Consider disabling nmi watchdog to minimize multiplexing", file=sys.stderr)
-    print("(echo 0 > /proc/sys/kernel/nmi_watchdog as root)", file=sys.stderr)
+    if not args.quiet:
+        print("Consider disabling nmi watchdog to minimize multiplexing", file=sys.stderr)
+        print("(echo 0 | sudo tee /proc/sys/kernel/nmi_watchdog or\n echo kernel.nmi_watchdog=0 >> /etc/sysctl.conf ; sysctl -p as root)", file=sys.stderr)
 
 if cpu.cpu is None:
     sys.exit("Unsupported CPU model %d" % (cpu.model,))
