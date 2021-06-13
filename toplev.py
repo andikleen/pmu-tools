@@ -2922,9 +2922,6 @@ def get_uval(ob):
     u.name = ob.name
     return u
 
-def do_warn(p):
-    print(p, file=sys.stderr)
-
 # pre compute column lengths
 def compute_column_lengths(olist, out):
     for obj in olist:
