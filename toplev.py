@@ -1127,6 +1127,7 @@ class PerfRun(object):
         self.sample_prob = None
         self.skip_line = False
         self.perf = None
+        self.offset = None
 
     def handle_inputsubset(self, f, iss):
         m = re.match(r'(\d+)-?(\d+)?$', iss)
@@ -1172,6 +1173,11 @@ class PerfRun(object):
             return not self.sampling
         return False
 
+    # must be stored before reading the line
+    def store_offset(self):
+        if self.end_seek_offset:
+            self.offset = self.inputf.tell()
+
     def skip_first_line(self):
         if self.skip_line:
             self.skip_line = False
@@ -1180,8 +1186,7 @@ class PerfRun(object):
 
     def next_timestamp(self):
         if self.end_seek_offset:
-            off = self.inputf.tell()
-            if self.end_seek_offset <= off:
+            if self.end_seek_offset <= self.offset:
                 return True
         self.skip_to_next_ts = False
         if self.sample_prob:
@@ -2013,6 +2018,7 @@ def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, res
         start = time.time()
     while True:
         try:
+            prun.store_offset()
             l = inf.readline()
             origl = l
             if not l:
