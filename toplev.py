@@ -1270,7 +1270,9 @@ def is_cpu_event(s):
 
 def initialize_event(name, i, e):
     if "." in name or "_" in name and name not in non_json_events:
-        ectx.emap.update_event(e.output(noname=True), e)
+        eo = e.output(noname=True)
+        ectx.emap.update_event(eo, e)
+        ectx.emap.update_event(remove_qual(eo), e) # XXX
         if (e.counter not in ectx.standard_counters and not name.startswith("UNC_")):
             if e.counter.startswith("Fixed"):
                 ectx.limited_counters[i] = int(e.counter.split()[2]) + FIXED_BASE
