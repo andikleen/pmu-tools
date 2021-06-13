@@ -2169,7 +2169,7 @@ def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, res
             dup_val(cpu.coreids[(socket, core)])
         # duration time is only output once, except with --cpu/-C (???)
         elif event.startswith("duration_time") and is_number(title) and not args.cpu and not args.core:
-            dup_val(allowed_threads)
+            dup_val(runner.cpu_list if runner.cpu_list else allowed_threads)
         else:
             add(title)
 
@@ -3500,8 +3500,6 @@ def init_runner_list():
             r.cpu_list = None
     else:
         if hybrid_pmus and cpu.cpu in hybrid_cpus:
-            # cannot be duplicated into multiple runners
-            feat.supports_duration_time = False
             for j in hybrid_pmus:
                 if args.cputype and os.path.basename(j).replace("cpu_", "") != args.cputype:
                     continue
