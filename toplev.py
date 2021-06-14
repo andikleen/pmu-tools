@@ -1749,7 +1749,7 @@ class SaveContext(object):
         if self.startoffset is not None:
             sys.stdin.seek(self.startoffset)
 
-def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
+def execute_no_multiplex(runner_list, out, rest, summary):
     results = []
     groups = []
     num_outg = 0
@@ -1779,7 +1779,7 @@ def execute_no_multiplex(runner_list, allowed_threads, out, rest, summary):
             flat_rmap = [event_rmap(e) for e in flat_events]
             runner.clear_ectx()
             for ret, res, rev, interval, valstats, env in do_execute(
-                    summary, allowed_threads, evstr, flat_events, flat_rmap,
+                    summary, runner.cpu_list, evstr, flat_events, flat_rmap,
                     out, rest, resoff):
                 lresults.append([ret, res, rev, interval, valstats, env, runner])
             if res:
@@ -1820,8 +1820,10 @@ def runner_split(runner_list, res):
         else:
             yield r, res
 
-def execute(runner_list, allowed_threads, out, rest, summary):
+def execute(runner_list, out, rest, summary):
     events, evstr, flat_events, flat_rmap = [], "", [], []
+    allowed_threads = []
+    seen_cpus = set()
     for runner in runner_list:
         events += [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
         runner.set_ectx()
@@ -1831,6 +1833,10 @@ def execute(runner_list, allowed_threads, out, rest, summary):
         flat_events += flatten(events)
         flat_rmap += [event_rmap(e) for e in flat_events]
         runner.clear_ectx()
+        for cpu in runner.cpu_list:
+            if cpu not in seen_cpus:
+                allowed_threads.append(cpu)
+                seen_cpus.add(cpu)
     ctx = SaveContext()
     for ret, res, rev, interval, valstats, env in do_execute(summary,
             allowed_threads, evstr, flat_events, flat_rmap, out, rest):
@@ -3610,22 +3616,19 @@ def setup_cpus(rest):
     else:
         allowed_threads = allcpus
 
-    if len(runner_list) > 2 and args.no_aggr: # XXX
+    if len(runner_list) > 1 and args.no_aggr: # XXX
         part = len(allowed_threads)//len(runner_list)
         start = 0
         for r in runner_list:
             r.cpu_list = allowed_threads[start:start + part]
             start += part
         assert start == len(allowed_threads)
-    elif args.no_aggr:
-        for r in runner_list:
-            r.cpu_list = list(allowed_threads)
     else:
         for r in runner_list:
-            r.cpu_list = []
-    return rest, allowed_threads
+            r.cpu_list = list(allowed_threads)
+    return rest
 
-rest, allowed_threads = setup_cpus(rest)
+rest = setup_cpus(rest)
 
 if not args.quiet and not args.print:
     print("Using level %d." % (args.level), end='')
@@ -3680,14 +3683,14 @@ def suggest(runner):
         return suggest_bottlenecks(runner)
     return False
 
-def measure_and_sample(runner_list, allowed_threads, count):
+def measure_and_sample(runner_list, count):
     while True:
         summary = Summary()
         try:
             if args.no_multiplex and not args.import_:
-                ret = execute_no_multiplex(runner_list, allowed_threads, out, rest, summary)
+                ret = execute_no_multiplex(runner_list, out, rest, summary)
             else:
-                ret = execute(runner_list, allowed_threads, out, rest, summary)
+                ret = execute(runner_list, out, rest, summary)
         except KeyboardInterrupt:
             ret = 1
         for runner in runner_list:
@@ -3734,11 +3737,11 @@ def report_not_supported(runner_list):
 if args.sample_repeat:
     cnt = 1
     for j in range(args.sample_repeat):
-        ret, cnt = measure_and_sample(runner_list, allowed_threads, cnt)
+        ret, cnt = measure_and_sample(runner_list, cnt)
         if ret:
             break
 else:
-    ret, count = measure_and_sample(runner_list, allowed_threads, 0 if args.drilldown else None)
+    ret, count = measure_and_sample(runner_list, 0 if args.drilldown else None)
 
 out.print_footer()
 out.flushfiles()
