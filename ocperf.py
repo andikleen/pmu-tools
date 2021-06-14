@@ -1191,7 +1191,7 @@ if __name__ == '__main__':
         if j == "--noexplode":
             noexplode = True
     msr = MSR()
-    g = glob.glob("/sys/devices/cpu*"):
+    g = glob.glob("/sys/devices/cpu*")
     if len(g) == 0:
         g = "/sys/devices/cpu"
     for pmu in g:
