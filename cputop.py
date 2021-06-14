@@ -16,7 +16,6 @@ import os
 import re
 import argparse
 import glob
-import re
 
 def numfile(fn):
     f = open(fn, "r")
