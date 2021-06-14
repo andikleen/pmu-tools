@@ -1739,9 +1739,7 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
             mode = OUTPUT_GLOBAL
         print_keys(runner, res, rev, valstats, out, interval, env, mode)
 
-def print_and_sum_keys(runner, summary, res, rev, valstats, out, interval, env):
-    if summary:
-        summary.add(res, rev, valstats, env, runner.sched.offset)
+def print_check_keys(runner, res, rev, valstats, out, interval, env):
     if res and all([sum(res[k]) == 0.0 and len(res[k]) > 0 for k in res.keys()]) and cpu.cpu == cpu.realcpu:
         if args.subset:
             return
@@ -1866,9 +1864,10 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             n += 1
     assert num_runs == n
     for ret, res, rev, interval, valstats, env in results:
+        if summary:
+            summary.add(res, rev, valstats, env)
         for runner, res, rev in runner_split(runner_list, res, rev):
-            print_and_sum_keys(runner, summary, res, rev, valstats,
-                           out, interval, env)
+            print_check_keys(runner, res, rev, valstats, out, interval, env)
     return ret
 
 def runner_split(runner_list, res, rev):
@@ -1908,9 +1907,10 @@ def execute(runner_list, out, rest, summary):
     for ret, res, rev, interval, valstats, env in do_execute(
             runner_list, summary,
             allowed_threads, evstr, flat_rmap, out, rest, Counter(), None):
+        if summary:
+            summary.add(res, rev, valstats, env)
         for runner, res, rev in runner_split(runner_list, res, rev):
-            print_and_sum_keys(runner, summary, res, rev, valstats,
-                               out, interval, env)
+            print_check_keys(runner, res, rev, valstats, out, interval, env)
     ctx.restore()
     return ret
 
@@ -2629,12 +2629,12 @@ class Summary(object):
         self.valstats = defaultdict(list)
         self.summary_perf = OrderedDict()
 
-    def add(self, res, rev, valstats, env, off):
+    def add(self, res, rev, valstats, env):
         for j in res.keys():
             for ind, val in enumerate(res[j]):
-                if ind + off < len(self.res[j]):
-                    self.res[j][ind + off] += val
-                    self.valstats[j][ind + off] = combine_valstat([self.valstats[j][ind + off], valstats[j][ind]])
+                if ind < len(self.res[j]):
+                    self.res[j][ind] += val
+                    self.valstats[j][ind] = combine_valstat([self.valstats[j][ind], valstats[j][ind]])
                 else:
                     self.res[j].append(val)
                     self.valstats[j].append(valstats[j][ind])
