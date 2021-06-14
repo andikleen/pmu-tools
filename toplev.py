@@ -43,6 +43,7 @@ import csv
 import bisect
 import random
 import io
+import glob
 from copy import copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter, OrderedDict
@@ -224,7 +225,6 @@ class PerfFeatures(object):
             # look for the underlying perf installs, if any
             # perf is compatible, so just pick the newest
             if ret == 512:
-                import glob
                 l = sorted(glob.glob("/usr/lib/linux-tools*/perf"),
                           key=lambda x: [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', x)])
                 if len(l) > 0:
@@ -2853,7 +2853,7 @@ class Runner(object):
         self.sched = Scheduler()
         self.printer = Printer(self.metricgroups)
 
-    def __init__(self, max_level, idle_threshold):
+    def __init__(self, max_level, idle_threshold, pmu=None):
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         self.reset()
@@ -2862,6 +2862,7 @@ class Runner(object):
         self.max_node_level = 0
         self.idle_threshold = idle_threshold
         self.ectx = EventContext()
+        self.pmu = pmu
 
     def set_ectx(self):
         #print("set_ectx", sys._getframe(1).f_code.co_name, file=sys.stderr)
@@ -3317,14 +3318,20 @@ def setup_metrics(model):
     ectx.core_domains = set(["CoreClocks", "CoreMetric"])
     ectx.slots_available = force_metrics or os.path.exists("/sys/devices/cpu/events/slots")
 
+hybrid_pmus = []
 nr = os.getenv("NUM_RUNNERS")
+runner_list = []
 if nr:
     num_runners = int(nr)
-    runner_list = []
     for j in range(num_runners):
         runner_list.append(Runner(args.level, idle_threshold))
 else:
-    runner_list = [Runner(args.level, idle_threshold)]
+    cpu_pmus = glob.glob("/sys/devices/cpu_*/cpus")
+    if hybrid_pmus:
+        for j in hybrid_pmus:
+            runner_list.append(Runner(args.level, idle_threshold, j))
+    else:
+        runner_list = [Runner(args.level, idle_threshold)]
 
 pe = lambda x: None
 if args.debug:
@@ -3343,8 +3350,26 @@ if args.quiet:
         args.no_desc = True
     args.no_util = True
 
+def init_model(model):
+    version = model.version
+    model.print_error = pe
+    model.check_event = lambda ev: ectx.emap.getevent(ev) is not None
+    model.Setup(runner)
+
+    if "Errata_Whitelist" in model.__dict__:
+        ectx.errata_whitelist += model.Errata_Whitelist.split(";")
+
+    if "base_frequency" in model.__dict__:
+        model.base_frequency = cpu.freq * 1000
+
+    if "model" in model.__dict__:
+        model.model = cpu.modelid
+
+    return version
+
 def model_setup(runner, cpuname):
     global smt_mode
+    hmodels = None
     if cpuname == "ivb":
         import ivb_client_ratios
         ivb_client_ratios.smt_enabled = cpu.ht
@@ -3435,19 +3460,14 @@ def model_setup(runner, cpuname):
         import simple_ratios
         model = simple_ratios
 
-    version = model.version
-    model.print_error = pe
-    model.check_event = lambda ev: ectx.emap.getevent(ev) is not None
-    model.Setup(runner)
-
-    if "Errata_Whitelist" in model.__dict__:
-        ectx.errata_whitelist += model.Errata_Whitelist.split(";")
-
-    if "base_frequency" in model.__dict__:
-        model.base_frequency = cpu.freq * 1000
-
-    if "model" in model.__dict__:
-        model.model = cpu.modelid
+    if hmodels:
+        version = ""
+        for m in hmodels:
+            if version:
+                version += " "
+            version += init_model(m)
+    else:
+        version = init_model(model)
 
     return version
 
