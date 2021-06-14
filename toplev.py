@@ -3924,12 +3924,12 @@ def measure_and_sample(runner_list, count):
     return ret, count
 
 def report_idle(runner_list):
-    idle_keys = set()
-    for runner in runner_list:
-        idle_keys |= runner.idle_keys
-    if idle_keys and not args.quiet:
+    ik = set()
+    for r in runner_list:
+        ik |= r.idle_keys
+    if ik and not args.quiet:
         print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" %
-                    (",".join(idle_keys)), file=sys.stderr)
+                idle_range_list(ik), file=sys.stderr)
 
 def report_not_supported(runner_list):
     notfound_caches = dict()
@@ -3963,13 +3963,6 @@ def idle_range_list(l):
             return "%d-%d" % (group[0], group[-1])
         l = [get_range(g) for k, g in groupby(enumerate(sorted([int(x) for x in l])), lambda x: x[0] - x[1])]
     return ",".join(l)
-
-if any([r.idle_keys for r in runner_list]) and not args.quiet:
-    ik = set()
-    for r in runner_list:
-        ik |= r.idle_keys
-    print("Idle CPUs %s may have been hidden. Override with --idle-threshold 100" %
-            idle_range_list(ik), file=sys.stderr)
 
 report_idle(runner_list)
 report_not_supported(runner_list)
