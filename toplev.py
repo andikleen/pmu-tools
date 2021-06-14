@@ -1884,7 +1884,7 @@ def runner_split(runner_list, res, rev):
             yield r, res, rev
 
 def execute(runner_list, out, rest, summary):
-    events, evstr, flat_events, flat_rmap = [], "", [], []
+    evstr, flat_events, flat_rmap = "", [], []
     allowed_threads = []
     seen_cpus = set()
     for runner in runner_list:
@@ -1975,9 +1975,9 @@ def find_runner(rlist, off, title, event):
                     # For hybrid, non cpu events like msr/tsc/ get expanded over all CPUs.
                     # and leak into the other runner who doesn't know anything about them.
                     if (not event.startswith("cpu") and
-                        (off >= len(r.sched.evnum) or
-                        event != r.sched.evnum[off])):
-                            return None, 0
+                            (off >= len(r.sched.evnum) or
+                             event != r.sched.evnum[off])):
+                        return None, 0
                     return r, off
         else:
             return r, off
@@ -3097,7 +3097,6 @@ class Runner(object):
             if not obj.metric and 'parent' in obj.__dict__ and obj.parent:
                 obj.parent.children.append(obj)
 
-
     def reset_thresh(self):
         for obj in self.olist:
             if not obj.metric:
@@ -3556,7 +3555,6 @@ def init_model(model, runner):
 
 def model_setup(runner, cpuname):
     global smt_mode
-    hmodels = None
     if cpuname == "ivb":
         import ivb_client_ratios
         ivb_client_ratios.smt_enabled = cpu.ht
