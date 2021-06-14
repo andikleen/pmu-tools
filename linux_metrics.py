@@ -169,12 +169,15 @@ class NetworkRX:
 # XXX gpu
 # kvm:kvm_exit
 
+warned = False
+
 class Setup:
     def __init__(self, r):
         r.force_metric(CS())
         r.force_metric(MinorFaults())
         r.force_metric(MajorFaults())
         r.force_metric(Migrations())
+        global warned
         if os.path.exists("/sys/kernel/debug/tracing/events"):
             r.force_metric(Syscalls())
             r.force_metric(Interrupts())
@@ -183,5 +186,6 @@ class Setup:
             r.force_metric(BlockIOs())
             r.force_metric(NetworkTX())
             r.force_metric(NetworkRX())
-        elif sys.argv[0].find("toplev") >= 0:
+        elif sys.argv[0].find("toplev") >= 0 and not warned:
+            warned = True
             print("Need to be root for trace point Linux software metrics.", file=sys.stderr)

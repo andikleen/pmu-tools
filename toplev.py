@@ -43,6 +43,7 @@ import csv
 import bisect
 import random
 import io
+import glob
 from copy import copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter, OrderedDict
@@ -86,6 +87,8 @@ eventlist_alias = {
 }
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx")
+
+hybrid_cpus = ("adl", )
 
 non_json_events = set(("dummy", "duration_time"))
 
@@ -142,22 +145,28 @@ limited_counters_base = {
     "cycles": FIXED_BASE + 1,
     "ref-cycles": FIXED_BASE + 2,
     "slots": FIXED_BASE + 3,
+    "cpu_core/slots/": FIXED_BASE + 3,
     "topdown.slots": FIXED_BASE + 3,
     "topdown-fe-bound": METRICS_BASE + 0,
+    "cpu_core/topdown-fe-bound/": METRICS_BASE + 0,
     "topdown-be-bound": METRICS_BASE + 1,
+    "cpu_core/topdown-be-bound/": METRICS_BASE + 1,
     "topdown-bad-spec": METRICS_BASE + 2,
+    "cpu_core/topdown-bad-spec/": METRICS_BASE + 2,
     "topdown-retiring": METRICS_BASE + 3,
+    "cpu_core/topdown-retiring/": METRICS_BASE + 3,
     "cpu/cycles-ct/": 2,
+    "cpu_core/cycles-ct/": 2,
 }
 
 event_nocheck = False
 
 class EventContext(object):
     """Event related context for a given target CPU."""
-    def __init__(self):
+    def __init__(self, pmu):
         self.constraint_fixes = dict()
         self.errata_whitelist = []
-        self.outgroup_events = set(["dummy", "duration_time"])
+        self.outgroup_events = set(["dummy", "duration_time", "msr/tsc/"])
         self.sched_ignore_events = set([])
         self.require_pebs_events = set([])
         self.core_domains = set(["Slots", "CoreClocks", "CoreMetric"])
@@ -172,6 +181,11 @@ class EventContext(object):
         self.rmap_cache = dict()
         self.slots_available = False
         self.emap = None
+        if pmu is None or pmu not in cpu.counters:
+            pmu = "cpu"
+        self.standard_counters = cpu.standard_counters[pmu]
+        self.counters = cpu.counters[pmu]
+        self.limit4_counters = cpu.limit4_counters[pmu]
 
 ectx = None
 
@@ -190,11 +204,15 @@ def warn_once(msg):
     if msg not in warned:
         warn(msg)
         warned.add(msg)
+    if test_mode:
+        assert 0
 
 def warn_once_no_assert(msg):
     if msg not in warned:
         print("warning: " + msg, file=sys.stderr)
         warned.add(msg)
+    if test_mode:
+        assert 0
 
 def debug_print(x):
     if args.debug:
@@ -211,9 +229,21 @@ def test_debug_print(x):
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
+exists_cache = dict()
+
+def cached_exists(fn):
+    if fn in exists_cache:
+        return exists_cache[fn]
+    found = os.path.exists(fn)
+    exists_cache[fn] = found
+    return found
+
 class PerfFeatures(object):
     """Adapt to the quirks of various perf versions."""
     def __init__(self, args):
+        pmu = "cpu"
+        if os.path.exists("/sys/devices/cpu_core"):
+            pmu = "cpu_core"
         self.perf = os.getenv("PERF")
         if not self.perf:
             self.perf = "perf"
@@ -224,7 +254,6 @@ class PerfFeatures(object):
             # look for the underlying perf installs, if any
             # perf is compatible, so just pick the newest
             if ret == 512:
-                import glob
                 l = sorted(glob.glob("/usr/lib/linux-tools*/perf"),
                           key=lambda x: [int(t) if t.isdigit() else t for t in re.split(r'(\d+)', x)])
                 if len(l) > 0:
@@ -245,15 +274,12 @@ class PerfFeatures(object):
             self.supports_duration_time = works(self.perf + " list duration_time | grep duration_time")
         # guests don't support offcore response
         if event_nocheck:
-            self.supports_ocr = True
             self.has_max_precise = True
             self.max_precise = 3
         else:
-            self.supports_ocr = works(self.perf +
-                    " stat -e '{cpu/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true")
-            self.has_max_precise = os.path.exists("/sys/devices/cpu/caps/max_precise")
+            self.has_max_precise = os.path.exists("/sys/devices/%s/caps/max_precise" % pmu)
             if self.has_max_precise:
-                self.max_precise = int(open("/sys/devices/cpu/caps/max_precise").read())
+                self.max_precise = int(open("/sys/devices/%s/caps/max_precise" % pmu).read())
         if args.exclusive and not args.print and not works(self.perf + " stat -e '{branches,branches,branches,branches}:e' true"):
             sys.exit("perf binary does not support :e exclusive modifier")
 
@@ -289,7 +315,7 @@ def limit4_overflow(evlist):
     return sum([x in ectx.limit4_events for x in evlist]) > 4
 
 def ismetric(x):
-    return x.startswith("topdown-")
+    return x.startswith("topdown-") or x.startswith("cpu_core/topdown-")
 
 resources = ("frontend=", "offcore_rsp=", "ldlat=", "in_tx_cp=", "cycles-ct")
 
@@ -321,6 +347,9 @@ FORCE_SPLIT = 100
 # Force metrics into own group
 metrics_own_group = True
 
+def is_slots(x):
+    return x in ("slots", "cpu_core/slots/")
+
 def needed_counters(evlist):
     evset = set(evlist)
     num = num_generic_counters(evset)
@@ -331,7 +360,7 @@ def needed_counters(evlist):
 
     if any(metrics):
         # slots must be first if metrics are present
-        if "slots" in evlist and evlist[0] != "slots":
+        if not is_slots(evlist[0]) and any(map(is_slots, evlist)):
             debug_print("split for slots %s" % evlist)
             return FORCE_SPLIT
         # force split if there are other events.
@@ -369,11 +398,11 @@ def event_group(evlist):
             g = list(g)
             e = ",".join(g)
             n = needed_counters(g)
-            if n <= cpu.counters:
+            if n <= ectx.counters:
                 e = "{%s}" % e
                 if args.exclusive:
                     e += ":e"
-                elif args.pinned and all([ismetric(x) or x == "slots" for x in g]):
+                elif args.pinned and all([ismetric(x) or is_slots(x) for x in g]):
                     e += ":D"
             else:
                 # the scheduler should have avoided that
@@ -495,6 +524,7 @@ g.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 g.add_argument('--pid', '-p', help=argparse.SUPPRESS)
 g.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
 g.add_argument('--no-aggr', '-A', help='Measure every CPU', action='store_true')
+g.add_argument('--cputype', help='Limit to hybrid cpu type (atom or core)', choices=['atom', 'core'])
 
 g = p.add_argument_group('Select events')
 g.add_argument('--level', '-l', help='Measure upto level N (max 6)',
@@ -1027,6 +1057,8 @@ if not args.force_cpu and cpu.model in eventlist_alias:
 if cpu.pmu_name and cpu.pmu_name.startswith("generic") and not args.quiet:
     print("warning: kernel is in architectural mode and might mismeasure events", file=sys.stderr)
     print("Consider a kernel update. See https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support", file=sys.stderr)
+    if cpu.cpu in hybrid_cpus:
+        sys.exit("Hybrid %s not supported in architectural mode" % cpu.cpu)
 
 if args.xlsx and not forced_per_socket and cpu.sockets == 1:
     args.per_socket = False
@@ -1036,7 +1068,6 @@ if args.xlsx and not forced_per_core and cpu.threads == 1:
 if cpu.hypervisor:
     feat.max_precise = 0
     feat.has_max_precise = True
-    feat.supports_ocr = False
 
 if not pversion.has_uncore_expansion:
     # XXX reenable power
@@ -1096,6 +1127,7 @@ class PerfRun(object):
         self.sample_prob = None
         self.skip_line = False
         self.perf = None
+        self.offset = None
 
     def handle_inputsubset(self, f, iss):
         m = re.match(r'(\d+)-?(\d+)?$', iss)
@@ -1141,6 +1173,11 @@ class PerfRun(object):
             return not self.sampling
         return False
 
+    # must be stored before reading the line
+    def store_offset(self):
+        if self.end_seek_offset:
+            self.offset = self.inputf.tell()
+
     def skip_first_line(self):
         if self.skip_line:
             self.skip_line = False
@@ -1149,8 +1186,7 @@ class PerfRun(object):
 
     def next_timestamp(self):
         if self.end_seek_offset:
-            off = self.inputf.tell()
-            if self.end_seek_offset <= off:
+            if self.end_seek_offset <= self.offset:
                 return True
         self.skip_to_next_ts = False
         if self.sample_prob:
@@ -1229,12 +1265,20 @@ def add_filter(s):
         s = list(map(add_filter_event, s))
     return s
 
+def is_cpu_event(s):
+    return re.match(r'cpu(_atom|_core)?/', s) is not None
+
 def initialize_event(name, i, e):
     if "." in name or "_" in name and name not in non_json_events:
-        ectx.emap.update_event(e.output(noname=True), e)
-        if (e.counter not in cpu.standard_counters and not name.startswith("UNC_")):
+        eo = e.output(noname=True)
+        ectx.emap.update_event(eo, e)
+        ectx.emap.update_event(remove_qual(eo), e) # XXX
+        if (e.counter not in ectx.standard_counters and not name.startswith("UNC_")):
             if e.counter.startswith("Fixed"):
                 ectx.limited_counters[i] = int(e.counter.split()[2]) + FIXED_BASE
+                ectx.fixed_events.add(i)
+            elif is_number(e.counter) and int(e.counter) >= 32:
+                ectx.limited_counters[i] = int(e.counter)
                 ectx.fixed_events.add(i)
             else:
                 # for now use the first counter only to simplify
@@ -1244,7 +1288,7 @@ def initialize_event(name, i, e):
             ectx.limited_set.add(i)
         if e.name.upper() in ectx.constraint_fixes:
             e.counter = ectx.constraint_fixes[e.name.upper()]
-        if e.counter == cpu.limit4_counters:
+        if e.counter == ectx.limit4_counters:
             ectx.limit4_events.add(i)
         if e.errata:
             if e.errata not in ectx.errata_whitelist:
@@ -1255,7 +1299,7 @@ def initialize_event(name, i, e):
             ectx.require_pebs_events.add(name)
     else:
         non_json_events.add(i)
-    if not i.startswith("cpu/") and i not in ectx.fixed_events:
+    if not is_cpu_event(i) and i not in ectx.fixed_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
         if i.startswith("msr/"):
@@ -1266,11 +1310,9 @@ def initialize_event(name, i, e):
 def raw_event(i, name="", period=False, nopebs=True, initialize=False):
     e = None
     orig_i = i
+    if i == "cycles" and cpu.cpu != "simple":
+        i = "cpu_clk_unhalted.thread"
     if "." in i or "_" in i and i not in non_json_events:
-        if re.match(r'^(OCR|OFFCORE_RESPONSE).*', i) and not feat.supports_ocr:
-            if not args.quiet:
-                print("%s not supported in guest" % i, file=sys.stderr)
-            return "dummy"
         if not cpu.ht:
             i = i.replace(":percore", "")
         extramsg = []
@@ -1280,6 +1322,10 @@ def raw_event(i, name="", period=False, nopebs=True, initialize=False):
                 ectx.notfound_cache[i] = extramsg[0]
                 print("%s %s" % (i, extramsg[0]), file=sys.stderr)
             return "dummy"
+        if has(e, 'perfqual') and not cached_exists("/sys/devices/%s/format/%s"  % (ectx.emap.pmu, e.perfqual)):
+            print("%s event not supported in hypervisor or architectural mode" % i, file=sys.stderr)
+            return "dummy"
+
         if re.match("^[0-9]", name):
             name = "T" + name
         if args.filterquals:
@@ -1352,7 +1398,7 @@ class ValidEvents(object):
         self.string = "|".join(self.valid_events)
 
     def __init__(self):
-        self.valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*",
+        self.valid_events = [r"cpu(_core|_atom)?/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*",
                              r"msr.*", "emulation-faults",
                              r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy",
                              "slots", r"topdown-(fe-bound|be-bound|retiring|bad-spec)"]
@@ -1374,7 +1420,7 @@ def is_event(l, n):
     return re.match(valid_events.string, l[n])
 
 def is_number(n):
-    return re.match(r'\d+', n) is not None
+    return re.match(r'\d+$', n) is not None
 
 def set_interval(env, d, interval):
     env['interval-ns'] = d * 1e9
@@ -1403,7 +1449,7 @@ def thread_fmt(j):
 def display_core(cpunum, ignore_thread=False):
     for match in args.core.split(","):
         m = re.match(r'(?P<socket>S\d+)?-?(?P<core>C\d+)?-?(?P<thread>T\d+)?', match, re.I)
-        if not m:
+        if not m or not any((m.group('core'), m.group('socket'),)):
             sys.exit("Bad core match %s" % match)
 
         def matching(name, mapping):
@@ -1423,7 +1469,7 @@ OUTPUT_THREAD = 2
 OUTPUT_SOCKET = 3
 OUTPUT_GLOBAL = 4
 
-def display_keys(runner, keys, mode):
+def display_keys(runner, keys, mode, post=""):
     allowed_threads = runner.cpu_list
     if mode == OUTPUT_GLOBAL:
         return ("",)
@@ -1433,12 +1479,12 @@ def display_keys(runner, keys, mode):
         else:
             cores = [key_to_coreid(x) for x in keys if int(x) in allowed_threads]
             if mode != OUTPUT_CORE:
-                threads = list(map(thread_fmt, allowed_threads))
+                threads = [thread_fmt(x) + post for x in allowed_threads]
             else:
                 threads = []
-            all_cpus = list(set(map(core_fmt, cores))) + threads
+            all_cpus = [core_fmt(x)+post for x in cores] + threads
     else:
-        all_cpus = list(keys)
+        all_cpus = [x + post for x in keys]
     if any(map(package_node, runner.olist)):
         all_cpus += ["S%d" % x for x in range(cpu.sockets)]
     return all_cpus
@@ -1483,6 +1529,11 @@ def invalid_res(res, key, nothing):
         return True
     return False
 
+def runner_name(r):
+    if r.pmu is None:
+        return ""
+    return r.pmu.replace("cpu_", "")
+
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     nothing = set()
     allowed_threads = runner.cpu_list
@@ -1497,7 +1548,10 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     hidden_keys = set()
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
-    out.set_cpus(display_keys(runner, keys, mode))
+    post = ""
+    if len(res.keys()) > 1 and len(runner_list) > 1:
+        post = "-" + runner_name(runner)
+    out.set_cpus(display_keys(runner, keys, mode, post))
     runner.printer.numprint = 0
     if smt_mode:
         printed_cores = set()
@@ -1568,7 +1622,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 continue
             if mode == OUTPUT_THREAD:
                 runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
-                printer.print_res(runner.olist, out, interval, thread_fmt(int(j)), any_node,
+                printer.print_res(runner.olist, out, interval, thread_fmt(int(j))+post, any_node,
                                   bn, j in idle_mark_keys)
                 continue
 
@@ -1576,7 +1630,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
 
             # print the SMT aware nodes
             if core not in printed_cores:
-                printer.print_res(runner.olist, out, interval, core_fmt(core), core_node, bn,
+                printer.print_res(runner.olist, out, interval, core_fmt(core)+post, core_node, bn,
                         idle_core(core, idle_mark_keys))
                 printed_cores.add(core)
 
@@ -1587,7 +1641,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             else:
                 fmt = thread_fmt(int(j))
                 idle = j in idle_mark_keys
-            printer.print_res(runner.olist, out, interval, fmt, thread_node, bn, idle)
+            printer.print_res(runner.olist, out, interval, fmt+post, thread_node, bn, idle)
     elif mode != OUTPUT_GLOBAL:
         env['num_merged'] = 1
         for j in keys:
@@ -1601,7 +1655,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             runner.reset_thresh()
             runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
             bn = find_bn(runner.olist, not_package_node)
-            printer.print_res(runner.olist, out, interval, j, not_package_node, bn, j in idle_mark_keys)
+            printer.print_res(runner.olist, out, interval, j+post, not_package_node, bn, j in idle_mark_keys)
     if mode == OUTPUT_GLOBAL:
         env['num_merged'] = 1
         cpus = [x for x in keys if not filtered(x)]
@@ -1650,7 +1704,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     if nothing:
         print("Nothing measured for", " ".join(sorted(nothing)), file=sys.stderr)
     if runner.printer.numprint == 0 and not args.quiet and runner.olist:
-        print("No node crossed threshold", file=sys.stderr)
+        print("No node %scrossed threshold" % (
+                "for %s " % runner_name(runner) if len(runner_list) > 1 else ""),file=sys.stderr)
 
 def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
     if multi_output():
@@ -1684,22 +1739,21 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
             mode = OUTPUT_GLOBAL
         print_keys(runner, res, rev, valstats, out, interval, env, mode)
 
-def print_and_sum_keys(runner, summary, res, rev, valstats, out, interval, env):
+def print_check_keys(runner, res, rev, valstats, out, interval, env):
     if res and all([sum(res[k]) == 0.0 and len(res[k]) > 0 for k in res.keys()]) and cpu.cpu == cpu.realcpu:
         if args.subset:
             return
         if len(runner_list) == 1:
             sys.exit("All measured values 0. perf broken?")
         else:
-            print("Measured values in a runner all 0", file=sys.stderr)
+            print("Measured values for %s all 0" % runner_name(runner), file=sys.stderr)
+            return
     if args.interval and interval is None:
         interval = float('nan')
-    if summary:
-        summary.add(res, rev, valstats, env)
     if not args.no_output:
         print_and_split_keys(runner, res, rev, valstats, out, interval, env)
 
-def print_summary(runner, allowed_threads, summary, out):
+def print_summary(summary, out):
     if args.perf_summary:
         p = summary.summary_perf
         for sv in zip_longest(*p.values()):
@@ -1727,7 +1781,8 @@ def print_summary(runner, allowed_threads, summary, out):
 
     if not args.summary:
         return
-    print_and_split_keys(runner, summary.res, summary.rev,
+    for runner, res, rev in runner_split(runner_list, summary.res, summary.rev):
+        print_and_split_keys(runner, res, rev,
                          summary.valstats, out,
                          float('nan'), summary.env)
 
@@ -1764,11 +1819,13 @@ def execute_no_multiplex(runner_list, out, rest, summary):
     # runs could be further reduced by tweaking
     # the scheduler to avoid any duplicated events
     for runner in runner_list:
+        groups = [g.evnum for g in runner.sched.evgroups]
         for g, gg in zip(groups, runner.sched.evgroups):
             if gg.outgroup:
                 outg.append(g)
                 continue
-            print("RUN #%d of %d: %s" % (n, num_runs,
+            print("RUN #%d of %d for %s: %s" % (n, num_runs,
+                runner.pmu,
                 " ".join([quote(o.name) for o in gg.objl])))
             lresults = results if n == 0 else []
             res = None
@@ -1779,9 +1836,10 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             flat_rmap = [event_rmap(e) for e in flat_events]
             runner.clear_ectx()
             for ret, res, rev, interval, valstats, env in do_execute(
-                    summary, runner.cpu_list, evstr, flat_events, flat_rmap,
-                    out, rest, resoff):
-                lresults.append([ret, res, rev, interval, valstats, env, runner])
+                    [runner],
+                    summary, runner.cpu_list, evstr, flat_rmap,
+                    out, rest, resoff, flat_events):
+                lresults.append([ret, res, rev, interval, valstats, env])
             if res:
                 for t in res.keys():
                     resoff[t] += len(res[t])
@@ -1794,7 +1852,6 @@ def execute_no_multiplex(runner_list, out, rest, summary):
                 # XXX handle results > lresults
                 for r, lr in zip(results, lresults):
                     r[0] = lr[0]
-                    r[6] = lr[6]
                     for j in (1, 2, 4, 5):
                         diff = len(results[0][j]) - len(lr[j])
                         if diff:
@@ -1806,43 +1863,54 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             outg = []
             n += 1
     assert num_runs == n
-    for ret, res, rev, interval, valstats, env, runner in results:
-        print_and_sum_keys(runner, summary, res, rev, valstats,
-                           out, interval, env)
+    for ret, res, rev, interval, valstats, env in results:
+        if summary:
+            summary.add(res, rev, valstats, env)
+        for runner, res, rev in runner_split(runner_list, res, rev):
+            print_check_keys(runner, res, rev, valstats, out, interval, env)
     return ret
 
-def runner_split(runner_list, res):
+def runner_split(runner_list, res, rev):
     for r in runner_list:
-        if r.cpu_list and not args.single_thread:
+        if len(res.keys()) == 1 and "" in res:
+            off = r.sched.offset
+            end = off + len(r.sched.evnum)
+            yield r, { "": res[""][off:end]}, { "": rev[""][off:end] }
+        elif r.cpu_list:
             d = defaultdict(list)
             d.update({ "%d" % k: res["%d" % k] for k in r.cpu_list })
-            yield r, d
+            yield r, d, rev
         else:
-            yield r, res
+            yield r, res, rev
 
 def execute(runner_list, out, rest, summary):
     events, evstr, flat_events, flat_rmap = [], "", [], []
     allowed_threads = []
     seen_cpus = set()
     for runner in runner_list:
-        events += [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
+        new_events = [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
+        if len(new_events) == 0:
+            continue
         runner.set_ectx()
         if evstr:
             evstr += ","
-        evstr += group_join(events)
-        flat_events += flatten(events)
-        flat_rmap += [event_rmap(e) for e in flat_events]
+        evstr += group_join(new_events)
+        new_flat_events = flatten(new_events)
+        flat_events += new_flat_events
+        flat_rmap += [event_rmap(e) for e in new_flat_events]
         runner.clear_ectx()
         for cpu in runner.cpu_list:
             if cpu not in seen_cpus:
                 allowed_threads.append(cpu)
                 seen_cpus.add(cpu)
     ctx = SaveContext()
-    for ret, res, rev, interval, valstats, env in do_execute(summary,
-            allowed_threads, evstr, flat_events, flat_rmap, out, rest):
-        for runner, res in runner_split(runner_list, res):
-            print_and_sum_keys(runner, summary, res, rev, valstats,
-                               out, interval, env)
+    for ret, res, rev, interval, valstats, env in do_execute(
+            runner_list, summary,
+            allowed_threads, evstr, flat_rmap, out, rest, Counter(), None):
+        if summary:
+            summary.add(res, rev, valstats, env)
+        for runner, res, rev in runner_split(runner_list, res, rev):
+            print_check_keys(runner, res, rev, valstats, out, interval, env)
     ctx.restore()
     return ret
 
@@ -1894,7 +1962,51 @@ def update_perf_summary(summary, off, title, val, event, unit, multiplex):
         assert r[2] == event or event == "dummy"
         r[3] = min(r[3], multiplex)
 
-def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, rest, resoff = Counter()):
+def find_runner(rlist, off, title, event):
+    if len(rlist) == 1:
+        return rlist[0], off
+    for r in rlist:
+        if title == "":
+            if r.sched.offset <= off < r.sched.offset+len(r.sched.evnum):
+                return r, off - r.sched.offset
+        elif r.cpu_list:
+            for k in r.cpu_list:
+                if title == "%d" % k:
+                    # For hybrid, non cpu events like msr/tsc/ get expanded over all CPUs.
+                    # and leak into the other runner who doesn't know anything about them.
+                    if (not event.startswith("cpu") and
+                        (off >= len(r.sched.evnum) or
+                        event != r.sched.evnum[off])):
+                            return None, 0
+                    return r, off
+        else:
+            return r, off
+    assert 0
+
+def check_event(rlist, event, res, title, prev_interval, l, revnum):
+    off = len(res)
+    r, off = find_runner(rlist, off, title, event)
+    if r is None:
+        return r
+    if revnum is None:
+        revnum = r.sched.evnum
+    if event.startswith("uncore"):
+        event = re.sub(r'_[0-9]+', '', event)
+    expected_ev = remove_qual(revnum[off])
+    if event != expected_ev:
+        # work around perf bug that incorrectly expands uncore events in some versions
+        if off > 0 and event == remove_qual(revnum[off - 1]):
+            return None
+        print("Event in input does not match schedule (%s vs expected %s [pmu:%s/ind:%d/tit:%s/int:%f])." % (
+                event, expected_ev, r.pmu, off, title, prev_interval),
+                file=sys.stderr)
+        sys.stdout.write(l)
+        if args.import_:
+            sys.exit("Different arguments than original toplev?")
+        sys.exit("Input corruption")
+    return r
+
+def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, resoff, revnum):
     res = defaultdict(list)
     rev = defaultdict(list)
     valstats = defaultdict(list)
@@ -1908,6 +2020,7 @@ def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, res
         start = time.time()
     while True:
         try:
+            prun.store_offset()
             l = inf.readline()
             origl = l
             if not l:
@@ -1990,16 +2103,9 @@ def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, res
         # code later relies on stripping ku flags
         event = remove_qual(event)
 
-        expected_ev = remove_qual(flat_events[len(res[title])])
-        if event != expected_ev:
-            # XXX handle this better
-            print("Event in input does not match schedule (%s vs expected %s [ind:%d/tit:%s/int:%f])." % (
-                    event, expected_ev, len(res[title]), title, prev_interval),
-                    file=sys.stderr)
-            sys.stdout.write(l)
-            if args.import_:
-                sys.exit("Different arguments than original toplev?")
-            sys.exit("Input corruption")
+        runner = check_event(rlist, event, res[title], title, prev_interval, l, revnum)
+        if runner is None:
+            continue
 
         multiplex = float('nan')
         event = event.rstrip()
@@ -2029,7 +2135,13 @@ def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, res
 
         account[event].total += 1
 
+        def ignored_cpu(num):
+            return num not in runner.cpu_list and not any([k in runner.cpu_list for k in cpu.coreids[cpu.cputocore[num]]])
+
         def add(t):
+            if runner.cpu_list and is_number(title) and ignored_cpu(int(title)):
+                return
+
             res[t].append(val)
             rev[t].append(event)
             valstats[t].append(st)
@@ -2059,7 +2171,7 @@ def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, res
             dup_val(cpu.coreids[(socket, core)])
         # duration time is only output once, except with --cpu/-C (???)
         elif event.startswith("duration_time") and is_number(title) and not args.cpu and not args.core:
-            dup_val(allowed_threads)
+            dup_val(runner.cpu_list if runner.cpu_list else allowed_threads)
         else:
             add(title)
 
@@ -2068,7 +2180,7 @@ def do_execute(summary, allowed_threads, evstr, flat_events, flat_rmap, out, res
                      interval if args.interval else "",
                      title,
                      event,
-                     flat_rmap[len(res[title])-1],
+                     flat_rmap[len(res[title])-1] if len(runner_list) == 1 else event_rmap(event), # XXX
                      val,
                      len(res[title]) - 1,
                      stddev, multiplex)
@@ -2170,24 +2282,51 @@ def canon_event(e):
         e = m.group(1)
     return e.lower()
 
-def do_event_rmap(e):
-    n = canon_event(ectx.emap.getperf(e))
-    if ectx.emap.getevent(n, nocheck=event_nocheck):
+def find_runner_by_pmu(pmu):
+    for r in runner_list:
+        if r.pmu == pmu:
+            return r
+    return None
+
+def event_pmu(ev):
+    m = re.match(r'(.*?)/', ev)
+    if m:
+        return m.group(1)
+    return None
+
+def event_ectx(ev):
+    pmu = event_pmu(ev)
+    if pmu:
+        r = find_runner_by_pmu(pmu)
+        if r:
+            return r.ectx
+    return ectx if ectx else runner_list[0].ectx
+
+def do_event_rmap(e, ectx_):
+    n = canon_event(ectx_.emap.getperf(e))
+    if ectx_.emap.getevent(n, nocheck=event_nocheck):
         return n
     if e in non_json_events:
         return e
-    debug_print("rmap: cannot find %s, using dummy" % e)
+    print("rmap: cannot find %s, using dummy" % e, file=sys.stderr)
     return "dummy"
 
 def event_rmap(e):
-    if e in ectx.rmap_cache:
-        return ectx.rmap_cache[e]
-    n = do_event_rmap(e)
-    ectx.rmap_cache[e] = n
+    ectx_ = event_ectx(e)
+    if e in ectx_.rmap_cache:
+        return ectx_.rmap_cache[e]
+    n = do_event_rmap(e, ectx_)
+    ectx_.rmap_cache[e] = n
     return n
+
+def iscycles(ev):
+    return ev == "cycles" or ev == "cpu_clk_unhalted.thread"
 
 # compare events to handle name aliases
 def compare_event(aname, bname):
+    # XXX this should be handled in ocperf
+    if iscycles(aname) and iscycles(bname):
+        return True
     a = ectx.emap.getevent(aname, nocheck=event_nocheck)
     if a is None:
         return False
@@ -2364,7 +2503,7 @@ def node_filter(obj, default, sibmatch):
         def _match(m):
             return (fnmatch(name, m) or
                     fnmatch(fname, m) or
-                    fnmatch(fname, "*" + m))
+                    fnmatch(fname, "*." + m))
 
         def match(m, checklevel=True):
             if m.endswith("^"):
@@ -2491,20 +2630,18 @@ class Summary(object):
         self.summary_perf = OrderedDict()
 
     def add(self, res, rev, valstats, env):
-        # assume perf always outputs the same
-        if self.rev:
-            assert rev == self.rev
         for j in res.keys():
-            if len(self.res[j]) == 0:
-                self.res[j] = res[j]
-            else:
-                self.res[j] = [a+b for a, b in zip(self.res[j], res[j])]
-        self.rev = rev
-        for j in valstats.keys():
-            if len(self.valstats[j]) == 0:
-                self.valstats[j] = valstats[j]
-            else:
-                self.valstats[j] = [combine_valstat([a,b]) for a, b in zip(self.valstats[j], valstats[j])]
+            for ind, val in enumerate(res[j]):
+                if ind < len(self.res[j]):
+                    self.res[j][ind] += val
+                    self.valstats[j][ind] = combine_valstat([self.valstats[j][ind], valstats[j][ind]])
+                else:
+                    self.res[j].append(val)
+                    self.valstats[j].append(valstats[j][ind])
+        if len(rev.keys()) == 1:
+            append_dict(self.rev, rev)
+        else:
+            self.rev.update(rev)
         for j in env.keys():
             self.env[j] += env[j]
 
@@ -2567,14 +2704,14 @@ any_merge = True
 distribute_uncore = False
 
 def grab_group(l):
-    if needed_counters(l) <= cpu.counters:
+    if needed_counters(l) <= ectx.counters:
         return len(l)
     n = 1
-    while needed_counters(l[:n]) < cpu.counters and n < len(l):
+    while needed_counters(l[:n]) < ectx.counters and n < len(l):
         n += 1
-    if needed_counters(l[:n]) > cpu.counters and n > 0:
+    if needed_counters(l[:n]) > ectx.counters and n > 0:
         n -= 1
-        assert needed_counters(l[:n]) <= cpu.counters
+        assert needed_counters(l[:n]) <= ectx.counters
     return n
 
 def update_group_map(evnum, obj, group):
@@ -2599,6 +2736,8 @@ def gen_res_map(solist):
 def print_group(g):
     evkeys = [k for o in g.objl for k in o.group_map.keys() if o.group_map[k][0] == g]
     objnames = {("%s" % quote(x[2])) + ("[%d]" % x[1] if x[1] else "") for x in evkeys}
+    if len(objnames) == 0:
+        return
     evnames = {mark_fixed(x[0]) for x in evkeys}
     pwrap(" ".join(objnames) + ":", 78)
     pwrap(" ".join(evnames).lower() +
@@ -2659,7 +2798,7 @@ class Scheduler(object):
             # with eventual exclusive use we would like as big groups as
             # possible. Still keep it as a --tune option to play around.
             if ((any_merge or not evset.isdisjoint(g.evnum)) and
-                  needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
+                  needed_counters(cat_unique(g.evnum, evnum)) <= ectx.counters):
                 obj_debug_print(obj, "add_duplicate %s %s in %s obj %s to group %d" % (
                     " ".join(evnum),
                     " ".join(list(map(event_rmap, evnum))),
@@ -2674,7 +2813,7 @@ class Scheduler(object):
                 return True
 
             # memorize already full groups
-            elif num_generic_counters(set(g.evnum)) >= cpu.counters:
+            elif num_generic_counters(set(g.evnum)) >= ectx.counters:
                 full.add(g)
         if full:
             self.evgroups_nf = [g for g in self.evgroups_nf if g not in full]
@@ -2683,7 +2822,7 @@ class Scheduler(object):
 
     def add(self, obj, evnum, evlev):
         # does not fit into a group.
-        if needed_counters(evnum) > cpu.counters:
+        if needed_counters(evnum) > ectx.counters:
             self.split_groups(obj, evlev)
             return
         evnum = dedup(evnum)
@@ -2843,6 +2982,33 @@ class Printer(object):
                     self.sample_obj.add(obj)
             self.numprint += 1
 
+# check nodes argument for typos
+def check_nodes(runner_list, nodesarg):
+    def opt_obj_name(s):
+        if s[:1] in ('+', '^', '-'):
+            s = s[1:]
+        if "/" in s:
+            s = s[:s.index("/")]
+        if s.endswith("^"):
+            s = s[:-1]
+        return s
+
+    if nodesarg[:1] == "!":
+        nodesarg = nodesarg[1:]
+    options = [opt_obj_name(s) for s in nodesarg.split(",")]
+    def valid_node(s):
+        for r in runner_list:
+            if s in r.odict:
+                return True
+            for k in r.olist:
+                if fnmatch(k.name, s) or fnmatch(full_name(k), s):
+                    return True
+        return False
+    valid = map(valid_node, options)
+    if not all(valid):
+        sys.exit("Unknown node(s) in --nodes: " +
+                 " ".join([o for o, v in zip(options, valid) if not v]))
+
 class Runner(object):
     """Handle measurements of event groups. Map events to groups."""
 
@@ -2853,7 +3019,7 @@ class Runner(object):
         self.sched = Scheduler()
         self.printer = Printer(self.metricgroups)
 
-    def __init__(self, max_level, idle_threshold):
+    def __init__(self, max_level, idle_threshold, pmu=None):
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         self.reset()
@@ -2861,7 +3027,8 @@ class Runner(object):
         self.max_level = max_level
         self.max_node_level = 0
         self.idle_threshold = idle_threshold
-        self.ectx = EventContext()
+        self.ectx = EventContext(pmu)
+        self.pmu = pmu
 
     def set_ectx(self):
         #print("set_ectx", sys._getframe(1).f_code.co_name, file=sys.stderr)
@@ -2930,32 +3097,6 @@ class Runner(object):
             if not obj.metric and 'parent' in obj.__dict__ and obj.parent:
                 obj.parent.children.append(obj)
 
-    # check nodes argument for typos
-    def check_nodes(self, nodesarg):
-
-        def opt_obj_name(s):
-            if s[:1] in ('+', '^', '-'):
-                s = s[1:]
-            if "/" in s:
-                s = s[:s.index("/")]
-            if s.endswith("^"):
-                s = s[:-1]
-            return s
-
-        if nodesarg[:1] == "!":
-            nodesarg = nodesarg[1:]
-        options = [opt_obj_name(s) for s in nodesarg.split(",")]
-        def valid_node(s):
-            if s in self.odict:
-                return True
-            for k in self.olist:
-                if fnmatch(k.name, s) or fnmatch(full_name(k), s):
-                    return True
-            return False
-        valid = map(valid_node, options)
-        if not all(valid):
-            sys.exit("Unknown node(s) in --nodes: " +
-                     " ".join([o for o, v in zip(options, valid) if not v]))
 
     def reset_thresh(self):
         for obj in self.olist:
@@ -3059,7 +3200,6 @@ class Runner(object):
         return changed[0]
 
     def compute(self, res, rev, valstats, env, match, stat):
-
         self.set_ectx()
         changed = 0
 
@@ -3133,7 +3273,7 @@ class Runner(object):
             rest = add_args(rest, "--percore-show-thread")
         return rest
 
-def runner_restart(runner):
+def runner_restart(runner, offset):
     emap = runner.printer.emap
     runner.reset()
     runner.printer.emap = emap
@@ -3146,10 +3286,11 @@ def runner_restart(runner):
     runner.set_ectx()
     runner.sched.schedule(runner.olist)
     runner.clear_ectx()
+    runner.sched.offset = offset
+    offset += len(runner.sched.evnum)
+    return offset
 
 def runner_init(runner):
-    if args.nodes:
-        runner.check_nodes(args.nodes)
     runner.setup_children()
     runner.filter_nodes()
     runner.collect()
@@ -3272,9 +3413,10 @@ def suggest_desc(runner):
     def nummatch(n):
         return sum([x.name.startswith(n) for x in runner.olist])
     printer = runner.printer
-    print("Run toplev --describe %s to get more information on bottleneck%s" % (
+    print("Run toplev --describe %s to get more information on bottleneck%s%s" % (
         " ".join([full_name(x) + "^" if nummatch(x.name) > 1 else x.name + "^" for x in printer.bottlenecks]),
-        "s" if len(printer.bottlenecks) > 1 else ""), file=sys.stderr)
+        "s" if len(printer.bottlenecks) > 1 else "",
+        (" for " + runner.pmu.replace("cpu_", "")) if runner.pmu else ""), file=sys.stderr)
 
 def sysctl(name):
     try:
@@ -3286,9 +3428,12 @@ def sysctl(name):
 
 # check nmi watchdog
 if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
-    cpu.counters -= 1
-    print("Consider disabling nmi watchdog to minimize multiplexing", file=sys.stderr)
-    print("(echo 0 > /proc/sys/kernel/nmi_watchdog as root)", file=sys.stderr)
+    # XXX should probe if nmi watchdog runs on fixed or generic counter
+    for j in cpu.counters.keys():
+        cpu.counters[j] -= 1 # FIXME
+    if not args.quiet:
+        print("Consider disabling nmi watchdog to minimize multiplexing", file=sys.stderr)
+        print("(echo 0 | sudo tee /proc/sys/kernel/nmi_watchdog or\n echo kernel.nmi_watchdog=0 >> /etc/sysctl.conf ; sysctl -p as root)", file=sys.stderr)
 
 if cpu.cpu is None:
     sys.exit("Unsupported CPU model %d" % (cpu.model,))
@@ -3310,21 +3455,70 @@ def ht_warning():
         print("Measuring multiple processes/threads on the same core may is not reliable.",
                 file=sys.stderr)
 
-def setup_metrics(model):
+def setup_metrics(model, pmu):
     force_metrics = os.getenv("FORCEMETRICS") is not None
-    model.topdown_use_fixed = force_metrics or os.path.exists(
-            "/sys/devices/cpu/events/topdown-fe-bound")
+    model.topdown_use_fixed = (force_metrics or
+            os.path.exists("/sys/devices/%s/events/topdown-fe-bound" % pmu))
     ectx.core_domains = set(["CoreClocks", "CoreMetric"])
-    ectx.slots_available = force_metrics or os.path.exists("/sys/devices/cpu/events/slots")
+    ectx.slots_available = (force_metrics or
+            os.path.exists("/sys/devices/%s/events/slots" % pmu))
 
-nr = os.getenv("NUM_RUNNERS")
-if nr:
-    num_runners = int(nr)
+def parse_cpu_list(s):
+    l = []
+    for j in s.split(","):
+            m = re.match(r'(\d+)(-\d+)?', j)
+            if m.group(2):
+                for k in range(int(m.group(1)), int(m.group(2)[1:])+1):
+                    l.append(k)
+            else:
+                l.append(int(m.group(1)))
+    return l
+
+def read_cpus(base):
+    with open(base + "/cpus") as cpus:
+        return parse_cpu_list(cpus.readline())
+    return []
+
+def use_cpu(cpu):
+    if args.core:
+        return display_core(cpu, True)
+    if args.cpu:
+        return cpu in parse_cpu_list(args.cpu)
+    return True
+
+def init_runner_list():
+    nr = os.getenv("NUM_RUNNERS")
     runner_list = []
-    for j in range(num_runners):
-        runner_list.append(Runner(args.level, idle_threshold))
-else:
-    runner_list = [Runner(args.level, idle_threshold)]
+    hybrid_pmus = []
+    hybrid_pmus = glob.glob("/sys/devices/cpu_*")
+    if args.force_cpu and args.force_cpu not in hybrid_cpus:
+        hybrid_pmus = hybrid_pmus[:1]
+    if nr and not hybrid_pmus:
+        if args.cputype:
+            sys.exit("--cputype specified on non hybrid")
+        num_runners = int(nr)
+        for j in range(num_runners):
+            r = Runner(args.level, idle_threshold)
+            runner_list.append(r)
+            r.cpu_list = None
+    else:
+        if hybrid_pmus and cpu.cpu in hybrid_cpus:
+            for j in hybrid_pmus:
+                if args.cputype and os.path.basename(j).replace("cpu_", "") != args.cputype:
+                    continue
+                cpu_list = [k for k in read_cpus(j) if use_cpu(k)]
+                if len(cpu_list) == 0:
+                    continue
+                r = Runner(args.level, idle_threshold, os.path.basename(j))
+                runner_list.append(r)
+                r.cpu_list = cpu_list
+        else:
+            runner_list = [Runner(args.level, idle_threshold,
+                pmu="cpu_core" if hybrid_pmus else "cpu")]
+
+    return runner_list
+
+runner_list = init_runner_list()
 
 pe = lambda x: None
 if args.debug:
@@ -3343,8 +3537,26 @@ if args.quiet:
         args.no_desc = True
     args.no_util = True
 
+def init_model(model, runner):
+    version = model.version
+    model.print_error = pe
+    model.check_event = lambda ev: ectx.emap.getevent(ev) is not None
+    model.Setup(runner)
+
+    if "Errata_Whitelist" in model.__dict__:
+        ectx.errata_whitelist += model.Errata_Whitelist.split(";")
+
+    if "base_frequency" in model.__dict__:
+        model.base_frequency = cpu.freq * 1000
+
+    if "model" in model.__dict__:
+        model.model = cpu.modelid
+
+    return version
+
 def model_setup(runner, cpuname):
     global smt_mode
+    hmodels = None
     if cpuname == "ivb":
         import ivb_client_ratios
         ivb_client_ratios.smt_enabled = cpu.ht
@@ -3404,7 +3616,7 @@ def model_setup(runner, cpuname):
         import icx_server_ratios
         icx_server_ratios.smt_enabled = cpu.ht
         model = icx_server_ratios
-        setup_metrics(model)
+        setup_metrics(model, runner.pmu)
         # work around kernel constraint table bug in some kernel versions
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
@@ -3412,7 +3624,7 @@ def model_setup(runner, cpuname):
         import icl_client_ratios
         icl_client_ratios.smt_enabled = cpu.ht
         model = icl_client_ratios
-        setup_metrics(model)
+        setup_metrics(model, runner.pmu)
         # work around kernel constraint table bug in some kernel versions
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
@@ -3420,7 +3632,7 @@ def model_setup(runner, cpuname):
         import icl_client_ratios
         icl_client_ratios.smt_enabled = cpu.ht
         model = icl_client_ratios
-        setup_metrics(model)
+        setup_metrics(model, runner.pmu)
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
     elif cpuname == "slm":
@@ -3435,33 +3647,23 @@ def model_setup(runner, cpuname):
         import simple_ratios
         model = simple_ratios
 
-    version = model.version
-    model.print_error = pe
-    model.check_event = lambda ev: ectx.emap.getevent(ev) is not None
-    model.Setup(runner)
+    return init_model(model, runner)
 
-    if "Errata_Whitelist" in model.__dict__:
-        ectx.errata_whitelist += model.Errata_Whitelist.split(";")
-
-    if "base_frequency" in model.__dict__:
-        model.base_frequency = cpu.freq * 1000
-
-    if "model" in model.__dict__:
-        model.model = cpu.modelid
-
+def runner_emaps():
+    version = ""
+    for runner in runner_list:
+        runner.set_ectx()
+        runner.ectx.emap = ocperf.find_emap(pmu=runner.pmu if runner.pmu else "cpu")
+        runner.printer.emap = ectx.emap
+        if not ectx.emap:
+            sys.exit("Unknown CPU or CPU event map not found.")
+        if version:
+            version += ", "
+        version += model_setup(runner, cpu.cpu)
+        runner.clear_ectx()
     return version
 
-version = ""
-for r in runner_list:
-    r.set_ectx()
-    ectx.emap = ocperf.find_emap()
-    r.printer.emap = ectx.emap
-    if not ectx.emap:
-        sys.exit("Unknown CPU or CPU event map not found.")
-    if version:
-        version += ", "
-    version += model_setup(r, cpu.cpu)
-    r.clear_ectx()
+version = runner_emaps()
 
 if args.gen_script:
     args.quiet = True
@@ -3544,9 +3746,11 @@ if args.power and feat.supports_power:
 
 for r in runner_list:
     extra_setup(r, rest)
-    if args.nodes:
-        r.check_nodes(args.nodes)
 
+if args.nodes:
+    check_nodes(runner_list, args.nodes)
+
+for r in runner_list:
     r.setup_children()
 
 if smt_mode and not os.getenv('FORCEHT'):
@@ -3558,14 +3762,15 @@ for r in runner_list:
     rest = r.filter_per_core(args.single_thread, rest)
 
 if not smt_mode and not args.single_thread and not args.no_aggr:
+    hybrid = cpu.cpu in hybrid_cpus
     multi = output_count()
     if multi > 0:
         rest = add_args(rest, "-a")
-    if multi > 1 or args.per_thread:
+    if (multi > 1 or args.per_thread) and not hybrid:
         args.no_aggr = True
-    if args.per_socket and multi == 1:
+    if args.per_socket and multi == 1 and not hybrid:
         rest = add_args(rest, "--per-socket")
-    if args.per_core and multi == 1:
+    if args.per_core and multi == 1 and not hybrid:
         rest = add_args(rest, "--per-core")
 
 full_system = False
@@ -3620,7 +3825,8 @@ def setup_cpus(rest):
         part = len(allowed_threads)//len(runner_list)
         start = 0
         for r in runner_list:
-            r.cpu_list = allowed_threads[start:start + part]
+            if not r.cpu_list:
+                r.cpu_list = allowed_threads[start:start + part]
             start += part
         assert start == len(allowed_threads)
     else:
@@ -3630,13 +3836,6 @@ def setup_cpus(rest):
 
 rest = setup_cpus(rest)
 
-if not args.quiet and not args.print:
-    print("Using level %d." % (args.level), end='')
-    if not args.level and cpu.cpu != "slm":
-        print("Change level with -lX")
-    print()
-    sys.stdout.flush()
-
 if args.pinned:
     run_l1_parallel = True
 
@@ -3644,9 +3843,6 @@ if args.repl:
     import code
     code.interact(banner='toplev repl', local=locals())
     sys.exit(0)
-
-for r in runner_list:
-    runner_init(r)
 
 if args.json:
     if args.csv:
@@ -3670,9 +3866,19 @@ if args.valcsv:
         out.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
                              "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
 
+# XXX use runner_restart
+offset = 0
+for r in runner_list:
+    runner_init(r)
+
+if args.nodes:
+    check_nodes(runner_list, args.nodes)
+
 for r in runner_list:
     r.set_ectx()
     r.sched.schedule(r.olist)
+    r.sched.offset = offset
+    offset += len(r.sched.evnum)
     r.clear_ectx()
 
 def suggest(runner):
@@ -3693,8 +3899,7 @@ def measure_and_sample(runner_list, count):
                 ret = execute(runner_list, out, rest, summary)
         except KeyboardInterrupt:
             ret = 1
-        for runner in runner_list:
-            print_summary(runner, runner.cpu_list, summary, out)
+        print_summary(summary, out)
         repeat = False
         for runner in runner_list:
             runner.stat.compute_errors()
@@ -3713,8 +3918,9 @@ def measure_and_sample(runner_list, count):
         if repeat:
             if not args.quiet:
                 print("Rerunning workload", file=sys.stderr)
+            offset = 0
             for r in runner_list:
-                runner_restart(r)
+                offset = runner_restart(r, offset)
         else:
             break
     return ret, count

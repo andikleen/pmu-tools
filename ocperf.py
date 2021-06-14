@@ -76,6 +76,8 @@ ocverbose = os.getenv("OCVERBOSE") is not None
 
 exists_cache = dict()
 
+emap_list = []
+
 topology = None
 
 def file_exists(s):
@@ -96,11 +98,11 @@ def file_exists(s):
     exists_cache[s] = found
     return found
 
-def has_format(s, pmu="cpu"):
+def has_format(s, pmu):
     return file_exists("/sys/devices/%s/format/%s" % (pmu, s))
 
-def has_format_any(f, u):
-    return has_format(f, u) or has_format(f, u + "_0")
+def has_format_any(f, pmu):
+    return has_format(f, pmu) or has_format(f, pmu + "_0")
 
 warned = set()
 
@@ -130,9 +132,11 @@ class PerfVersion(object):
             minor = int(m.group(2))
             version = major * 100 + minor
 
+        pmu = "cpu_core" if os.path.exists("/sys/devices/cpu_core") else "cpu"
+
         self.direct = os.getenv("DIRECT_MSR") or version < 400
-        self.offcore = has_format("offcore_rsp") and not self.direct
-        self.ldlat = has_format("ldlat") and not self.direct
+        self.offcore = has_format("offcore_rsp", pmu) and not self.direct
+        self.ldlat = has_format("ldlat", pmu) and not self.direct
         self.has_name = version >= 304
         self.has_uncore_expansion = version >= 412
 
@@ -311,7 +315,7 @@ class Event(object):
                 if extra:
                     ename += ":" + extra
             else:
-                ename = "cpu/%s/" % (p) + extra
+                ename = "%s/%s/" % (self.pmu, p) + extra
         return ename
 
     def filter_qual(self):
@@ -320,9 +324,9 @@ class Event(object):
                 return True
             if "=" in q:
                 q, _ = q.split("=")
-            if has_format_any(q, "cpu"):
+            if has_format_any(q, self.pmu):
                 return True
-            warn_once("cpu: format %s not supported. Filtering out" % q)
+            warn_once("%s: format %s not supported. Filtering out" % (self. pmu, q))
             return False
         self.newextra = ",".join(filter(check_qual, self.newextra.split(",")))
 
@@ -515,9 +519,11 @@ def merge_extra(a, b):
     m = m - set([':'])
     return m
 
-def print_event(name, desc, f, human, wrap):
+def print_event(name, desc, f, human, wrap, pmu=""):
     desc = "".join([y for y in desc if y < chr(127)])
     print("  %-42s" % (name,), end='', file=f)
+    if pmu:
+        print(" [%s]" % pmu, end='', file=f)
     if human:
         print("\n%s" % (wrap.fill(desc),), file=f)
     else:
@@ -572,7 +578,7 @@ def json_open(name):
 class EmapNativeJSON(object):
     """Read an event table."""
 
-    def __init__(self, name):
+    def __init__(self, name, pmu):
         self.events = {}
         self.perf_events = {}
         self.codes = {}
@@ -581,13 +587,17 @@ class EmapNativeJSON(object):
         self.latego = False
         self.uncore_events = {}
         self.error = False
+        self.pmu = pmu
         self.read_events(name)
 
     def add_event(self, e):
         self.events[e.name] = e
         self.perf_events[e.name.replace('.', '_')] = e  # workaround for perf-style naming
+        if e.pname:
+            self.pevents[e.pname] = e
         self.codes[e.val] = e
         self.desc[e.name] = e.desc
+        e.pmu = self.pmu
 
     def read_table(self, r, m):
         for row in r:
@@ -629,15 +639,19 @@ class EmapNativeJSON(object):
                     e.extra += "u"
                 if other & (1 << 17):
                     e.extra += "k"
+            e.perfqual = None
             if (m['msr_index'] in row and get('msr_index') and get('msr_value')):
                 msrnum = gethex('msr_index')
                 msrval = gethex('msr_value')
                 if version.offcore and msrnum in (0x1a6, 0x1a7):
                     e.newextra = ",offcore_rsp=0x%x" % (msrval, )
+                    e.perfqual = "offcore_rsp"
                 elif version.ldlat and msrnum in (0x3f6,):
                     e.newextra = ",ldlat=0x%x" % (msrval, )
+                    e.perfqual = "ldlat"
                 elif msrnum == 0x3f7:
                     e.newextra = ",frontend=%#x" % (msrval, )
+                    e.perfqual = "frontend"
                 # add new msr here
                 else:
                     e.msrval = msrval
@@ -710,7 +724,10 @@ class EmapNativeJSON(object):
             return ev
         elif e in self.perf_events:
             return self.perf_events[e]
-        extramsg.append("not found")
+        elif e in self.pevents:
+            return self.pevents[e]
+
+        extramsg.append("event not found")
         return None
 
     def update_event(self, e, ev):
@@ -732,7 +749,7 @@ class EmapNativeJSON(object):
             return self.pevents[p].name
         return p
 
-    def dumpevents(self, f=sys.stdout, human=True):
+    def dumpevents(self, f=sys.stdout, human=True, uncore=True):
         """Print all events with descriptions to the file descriptor f.
            When human is true word wrap all the descriptions."""
         wrap = None
@@ -740,9 +757,10 @@ class EmapNativeJSON(object):
             wrap = textwrap.TextWrapper(initial_indent="     ",
                                         subsequent_indent="     ")
         for k in sorted(self.events.keys()):
-            print_event(k, self.desc[k], f, human, wrap)
-        for k in sorted(self.uncore_events.keys()):
-            print_event(k, self.uncore_events[k].desc, f, human, wrap)
+            print_event(k, self.desc[k], f, human, wrap, self.pmu)
+        if uncore:
+            for k in sorted(self.uncore_events.keys()):
+                print_event(k, self.uncore_events[k].desc, f, human, wrap)
 
     def read_events(self, name):
         """Read JSON normal events table."""
@@ -830,7 +848,10 @@ class EmapNativeJSON(object):
         def td_event(name, pname, desc, counter):
             e = Event(name, 0, desc)
             e.counter = counter
-            e.pname = pname
+            if self.pmu != "cpu":
+                e.pname = "%s/%s/" % (self.pmu, pname)
+            else:
+                e.pname = pname
             self.add_event(e)
         td_event("perf_metrics.retiring", "topdown-retiring", "Number of slots the pipeline was frontend bound.", "32")
         td_event("perf_metrics.bad_speculation", "topdown-bad-spec", "Number of slots the pipeline was doing bad speculation.", "33")
@@ -838,9 +859,23 @@ class EmapNativeJSON(object):
         td_event("perf_metrics.backend_bound", "topdown-be-bound", "Number of slots the pipeline was backend bound.", "35")
         td_event("topdown.slots", "slots", "Number of slots", "36")
 
-def json_with_extra(el, eventmap_is_file):
-    name = event_download.eventlist_name(el, "core")
-    emap = EmapNativeJSON(name)
+        if "topdown.memory_bound_slots" in self.events:
+            td_event("perf_metrics.heavy_operations", "topdown-heavy-ops", "Number of slots pipeline retired microcode instructions with >2 uops", "36")
+            td_event("perf_metrics.branch_mispredicts", "topdown-br-mispredict", "Number of slots frontend was bound by branch mispredictions", "37")
+            td_event("perf_metrics.memory_bound", "topdown-mem-bound", "Number of slots backend was bound by memory", "38")
+            td_event("perf_metrics.fetch_latency", "topdown-fetch-lat", "Number of slots frontend was bound by memory fetch latency", "39")
+
+pmu_to_type = {
+    "cpu_core": "hybrid core",
+    "cpu_atom": "hybrid atom",
+    "cpu": "core",
+}
+
+def json_with_extra(el, eventmap_is_file, pmu):
+    name = event_download.eventlist_name(el, pmu_to_type[pmu])
+    if pmu_to_type != "core" and not os.path.exists(name):
+        name = event_download.eventlist_name(el, "core")
+    emap = EmapNativeJSON(name, pmu)
     if not emap or emap.error:
         print("parsing", name, "failed", file=sys.stderr)
         return None
@@ -910,16 +945,18 @@ def canon_emapvar(el, typ):
                 el = l[0]
     return el
 
-def find_emap():
+def find_emap(eventvar="EVENTMAP", pmu="cpu"):
     """Search and read a perfmon event map.
        When the EVENTMAP environment variable is set read that, otherwise
        read the map for the current CPU. EVENTMAP can be a CPU specifier
        in the map file or a path name.
        Dito for the OFFCORE and UNCORE environment variables.
 
+       Optionally pass the name of the EVENTMAP variable, and the cpu pmu name.
+
        Return an emap object that contains the events and can be queried
        or None if nothing is found or the current CPU is unknown."""
-    el = os.getenv("EVENTMAP")
+    el = os.getenv(eventvar)
     if not el:
         eventmap_is_file = False
         el = event_download.get_cpustr()
@@ -928,7 +965,7 @@ def find_emap():
     el = canon_emapvar(el, "core")
     if "/" in el:
         try:
-            emap = EmapNativeJSON(el)
+            emap = EmapNativeJSON(el, pmu)
             if not emap or emap.error:
                 return None
             add_extra_env(emap, el, eventmap_is_file)
@@ -937,7 +974,7 @@ def find_emap():
             return None
     try:
         if not force_download:
-            return json_with_extra(el, eventmap_is_file)
+            return json_with_extra(el, eventmap_is_file, pmu)
     except IOError:
         pass
     try:
@@ -949,14 +986,12 @@ def find_emap():
         if experimental:
             toget += [x + " experimental" for x in toget]
         event_download.download(el, toget)
-        return json_with_extra(el, eventmap_is_file)
+        return json_with_extra(el, eventmap_is_file, pmu)
     except IOError:
         pass
     return None
 
 def process_events(event, print_only, period, noexplode):
-    if emap is None:
-        return event, False
     overflow = None
     # replace inner commas so we can split events
     event = re.sub(r"([a-z][a-z0-9]+/)([^/]+)/",
@@ -982,7 +1017,11 @@ def process_events(event, print_only, period, noexplode):
         m = re.match(r'(cpu|uncore_.*?)/([^#]+)(#?.*?)/(.*)', i)
         if m:
             start = m.group(1) + "/"
-            ev = emap.getevent(m.group(2))
+            for emap in emap_list:
+                if emap.pmu == m.group(1):
+                    ev = emap.getevent(m.group(2))
+            else:
+                ev = emap_list[0].getevent(m.group(2))
             end = m.group(3) + "/"
             if ev:
                 qual = "".join(sorted(merge_extra(extra_set(ev.extra), extra_set(m.group(4)))))
@@ -992,8 +1031,13 @@ def process_events(event, print_only, period, noexplode):
                 start = ""
                 end = ""
         else:
-            ev = emap.getevent(i)
-            if ev:
+            ev = None
+            res = [x.getevent(i) for x in emap_list]
+            res = [x for x in res if x]
+            if res:
+                if len(x) > 1:
+                    print("Event %s is not unique on hybrid CPUs. Add cpu_*// prefixes" % i, file=sys.stderr)
+                ev = res[0]
                 i = ev.output(period=period, noexplode=noexplode)
         if ev:
             if ev.msr:
@@ -1090,7 +1134,7 @@ def get_pager():
     return f, None
 
 def perf_cmd(cmd):
-    if emap is None:
+    if len(emap_list) == 0:
         sys.exit(subprocess.call(cmd))
     elif len(sys.argv) >= 2 and sys.argv[1] == "list":
         pager, proc = get_pager()
@@ -1098,7 +1142,12 @@ def perf_cmd(cmd):
             l = subprocess.Popen(cmd, stdout=pager)
             l.wait()
             print(file=pager)
-            emap.dumpevents(pager, proc is not None)
+            uncore = True
+            for emap in emap_list:
+                if len(emap_list) > 1:
+                    print("%s:\n" % emap.pmu, file=pager)
+                emap.dumpevents(pager, proc is not None, uncore)
+                uncore = False
             if proc:
                 pager.close()
                 proc.wait()
@@ -1123,7 +1172,7 @@ def perf_cmd(cmd):
             for i in pipe:
                 i = re.sub("[rR]aw 0x([0-9a-f]{4,})", raw, i)
                 i = re.sub("r([0-9a-f]{4,})", raw, i)
-                i = re.sub("(cpu/.*?/)", lambda e: emap.getperf(e.group(1)), i)
+                i = re.sub("(cpu(_core|_atom)?/.*?/)", lambda e: emap.getperf(e.group(1)), i)
                 print(i, end='')
         except IOError:
             pass
@@ -1140,10 +1189,13 @@ if __name__ == '__main__':
             experimental = True
         if j == "--noexplode":
             noexplode = True
-    emap = find_emap()
-    if not emap:
-        print("Do not recognize CPU or cannot find CPU map file.", file=sys.stderr)
     msr = MSR()
+    for pmu in glob.glob("/sys/devices/cpu*"):
+        emap = find_emap(pmu=pmu.replace("/sys/devices/", ""))
+        if not emap:
+            print("Do not recognize CPU or cannot find CPU map file.", file=sys.stderr)
+        else:
+            emap_list.append(emap)
     cmd = process_args()
     try:
         perf_cmd(cmd)

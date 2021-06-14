@@ -2,6 +2,7 @@
 # clean up tl-tester logs after failures
 rm log[0-9]*
 rm log-[0-9]*
+rm logsum[0-9]*
 rm log-all*
 rm log-combined*
 rm val[0-9]*.csv
@@ -18,6 +19,7 @@ rm perf.data.*.old
 rm tlog[0-9]*
 rm tltest*_*
 rm perf.data*
+rm perf*.data.*.old
 rm perf[osv]*.csv
 rm val.[0-9]*.csv
 rm x*.xlsx
