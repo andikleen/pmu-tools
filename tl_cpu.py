@@ -81,7 +81,11 @@ class CPU(object):
     def force_counters(self):
         cnt = self.env.forcecounters
         if cnt:
-            self.counters = { "cpu": int(cnt) }
+            cntn = int(cnt)
+            if self.realcpu == "adl":
+                self.counters = { "cpu_core": cntn, "cpu_atom": cntn, "cpu": cntn }
+            else:
+                self.counters = { "cpu": cntn }
 
     def force_ht(self):
         ht = self.env.forceht
@@ -177,7 +181,20 @@ class CPU(object):
         self.force_counters()
         self.limit4_counters = { "cpu": "none" }
         self.standard_counters = { "cpu": ("0,1,2,3",) }
-        if self.cpu == "slm":
+        if self.cpu == "adl":
+            newcounters = {
+                    "cpu_core": 8,
+                    "cpu": 4,
+                    "cpu_atom": 6,
+                }
+            self.standard_counters = {
+                "cpu_core": ("0,1,2,3,4,5,6,7", "0,1,2,3", ),
+                "cpu": ("0,1,2,3,4,5,6,7", "0,1,2,3", ),
+                "cpu_atom": ("0,1,2,3,4,5", ),
+            }
+            self.limit4_counters = { "cpu_core": "0,1,2,3", "cpu_atom": "none",
+                                     "cpu": "0,1,2,3" }
+        elif self.cpu == "slm":
             newcounters = { "cpu": 2 }
             self.standard_counters = { "cpu": ("0,1",) }
         # when running in a hypervisor always assume worst case HT in on
