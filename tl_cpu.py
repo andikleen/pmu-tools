@@ -32,7 +32,7 @@ modelid_map = {
     (0x9e, ): "CFL",
 }
 
-cpus_8gpc = set(["icl", "tgl", "icx"])
+cpus_8gpc = set(["icl", "tgl", "icx"]) # XXX handle hybrid ADL
 
 def num_offline_cpus():
     cpus = glob.glob("/sys/devices/system/cpu/cpu[0-9]*/online")

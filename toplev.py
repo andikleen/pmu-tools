@@ -78,6 +78,7 @@ known_cpus = (
              167, )), # RKL as ICL for now
     ("tgl", (140, 141, )),
     ("icx", (106, 108, )),
+    ("adl", (154, )),
 )
 
 eventlist_alias = {
@@ -3750,6 +3751,14 @@ def model_setup(runner, cpuname):
         setup_metrics(model, runner.pmu)
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
+    elif cpuname == "adl" and runner.pmu in ("cpu_core", "cpu"):
+        import adl_glc_ratios
+        setup_metrics(adl_glc_ratios, runner.pmu)
+        adl_glc_ratios.smt_enabled = cpu.ht
+        model = adl_glc_ratios
+    elif cpuname == "adl" and runner.pmu == "cpu_atom":
+        import adl_grt_ratios
+        model = adl_grt_ratios
     elif cpuname == "slm":
         import slm_ratios
         model = slm_ratios
