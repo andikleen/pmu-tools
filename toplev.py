@@ -163,7 +163,7 @@ event_nocheck = False
 
 class EventContext(object):
     """Event related context for a given target CPU."""
-    def __init__(self):
+    def __init__(self, pmu):
         self.constraint_fixes = dict()
         self.errata_whitelist = []
         self.outgroup_events = set(["dummy", "duration_time", "msr/tsc/"])
@@ -181,6 +181,13 @@ class EventContext(object):
         self.rmap_cache = dict()
         self.slots_available = False
         self.emap = None
+        if pmu is None:
+            pmu = "cpu"
+        if pmu not in cpu.counters:
+            pmu = cpu.counters.keys()[0]
+        self.standard_counters = cpu.standard_counters[pmu]
+        self.counters = cpu.counters[pmu]
+        self.limit4_counters = cpu.limit4_counters[pmu]
 
 ectx = None
 
@@ -384,7 +391,7 @@ def event_group(evlist):
             g = list(g)
             e = ",".join(g)
             n = needed_counters(g)
-            if n <= cpu.counters:
+            if n <= ectx.counters:
                 e = "{%s}" % e
                 if args.exclusive:
                     e += ":e"
@@ -1250,7 +1257,7 @@ def is_cpu_event(s):
 def initialize_event(name, i, e):
     if "." in name or "_" in name and name not in non_json_events:
         ectx.emap.update_event(e.output(noname=True), e)
-        if (e.counter not in cpu.standard_counters and not name.startswith("UNC_")):
+        if (e.counter not in ectx.standard_counters and not name.startswith("UNC_")):
             if e.counter.startswith("Fixed"):
                 ectx.limited_counters[i] = int(e.counter.split()[2]) + FIXED_BASE
                 ectx.fixed_events.add(i)
@@ -1262,7 +1269,7 @@ def initialize_event(name, i, e):
             ectx.limited_set.add(i)
         if e.name.upper() in ectx.constraint_fixes:
             e.counter = ectx.constraint_fixes[e.name.upper()]
-        if e.counter == cpu.limit4_counters:
+        if e.counter == ectx.limit4_counters:
             ectx.limit4_events.add(i)
         if e.errata:
             if e.errata not in ectx.errata_whitelist:
@@ -2644,14 +2651,14 @@ any_merge = True
 distribute_uncore = False
 
 def grab_group(l):
-    if needed_counters(l) <= cpu.counters:
+    if needed_counters(l) <= ectx.counters:
         return len(l)
     n = 1
-    while needed_counters(l[:n]) < cpu.counters and n < len(l):
+    while needed_counters(l[:n]) < ectx.counters and n < len(l):
         n += 1
-    if needed_counters(l[:n]) > cpu.counters and n > 0:
+    if needed_counters(l[:n]) > ectx.counters and n > 0:
         n -= 1
-        assert needed_counters(l[:n]) <= cpu.counters
+        assert needed_counters(l[:n]) <= ectx.counters
     return n
 
 def update_group_map(evnum, obj, group):
@@ -2736,7 +2743,7 @@ class Scheduler(object):
             # with eventual exclusive use we would like as big groups as
             # possible. Still keep it as a --tune option to play around.
             if ((any_merge or not evset.isdisjoint(g.evnum)) and
-                  needed_counters(cat_unique(g.evnum, evnum)) <= cpu.counters):
+                  needed_counters(cat_unique(g.evnum, evnum)) <= ectx.counters):
                 obj_debug_print(obj, "add_duplicate %s %s in %s obj %s to group %d" % (
                     " ".join(evnum),
                     " ".join(list(map(event_rmap, evnum))),
@@ -2751,7 +2758,7 @@ class Scheduler(object):
                 return True
 
             # memorize already full groups
-            elif num_generic_counters(set(g.evnum)) >= cpu.counters:
+            elif num_generic_counters(set(g.evnum)) >= ectx.counters:
                 full.add(g)
         if full:
             self.evgroups_nf = [g for g in self.evgroups_nf if g not in full]
@@ -2760,7 +2767,7 @@ class Scheduler(object):
 
     def add(self, obj, evnum, evlev):
         # does not fit into a group.
-        if needed_counters(evnum) > cpu.counters:
+        if needed_counters(evnum) > ectx.counters:
             self.split_groups(obj, evlev)
             return
         evnum = dedup(evnum)
@@ -2941,7 +2948,7 @@ class Runner(object):
         self.max_level = max_level
         self.max_node_level = 0
         self.idle_threshold = idle_threshold
-        self.ectx = EventContext()
+        self.ectx = EventContext(pmu)
         self.pmu = pmu
 
     def set_ectx(self):
@@ -3375,7 +3382,9 @@ def sysctl(name):
 
 # check nmi watchdog
 if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
-    cpu.counters -= 1
+    # XXX should probe if nmi watchdog runs on fixed or generic counter
+    for j in cpu.counters.keys():
+        cpu.counters[j] -= 1 # FIXME
     print("Consider disabling nmi watchdog to minimize multiplexing", file=sys.stderr)
     print("(echo 0 > /proc/sys/kernel/nmi_watchdog as root)", file=sys.stderr)
 

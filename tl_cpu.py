@@ -81,7 +81,7 @@ class CPU(object):
     def force_counters(self):
         cnt = self.env.forcecounters
         if cnt:
-            self.counters = int(cnt)
+            cntn = { "cpu": int(cnt) }
 
     def force_ht(self):
         ht = self.env.forceht
@@ -96,7 +96,7 @@ class CPU(object):
         self.cpu = None
         self.realcpu = "simple"
         self.ht = False
-        self.counters = 0
+        self.counters = None
         self.has_tsx = False
         self.hypervisor = False
         self.force_hypervisor = False
@@ -107,7 +107,6 @@ class CPU(object):
         self.threads = 0
         forced_cpu = self.force_cpu(known_cpus)
         forced_ht = self.force_ht()
-        self.force_counters()
         cores = Counter()
         sockets = Counter()
         self.coreids = defaultdict(list)
@@ -175,28 +174,32 @@ class CPU(object):
                     if not forced_cpu:
                         self.cpu = i[0]
                     break
-        self.limit4_counters = "none"
-        self.standard_counters = ("0,1,2,3",)
-        if self.counters == 0:
-            if self.cpu == "slm":
-                self.counters = 2
-                self.standard_counters = ("0,1",)
-            # when running in a hypervisor always assume worst case HT in on
-            # also when CPUs are offline assume SMT is on
-            elif self.ht or self.hypervisor or (num_offline_cpus() > 0 and not nocheck) or self.cpu in cpus_8gpc:
-                if self.cpu in cpus_8gpc or (self.cpu == "simple" and self.realcpu in cpus_8gpc):
-                    self.counters = 8
-                    self.standard_counters = ("0,1,2,3,4,5,6,7", "0,1,2,3", )
-                    self.limit4_counters = "0,1,2,3"
-                else:
-                    self.counters = 4
+        self.force_counters()
+        self.limit4_counters = { "cpu": "none" }
+        self.standard_counters = { "cpu": ("0,1,2,3",) }
+        if self.cpu == "slm":
+            newcounters = { "cpu": 2 }
+            self.standard_counters = { "cpu": ("0,1",) }
+        # when running in a hypervisor always assume worst case HT in on
+        # also when CPUs are offline assume SMT is on
+        elif self.ht or self.hypervisor or (num_offline_cpus() > 0 and not nocheck) or self.cpu in cpus_8gpc:
+            if self.cpu in cpus_8gpc or (self.cpu == "simple" and self.realcpu in cpus_8gpc):
+                newcounters = {"cpu": 8 }
+                self.standard_counters = { "cpu": ("0,1,2,3,4,5,6,7", "0,1,2,3", ) }
+                self.limit4_counters = { "cpu": "0,1,2,3" }
             else:
-                self.counters = 8
-            if not nocheck:
-                self.counters -= reduced_counters()
-        elif self.cpu in cpus_8gpc:
-            self.standard_counters = ("0,1,2,3,4,5,6,7", "0,1,2,3", )
-            self.limit4_counters = "0,1,2,3"
+                newcounters = { "cpu": 4 }
+        else:
+            newcounters = { "cpu": 8 }
+        if self.counters is None:
+            self.counters = newcounters
+        if not nocheck and not self.env.forcecounters:
+            for j in ("cpu", "cpu_core", "cpu_atom"):
+                if j in self.counters:
+                    self.counters[j] -= reduced_counters()
+        if self.cpu in cpus_8gpc:
+            self.standard_counters = { "cpu": ("0,1,2,3,4,5,6,7", "0,1,2,3", ) }
+            self.limit4_counters = { "cpu": "0,1,2,3" }
 
         try:
             self.pmu_name = open("/sys/devices/cpu/caps/pmu_name").read().strip()
