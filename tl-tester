@@ -347,6 +347,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics $NOMULTIPLEX --column
 [ -z "$ONLYCPU" ] && $WRAP ./toplev.py --force-cpu bdw $OPT --cpu 0,1,2,3 --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns --filterquals -l4 $LOAD
 DURATION_TIME=0 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
 NUM_RUNNERS=2 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
+NUM_RUNNERS=2 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all -a -A $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD
