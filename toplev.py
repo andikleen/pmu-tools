@@ -181,10 +181,8 @@ class EventContext(object):
         self.rmap_cache = dict()
         self.slots_available = False
         self.emap = None
-        if pmu is None:
+        if pmu is None or pmu not in cpu.counters:
             pmu = "cpu"
-        if pmu not in cpu.counters:
-            pmu = cpu.counters.keys()[0]
         self.standard_counters = cpu.standard_counters[pmu]
         self.counters = cpu.counters[pmu]
         self.limit4_counters = cpu.limit4_counters[pmu]
@@ -1513,6 +1511,8 @@ def invalid_res(res, key, nothing):
     return False
 
 def runner_name(r):
+    if r.pmu is None:
+        return ""
     return r.pmu.replace("cpu_", "")
 
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
@@ -1530,7 +1530,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
     post = ""
-    if len(res.keys()) > 1:
+    if len(res.keys()) > 1 and len(runner_list) > 1:
         post = "-" + runner_name(runner)
     out.set_cpus(display_keys(runner, keys, mode, post))
     runner.printer.numprint = 0
@@ -1937,6 +1937,8 @@ def update_perf_summary(summary, off, title, val, event, unit, multiplex):
         r[3] = min(r[3], multiplex)
 
 def find_runner(off, title, event):
+    if len(runner_list) == 1:
+        return runner_list[0], off
     for r in runner_list:
         if title == "":
             if r.sched.offset <= off < r.sched.offset+len(r.sched.evnum):
@@ -2098,8 +2100,11 @@ def do_execute(summary, allowed_threads, evstr, flat_rmap, out, rest, resoff = C
 
         account[event].total += 1
 
+	def ignored_cpu(num):
+	    return num not in runner.cpu_list and not any([k in runner.cpu_list for k in cpu.coreids[cpu.cputocore[num]]])
+
         def add(t):
-            if runner.cpu_list and is_number(title) and int(title) not in runner.cpu_list:
+	    if runner.cpu_list and is_number(title) and ignored_cpu(int(title)):
                 return
 
             res[t].append(val)
@@ -3461,7 +3466,7 @@ def init_runner_list():
             for j in hybrid_pmus:
                 r = Runner(args.level, idle_threshold, os.path.basename(j))
                 runner_list.append(r)
-                r.cpu_list = parse_cpus(j)
+                r.cpu_list = [j for j in parse_cpus(j) if not args.core or display_core(f, True)]
         else:
             runner_list = [Runner(args.level, idle_threshold)]
     return runner_list
