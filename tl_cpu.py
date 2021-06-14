@@ -81,7 +81,7 @@ class CPU(object):
     def force_counters(self):
         cnt = self.env.forcecounters
         if cnt:
-            cntn = { "cpu": int(cnt) }
+            self.counters = { "cpu": int(cnt) }
 
     def force_ht(self):
         ht = self.env.forceht
