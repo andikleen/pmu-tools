@@ -1983,8 +1983,8 @@ def find_runner(rlist, off, title, event):
             return r, off
     assert 0
 
-def check_event(rlist, event, res, title, prev_interval, l, resoff, revnum):
-    off = len(res) # + resoff[title]
+def check_event(rlist, event, res, title, prev_interval, l, revnum):
+    off = len(res)
     r, off = find_runner(rlist, off, title, event)
     if r is None:
         return r
@@ -2103,7 +2103,7 @@ def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, res
         # code later relies on stripping ku flags
         event = remove_qual(event)
 
-        runner = check_event(rlist, event, res[title], title, prev_interval, l, resoff, revnum)
+        runner = check_event(rlist, event, res[title], title, prev_interval, l, revnum)
         if runner is None:
             continue
 
