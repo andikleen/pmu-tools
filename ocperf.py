@@ -1191,7 +1191,10 @@ if __name__ == '__main__':
         if j == "--noexplode":
             noexplode = True
     msr = MSR()
-    for pmu in glob.glob("/sys/devices/cpu*"):
+    g = glob.glob("/sys/devices/cpu*"):
+    if len(g) == 0:
+        g = "/sys/devices/cpu"
+    for pmu in g:
         emap = find_emap(pmu=pmu.replace("/sys/devices/", ""))
         if not emap:
             print("Do not recognize CPU or cannot find CPU map file.", file=sys.stderr)
