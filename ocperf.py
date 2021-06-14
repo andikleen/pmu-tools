@@ -1193,7 +1193,7 @@ if __name__ == '__main__':
     msr = MSR()
     g = glob.glob("/sys/devices/cpu*")
     if len(g) == 0:
-        g = "/sys/devices/cpu"
+        g = ["/sys/devices/cpu"]
     for pmu in g:
         emap = find_emap(pmu=pmu.replace("/sys/devices/", ""))
         if not emap:
