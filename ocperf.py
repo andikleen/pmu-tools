@@ -403,7 +403,7 @@ class UncoreEvent(object):
         if e.unit in uncore_units:
             e.unit = uncore_units[e.unit]
         if e.unit == "ncu":
-            e.unit = "clock" if box_exists("clock") else "cbox_0"
+            e.unit = "clock" if box_exists("clock") else "cbox"
             e.umask = 0
             e.code = 0xff
         # xxx subctr
