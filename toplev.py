@@ -149,6 +149,7 @@ limited_counters_base = {
     "topdown-bad-spec": METRICS_BASE + 2,
     "topdown-retiring": METRICS_BASE + 3,
     "cpu/cycles-ct/": 2,
+    "cpu_core/cycles-ct/": 2,
 }
 
 event_nocheck = False
@@ -215,6 +216,9 @@ def works(x):
 class PerfFeatures(object):
     """Adapt to the quirks of various perf versions."""
     def __init__(self, args):
+        pmu = "cpu"
+        if os.path.exists("/sys/devices/cpu_core"):
+            pmu = "cpu_core"
         self.perf = os.getenv("PERF")
         if not self.perf:
             self.perf = "perf"
@@ -249,11 +253,12 @@ class PerfFeatures(object):
             self.has_max_precise = True
             self.max_precise = 3
         else:
+            # XXX hybrid
             self.supports_ocr = works(self.perf +
-                    " stat -e '{cpu/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true")
-            self.has_max_precise = os.path.exists("/sys/devices/cpu/caps/max_precise")
+                    " stat -e '{%s/event=0xb7,umask=1,offcore_rsp=0x123/,instructions}' true" % pmu)
+            self.has_max_precise = os.path.exists("/sys/devices/%s/caps/max_precise" % pmu)
             if self.has_max_precise:
-                self.max_precise = int(open("/sys/devices/cpu/caps/max_precise").read())
+                self.max_precise = int(open("/sys/devices/%s/caps/max_precise" % pmu).read())
         if args.exclusive and not args.print and not works(self.perf + " stat -e '{branches,branches,branches,branches}:e' true"):
             sys.exit("perf binary does not support :e exclusive modifier")
 
@@ -1255,7 +1260,7 @@ def initialize_event(name, i, e):
             ectx.require_pebs_events.add(name)
     else:
         non_json_events.add(i)
-    if not i.startswith("cpu/") and i not in ectx.fixed_events:
+    if not re.match(r'cpu(_core|_atom)?/', i) and i not in ectx.fixed_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
         if i.startswith("msr/"):
@@ -1352,7 +1357,7 @@ class ValidEvents(object):
         self.string = "|".join(self.valid_events)
 
     def __init__(self):
-        self.valid_events = [r"cpu/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*",
+        self.valid_events = [r"cpu(_core|_atom)?/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*",
                              r"msr.*", "emulation-faults",
                              r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy",
                              "slots", r"topdown-(fe-bound|be-bound|retiring|bad-spec)"]
@@ -3311,25 +3316,27 @@ def ht_warning():
         print("Measuring multiple processes/threads on the same core may is not reliable.",
                 file=sys.stderr)
 
-def setup_metrics(model):
+def setup_metrics(model, pmu):
     force_metrics = os.getenv("FORCEMETRICS") is not None
-    model.topdown_use_fixed = force_metrics or os.path.exists(
-            "/sys/devices/cpu/events/topdown-fe-bound")
+    model.topdown_use_fixed = (force_metrics or
+            os.path.exists("/sys/devices/%s/events/topdown-fe-bound" % pmu))
     ectx.core_domains = set(["CoreClocks", "CoreMetric"])
-    ectx.slots_available = force_metrics or os.path.exists("/sys/devices/cpu/events/slots")
+    ectx.slots_available = (force_metrics or
+            os.path.exists("/sys/devices/%s/events/slots" % pmu))
 
 hybrid_pmus = []
 nr = os.getenv("NUM_RUNNERS")
 runner_list = []
-if nr:
+cpu_pmus = glob.glob("/sys/devices/cpu_*/cpus")
+if nr and not cpu_pmus:
     num_runners = int(nr)
     for j in range(num_runners):
         runner_list.append(Runner(args.level, idle_threshold))
 else:
-    cpu_pmus = glob.glob("/sys/devices/cpu_*/cpus")
     if hybrid_pmus:
         for j in hybrid_pmus:
-            runner_list.append(Runner(args.level, idle_threshold, j))
+            runner_list.append(Runner(args.level, idle_threshold,
+                os.path.basename(j.replace("/cpus"))))
     else:
         runner_list = [Runner(args.level, idle_threshold)]
 
@@ -3350,7 +3357,7 @@ if args.quiet:
         args.no_desc = True
     args.no_util = True
 
-def init_model(model):
+def init_model(model, runner):
     version = model.version
     model.print_error = pe
     model.check_event = lambda ev: ectx.emap.getevent(ev) is not None
@@ -3429,7 +3436,7 @@ def model_setup(runner, cpuname):
         import icx_server_ratios
         icx_server_ratios.smt_enabled = cpu.ht
         model = icx_server_ratios
-        setup_metrics(model)
+        setup_metrics(model, runner.pmu)
         # work around kernel constraint table bug in some kernel versions
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
@@ -3437,7 +3444,7 @@ def model_setup(runner, cpuname):
         import icl_client_ratios
         icl_client_ratios.smt_enabled = cpu.ht
         model = icl_client_ratios
-        setup_metrics(model)
+        setup_metrics(model, runner.pmu)
         # work around kernel constraint table bug in some kernel versions
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
@@ -3445,7 +3452,7 @@ def model_setup(runner, cpuname):
         import icl_client_ratios
         icl_client_ratios.smt_enabled = cpu.ht
         model = icl_client_ratios
-        setup_metrics(model)
+        setup_metrics(model, runner.pmu)
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
     elif cpuname == "slm":
@@ -3460,16 +3467,7 @@ def model_setup(runner, cpuname):
         import simple_ratios
         model = simple_ratios
 
-    if hmodels:
-        version = ""
-        for m in hmodels:
-            if version:
-                version += " "
-            version += init_model(m)
-    else:
-        version = init_model(model)
-
-    return version
+    return init_model(model, runner)
 
 version = ""
 for r in runner_list:
