@@ -3465,12 +3465,12 @@ def setup_metrics(model, pmu):
 def parse_cpu_list(s):
     l = []
     for j in s.split(","):
-            m = re.match(r'(\d+)(-\d+)?', j)
-            if m.group(2):
-                for k in range(int(m.group(1)), int(m.group(2)[1:])+1):
-                    l.append(k)
-            else:
-                l.append(int(m.group(1)))
+        m = re.match(r'(\d+)(-\d+)?', j)
+        if m.group(2):
+            for k in range(int(m.group(1)), int(m.group(2)[1:])+1):
+                l.append(k)
+        else:
+            l.append(int(m.group(1)))
     return l
 
 def read_cpus(base):
