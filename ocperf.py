@@ -1042,8 +1042,9 @@ def process_events(event, print_only, period, noexplode):
         if ev:
             if ev.msr:
                 msr.checked_writemsr(ev.msr, ev.msrval, print_only)
-            if emap.latego and (ev.val & 0xffff) in latego.latego_events:
-                latego.setup_event(ev.val & 0xffff, 1)
+            for emap in emap_list:
+                if emap.latego and (ev.val & 0xffff) in latego.latego_events:
+                    latego.setup_event(ev.val & 0xffff, 1)
             overflow = ev.overflow
         event = (group_start + start + i + end + group_end).replace("#", ",")
         nl.append(event)
