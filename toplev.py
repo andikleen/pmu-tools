@@ -1601,11 +1601,16 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             # in case of mutual dependencies between SMT and non SMT
             # but don't loop forever (?)
             used_stat = stat
-            for _ in range(3):
+            onemore = False
+            for _ in range(4):
                 changed = runner.compute(merged_res, rev[j], merged_st, env, thread_node, used_stat)
                 verify_rev(rev, cpus)
                 changed += runner.compute(combined_res, rev[cpus[0]], combined_st, env, core_node, used_stat)
                 if changed == 0:
+                    # do always one more so that any thresholds depending on a later node are caught
+                    if not onemore:
+                        onemore = True
+                        continue
                     break
                 used_stat = None
 
