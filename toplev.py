@@ -3596,6 +3596,9 @@ def use_cpu(cpu):
         return cpu in parse_cpu_list(args.cpu)
     return True
 
+def get_cpu_list(fn):
+    return [k for k in read_cpus(fn) if use_cpu(k)]
+
 def init_runner_list():
     nr = os.getenv("NUM_RUNNERS")
     runner_list = []
@@ -3603,7 +3606,12 @@ def init_runner_list():
     hybrid_pmus = glob.glob("/sys/devices/cpu_*")
     if args.force_cpu and args.force_cpu not in hybrid_cpus:
         hybrid_pmus = hybrid_pmus[:1]
-    if nr and not hybrid_pmus:
+    # emulated hybrid
+    if nr:
+        if hybrid_pmus:
+            print("Ignoring hybrid PMU(s) %s with NUM_RUNNER" %
+                    " ".join(hybrid_pmus[1:]), file=sys.stderr)
+            hybrid_pmus = hybrid_pmus[:1]
         if args.cputype:
             sys.exit("--cputype specified on non hybrid")
         num_runners = int(nr)
@@ -3611,20 +3619,29 @@ def init_runner_list():
             r = Runner(args.level, idle_threshold)
             runner_list.append(r)
             r.cpu_list = None
+    # real hybrid
+    elif hybrid_pmus and cpu.cpu in hybrid_cpus:
+        for j in hybrid_pmus:
+            pmuname = os.path.basename(j).replace("cpu_", "")
+            if args.cputype and pmuname != args.cputype:
+                continue
+            cpu_list = get_cpu_list(j)
+            if len(cpu_list) == 0:
+                continue
+            r = Runner(args.level, idle_threshold, os.path.basename(j))
+            runner_list.append(r)
+            r.cpu_list = cpu_list
+    # hybrid, but faking non hybrid cpu
+    elif hybrid_pmus:
+        runner_list = [Runner(args.level, idle_threshold, pmu="cpu_core")]
+        runner_list[0].cpu_list = get_cpu_list("/sys/devices/cpu_core")
+        if len(runner_list[0].cpu_list) == 0:
+            sys.exit("cpu_core fallback has no cpus")
+        print("runner_list", runner_list)
+        print("cpu_list", runner_list[0].cpu_list)
+    # no hybrid
     else:
-        if hybrid_pmus and cpu.cpu in hybrid_cpus:
-            for j in hybrid_pmus:
-                if args.cputype and os.path.basename(j).replace("cpu_", "") != args.cputype:
-                    continue
-                cpu_list = [k for k in read_cpus(j) if use_cpu(k)]
-                if len(cpu_list) == 0:
-                    continue
-                r = Runner(args.level, idle_threshold, os.path.basename(j))
-                runner_list.append(r)
-                r.cpu_list = cpu_list
-        else:
-            runner_list = [Runner(args.level, idle_threshold,
-                pmu="cpu_core" if hybrid_pmus else "cpu")]
+        runner_list = [Runner(args.level, idle_threshold, pmu="cpu")]
 
     if args.all:
         assert all([ru.max_level <= args.level for ru in runner_list])
@@ -3963,7 +3980,8 @@ def setup_cpus(rest, cpu):
             start += part
     else:
         for r in runner_list:
-            r.cpu_list = list(allowed_threads)
+            if r.cpu_list is None:
+                r.cpu_list = list(allowed_threads)
     return rest
 
 rest = setup_cpus(rest, cpu)
