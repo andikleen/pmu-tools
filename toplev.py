@@ -528,7 +528,7 @@ g.add_argument('--cputype', help='Limit to hybrid cpu type (atom or core)', choi
 
 g = p.add_argument_group('Select events')
 g.add_argument('--level', '-l', help='Measure upto level N (max 6)',
-               type=int, default=1)
+               type=int, default=-1)
 g.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
 g.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
 g.add_argument('--no-util', help="Do not measure CPU utilization", action='store_true')
@@ -1041,6 +1041,9 @@ def check_ratio(l):
 
 # XXX move into ectx
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
+
+if args.level < 0:
+    args.level = 2 if any([x >= 8 for x in cpu.counters.values()]) else 1
 
 if args.show_cpu:
     print("%s %s %s" % (cpu.true_name, cpu.pmu_name, cpu.name))
