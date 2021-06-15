@@ -1334,7 +1334,7 @@ def initialize_event(name, i, e):
             e.counter = ectx.constraint_fixes[e.name.upper()]
         if e.counter == ectx.limit4_counters:
             ectx.limit4_events.add(i)
-        if e.errata:
+        if e.errata and e.errata != "0" and e.errata != "null":
             if e.errata not in ectx.errata_whitelist:
                 ectx.errata_events[name] = e.errata
             else:
