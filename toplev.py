@@ -1534,7 +1534,7 @@ def invalid_res(res, key, nothing):
 
 def runner_name(r):
     if r.pmu is None:
-        return ""
+        return "%d" % (runner_list.index(r))
     return r.pmu.replace("cpu_", "")
 
 default_compute_iter = 3
