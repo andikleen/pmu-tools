@@ -3532,6 +3532,9 @@ def init_runner_list():
             runner_list = [Runner(args.level, idle_threshold,
                 pmu="cpu_core" if hybrid_pmus else "cpu")]
 
+    if args.all:
+        assert all([r.max_level <= args.level for r in runner_list])
+
     return runner_list
 
 runner_list = init_runner_list()
