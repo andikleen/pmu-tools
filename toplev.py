@@ -3692,25 +3692,28 @@ if args.subset:
     if args.script_record:
         sys.exit("--subset cannot be used with --script-record. Generate temp file with perf stat report -x\\;")
 
-if args.describe:
-    args.long_desc = True
-    if not rest:
-        sys.exit("No nodes to describe")
-    for r in runner_list:
-        r.list_nodes(None, any_node, rest)
-if args.list_metrics or args.list_all:
-    for r in runner_list:
-        r.list_nodes("Metrics", lambda obj: obj.metric, rest)
-if args.list_nodes or args.list_all:
-    for r in runner_list:
-        r.list_nodes("Nodes", lambda obj: not obj.metric, rest)
-if args.list_metric_groups or args.list_all:
-    for r in runner_list:
-        r.list_metric_groups()
-if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_all or args.describe:
-    if any([x.startswith("-") for x in rest]):
-        sys.exit("Unknown arguments for --list*/--describe")
-    sys.exit(0)
+def handle_cmd():
+    if args.describe:
+        args.long_desc = True
+        if not rest:
+            sys.exit("No nodes to describe")
+        for r in runner_list:
+            r.list_nodes(None, any_node, rest)
+    if args.list_metrics or args.list_all:
+        for r in runner_list:
+            r.list_nodes("Metrics", lambda obj: obj.metric, rest)
+    if args.list_nodes or args.list_all:
+        for r in runner_list:
+            r.list_nodes("Nodes", lambda obj: not obj.metric, rest)
+    if args.list_metric_groups or args.list_all:
+        for r in runner_list:
+            r.list_metric_groups()
+    if args.list_metric_groups or args.list_metrics or args.list_nodes or args.list_all or args.describe:
+        if any([x.startswith("-") for x in rest]):
+            sys.exit("Unknown arguments for --list*/--describe")
+        sys.exit(0)
+
+handle_cmd()
 
 def has_core_node(runner):
     res = False
@@ -3762,22 +3765,28 @@ if args.power and feat.supports_power:
     check_root()
     rest = add_args(rest, "-a")
 
-for r in runner_list:
-    extra_setup(r, rest)
+def runner_extra_init():
+    for r in runner_list:
+        extra_setup(r, rest)
 
-if args.nodes:
-    check_nodes(runner_list, args.nodes)
+    if args.nodes:
+        check_nodes(runner_list, args.nodes)
 
-for r in runner_list:
-    r.setup_children()
+    for r in runner_list:
+        r.setup_children()
+
+runner_extra_init()
 
 if smt_mode and not os.getenv('FORCEHT'):
     # do not need SMT mode if no objects have Core scope
     if not any_core_node():
         smt_mode = False
 
-for r in runner_list:
-    rest = r.filter_per_core(args.single_thread, rest)
+def runner_filter(rest):
+    for r in runner_list:
+        rest = r.filter_per_core(args.single_thread, rest)
+
+runner_filter(rest)
 
 if not smt_mode and not args.single_thread and not args.no_aggr:
     hybrid = cpu.cpu in hybrid_cpus
@@ -3885,19 +3894,22 @@ if args.valcsv:
                              "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
 
 # XXX use runner_restart
-offset = 0
-for r in runner_list:
-    runner_init(r)
+def runner_first_init():
+    offset = 0
+    for r in runner_list:
+        runner_init(r)
 
-if args.nodes:
-    check_nodes(runner_list, args.nodes)
+    if args.nodes:
+        check_nodes(runner_list, args.nodes)
 
-for r in runner_list:
-    r.set_ectx()
-    r.sched.schedule(r.olist)
-    r.sched.offset = offset
-    offset += len(r.sched.evnum)
-    r.clear_ectx()
+    for r in runner_list:
+        r.set_ectx()
+        r.sched.schedule(r.olist)
+        r.sched.offset = offset
+        offset += len(r.sched.evnum)
+        r.clear_ectx()
+
+runner_first_init()
 
 def suggest(runner):
     printer = runner.printer
