@@ -3401,14 +3401,18 @@ def suggest_bottlenecks(runner):
     printer = runner.printer
     children = [gen_bn(o) for o in printer.bottlenecks]
     children = list(filter(None, children))
-    if children and args.nodes:
-        children = [x for x in children if x[:-1] not in args.nodes]
+    parents = []
+    for b in printer.bottlenecks:
+        parents += ["+" + full_name(o) for o in get_parents(b)]
+    if args.nodes:
+        children = [x for x in children if x[1:-1] not in args.nodes]
+        parents = [x for x in parents if x[1:] not in args.nodes]
     if children:
         mux = ",+MUX" if not (args.metrics or args.all) and (args.nodes is None or "MUX" not in args.nodes) else ""
         if not args.quiet:
             print("Add%s --nodes '!%s%s' for breakdown." % (
                     "ing" if args.drilldown else "",
-                    ",".join(children),
+                    ",".join(children + parents),
                     mux))
         if args.drilldown:
             if args.nodes:
