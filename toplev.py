@@ -1313,7 +1313,7 @@ def initialize_event(name, i, e):
 def raw_event(i, name="", period=False, nopebs=True, initialize=False):
     e = None
     orig_i = i
-    if i == "cycles" and cpu.cpu != "simple":
+    if i == "cycles" and cpu.cpu in hybrid_cpus:
         i = "cpu_clk_unhalted.thread"
     if "." in i or "_" in i and i not in non_json_events:
         if not cpu.ht:
