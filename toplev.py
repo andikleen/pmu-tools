@@ -3533,7 +3533,7 @@ def init_runner_list():
                 pmu="cpu_core" if hybrid_pmus else "cpu")]
 
     if args.all:
-        assert all([r.max_level <= args.level for r in runner_list])
+        assert all([ru.max_level <= args.level for ru in runner_list])
 
     return runner_list
 
