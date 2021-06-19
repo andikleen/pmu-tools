@@ -411,7 +411,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-perf --no-desc --power -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc $ALL --no-group $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --sw -l4 $LOAD
 FORCE_COUNTERS=4 \
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --single-thread --user $LOAD | tee log$$
+$WRAP ./toplev.py -l1 --force-cpu $DCPU $OPT --single-thread --user $LOAD | tee log$$
 onegroup log$$
 grep '[:/]u' log$$
 grep /u log$$
