@@ -59,7 +59,7 @@ class UVal:
         elif self.value > 1000:
             return "{:16,.1f}".format(self.value)
         else:
-            return "{:16.1f}".format(self.value)
+            return "{:16.2f}".format(self.value)
 
     def format_value_raw(self):
         if self.value is None:
