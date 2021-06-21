@@ -3853,7 +3853,7 @@ if (args.perf_output or args.perf_summary) and not args.no_csv_header:
     if args.perf_summary:
         args.perf_summary.write(";".join(ph) + "\n")
 
-def setup_cpus(rest):
+def setup_cpus(rest, cpu):
     if args.cpu:
         allcpus = [int(x) for x in args.cpu.split(",")]
     else:
@@ -3865,20 +3865,19 @@ def setup_cpus(rest):
     else:
         allowed_threads = allcpus
 
-    if len(runner_list) > 1 and args.no_aggr: # XXX
-        part = len(allowed_threads)//len(runner_list)
+    if len(runner_list) > 1 and args.no_aggr and runner_list[0].cpu_list is None: # XXX
+        cores = list(sorted(cpu.coreids.keys()))
+        part = len(cores)//len(runner_list)
         start = 0
         for r in runner_list:
-            if not r.cpu_list:
-                r.cpu_list = allowed_threads[start:start + part]
+            r.cpu_list = sorted(flatten([cpu.coreids[x] for x in cores[start:start+part]]))
             start += part
-        assert start == len(allowed_threads)
     else:
         for r in runner_list:
             r.cpu_list = list(allowed_threads)
     return rest
 
-rest = setup_cpus(rest)
+rest = setup_cpus(rest, cpu)
 
 if args.pinned:
     run_l1_parallel = True
