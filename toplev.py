@@ -3329,7 +3329,7 @@ def do_sample(sample_obj, rest, count, ret):
             samples.append((s, obj.name))
 
     # first dedup
-    samples = [k for k, g in groupby(sorted(samples))]
+    samples = dedup(samples)
 
     # now merge objects with the same sample event into one
     def sample_event(x):
