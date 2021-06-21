@@ -32,7 +32,6 @@ MATCH=${MATCH:-}
 NOGROUP=${NOGROUP:-}
 NORES="${NORES:-}"
 PERF=${PERF:-perf}
-NMPI="" # XXX fix
 NOCPUS="${NOCPUS:-}"
 NUM_RUNNERS="${NUM_RUNNERS:-}"
 NOMULTIPLEX="${NOMULTIPLEX:---no-multiplex}"
@@ -296,13 +295,11 @@ $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-o
 [ -z "$NORES" ] && grep -v "not supported" log$$
 rm log$$ val$$.csv perfo$$.csv
 
-if [ -n "$NMPI" ] ; then
 $WRAP ./toplev.py -I 100 -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --ignore-errata \
 	--stats --force-events $NOMULTIPLEX -l3 --perf-summary perfs$$.csv \
 	$LOADLONG
 $WRAP ./toplev.py -g -l3 --ignore-errata --force-events --import perfs$$.csv
 rm perfo$$.csv perfs$$.csv
-fi
 
 # always on native CPU
 $WRAP ./toplev.py --all --valcsv val$$.csv --perf-output perfo$$.csv -o log$$ $LOADLONG
