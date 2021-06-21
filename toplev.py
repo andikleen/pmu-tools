@@ -654,7 +654,8 @@ args, rest = p.parse_known_args()
 
 if args.setvar:
     for j in args.setvar:
-        os.putenv(*j.split("="))
+        l = j.split("=")
+        os.environ[l[0]] = l[1]
 
 def output_count():
     return args.per_core + args.global_ + args.per_thread + args.per_socket
@@ -1049,13 +1050,13 @@ if args.show_cpu:
     print("%s %s %s" % (cpu.true_name, cpu.pmu_name, cpu.name))
     sys.exit(0)
 
-# XXX FORCECPU
-if not args.force_cpu and cpu.model in eventlist_alias:
-    r = eventlist_alias[cpu.model]
+desired_cpu = args.force_cpu if args.force_cpu else cpu.model
+if desired_cpu in eventlist_alias:
+    r = eventlist_alias[desired_cpu]
     if not os.getenv("EVENTMAP"):
-        os.putenv("EVENTMAP", r)
+        os.environ["EVENTMAP"] = r
     if not os.getenv("UNCORE"):
-        os.putenv("UNCORE", r)
+        os.environ["UNCORE"] = r
 
 if cpu.pmu_name and cpu.pmu_name.startswith("generic") and not args.quiet:
     print("warning: kernel is in architectural mode and might mismeasure events", file=sys.stderr)
