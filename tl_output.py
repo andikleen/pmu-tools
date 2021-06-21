@@ -241,6 +241,8 @@ class OutputHuman(Output):
                     fmt_below(below),
                     unitlen=self.unitlen + 1,
                     belowlen=self.belowlen)
+        if not self.args.no_mux and val.multiplex != 100.0:
+            vals += " " + val.format_mux()
         if val.stddev:
             vals += " +- {:>8}".format(val.format_uncertainty())
         if bn:

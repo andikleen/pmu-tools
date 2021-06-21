@@ -105,6 +105,7 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev now outputs multiplexing statistics by default. This can be disabled with --no-mux.
 * cputop now supports hybrid types (type=="core"/"atom")
 * ucevent now supports Icelake Server
 * toplev now supports Icelake Server

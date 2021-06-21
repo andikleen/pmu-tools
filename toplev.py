@@ -599,6 +599,7 @@ g.add_argument('--print', help="Only print perf command line. Don't run", action
 g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5%% of busiest if not CSV, specify percent)",
                default=None, type=float)
 g.add_argument('--no-output', help="Don't print computed output. Does not affect --summary.", action='store_true')
+g.add_argument('--no-mux', help="Don't print mux statistics", action="store_true")
 
 g = p.add_argument_group('Environment')
 g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
