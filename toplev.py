@@ -2105,7 +2105,7 @@ def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, res
         elif is_event(n, 2):
             title, count, event, off = n[0], n[1], n[2], 3
         else:
-            warn("unparseable perf output\n%s" % l.rstrip())
+            warn("unparseable perf output\n%s" % origl.rstrip())
             continue
 
         # dummy event used as separator to avoid merging problems
@@ -2117,7 +2117,7 @@ def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, res
         # code later relies on stripping ku flags
         event = remove_qual(event)
 
-        runner = check_event(rlist, event, res[title], title, prev_interval, l, revnum)
+        runner = check_event(rlist, event, res[title], title, prev_interval, origl, revnum)
         if runner is None:
             continue
 
