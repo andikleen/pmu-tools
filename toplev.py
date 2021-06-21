@@ -1282,7 +1282,7 @@ def initialize_event(name, i, e):
                 ectx.limited_counters[i] = int(e.counter.split()[2]) + FIXED_BASE
                 ectx.fixed_events.add(i)
             elif is_number(e.counter) and int(e.counter) >= 32:
-                ectx.limited_counters[i] = int(e.counter)
+                ectx.limited_counters[i] = int(e.counter) - 32 + FIXED_BASE
                 ectx.fixed_events.add(i)
             else:
                 # for now use the first counter only to simplify
