@@ -44,7 +44,7 @@
 # topologyfile is a dump of the sysfs of another system (find /sys > file)
 # Needed for uncore units. This is useful to generate perf command lines for other systems.
 #
-# OCVERBOSE=1 print while files are opened
+# OCVERBOSE=1 print which files are opened
 #
 # Special arguments:
 # --no-period   Never add a period
