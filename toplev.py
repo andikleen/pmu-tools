@@ -3150,7 +3150,7 @@ class Runner(object):
             obj.val = None
             obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist, initialize=True)
-            obj.nc = needed_counters(set(obj.evnum))
+            obj.nc = needed_counters(dedup(obj.evnum))
 
             # work arounds for lots of different problems
             unsup = [x for x in obj.evlist if unsup_event(x, unsup_events, min_kernel)]
