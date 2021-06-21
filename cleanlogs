@@ -1,29 +1,29 @@
 #!/bin/sh
 # clean up tl-tester logs after failures
-rm log[0-9]*
-rm log-[0-9]*
-rm logsum[0-9]*
-rm log-all*
-rm log-combined*
-rm val[0-9]*.csv
-rm x*.png
-rm x*.csv
-rm y*.csv
-rm y*.out
-rm x*.csv.gz
-rm y*.out.gz
-rm x*.csv.xz
-rm j*.json
-rm out*-{core,global,socket,thread}
-rm perf.data.*.old
-rm tlog[0-9]*
-rm tltest*_*
-rm perf.data*
-rm perf*.data.*.old
-rm perf[osv]*.csv
-rm val.[0-9]*.csv
-rm x*.xlsx
-rm script[0-9]*
-rm toplev[ospv]*.csv toplevm[0-9]*
-rm nflog[0-9]*
-rm toplevs*-cpu*
+rm -f log[0-9]*
+rm -f log-[0-9]*
+rm -f logsum[0-9]*
+rm -f log-all*
+rm -f log-combined*
+rm -f val[0-9]*.csv
+rm -f x*.png
+rm -f x*.csv
+rm -f y*.csv
+rm -f y*.out
+rm -f x*.csv.gz
+rm -f y*.out.gz
+rm -f x*.csv.xz
+rm -f j*.json
+rm -f out*-{core,global,socket,thread}
+rm -f perf.data.*.old
+rm -f tlog[0-9]*
+rm -f tltest*_*
+rm -f perf.data*
+rm -f perf*.data.*.old
+rm -f perf[osv]*.csv
+rm -f val.[0-9]*.csv
+rm -f x*.xlsx
+rm -f script[0-9]*
+rm -f toplev[ospv]*.csv toplevm[0-9]*
+rm -f nflog[0-9]*
+rm -f toplevs*-cpu*
