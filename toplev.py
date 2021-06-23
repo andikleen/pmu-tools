@@ -214,6 +214,11 @@ def warn_once_no_assert(msg):
     if test_mode:
         assert 0
 
+def print_once(msg):
+    if msg not in warned:
+        print(msg)
+        warned.add(msg)
+
 def debug_print(x):
     if args.debug:
         print(x, file=sys.stderr)
@@ -3449,7 +3454,7 @@ def suggest_desc(runner):
         "s" if len(printer.bottlenecks) > 1 else "",
         (" for " + runner.pmu.replace("cpu_", "")) if runner.pmu and runner.pmu != "cpu" else ""),
         file=sys.stderr)
-    print("Add --run-sample to find locations")
+    print_once("Add --run-sample to find locations")
 
 def sysctl(name):
     try:
