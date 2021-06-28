@@ -417,6 +417,7 @@ class UncoreEvent(object):
             e.errata = row['Errata']
         else:
             e.errata = None
+        self.extra = ''
 
     #  {
     # "Unit": "CBO",
@@ -730,6 +731,7 @@ class EmapNativeJSON(object):
         extramsg.append("event not found")
         return None
 
+    # XXX need to handle exploded events
     def update_event(self, e, ev):
         if e not in self.pevents:
             self.pevents[e] = ev
@@ -1014,7 +1016,7 @@ def process_events(event, print_only, period, noexplode):
             group_end = m.group(2)
             i = m.group(1)
         i = i.strip()
-        m = re.match(r'(cpu|uncore_.*?)/([^#]+)(#?.*?)/(.*)', i)
+        m = re.match(r'([^/]+)/([^#]+)(#?.*?)/(.*)', i)
         if m:
             start = m.group(1) + "/"
             for emap in emap_list:
@@ -1027,6 +1029,9 @@ def process_events(event, print_only, period, noexplode):
                 qual = "".join(sorted(merge_extra(extra_set(ev.extra), extra_set(m.group(4)))))
                 end += qual
                 i = ev.output_newstyle(period=period, noexplode=noexplode)
+                if i.count("/") > 2: # was it exploded?
+                    start = ""
+                    end = ""
             else:
                 start = ""
                 end = ""
