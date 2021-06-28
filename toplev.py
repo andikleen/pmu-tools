@@ -1486,7 +1486,7 @@ def display_keys(runner, keys, mode, post=""):
         return ("",)
     if len(keys) > 1 and smt_mode:
         if mode == OUTPUT_SOCKET:
-            all_cpus = list(set(map(socket_fmt, allowed_threads)))
+            all_cpus = dedup(map(socket_fmt, allowed_threads))
         else:
             cores = [key_to_coreid(x) for x in keys if int(x) in allowed_threads]
             if mode != OUTPUT_CORE:
