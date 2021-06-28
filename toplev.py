@@ -48,7 +48,7 @@ from copy import copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter, OrderedDict
 from itertools import compress, groupby, chain
-from listutils import cat_unique, dedup, filternot, not_list, append_dict, zip_longest, flatten, findprefix
+from listutils import cat_unique, dedup, filternot, not_list, append_dict, zip_longest, flatten, findprefix, dummy_dict
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, combine_valstat
@@ -1836,6 +1836,8 @@ def execute_no_multiplex(runner_list, out, rest, summary):
     n = 0
     ctx = SaveContext()
     resoff = Counter()
+    RES, REV, INTERVAL, VALSTATS, ENV = range(5)
+    ret = 0
     # runs could be further reduced by tweaking
     # the scheduler to avoid any duplicated events
     for runner in runner_list:
@@ -1844,8 +1846,8 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             if gg.outgroup:
                 outg.append(g)
                 continue
-            print("RUN #%d of %d for %s: %s" % (n, num_runs,
-                runner.pmu,
+            print("RUN #%d of %d%s: %s" % (n + 1, num_runs,
+                " for %s" % runner_name(runner) if len(runner_list) > 1 else "",
                 " ".join([quote(o.name) for o in gg.objl])))
             lresults = results if n == 0 else []
             res = None
@@ -1859,31 +1861,40 @@ def execute_no_multiplex(runner_list, out, rest, summary):
                     [runner],
                     summary, runner.cpu_list, evstr, flat_rmap,
                     out, rest, resoff, flat_events):
-                lresults.append([ret, res, rev, interval, valstats, env])
+                ret = max(ret, ret)
+                lresults.append([res, rev, interval, valstats, env])
             if res:
                 for t in res.keys():
                     resoff[t] += len(res[t])
             if n > 0:
-                if len(lresults) > len(results):
-                    print("different number of intervals on rerun. "
-                          "Workload run time not stable?", file=sys.stderr)
-                    while len(lresults) > len(results):
-                        lresults.pop()
-                # XXX handle results > lresults
+                if len(lresults) != len(results):
+                    print("Original run had %d intervals, this run has %d. "
+                          "Workload run time not stable?" %
+                          (len(lresults), len(results)), file=sys.stderr)
+                    if len(lresults) > len(results):
+                        # throw away excessive intervals
+                        lresults = lresults[:len(results)]
+                    else:
+                        # fill the missing intervals with dummy data
+                        v = lresults[0]
+                        for ind, _ in enumerate(results):
+                            if ind >= len(lresults):
+                                lresults.append([dummy_dict(v[RES]),
+                                                 v[REV],
+                                                 v[INTERVAL],
+                                                 dummy_dict(v[RES], ValStat(0,0)),
+                                                 v[ENV]])
+                    assert len(lresults) == len(results)
+                i = 0
                 for r, lr in zip(results, lresults):
-                    r[0] = lr[0]
-                    for j in (1, 2, 4, 5):
-                        diff = len(results[0][j]) - len(lr[j])
-                        if diff:
-                            warn("%s perf output values on rerun [%d difference(s)] %s %s" %
-                                    ("missing" if diff > 0 else "too few", diff, r[1],
-                                    (("at %f" % lr[3]) if lr[3] else "")))
+                    for j in (RES, REV, VALSTATS):
                         append_dict(r[j], lr[j])
+                    i += 1
             ctx.restore()
             outg = []
             n += 1
     assert num_runs == n
-    for ret, res, rev, interval, valstats, env in results:
+    for res, rev, interval, valstats, env in results:
         if summary:
             summary.add(res, rev, valstats, env)
         for runner, res, rev in runner_split(runner_list, res, rev):

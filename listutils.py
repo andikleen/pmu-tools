@@ -41,6 +41,10 @@ def append_dict(a, b):
         else:
             a[k] = b[k]
 
+# create dict/list with same shape as a, but filled with dummy values
+def dummy_dict(a, val=0.0):
+    return {k: [val] * len(a[k]) for k in a}
+
 def padlist(l, length, val=0.0):
     if len(l) < length:
         return l + [val]*(length-len(l))
