@@ -332,7 +332,7 @@ def event_to_resource(ev):
 
 def resource_split(evlist):
     r = Counter(map(event_to_resource, evlist))
-    for j in r.keys():
+    for j in sorted(r.keys()):
         if j == "":
             continue
         if j == "offcore_rsp=":
@@ -2675,7 +2675,7 @@ class Summary(object):
         self.summary_perf = OrderedDict()
 
     def add(self, res, rev, valstats, env):
-        for j in res.keys():
+        for j in sorted(res.keys()):
             for ind, val in enumerate(res[j]):
                 if ind < len(self.res[j]):
                     self.res[j][ind] += val
