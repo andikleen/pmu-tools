@@ -298,7 +298,7 @@ rm log$$ val$$.csv perfo$$.csv
 $WRAP ./toplev.py -I 100 -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --ignore-errata \
 	--stats --force-events $NOMULTIPLEX -l3 --perf-summary perfs$$.csv \
 	$LOADLONG
-$WRAP ./toplev.py -g -l3 --ignore-errata --force-events --import perfs$$.csv
+$WRAP ./toplev.py -I 100 -g -l3 --force-cpu $DCPU $OPT --ignore-errata --force-events --import perfs$$.csv
 rm perfo$$.csv perfs$$.csv
 
 # always on native CPU
@@ -313,7 +313,8 @@ $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-o
 rm log$$ val$$.csv perfo$$.csv
 
 test_subset() {
-SHOPT="-I100 -a -A --force-cpu $DCPU $OPT -l3 --metric-group +Summary --no-desc $1"
+# XXX remove --no-mux by fixing multiplexing for summaries
+SHOPT="-I100 -a -A --force-cpu $DCPU $OPT -l3 --metric-group +Summary --no-desc --no-mux $1"
 $WRAP ./toplev.py $SHOPT --perf-output x$$.csv -o log-all0.$$ $LOADLONG
 $WRAP ./toplev.py $SHOPT --import x$$.csv -o log-all.$$
 diff -wu log-all0.$$ log-all.$$
@@ -367,8 +368,8 @@ cat j$$.json | $PYTHON -m json.tool
 rm j$$.json
 
 for MODE in -l3 "-a -A --all" ; do
-# exclude MUX for now because it has small variances, as well as /sec nodes
-COMMON="--force-cpu $DCPU $OPT -I100 --no-desc --summary --no-output --no-uncore --nodes=-MUX"
+# exclude MUX for now because it has small variances, as well as /sec nodes, --no-mux needs to be fixed
+COMMON="--force-cpu $DCPU $OPT -I100 --no-desc --summary --no-output --no-uncore --nodes=-MUX --no-mux"
 
 $WRAP ./toplev.py $COMMON $MODE --perf-summary perfs$$.csv --perf-output perfo$$.csv -o log$$ --valcsv val.1.$$.csv $LOADLONG
 $WRAP ./toplev.py $COMMON $MODE --import perfs$$.csv --perf-output perfo.1.$$.csv --valcsv val.2.$$.csv -o log2.$$
@@ -522,7 +523,7 @@ rm x$$.xlsx
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 fi
 
-ARG="-a -A --all -I100 --summary --no-desc --no-uncore --nodes=-MUX"
+ARG="-a -A --all -I100 --summary --no-desc --no-uncore --nodes=-MUX --no-mux"
 $WRAP ./toplev.py $ARG -o log0.$$ --perf-output perfo0.$$.csv --valcsv perfv0.$$.csv $LOADLONG
 $WRAP ./toplev.py --import perfo0.$$.csv $ARG -o log1.$$ --perf-output perfo1.$$.csv --valcsv perfv1.$$.csv
 diff -u perfo0.$$.csv perfo1.$$.csv | head
