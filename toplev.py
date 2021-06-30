@@ -3878,7 +3878,7 @@ if (args.perf_output or args.perf_summary) and not args.no_csv_header:
 
 def setup_cpus(rest, cpu):
     if args.cpu:
-        allcpus = [int(x) for x in args.cpu.split(",")]
+        allcpus = parse_cpu_list(args.cpu)
     else:
         allcpus = cpu.allcpus
     if args.core:
