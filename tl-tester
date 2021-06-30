@@ -314,7 +314,7 @@ rm log$$ val$$.csv perfo$$.csv
 
 test_subset() {
 # XXX remove --no-mux by fixing multiplexing for summaries
-SHOPT="-I100 -a -A --force-cpu $DCPU $OPT -l3 --metric-group +Summary --no-desc --no-mux $1"
+SHOPT="-I300 -a -A --force-cpu $DCPU $OPT -l3 --metric-group +Summary --no-desc --no-mux $1"
 $WRAP ./toplev.py $SHOPT --perf-output x$$.csv -o log-all0.$$ $LOADLONG
 $WRAP ./toplev.py $SHOPT --import x$$.csv -o log-all.$$
 diff -wu log-all0.$$ log-all.$$
@@ -330,6 +330,9 @@ $WRAP ./toplev.py $SHOPT --subset 'sample:10%' --import x$$.csv
 }
 
 test_subset ""
+# note this may fail if there are so many CPUs that perf stat takes longer than the interval
+# time configured above in SHOPT, because the time for the border intervals will be wrong.
+# in this case may need to limit the CPUs or increase interval/runtime
 test_subset "--setvar DURATION_TIME=0"
 
 xz x$$.csv
