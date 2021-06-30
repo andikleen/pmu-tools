@@ -1955,11 +1955,17 @@ def find_group(num):
     num -= offset
     groups = runner.sched.evgroups
     g = groups[bisect.bisect_right(groups, GroupCmp(num)) - 1]
-    assert g.base <= num < g.base + len(g.evnum)
-    return g
+    if g.base <= num < g.base + len(g.evnum):
+        return g
+    warn("group for event %d not found" % num)
+    return None
 
 def dump_raw(valcsv, interval, title, event, ename, val, index, stddev, multiplex):
+    if index < 0:
+        return
     g = find_group(index)
+    if g is None:
+        return
     nodes = " ".join(sorted([o.name.replace(" ", "_") for o in g.objl if event in o.evnum]))
     if args.raw:
         print("raw", title, "event", event, "val", val, "ename", ename, "index",
