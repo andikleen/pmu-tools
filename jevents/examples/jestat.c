@@ -51,71 +51,8 @@
 #define err(x) perror(x), exit(1)
 #define PAIR(x) x, sizeof(x) - 1
 
-FILE *outfh;
-uint64_t (*scaled_value)(struct event *e, int cpu) = event_scaled_value;
-bool merge;
-
-void print_runtime(uint64_t *val)
-{
-	if (val[1] != val[2])
-		fprintf(outfh, " [%2.2f%%]", ((double)val[2] / val[1]) * 100.);
-}
-
-void print_data_aggr(struct eventlist *el, double ts, bool print_ts)
-{
-	struct event *e;
-	int i;
-
-	for (e = el->eventlist; e; e = e->next) {
-		if (merge && e->orig)
-			continue;
-
-		uint64_t v = 0, val[3] = { 0, 0, 0 };
-		for (i = 0; i < el->num_cpus; i++) {
-			v += scaled_value(e, i);
-			// assumes all are scaled the same way
-			if (e->efd[i].val[2]) {
-				val[1] += e->efd[i].val[1];
-				val[2] += e->efd[i].val[2];
-			}
-		}
-		if (val[1] == 0 && el->num_cpus > 0) {
-			val[1] = e->efd[0].val[1];
-			val[2] = e->efd[0].val[2];
-		}
-
-		if (print_ts)
-			fprintf(outfh, "% 12.9f\t", ts);
-		fprintf(outfh, "%-30s %'15lu", e->extra.name ? e->extra.name : e->event, v);
-		print_runtime(val);
-		putc('\n', outfh);
-	}
-}
-
-void print_data_no_aggr(struct eventlist *el, double ts, bool print_ts)
-{
-	struct event *e;
-	int i;
-
-	for (e = el->eventlist; e; e = e->next) {
-		uint64_t v;
-		for (i = 0; i < el->num_cpus; i++) {
-			if (e->efd[i].fd < 0)
-				continue;
-			if (merge && e->orig)
-				continue;
-			v = scaled_value(e, i);
-			if (print_ts)
-				fprintf(outfh, "% 12.9f\t", ts);
-			fprintf(outfh, "%3d %-30s %'15lu", i,
-					e->extra.name ? e->extra.name : e->event, v);
-			print_runtime(e->efd[i].val);
-			putc('\n', outfh);
-		}
-	}
-}
-
-void (*print_data)(struct eventlist *el, double ts, bool print_ts) = print_data_aggr;
+void (*do_print_data)(FILE *outfh, struct eventlist *el, struct session_print *arg) =
+	session_print_aggr;
 
 enum { OPT_APPEND = 1000, OPT_MERGE };
 
@@ -131,6 +68,8 @@ static struct option opts[] = {
 	{ "merge", no_argument, 0, OPT_MERGE },
 	{},
 };
+
+struct session_print parg;
 
 void usage(void)
 {
@@ -169,12 +108,22 @@ double gettime(void)
 	return (double)ts.tv_sec + ts.tv_nsec/1e9;
 }
 
-bool cont_measure(int ret, struct eventlist *el)
+void print_data(FILE *outfh, struct eventlist *el, double timestamp, bool print_ts)
+{
+	char ts[SESSION_TIMESTAMP_LEN];
+	if (print_ts) {
+		session_print_timestamp(ts, sizeof ts, timestamp);
+		parg.prefix = ts;
+	}
+	do_print_data(outfh, el, &parg);
+}
+
+bool cont_measure(FILE *outfh, int ret, struct eventlist *el)
 {
 	if (ret < 0 && gotalarm) {
 		gotalarm = false;
 		read_all_events(el);
-		print_data(el, gettime() - starttime, true);
+		print_data(outfh, el, gettime() - starttime, true);
 		return true;
 	}
 	return false;
@@ -197,12 +146,12 @@ int main(int ac, char **av)
 	char *outname = NULL;
 	int initial_delay = 0;
 	int flags = 0;
+	FILE *outfh = stderr;
 
 	setlocale(LC_NUMERIC, "");
 	el = alloc_eventlist();
-	outfh = stderr;
 
-	while ((opt = getopt_long(ac, av, "ae:p:I:C:Avo:D:", opts, NULL)) != -1) {
+	while ((opt = getopt_long(ac, av, "ae:p:I:C:Avo:D:x:", opts, NULL)) != -1) {
 		switch (opt) {
 		case 'e':
 			if (parse_events(el, optarg) < 0)
@@ -220,7 +169,7 @@ int main(int ac, char **av)
 			cpumask = optarg;
 			break;
 		case 'A':
-			print_data = print_data_no_aggr;
+			do_print_data = session_print;
 			break;
 		case 'v':
 			verbose++;
@@ -229,8 +178,12 @@ int main(int ac, char **av)
 			openmode = "a";
 			break;
 		case OPT_MERGE:
-			merge = true;
-			scaled_value = event_scaled_value_sum;
+			parg.merge = true;
+			break;
+		case 'x':
+			/* Implies -A for now */
+			do_print_data = session_print_csv;
+			parg.sep = optarg;
 			break;
 		case 'o':
 			outname = optarg;
@@ -303,14 +256,14 @@ int main(int ac, char **av)
 		write(child_pipe[1], "x", 1);
 		do
 			ret = waitpid(measure_pid, NULL, 0);
-		while (cont_measure(ret, el));
+		while (cont_measure(outfh, ret, el));
 	} else {
 		do
 			ret = pause();
-		while (cont_measure(ret, el));
+		while (cont_measure(outfh, ret, el));
 	}
 	read_all_events(el);
-	print_data(el, gettime() - starttime,
-			interval != 0 && starttime);
+	print_data(outfh, el, gettime() - starttime,
+		   interval != 0 && starttime);
 	return 0;
 }

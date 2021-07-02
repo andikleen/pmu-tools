@@ -3,6 +3,7 @@
 
 #include <linux/perf_event.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "jevents.h"
 
 #ifdef __cplusplus
@@ -50,6 +51,27 @@ uint64_t event_scaled_value(struct event *e, int cpu);
 uint64_t event_scaled_value_sum(struct event *e, int cpu);
 void free_eventlist(struct eventlist *el);
 void print_event_list_attr(struct eventlist *el, FILE *f);
+
+/**
+ * struct session_print - Arguments for printing eventlists
+ * @size:	size of session_print or 0 (for compatibility)
+ * @sep:	separator string. Only used for CSV mode. Or NULL. Default ;
+ * @prefix:	String prefix to print before output (e.g. timestamp).
+ *		Needs to include separators. Or NULL.
+ * @merge:	Merge identical events
+ */
+struct session_print {
+	int size;	/* 0 or size for binary compatibility */
+	char *sep;
+	char *prefix;
+	bool merge;
+};
+
+void session_print_csv(FILE *outfh, struct eventlist *el, struct session_print *arg);
+void session_print_aggr(FILE *outfh, struct eventlist *el, struct session_print *arg);
+void session_print(FILE *outfh, struct eventlist *el, struct session_print *arg);
+void session_print_timestamp(char *buf, int bufs, double ts);
+#define SESSION_TIMESTAMP_LEN 30
 
 #ifdef __cplusplus
 }

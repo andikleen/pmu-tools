@@ -6,7 +6,7 @@ INCLUDE=$(PREFIX)/include
 CFLAGS := -g -fPIC -Wall -O2 -Wno-unused-result
 OBJ := json.o jsmn.o jevents.o resolve.o cache.o cpustr.o rawevent.o \
        perf-iter.o interrupts.o rdpmc.o measure.o perf_event_open.o \
-       session.o perf-aux.o
+       session.o perf-aux.o csv.o print.o
 KDOC = /usr/src/linux/scripts/kernel-doc
 
 all: libjevents.a showevent listevents event-rmap all-examples
@@ -45,7 +45,7 @@ listevents: listevents.o libjevents.a
 event-rmap: event-rmap.o libjevents.a
 
 DOCFILES := cache.c jevents.c cpustr.c rawevent.c interrupts.c measure.c rdpmc.c \
-	    session.c perf-aux.c
+	    session.c perf-aux.c csv.c print.o jsession.h
 
 html: jevents.html
 

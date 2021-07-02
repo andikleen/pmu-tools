@@ -105,6 +105,8 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* jestat now supports CSV output (-x,), not aggregated.
+* libjevents has utility functions to output event list in perf stat style (both CSV and normal)
 * toplev now outputs multiplexing statistics by default. This can be disabled with --no-mux.
 * cputop now supports hybrid types (type=="core"/"atom")
 * ucevent now supports Icelake Server
