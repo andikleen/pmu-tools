@@ -159,6 +159,13 @@ limited_counters_base = {
     "cpu_core/cycles-ct/": 2,
 }
 
+promotable_limited = set((
+    "instructions",
+    "cycles",
+    "slots",
+    "cpu_core/slots/")
+)
+
 event_nocheck = False
 
 class EventContext(object):
@@ -311,22 +318,33 @@ def unsup_event(e, table, min_kernel=None):
 def remove_qual(ev):
     return re.sub(r':[ku]+', '', re.sub(r'/[ku]+', '/', ev))
 
-def limited_overflow(evlist):
-    assigned = Counter([ectx.limited_counters[x] for x in evlist if x in ectx.limited_counters]).values()
-    return any([x > 1 for x in assigned])
+def limited_overflow(evlist, num):
+    class GenericCounters:
+        def __init__(self):
+            self.num = 0
+
+    def gen_overflow(c, gc, inc):
+        if c in promotable_limited:
+            gc.num += inc - 1
+            return False
+        return True
+
+    assigned = Counter([ectx.limited_counters[remove_qual(x)] for x in evlist if x in ectx.limited_counters])
+    gc = GenericCounters()
+    return any([x > 1 and gen_overflow(k, gc, x) for k, x in assigned.items()]), gc.num
 
 # limited to first four counters on ICL+
 def limit4_overflow(evlist):
-    return sum([x in ectx.limit4_events for x in evlist]) > 4
+    return sum([remove_qual(x) in ectx.limit4_events for x in evlist]) > 4
 
 def ismetric(x):
-    return x.startswith("topdown-") or x.startswith("cpu_core/topdown-")
+    return x.startswith(("topdown-", "cpu_core/topdown-"))
 
 resources = ("frontend=", "offcore_rsp=", "ldlat=", "in_tx_cp=", "cycles-ct")
 
 def event_to_resource(ev):
     for j in resources:
-        if j in ev:
+        if remove_qual(j) in ev:
             return j
     return ""
 
@@ -353,13 +371,11 @@ FORCE_SPLIT = 100
 metrics_own_group = True
 
 def is_slots(x):
-    return x in ("slots", "cpu_core/slots/")
+    return remove_qual(x) in ("slots", "cpu_core/slots/")
 
 def needed_counters(evlist):
     evset = set(evlist)
     num = num_generic_counters(evset)
-
-    evlist = list(map(remove_qual, evlist))
 
     metrics = [ismetric(x) for x in evlist]
 
@@ -381,9 +397,8 @@ def needed_counters(evlist):
     evlist = list(compress(evlist, not_list(metrics)))
 
     # force split if we overflow fixed or limited
-    # some fixed could be promoted to generic, but that doesn't work
-    # with ref-cycles.
-    if limited_overflow(evlist):
+    l_over, numg = limited_overflow(evlist, num)
+    if l_over:
         debug_print("split for limited overflow %s " % evlist)
         return FORCE_SPLIT
 
@@ -391,7 +406,7 @@ def needed_counters(evlist):
         debug_print("split for limit4 overflow %s" % evlist)
         return FORCE_SPLIT
 
-    return num
+    return num + numg
 
 def event_group(evlist):
     evlist = add_filter(evlist)
