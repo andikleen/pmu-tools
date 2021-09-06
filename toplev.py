@@ -277,13 +277,19 @@ class PerfFeatures(object):
         self.supports_power = (
                 not args.no_uncore
                 and not args.force_hypervisor
-                and works(self.perf + " stat -e power/energy-cores/ -a true"))
-        self.supports_percore = works(self.perf + " stat --percore-show-thread true")
+                and os.path.exists("/sys/devices/power/events/energy-cores"))
+        with os.popen(self.perf + " --version") as f:
+            v = f.readline().split()
+            perf_version = map(int, (v[2]).split("."))[:2] if len(v) >= 3 else (0,0)
+
+        self.supports_percore = (perf_version >= (5,7) or
+                                 works(self.perf + " stat --percore-show-thread true"))
         dt = os.getenv("DURATION_TIME")
         if dt:
             self.supports_duration_time = int(dt)
         else:
-            self.supports_duration_time = works(self.perf + " list duration_time | grep duration_time")
+            self.supports_duration_time = (perf_version >= (5,2) or
+                    works(self.perf + " list duration_time | grep duration_time"))
         # guests don't support offcore response
         if event_nocheck:
             self.has_max_precise = True
@@ -292,7 +298,7 @@ class PerfFeatures(object):
             self.has_max_precise = os.path.exists("/sys/devices/%s/caps/max_precise" % pmu)
             if self.has_max_precise:
                 self.max_precise = int(open("/sys/devices/%s/caps/max_precise" % pmu).read())
-        if args.exclusive and not args.print and not works(self.perf + " stat -e '{branches,branches,branches,branches}:e' true"):
+        if args.exclusive and not args.print and not (perf_version >= (5,10) or works(self.perf + " stat -e '{branches,branches,branches,branches}:e' true")):
             sys.exit("perf binary does not support :e exclusive modifier")
 
 def kv_to_key(v):
