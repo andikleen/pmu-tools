@@ -280,7 +280,7 @@ class PerfFeatures(object):
                 and os.path.exists("/sys/devices/power/events/energy-cores"))
         with os.popen(self.perf + " --version") as f:
             v = f.readline().split()
-            perf_version = map(int, (v[2]).split("."))[:2] if len(v) >= 3 else (0,0)
+            perf_version = tuple(map(int, (v[2]).split(".")))[:2] if len(v) >= 3 else (0,0)
 
         self.supports_percore = (perf_version >= (5,7) or
                                  works(self.perf + " stat --percore-show-thread true"))
