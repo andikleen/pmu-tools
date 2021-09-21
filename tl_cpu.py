@@ -130,9 +130,7 @@ class CPU(object):
                     seen.add("processor")
                     cpunum = int(n[2])
                     self.allcpus.append(cpunum)
-                elif n[0] == "vendor_id":
-                    if n[2] != "GenuineIntel":
-                        sys.exit("toplev requires an Intel CPU")
+                elif (n[0], n[2]) == ("vendor_id", "GenuineIntel"):
                     seen.add("vendor_id")
                 elif (len(n) > 3 and
                         (n[0], n[1], n[3]) == ("cpu", "family", "6")):
