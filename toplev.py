@@ -651,6 +651,7 @@ p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS) # start py
 p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true') # remove events not supported by perf
 p.add_argument('--setvar', help=argparse.SUPPRESS, action='append') # set env variable (for test suite iterating options)
 p.add_argument('--tune', nargs='+', help=argparse.SUPPRESS) # override global variables with python expression
+p.add_argument('--tune-model', nargs='+', help=argparse.SUPPRESS) # override global variables late with python expression
 p.add_argument('--force-bn', action='append', help=argparse.SUPPRESS) # force bottleneck for testing
 p.add_argument('--no-json-header', action='store_true', help=argparse.SUPPRESS) # no [ for json
 p.add_argument('--no-json-footer', action='store_true', help=argparse.SUPPRESS) # no ] for json
@@ -3610,6 +3611,10 @@ def init_model(model, runner):
 
     if "model" in model.__dict__:
         model.model = cpu.modelid
+
+    if args.tune_model:
+        for t in args.tune_model:
+            exec(t)
 
     return version
 
