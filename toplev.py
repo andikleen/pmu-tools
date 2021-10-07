@@ -3624,6 +3624,11 @@ if args.quiet:
         args.no_desc = True
     args.no_util = True
 
+def tune_model(model):
+    if args.tune_model:
+        for t in args.tune_model:
+            exec(t)
+
 def init_model(model, runner):
     version = model.version
     model.print_error = pe
@@ -3639,9 +3644,7 @@ def init_model(model, runner):
     if "model" in model.__dict__:
         model.model = cpu.modelid
 
-    if args.tune_model:
-        for t in args.tune_model:
-            exec(t)
+    tune_model(model)
 
     return version
 
