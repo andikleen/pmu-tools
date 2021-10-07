@@ -74,10 +74,8 @@ First run event_download.py to download a current event list for your CPU.
 
 ```C
 	#include "jevents.h"
-	#include "perf-iter.h"
+	#include "rdpmc.h"
 	#include <linux/perf_event.h>
-	#include <sys/syscall.h>
-	#include <unistd.h>
 
 	struct perf_event_attr attr;
 	if (resolve_event("cpu_clk_thread_unhalted.ref_xclk", &attr) < 0) {
@@ -86,4 +84,11 @@ First run event_download.py to download a current event list for your CPU.
 
 	/* You can change attr, see the perf_event_open man page for details */
 
+	struct rdpmc_ctx ctx;
+	if (rdpmc_open_attr(PERF_COUNT_HW_CPU_CYCLES, &ctx, &attr) < 0) 
+		... error ...
+
+
 '''
+
+Or alternatively use the resolve attr for sampling, set up the sampling attributes in attr, and use perf_fd_open / perf_iter_*. See examples/addr.c
