@@ -81,7 +81,7 @@ jsmntok_t *parse_json(const char *fn, char **map, size_t *size, int *len)
 		return NULL;
 	/* Heuristic */
 	sz = *size * 16;
-	tokens = malloc(sz);
+	tokens = calloc(1, sz);
 	if (!tokens)
 		goto error;
 	jsmn_init(&parser);
