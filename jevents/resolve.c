@@ -127,25 +127,31 @@ int jevents_update_qual(const char *qual, struct perf_event_attr *attr,
 				break;
 		}
 
-		switch (*qual) { 
+		switch (*qual) {
 		case 'p':
 			attr->precise_ip++;
 			break;
 		case 'k':
 			attr->exclude_user = 1;
+			attr->exclude_hv = 1;
 			break;
 		case 'u':
 			attr->exclude_kernel = 1;
+			attr->exclude_guest = 1;
+			attr->exclude_hv = 1;
 			break;
 		case 'h':
-		case 'H': /* ??? */
+			attr->exclude_user = 1;
+			attr->exclude_kernel = 1;
+			break;
+		case 'H':
 			attr->exclude_guest = 1;
 			break;
 		case 'I':
 			attr->exclude_idle = 1;
 			break;
 		case 'G':
-			attr->exclude_hv = 1;
+			attr->exclude_host = 1;
 			break;
 		case 'D':
 			attr->pinned = 1;
