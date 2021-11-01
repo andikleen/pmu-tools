@@ -53,6 +53,7 @@ static const char *json_default_name(char *type)
 	char *idstr = get_cpu_str_type(type, &idstr_step);
 	char *res = NULL;
 	char *home = NULL;
+	char *sudo_user = NULL;
 	char *emap;
 
 	emap = getenv("EVENTMAP");
@@ -64,14 +65,22 @@ static const char *json_default_name(char *type)
 			goto out;
 	}
 
-	cache = getenv_copy("JEVENTS_CACHEDIR");
+	cache = getenv("JEVENTS_CACHEDIR");
 	if (!cache)
-		cache = getenv_copy("XDG_CACHE_HOME");
+		cache = getenv("XDG_CACHE_HOME");
+	if (!cache) {
+		sudo_user = getenv("SUDO_USER");
+		if (sudo_user)
+			if (asprintf(&cache, "/home/%s/.cache", sudo_user) < 0)
+				goto out;
+	}
 	if (!cache) {
 		home = getenv("HOME");
-		if (!home || asprintf(&cache, "%s/.cache", home) < 0)
-			goto out;
+		if (home)
+			if (asprintf(&cache, "%s/.cache", home) < 0)
+				goto out;
 	}
+
 	if (cache && idstr) {
 		asprintf(&res, "%s/pmu-events/%s.json", cache, idstr_step);
 		if (access(res, R_OK) != 0) {
@@ -81,8 +90,8 @@ static const char *json_default_name(char *type)
 				     idstr);
 		}
 	}
+
 out:
-	free(cache);
 	free(idstr);
 	free(idstr_step);
 	return res;
@@ -242,10 +251,10 @@ static struct msrmap *lookup_msr(char *map, jsmntok_t *val)
  * @func: Callback to call for each event
  * @data: Abstract pointer to pass to func.
  *
- * The callback gets the data pointer, the event name, the event 
+ * The callback gets the data pointer, the event name, the event
  * in perf format and a description passed.
  *
- * Call func with each event in the json file 
+ * Call func with each event in the json file
  * Return: -1 on failure, otherwise 0.
  */
 int json_events(const char *fn,
