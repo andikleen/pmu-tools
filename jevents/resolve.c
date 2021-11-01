@@ -373,7 +373,10 @@ void jevent_copy_extra(struct jevent_extra *dst, struct jevent_extra *src)
 	dst->pmus.gl_pathc = src->pmus.gl_pathc;
 	len = sizeof(char *) * src->pmus.gl_pathc;
 	dst->pmus.gl_pathv = malloc(len);
-	memcpy(dst->pmus.gl_pathv, src->pmus.gl_pathv, len);
+	size_t i;
+	for (i = 0; i < src->pmus.gl_pathc; i++) {
+		dst->pmus.gl_pathv[i] = strdup(src->pmus.gl_pathv[i]);
+	}
 }
 
 /**

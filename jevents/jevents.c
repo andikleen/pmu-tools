@@ -364,6 +364,8 @@ int json_events(const char *fn,
 			addfield(map, &event, ",", msr->pname, msrval);
 		if (!pmu)
 			pmu = strdup("cpu");
+		if (!desc)
+			desc = strdup("No description.");
 		err = -EIO;
 		if (name && event) {
 			fixname(name);

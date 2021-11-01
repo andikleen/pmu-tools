@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+if [ ! -f tramp3d-v4.cpp ] ; then
+	echo "Downloading tramp3d-v4"
+	curl https://users.suse.com/~rguenther/tramp3d/tramp3d-v4.cpp.gz |
+	gunzip |
+	sed -e 's/mutable Element_t/Element_t/' \
+	    -e 's/mutable Pooma::Iterate_t/Pooma::Iterate_t/' > tramp3d-v4.cpp
+fi
+clang++ -w -std=gnu++11 tramp3d-v4.cpp
