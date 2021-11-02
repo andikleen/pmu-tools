@@ -412,6 +412,56 @@ int jevent_next_pmu(struct jevent_extra *extra,
 	return 0;
 }
 
+/* check_valid_hex - Checks if a string is a valid hex value in
+   its entirety. Returns 1 if so, 0 if not. */
+int check_valid_hex(char *str)
+{
+	char *ptr;
+
+	ptr = str;
+	while (*ptr) {
+		if (((*ptr < '0') || (*ptr > '9')) &&
+		   ((*ptr < 'A') || (*ptr > 'F')) &&
+		   ((*ptr < 'a') || (*ptr > 'f')))
+			return 0;
+		ptr++;
+	}
+	return 1;
+}
+
+/* is_valid_cpu_event - Checks if the given string is a valid
+   cpu event by checking /sys/devices/cpu/events. Assumes that
+   aliases have already been applied. Returns 1 if so, 0 if not,
+   -1 on error. */
+int check_cpu_event(char *event)
+{
+	glob_t globbuf;
+	char *cur_event;
+	int i;
+
+	/* This event might not specify a PMU, but it's possible
+	 * for it to begin with a "/". If so, simply remove this
+	 * character. */
+	if (event[0] == '/')
+		memmove(event, event + 1, strlen(event + 1) + 1);
+
+	if (glob("/sys/devices/cpu/events/*", GLOB_NOSORT, NULL, &globbuf) != 0)
+		goto err_free;
+	for (i = 0; i < globbuf.gl_pathc; i++) {
+		cur_event = basename(globbuf.gl_pathv[i]);
+		if (!strcmp(cur_event, event)) {
+			globfree(&globbuf);
+			return 1;
+		}
+	}
+
+	globfree(&globbuf);
+	return 0;
+err_free:
+	globfree(&globbuf);
+	return -1;
+}
+
 /**
  * jevent_name_to_attr_extra - Resolve perf style event to perf_attr
  * @str: perf style event (e.g. cpu/event=1/)
@@ -445,12 +495,18 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 		extra = &dummy;
 	memset(extra, 0, sizeof(struct jevent_extra));
 
+	/* Aliases */
 	if (!strcmp(str, "cycles"))
 		str = "cpu/cpu-cycles/";
 	if (!strcmp(str, "branches"))
 		str = "cpu/branch-instructions/";
 
-	if (sscanf(str, "r%llx%n", &attr->config, &qual_off) == 1) {
+	/* Raw syntax:
+	 * 1. Must begin with an "r."
+	 * 2. Must contain only valid hex values.
+	 * 3. Optionally ends with a colon followed by qualifiers. */
+	if ((sscanf(str, "r%200[^:]%n", config, &qual_off) == 1) && (check_valid_hex(config) == 1)) {
+		sscanf(config, "%llx", &attr->config);
 		assert(qual_off != -1);
 		glob("/sys/devices/cpu", 0, NULL, &extra->pmus);
 		if (str[qual_off] == 0)
@@ -459,6 +515,27 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 			return 0;
 		return -1;
 	}
+
+	/* Implicit CPU PMU syntax:
+	 * 1. Optionally begins with a slash (nothing before the slash, though).
+	 * 2. No other slashes in the string.
+	 * 3. Optionally ends with a colon followed by qualifiers. */
+	if ((sscanf(str, "%200[^:]%n", config, &qual_off) == 1) && (check_cpu_event(config) == 1)) {
+		/* We found the event, so it's valid. */
+		if (parse_terms("cpu", config, attr, 0, extra) < 0)
+			goto err_free;
+		glob("/sys/devices/cpu", 0, NULL, &extra->pmus);
+		if (str[qual_off] == 0)
+			return 0;
+		if (str[qual_off] == ':' && jevents_update_qual(str + qual_off + 1, attr, str) == 0)
+			return 0;
+		return -1;
+	}
+
+	/* PMU-specifying syntax:
+		 1. Begins with a PMU type, followed by a slash.
+		 2. Includes an event, followed by another slash.
+		 3. Per `perf`, cannot include qualifiers. */
 	if (sscanf(str, "%30[^/]/%200[^/]/%n", pmu, config, &qual_off) < 2)
 		return -1;
 	char *type = NULL;
@@ -489,7 +566,8 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 	return 0;
 
 err_free:
-	jevent_free_extra(extra);
+	if (extra == &dummy)
+		jevent_free_extra(extra);
 	return -1;
 }
 
