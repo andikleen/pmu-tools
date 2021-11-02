@@ -36,6 +36,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <pwd.h>
 #include "jsmn.h"
 #include "json.h"
 #include "jevents.h"
@@ -55,7 +56,10 @@ static const char *json_default_name(char *type)
 	char *home = NULL;
 	char *sudo_user = NULL;
 	char *emap;
+	struct passwd *pwd;
+	char free_cache;
 
+	free_cache = 0;
 	emap = getenv("EVENTMAP");
 	if (emap) {
 		if (access(emap, R_OK) == 0)
@@ -70,18 +74,28 @@ static const char *json_default_name(char *type)
 		cache = getenv("XDG_CACHE_HOME");
 	if (!cache) {
 		sudo_user = getenv("SUDO_USER");
-		if (sudo_user)
-			if (asprintf(&cache, "/home/%s/.cache", sudo_user) < 0)
+		if (sudo_user) {
+			/* Get the home directory of the sudo_user */
+			pwd = getpwnam(sudo_user);
+			if (!pwd)
 				goto out;
+			free_cache = 1;
+			if (asprintf(&cache, "%s/.cache", pwd->pw_dir) < 0) {
+				goto out;
+			}
+		}
 	}
 	if (!cache) {
 		home = getenv("HOME");
-		if (home)
+		if (home) {
+			free_cache = 1;
 			if (asprintf(&cache, "%s/.cache", home) < 0)
 				goto out;
+		}
 	}
 
 	if (cache && idstr) {
+		printf("Using the cache directory: %s\n", cache);
 		asprintf(&res, "%s/pmu-events/%s.json", cache, idstr_step);
 		if (access(res, R_OK) != 0) {
 			free(res);
@@ -92,6 +106,8 @@ static const char *json_default_name(char *type)
 	}
 
 out:
+	if(free_cache)
+		free(cache);
 	free(idstr);
 	free(idstr_step);
 	return res;
@@ -272,8 +288,11 @@ int json_events(const char *fn,
 	if (!fn)
 		fn = json_default_name("-core");
 	tokens = parse_json(fn, &map, &size, &len);
-	if (!tokens)
+	if (!tokens) {
+		if(!orig_fn)
+			free((char *) fn);
 		return -EIO;
+	}
 	EXPECT(tokens->type == JSMN_ARRAY, tokens, "expected top level array");
 	tok = tokens + 1;
 	for (i = 0; i < tokens->size; i++) {
@@ -385,11 +404,14 @@ int json_events(const char *fn,
 out_free:
 	free_json(map, size, tokens);
 	if (!orig_fn && !err) {
+		free((char *)fn);
 		fn = json_default_name("-uncore");
 		err = json_events(fn, func, data);
 		/* Ignore open error */
-		if (err == -EIO)
+		if (err == -EIO) {
+			free((char *)fn);
 			return 0;
+		}
 	}
 	if (!orig_fn)
 		free((char *)fn);
