@@ -414,7 +414,8 @@ int jevent_next_pmu(struct jevent_extra *extra,
 
 /* check_valid_hex - Checks if a string is a valid hex value in
    its entirety. Returns 1 if so, 0 if not. */
-int check_valid_hex(char *str) {
+int check_valid_hex(char *str)
+{
 	char *ptr;
 
 	ptr = str;
@@ -432,7 +433,8 @@ int check_valid_hex(char *str) {
    cpu event by checking /sys/devices/cpu/events. Assumes that
    aliases have already been applied. Returns 1 if so, 0 if not,
    -1 on error. */
-int check_cpu_event(char *event) {
+int check_cpu_event(char *event)
+{
 	glob_t globbuf;
 	char *cur_event;
 	int i;
@@ -440,13 +442,11 @@ int check_cpu_event(char *event) {
 	/* This event might not specify a PMU, but it's possible
 	 * for it to begin with a "/". If so, simply remove this
 	 * character. */
-	if (event[0] == '/') {
+	if (event[0] == '/')
 		memmove(event, event + 1, strlen(event + 1) + 1);
-	}
 
-	if (glob("/sys/devices/cpu/events/*", GLOB_NOSORT, NULL, &globbuf) != 0) {
+	if (glob("/sys/devices/cpu/events/*", GLOB_NOSORT, NULL, &globbuf) != 0)
 		goto err_free;
-	}
 	for (i = 0; i < globbuf.gl_pathc; i++) {
 		cur_event = basename(globbuf.gl_pathv[i]);
 		if (!strcmp(cur_event, event)) {
