@@ -53,7 +53,7 @@
  * a JSON event file from https://download.01.org/perfmon
  * can be specified through the EVENTMAP= environment variable.
  */
- 
+
 struct event {
 	struct event *next;
 	char *name;
@@ -213,7 +213,7 @@ int resolve_event_extra(const char *name, struct perf_event_attr *attr,
 			}
 			ret = jevent_name_to_attr_extra(buf, attr, extra);
 			extra->decoded = buf;
-			if (ret) {
+			if (ret && (extra == &extras)) {
 				jevent_free_extra(extra);
 			}
 			return ret;
@@ -262,8 +262,8 @@ int resolve_event(const char *name, struct perf_event_attr *attr)
  * @func: Callback to call on each event.
  * @data: Abstract data pointer to pass to callback.
  *
- * The callback gets passed the data argument, the name of the 
- * event, the translated event in perf form (cpu/.../) and a 
+ * The callback gets passed the data argument, the name of the
+ * event, the translated event in perf form (cpu/.../) and a
  * description of the event.
  *
  * Return: -1 on failure, otherwise 0.
