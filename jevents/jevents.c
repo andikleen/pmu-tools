@@ -95,7 +95,6 @@ static const char *json_default_name(char *type)
 	}
 
 	if (cache && idstr) {
-		printf("Using the cache directory: %s\n", cache);
 		asprintf(&res, "%s/pmu-events/%s.json", cache, idstr_step);
 		if (access(res, R_OK) != 0) {
 			free(res);
