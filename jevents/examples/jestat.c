@@ -154,8 +154,10 @@ int main(int ac, char **av)
 	while ((opt = getopt_long(ac, av, "ae:p:I:C:Avo:D:x:", opts, NULL)) != -1) {
 		switch (opt) {
 		case 'e':
-			if (parse_events(el, optarg) < 0)
+			if (parse_events(el, optarg) < 0) {
+				free_eventlist(el);
 				exit(1);
+			}
 			events = NULL;
 			break;
 		case 'a':
@@ -200,6 +202,7 @@ int main(int ac, char **av)
 		if (!outfh) {
 			fprintf(stderr, "Cannot open %s: %s\n", optarg,
 					strerror(errno));
+			free_eventlist(el);
 			exit(1);
 		}
 	}
@@ -207,8 +210,10 @@ int main(int ac, char **av)
 		fprintf(stderr, "Specify command or -a\n");
 		usage();
 	}
-	if (events && parse_events(el, events) < 0)
+	if (events && parse_events(el, events) < 0) {
+		free_eventlist(el);
 		exit(1);
+	}
 	pipe(child_pipe);
 	signal(SIGCHLD, SIG_IGN);
 	child_pid = measure_pid = fork();
@@ -265,5 +270,6 @@ int main(int ac, char **av)
 	read_all_events(el);
 	print_data(outfh, el, gettime() - starttime,
 		   interval != 0 && starttime);
+	free_eventlist(el);
 	return 0;
 }
