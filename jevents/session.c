@@ -107,10 +107,23 @@ int parse_events(struct eventlist *el, char *events)
 {
 	char *s, *next;
 	bool ingroup = false;
+	int err;
+	struct perf_event_attr attr;
+	struct event *ne;
+
+	/* Keeps track of in-group multi-pmu events for
+	   later parsing and duplication of group */
+	char **multi_pmu_strs;
+	struct event **multi_pmu_events;
+	int num_multi_pmu, i, n;
 
 	events = strdup(events);
 	if (!events)
 		return -1;
+
+	multi_pmu_strs = NULL;
+	multi_pmu_events = NULL;
+	num_multi_pmu = 0;
 	next = events;
 	while ((s = grab_event(next, &next)) != NULL) {
 		bool group_leader = false, end_group = false;
@@ -120,7 +133,8 @@ int parse_events(struct eventlist *el, char *events)
 			s++;
 			group_leader = true;
 			ingroup = true;
-		} else if (len = strlen(s), len > 0 && s[len - 1] == '}') {
+		}
+		if (len = strlen(s), len > 0 && s[len - 1] == '}') {
 			s[len - 1] = 0;
 			end_group = true;
 		}
@@ -135,30 +149,71 @@ int parse_events(struct eventlist *el, char *events)
 		}
 		e->uncore = jevent_pmu_uncore(e->extra.decoded);
 		if (e->extra.multi_pmu) {
-			int err;
-			struct event *ne;
-			struct perf_event_attr attr = e->attr;
+			attr = e->attr;
 
-			while ((err = jevent_next_pmu(&e->extra, &attr)) == 1) {
-				if (ingroup) {
-					// XXX should fix by duplicating the group
-					fprintf(stderr, "Cannot handle multi pmu event %s in group\n", s);
+			if (ingroup) {
+				/* We'll store this multi-PMU event for now; at the end of the group,
+				   we'll parse and handle it. */
+				multi_pmu_strs = realloc(multi_pmu_strs, (num_multi_pmu + 1) * sizeof(char **));
+				if (!multi_pmu_strs)
+					goto err;
+				multi_pmu_events = realloc(multi_pmu_events, (num_multi_pmu + 1) * sizeof(struct event *));
+				if (!multi_pmu_events)
+					goto err;
+				multi_pmu_strs[num_multi_pmu] = strdup(s);
+				multi_pmu_events[num_multi_pmu] = e;
+				num_multi_pmu++;
+			} else {
+				while ((err = jevent_next_pmu(&e->extra, &attr)) == 1) {
+					ne = new_event(el, s);
+					ne->attr = attr;
+					ne->orig = e;
+					ne->uncore = e->uncore;
+					e->num_clones++;
+					jevent_copy_extra(&ne->extra, &e->extra);
+				}
+				if (err < 0) {
+					fprintf(stderr, "Cannot find PMU for event %s\n", e->event);
 					goto err;
 				}
-				ne = new_event(el, s);
-				ne->attr = attr;
-				ne->orig = e;
-				ne->uncore = e->uncore;
-				e->num_clones++;
-				jevent_copy_extra(&ne->extra, &e->extra);
-			}
-			if (err < 0) {
-				fprintf(stderr, "Cannot find PMU for event %s\n", e->event);
-				goto err;
 			}
 		}
-		if (end_group)
+		if (end_group) {
 			ingroup = false;
+			if (num_multi_pmu) {
+				/* This ends the group that contained multi-pmu events.
+				   Go back through those events and create a new copy
+				   of the group for each PMU. Here, we can simply use
+				   the number of PMUs in the first event as the number of groups. */
+				for (i = 0; i < multi_pmu_events[0]->extra.pmus.gl_pathc; i++) {
+					for (n = 0; n < num_multi_pmu; n++) {
+						err = jevent_next_pmu(&(multi_pmu_events[n]->extra), &(multi_pmu_events[n]->attr));
+						if (err == 0) {
+							fprintf(stderr, "There was a mismatch in the number of multi-PMU events: %s\n", multi_pmu_events[n]->event);
+							goto err;
+						} else if (err == -1) {
+							fprintf(stderr, "Failed to get next PMU for multi-PMU event %s.\n", multi_pmu_events[n]->event);
+							goto err;
+						}
+						ne = new_event(el, multi_pmu_strs[n]);
+						ne->attr = multi_pmu_events[n]->attr;
+						ne->orig = multi_pmu_events[n];
+						ne->uncore = multi_pmu_events[n]->uncore;
+						multi_pmu_events[n]->num_clones++;
+						jevent_copy_extra(&ne->extra, &(multi_pmu_events[n]->extra));
+					}
+				}
+
+				/* Free up multi-PMU storage */
+				free(multi_pmu_events);
+				for (i = 0; i < num_multi_pmu; i++)
+					free(multi_pmu_strs[i]);
+				free(multi_pmu_strs);
+				multi_pmu_strs = NULL;
+				multi_pmu_events = NULL;
+				num_multi_pmu = 0;
+			}
+		}
 	}
 	free(events);
 	return 0;
