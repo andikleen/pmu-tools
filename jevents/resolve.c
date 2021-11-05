@@ -551,7 +551,7 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 				return -1;
 			if (try_pmu_type(&type, strrchr(extra->pmus.gl_pathv[0], '/'), pmu, NULL) < 0)
 				goto err_free;
-			extra->next_pmu = 1;
+			extra->next_pmu = 0;
 			extra->multi_pmu = true;
 		}
 	}
