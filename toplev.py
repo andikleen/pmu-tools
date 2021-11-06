@@ -2574,7 +2574,12 @@ Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
     return desc
 
-def node_filter(obj, default, sibmatch):
+def get_mg(obj):
+    if has(obj, 'metricgroup'):
+        return obj.metricgroup
+    return []
+
+def node_filter(obj, default, sibmatch, mgroups):
     if args.nodes:
         fname = full_name(obj)
         name = obj.name
@@ -2598,6 +2603,9 @@ def node_filter(obj, default, sibmatch):
         def has_siblings(j, obj):
             return j.endswith("^") and 'sibling' in obj.__dict__ and obj.sibling
 
+        def has_mg(j, obj):
+            return j.endswith("^") and get_mg(obj)
+
         nodes = args.nodes
         if nodes[0] == '!':
             default = False
@@ -2615,6 +2623,8 @@ def node_filter(obj, default, sibmatch):
             if match(j[i:], True):
                 if has_siblings(j, obj):
                     sibmatch |= set(obj.sibling)
+                if has_mg(j, obj):
+                    mgroups |= set(obj.metricgroup)
                 return True
             if has_siblings(j, obj):
                 for sib in obj.sibling:
@@ -3083,7 +3093,8 @@ def check_nodes(runner_list, nodesarg):
                 if fnmatch(k.name, s) or fnmatch(full_name(k), s):
                     return True
         return False
-    valid = map(valid_node, options)
+
+    valid = [o for o in options if valid_node(o)]
     if not all(valid):
         sys.exit("Unknown node(s) in --nodes: " +
                  " ".join([o for o, v in zip(options, valid) if not v]))
@@ -3150,6 +3161,7 @@ class Runner(object):
                     parents += get_parents(s)
 
         self.sibmatch = set()
+        mgroups = set()
 
         def want_node(obj):
             if args.reduced and has(obj, 'server') and not obj.server:
@@ -3162,12 +3174,21 @@ class Runner(object):
                     obj in parents) and obj.name not in remove_met
             if not obj.metric and obj.level <= self.max_level:
                 want = True
-            return node_filter(obj, want, self.sibmatch)
+            return node_filter(obj, want, self.sibmatch, mgroups)
 
         # this updates sibmatch
-        fmatch = list(map(want_node, self.olist))
-        # now keep what is both in fmatch and sibmatch
-        self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or obj in self.sibmatch]
+        fmatch = [want_node(x) for x in self.olist]
+
+        def select_node(obj):
+            if obj in self.sibmatch:
+                return True
+            if set(get_mg(obj)) & mgroups:
+                return True
+            return False
+
+        # now keep what is both in fmatch and sibmatch and mgroups
+        # assume that mgroups matches do not need propagation
+        self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or select_node(obj)]
         if len(self.olist) == 0:
             sys.exit("All nodes disabled")
 
