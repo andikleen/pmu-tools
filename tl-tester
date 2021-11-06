@@ -69,17 +69,21 @@ trap failed ERR 0
 
 rm -f nflog$$
 
-cat >hello.c <<EOL
-#include <stdio.h>
-int main() {
-	printf("Hello world\n");
-	return 0;
-}
-EOL
+(
+echo '#include <stdio.h>'
+for ((i=0;i<500;i++)) ; do
+	echo "void func$i(void) { int i; for(i=0;i<10;i++) printf(\"Hello $i\n\"); }"
+done
+echo 'int main(void) {'
+for ((i=0;i<500;i++)) ; do
+	echo "    func$i();"
+done
+echo '}'
+) > longhello.c
 
 set -x
 
-LOAD="${LOAD:--- gcc -O3 -o /dev/null hello.c}"
+LOAD="${LOAD:--- gcc -O3 -o /dev/null longhello.c}"
 LOADLONG=${LOADLONG:-./workloads/BC1s}
 LOAD0="-- taskset -c 0 $LOAD"
 
