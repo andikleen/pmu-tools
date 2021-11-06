@@ -2327,8 +2327,8 @@ def adjust_ev(ev, level):
     # use the programmable slots for non L1 so that level 1
     # can (mostly) run in parallel with other groups.
     # this also helps for old or non ICL kernels
-    if ev == "TOPDOWN.SLOTS" and ((run_l1_parallel and level != 1) or not ectx.slots_available):
-        ev = "TOPDOWN.SLOTS_P"
+    if isinstance(ev, str) and ev.startswith("TOPDOWN.SLOTS") and ((run_l1_parallel and level != 1) or not ectx.slots_available):
+        ev = ev.replace("TOPDOWN.SLOTS", "TOPDOWN.SLOTS_P")
     return ev
 
 def ev_collect(ev, level, obj):
@@ -2345,10 +2345,10 @@ def ev_collect(ev, level, obj):
 
     key = (ev, level, obj.name)
     if key not in obj.evlevels:
-        if ev == "TOPDOWN.SLOTS" or ev.startswith("PERF_METRICS."):
+        if ev.startswith("TOPDOWN.SLOTS") or ev.startswith("PERF_METRICS."):
             ind = [x[1] == level for x in obj.evlevels]
             ins = ind.index(True) if any(ind) else 0
-            obj.evlevels.insert(ins + (0 if ev == "TOPDOWN.SLOTS" else 1), key)
+            obj.evlevels.insert(ins + (0 if ev.startswith("TOPDOWN.SLOTS") else 1), key)
         else:
             obj.evlevels.append(key)
         if safe_ref(obj, 'nogroup') or ev == "duration_time":
