@@ -107,6 +107,7 @@ on newer Linux kernels.
 
 * toplev updated to Ahmad Yasin's TMA 4.3:
   [ADL so far missing. TGL/RKL still use the ICL model]
+  Note: if you see missing events please remove ~/.cache/pmu-events/* to force a redownload
   * New Nodes:
     * New Retiring.Light_Operations breakdown
       * Add Nop_Instructions for slots utilized by NOPs.
