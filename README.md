@@ -105,6 +105,23 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev updated to Ahmad Yasin's TMA 4.3:
+  [ADL so far missing. TGL/RKL still use the ICL model]
+  * New Nodes:
+    * New Retiring.Light_Operations breakdown
+      * Add Nop_Instructions for slots utilized by NOPs.
+      * Breakdown of Branch_Resteers into Mispredicts_Resteers, Clear_Resteers, Unknown_Branches
+  * Info groups:
+    * New Info.Bottlenecks group aggregating total costs in SLOTS of key performance-issues: Mispredictions, Big_Code, Instruction_Fetch_BW [SKL onwards]
+    * Organized (almost all) Info metrics in 5 mega-buckets of {Fed, Bad, Ret, Cor, Mem} using the Metric Group column
+  * New Informative Metrics
+    * DSB_Misses_Cost for Total penalty related to DSB misses
+    * Kernel CPI for Cycles Per Instruction in kernel (operating system) mode
+  * Key Enhancements & fixes
+    * Fixed Heavy_Operations for few uop instructions [ICL, ICX, TGL].
+    * Capped nodes using fixed-costs, e.g. DRAM_Bound, to 100% max. Some tools did this in ad-hoc manner thus far [All]
+    * Fixed DTLB_Load in case of multiple hits per cycles [SKL onwards]
+    * Many other fixes: Thresholds, Tagging (e.g. Ports_Utilized_2), Locate-with, Count Domain, Metric Group, Metric Max, etc
 * jestat now supports CSV output (-x,), not aggregated.
 * libjevents has utility functions to output event list in perf stat style (both CSV and normal)
 * toplev now outputs multiplexing statistics by default. This can be disabled with --no-mux.
