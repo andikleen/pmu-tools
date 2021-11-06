@@ -81,9 +81,18 @@ done
 echo '}'
 ) > longhello.c
 
+cat >hello.c <<EOL
+#include <stdio.h>
+int main() {
+       printf("Hello world\n");
+       return 0;
+}
+EOL
+
 set -x
 
 LOAD="${LOAD:--- gcc -O3 -o /dev/null longhello.c}"
+LOADQUICK="${LOAD:--- gcc -O3 -o /dev/null hello.c}"
 LOADLONG=${LOADLONG:-./workloads/BC1s}
 LOAD0="-- taskset -c 0 $LOAD"
 
@@ -136,7 +145,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --metrics -x, -v -l4 $LOAD | 
 checklog0
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -g --raw -v --debug --stats $ALL --kernel $LOAD | tee log$$
 checklog0
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --stats $ALL --kernel --valcsv val$$.csv $NOMULTIPLEX $LOAD | tee log$$
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --stats $ALL --kernel --valcsv val$$.csv $NOMULTIPLEX $LOADQUICK | tee log$$
 checklog0
 grep :k log$$
 grep /k log$$
@@ -294,14 +303,14 @@ done
 fi
 
 # misc features
-$WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --ignore-errata --stats --metrics --force-events $NOMULTIPLEX -l4 $LOAD
+$WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --ignore-errata --stats --metrics --force-events $NOMULTIPLEX -l4 $LOADQUICK
 [ -z "$NORES" ] && grep Turbo_Utilization log$$
 [ -z "$NORES" ] && grep -v "not supported" log$$
 rm log$$ val$$.csv perfo$$.csv
 
 $WRAP ./toplev.py -I 100 -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --ignore-errata \
 	--stats --force-events $NOMULTIPLEX -l3 --perf-summary perfs$$.csv \
-	$LOADLONG
+	$LOAD
 $WRAP ./toplev.py -I 100 -g -l3 --force-cpu $DCPU $OPT --ignore-errata --force-events --import perfs$$.csv
 rm perfo$$.csv perfs$$.csv
 
@@ -348,7 +357,7 @@ $WRAP ./toplev.py $SHOPT --import x$$.csv.gz -o y$$.out.gz
 [ -z "$NORES" ] && zgrep IPC y$$.out.gz
 rm x$$.csv.gz y$$.out.gz
 
-$WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics $NOMULTIPLEX --columns -l4 $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics $NOMULTIPLEX --columns -l4 $LOADQUICK
 [ -z "$ONLYCPU" ] && $WRAP ./toplev.py --force-cpu bdw $OPT --cpu 0,1,2,3 --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns --filterquals -l4 $LOAD
 DURATION_TIME=0 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
 #NUM_RUNNERS=2 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
