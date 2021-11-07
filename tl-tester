@@ -236,7 +236,8 @@ notfound $j
 FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $OPT --user $LOAD 2>&1
 checklog log$$.$j
 notfound $j
-
+FORCEHT=1 $WRAP ./toplev.py --force-topology topology --thread --force-cpu $j --force-events $ALL --filterquals $OPT --user $LOAD 2>&1
+checklog log$$.$j
 fi
 FORCEHT=0 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j

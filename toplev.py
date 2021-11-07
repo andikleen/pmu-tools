@@ -578,6 +578,9 @@ g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of 
                'comma separated list from --list-metric-groups.', default=None)
 g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
 g.add_argument('--exclusive', help='Use exclusive groups. Requires new kernel and new perf', action='store_true')
+g.add_argument('--thread',
+        help="Enable per thread SMT measurements for pre-ICL, at the cost of more multiplexing.",
+        action='store_true')
 
 g = p.add_argument_group('Query nodes')
 g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit, ^ for full match',
@@ -3669,63 +3672,60 @@ def init_model(model, runner):
 
     return version
 
+def legacy_smt_setup(model):
+    global smt_mode
+    if args.thread:
+        model.ebs_mode = cpu.ht
+        return
+    model.smt_enabled = cpu.ht
+    smt_mode |= cpu.ht
+
 def model_setup(runner, cpuname):
     global smt_mode
     if cpuname == "ivb":
         import ivb_client_ratios
-        ivb_client_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = ivb_client_ratios
+        legacy_smt_setup(model)
     elif cpuname == "ivt":
         import ivb_server_ratios
-        ivb_server_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = ivb_server_ratios
+        legacy_smt_setup(model)
     elif cpuname == "snb":
         import snb_client_ratios
-        snb_client_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = snb_client_ratios
+        legacy_smt_setup(model)
     elif cpuname == "jkt":
         import jkt_server_ratios
-        jkt_server_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = jkt_server_ratios
+        legacy_smt_setup(model)
     elif cpuname == "hsw":
         import hsw_client_ratios
-        hsw_client_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = hsw_client_ratios
+        legacy_smt_setup(model)
     elif cpuname == "hsx":
         import hsx_server_ratios
-        hsx_server_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = hsx_server_ratios
+        legacy_smt_setup(model)
     elif cpuname == "bdw":
         import bdw_client_ratios
-        bdw_client_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = bdw_client_ratios
+        legacy_smt_setup(model)
     elif cpuname == "bdx":
         import bdx_server_ratios
-        bdx_server_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = bdx_server_ratios
+        legacy_smt_setup(model)
     elif cpuname == "skl":
         import skl_client_ratios
-        skl_client_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = skl_client_ratios
+        legacy_smt_setup(model)
     elif cpuname == "skx":
         import skx_server_ratios
-        skx_server_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = skx_server_ratios
+        legacy_smt_setup(model)
     elif cpuname == "clx":
         import clx_server_ratios
-        clx_server_ratios.smt_enabled = cpu.ht
-        smt_mode |= cpu.ht
         model = clx_server_ratios
+        legacy_smt_setup(model)
     elif cpuname == "icx":
         import icx_server_ratios
         icx_server_ratios.smt_enabled = cpu.ht

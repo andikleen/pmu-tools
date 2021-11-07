@@ -105,6 +105,8 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* Add experimental --thread option to support per SMT thread measurements on pre ICL
+  CPUs.
 * toplev updated to Ahmad Yasin's TMA 4.3:
   [ADL so far missing. TGL/RKL still use the ICL model]
   Note: if you see missing events please remove ~/.cache/pmu-events/* to force a redownload
