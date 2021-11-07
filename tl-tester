@@ -93,7 +93,7 @@ PS4='Line ${LINENO} '
 set -x
 
 LOAD="${LOAD:--- gcc -O3 -o /dev/null longhello.c}"
-LOADQUICK="${LOAD:--- gcc -O3 -o /dev/null hello.c}"
+LOADQUICK="${LOADQUICK:--- gcc -O3 -o /dev/null hello.c}"
 LOADLONG=${LOADLONG:-./workloads/BC1s}
 LOAD0="-- taskset -c 0 $LOAD"
 
@@ -311,7 +311,7 @@ rm log$$ val$$.csv perfo$$.csv
 
 $WRAP ./toplev.py -I 100 -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --ignore-errata \
 	--stats --force-events $NOMULTIPLEX -l3 --perf-summary perfs$$.csv \
-	$LOAD
+	$LOADQUICK
 $WRAP ./toplev.py -I 100 -g -l3 --force-cpu $DCPU $OPT --ignore-errata --force-events --import perfs$$.csv
 rm perfo$$.csv perfs$$.csv
 
