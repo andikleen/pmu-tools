@@ -105,6 +105,7 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev now supports a --abbrev option to abbreviate node names
 * Add experimental --thread option to support per SMT thread measurements on pre ICL
   CPUs.
 * toplev updated to Ahmad Yasin's TMA 4.3:

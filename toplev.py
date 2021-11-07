@@ -635,6 +635,7 @@ g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5%% of busiest
                default=None, type=float)
 g.add_argument('--no-output', help="Don't print computed output. Does not affect --summary.", action='store_true')
 g.add_argument('--no-mux', help="Don't print mux statistics", action="store_true")
+g.add_argument('--abbrev', help="Abbreviate node names in output", action="store_true")
 
 g = p.add_argument_group('Environment')
 g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
@@ -2522,6 +2523,13 @@ def full_name(obj):
         name = obj.name + "." + name
     return name
 
+def full_name_output(obj):
+    if args.abbrev:
+        if 'parent' in obj.__dict__ and obj.parent:
+            return "..." + obj.name
+        return obj.name
+    return full_name(obj)
+
 def package_node(obj):
     return safe_ref(obj, 'domain') in ("Package", "SystemMetric")
 
@@ -3019,7 +3027,7 @@ def get_uval(ob):
 # pre compute column lengths
 def compute_column_lengths(olist, out):
     for obj in olist:
-        out.set_hdr(full_name(obj), obj_area(obj))
+        out.set_hdr(full_name_output(obj), obj_area(obj))
         if obj.metric:
             out.set_unit(metric_unit(obj))
         else:
@@ -3062,7 +3070,7 @@ class Printer(object):
                         idlemark)
             else:
                 out.ratio(obj_area(obj),
-                        full_name(obj), val, timestamp,
+                        full_name_output(obj), val, timestamp,
                         "%" + node_unit(obj),
                         desc,
                         title,
