@@ -109,8 +109,10 @@ on newer Linux kernels.
 * Add experimental --thread option to support per SMT thread measurements on pre ICL
   CPUs.
 * toplev updated to Ahmad Yasin's TMA 4.3:
-  [ADL so far missing. TGL/RKL still use the ICL model]
-  Note: if you see missing events please remove ~/.cache/pmu-events/* to force a redownload
+  [ADL is missing so far. TGL/RKL still use the ICL model]
+  
+  **Note: if you see missing events please remove ~/.cache/pmu-events/* to force a redownload**
+  
   * New Tree Metrics (nodes)
   * A brand new breakdown of the Light_Operations sub-category (under Retiring category) per operation type:
     * Memory_Operations for (fraction of retired) slots utilized by load or store memory accesses
@@ -125,7 +127,7 @@ on newer Linux kernels.
   * Informative Groups
     * New Info.Branches group for branch instructions of certain types: Cond_TK (Conditional TaKen branches), Cond_NT (Conditional Non-Taken), CallRet, Jump and Other_Branches.
     * Organized (almost all) Info metrics in 5 mega-buckets of {Fed, Bad, Ret, Cor, Mem} using the Metric Group column
-New Informative Metrics
+  * New Informative Metrics
     * UpTB for Uops per Taken Branch
     * Slots_Utilization for Fraction of Physical Core issue-slots utilized by this Logical Processor [ICL onwards]
     * Execute_per_Issue for the ratio of Uops Executed to Uops Issued (allocated)
