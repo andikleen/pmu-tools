@@ -111,20 +111,35 @@ on newer Linux kernels.
 * toplev updated to Ahmad Yasin's TMA 4.3:
   [ADL so far missing. TGL/RKL still use the ICL model]
   Note: if you see missing events please remove ~/.cache/pmu-events/* to force a redownload
-  * New Nodes:
-    * New Retiring.Light_Operations breakdown
-      * Add Nop_Instructions for slots utilized by NOPs.
-      * Breakdown of Branch_Resteers into Mispredicts_Resteers, Clear_Resteers, Unknown_Branches
-  * Info groups:
-    * New Info.Bottlenecks group aggregating total costs in SLOTS of key performance-issues: Mispredictions, Big_Code, Instruction_Fetch_BW [SKL onwards]
+  * New Tree Metrics (nodes)
+  * A brand new breakdown of the Light_Operations sub-category (under Retiring category) per operation type:
+    * Memory_Operations for (fraction of retired) slots utilized by load or store memory accesses
+    * Fused_Instructions for slots utilized by fused instruction pairs (mostly conditional branches)
+    * Non_Fused_Branches for slots utilized by remaining types of branches.
+    * (Branch_Instructions is used in lieu of the last two nodes for ICL .. TGL models)
+    * Nop_Instructions for slots utilized by NOP instructions
+    * FP_Arith - a fraction estimate of arithmetic floating-point operations (legacy)
+    * CISC new tree node for complex instructions (under the Heavy_Operations sub-category)
+    * Decoder0_Alone new tree node for instructions requiring heavy decoder (under the Fetch_Bandwidth sub-category)
+    * Memory_Fence new tree node for LFENCE stalls (under the Core_Bound sub-category)
+  * Informative Groups
+    * New Info.Branches group for branch instructions of certain types: Cond_TK (Conditional TaKen branches), Cond_NT (Conditional Non-Taken), CallRet, Jump and Other_Branches.
     * Organized (almost all) Info metrics in 5 mega-buckets of {Fed, Bad, Ret, Cor, Mem} using the Metric Group column
-  * New Informative Metrics
+New Informative Metrics
+    * UpTB for Uops per Taken Branch
+    * Slots_Utilization for Fraction of Physical Core issue-slots utilized by this Logical Processor [ICL onwards]
+    * Execute_per_Issue for the ratio of Uops Executed to Uops Issued (allocated)
+    * Fetch_UpC for average number of fetched uops when the front-end is delivering uops
     * DSB_Misses_Cost for Total penalty related to DSB misses
+    * IpDSB_Miss_Ret for Instructions per (any) retired DSB miss
     * Kernel CPI for Cycles Per Instruction in kernel (operating system) mode
   * Key Enhancements & fixes
     * Fixed Heavy_Operations for few uop instructions [ICL, ICX, TGL].
+    * Fixed Fetch_Latency overcount (or Fetch_Bandwidth undercount) [ICL, ICX, TGL]
     * Capped nodes using fixed-costs, e.g. DRAM_Bound, to 100% max. Some tools did this in ad-hoc manner thus far [All]
-    * Fixed DTLB_Load in case of multiple hits per cycles [SKL onwards]
+    * Fixed DTLB_{Load,Store} and STLB_Hit_{Load,Store} in case of multiple hits per cycles [SKL onwards]
+  * Fixed Lock_Latency to account for lock that hit in L1D or L2 caches [SKL onwards]
+    * Fixed Mixing_Vectors and X87_Use to Clocks and Slots Count Domains, respectively [SKL onwards]
     * Many other fixes: Thresholds, Tagging (e.g. Ports_Utilized_2), Locate-with, Count Domain, Metric Group, Metric Max, etc
 * jestat now supports CSV output (-x,), not aggregated.
 * libjevents has utility functions to output event list in perf stat style (both CSV and normal)
