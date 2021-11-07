@@ -235,9 +235,9 @@ class OutputHuman(Output):
         if title:
             write("%-*s" % (self.titlelen, title))
         self.print_line_header(area, hdr)
-        vals = "{:<{unitlen}} {:>} {:<{belowlen}}".format(
+        vals = "{:<{unitlen}} {:>20} {:<{belowlen}}".format(
                     ("  " if unit and unit[0] != "%" else "") + unit,
-                    val.format_value(),
+                    val.format_value(unit),
                     fmt_below(below),
                     unitlen=self.unitlen + 1,
                     belowlen=self.belowlen)
@@ -246,7 +246,7 @@ class OutputHuman(Output):
         if val.stddev:
             vals += " +- {:>8}".format(val.format_uncertainty())
         if bn:
-            vals += " " + bn
+            vals += bn
         write(vals + "\n")
         self.print_desc(desc, sample)
 
@@ -311,7 +311,7 @@ class OutputColumns(OutputHuman):
                 if cpuname in node:
                     cpu = node[cpuname]
                     uval, unit, desc, sample, bn, below, idle = cpu
-                    v = uval.format_value()
+                    v = uval.format_value(unit)
                     vlist.append(uval)
                     write("%*s%s " % (VALCOL_LEN, v, "?" if below else "*" if bn else " "))
                 else:

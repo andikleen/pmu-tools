@@ -51,13 +51,15 @@ class UVal:
     def __repr__(self):
         return "{} [{} +- {}]*{}".format(self.name, self.value, self.stddev, self.samples)
 
-    def format_value(self):
+    def format_value(self, unit):
         if self.value is None:
             return ""
         if self.is_ratio:
-            return "{:>16.1f}".format(self.value * 100.)
+            return "{:>16.1f} ".format(self.value * 100.)
+        elif unit == "Count" or unit == "Clocks":
+            return "{:16,.0f}   ".format(self.value)
         elif self.value > 1000:
-            return "{:16,.1f}".format(self.value)
+            return "{:16,.1f} ".format(self.value)
         else:
             return "{:16.2f}".format(self.value)
 
@@ -86,7 +88,7 @@ class UVal:
     def format_mux(self):
         vs = ""
         if self.multiplex and self.multiplex == self.multiplex:
-            vs = "[{:3.1f}%]".format(self.multiplex)
+            vs = "[{:4.1f}%]".format(self.multiplex)
         return vs
 
     @staticmethod
