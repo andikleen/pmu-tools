@@ -89,6 +89,7 @@ int main() {
 }
 EOL
 
+PS4='Line ${LINENO} '
 set -x
 
 LOAD="${LOAD:--- gcc -O3 -o /dev/null longhello.c}"
