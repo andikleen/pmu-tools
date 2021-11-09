@@ -109,19 +109,19 @@ on newer Linux kernels.
 * Add experimental --thread option to support per SMT thread measurements on pre ICL
   CPUs.
 ## TMA 4.3 release
-* toplev updated to Ahmad Yasin's TMA 4.3:
-  [ADL is missing so far. TGL/RKL still use the ICL model]
+* toplev updated to Ahmad Yasin's TMA 4.3: New Retiring.Light_Operations breakdown
   
-  **Note: if you see missing events please remove ~/.cache/pmu-events/* to force a redownload**
+  *Notes: ADL is missing so far. TGL/RKL still use the ICL model.
+  if you see missing events please remove ~/.cache/pmu-events/\* to force a redownload*
   
   * New Tree Metrics (nodes)
-  * A brand new breakdown of the Light_Operations sub-category (under Retiring category) per operation type:
-    * Memory_Operations for (fraction of retired) slots utilized by load or store memory accesses
-    * Fused_Instructions for slots utilized by fused instruction pairs (mostly conditional branches)
-    * Non_Fused_Branches for slots utilized by remaining types of branches.
-    * (Branch_Instructions is used in lieu of the last two nodes for ICL .. TGL models)
-    * Nop_Instructions for slots utilized by NOP instructions
-    * FP_Arith - a fraction estimate of arithmetic floating-point operations (legacy)
+    * A brand new breakdown of the Light_Operations sub-category (under Retiring category) per operation type:
+      * Memory_Operations for (fraction of retired) slots utilized by load or store memory accesses
+      * Fused_Instructions for slots utilized by fused instruction pairs (mostly conditional branches)
+      * Non_Fused_Branches for slots utilized by remaining types of branches.
+      * (Branch_Instructions is used in lieu of the last two nodes for ICL .. TGL models)
+      * Nop_Instructions for slots utilized by NOP instructions
+      * FP_Arith - a fraction estimate of arithmetic floating-point operations (legacy)
     * CISC new tree node for complex instructions (under the Heavy_Operations sub-category)
     * Decoder0_Alone new tree node for instructions requiring heavy decoder (under the Fetch_Bandwidth sub-category)
     * Memory_Fence new tree node for LFENCE stalls (under the Core_Bound sub-category)
@@ -141,7 +141,7 @@ on newer Linux kernels.
     * Fixed Fetch_Latency overcount (or Fetch_Bandwidth undercount) [ICL, ICX, TGL]
     * Capped nodes using fixed-costs, e.g. DRAM_Bound, to 100% max. Some tools did this in ad-hoc manner thus far [All]
     * Fixed DTLB_{Load,Store} and STLB_Hit_{Load,Store} in case of multiple hits per cycles [SKL onwards]
-  * Fixed Lock_Latency to account for lock that hit in L1D or L2 caches [SKL onwards]
+    * Fixed Lock_Latency to account for lock that hit in L1D or L2 caches [SKL onwards]
     * Fixed Mixing_Vectors and X87_Use to Clocks and Slots Count Domains, respectively [SKL onwards]
     * Many other fixes: Thresholds, Tagging (e.g. Ports_Utilized_2), Locate-with, Count Domain, Metric Group, Metric Max, etc
 * jestat now supports CSV output (-x,), not aggregated.
@@ -151,18 +151,19 @@ on newer Linux kernels.
 * ucevent now supports Icelake Server
 * toplev now supports Icelake Server
 ## TMA 4.2 release
-* toplev updated to Ahmad Yasin's TMA 4.2:
-    Bottlenecks Info group, Tuned memory access costs
-    New Metrics
+* toplev updated to Ahmad Yasin's TMA 4.2: Bottlenecks Info group, Tuned memory access costs
+  * New Metrics
     * New Info.Bottlenecks group aggregating total performance-issue costs in SLOTS across the tree: [SKL onwards]
-    ** Memory_Latency, Memory_Bandwidth, Memory_Data_TLBs
-    ** Big_Code, Instruction_Fetch_BW, Branching_Overheads and
-    ** Mispredictions (introduced in 4.1 release)
+      * Memory_Latency, Memory_Bandwidth, Memory_Data_TLBs
+      * Big_Code, Instruction_Fetch_BW, Branching_Overheads and
+      * Mispredictions (introduced in 4.1 release)
     * New tree node for Streaming_Stores [ICL onwards]
-    Key Enhancements & fixes
-    ** The Average_Frequency is calculated using the TSC (TimeStamp Counter) value
-    ** With this key enhancement #Mem costs become NanoSecond- (was Constant), DurationTimeInMilliSeconds becomes ExternalParameter CountDomain and #Base_Frequency is deprecated
-    * Fixed Ports_Utilization for detection of serializing operations [SKL onwards]
+  * Key Enhancements & fixes
+    * Tuned memory metrics with up-to-date frequency-based measured costs [TGL, ICX]
+      * The Average_Frequency is calculated using the TSC (TimeStamp Counter) value
+      * With this key enhancement #Mem costs become NanoSecond- (was Constant), DurationTimeInMilliSeconds becomes ExternalParameter CountDomain and #Base_Frequency is deprecated
+      * The previous method of setting frequency using Base_Frequency is deprecated.
+    * Fixed Ports_Utilization for detection of serializing operations - [issue#339](https://github.com/andikleen/pmu-tools/issues/339) [SKL onwards]
     * Tuned MITE, DSB, LSD and move to Slots_Estimated domain [all]
     * Capping DTLB_Load and STLB_Hit_Load cost using events in Clocks CountDomain [SKL onwards]
     * Tuned Pause latency using default setting [CLX]
@@ -200,8 +201,8 @@ on newer Linux kernels.
   - Tuning of Level 2 breakdown for Backend\_Bound, Frontend\_Bound (rollback FRONTEND\_RETIRED 2-events use) [SKL onwards]
   - Improved branch misprediction related metrics to leverage a new PerfMon event [ICL onwards]
   - Improved CORE\_CLKS & #Retire\_Slots-based metrics [ICL onwards]
-  - Adjusted cost of all nodes using MEM\_LOAD*RETIRED.* in case of shadow L1 d-cache misses
-  - renamed Frontend_ to FetchLatency/Bandwidth [all]
+  - Adjusted cost of all nodes using MEM\_LOAD\_\*RETIRED.\* in case of shadow L1 d-cache misses
+  - renamed Frontend_ to Fetch\_Latency/Bandwidth [all]
   - Additional documentation/details to aid automated parsing in ‘For Tool Developers’.
   - Other fixes including Thresholds, Tagging (e.g. $issueSnoops), Locate-with, Metric Group
 * toplev can now generate charts in xlsx files with the --xchart option.
