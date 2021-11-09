@@ -108,6 +108,7 @@ on newer Linux kernels.
 * toplev now supports a --abbrev option to abbreviate node names
 * Add experimental --thread option to support per SMT thread measurements on pre ICL
   CPUs.
+## TMA 4.3 release
 * toplev updated to Ahmad Yasin's TMA 4.3:
   [ADL is missing so far. TGL/RKL still use the ICL model]
   
@@ -149,6 +150,7 @@ on newer Linux kernels.
 * cputop now supports hybrid types (type=="core"/"atom")
 * ucevent now supports Icelake Server
 * toplev now supports Icelake Server
+## TMA 4.2 release
 * toplev updated to Ahmad Yasin's TMA 4.2:
     Bottlenecks Info group, Tuned memory access costs
     New Metrics
@@ -186,6 +188,7 @@ on newer Linux kernels.
 * Updated to TMA 4.11: Fixed an error in misprediction-related and Power License metrics
 * toplev now supports the new fixed TMA metrics counters on Icelake. This requires
   the upcoming 5.9+ kernel.
+## TMA 4.1 release
 * toplev was updated to Ahmad Yasin's/Anton Hanna's TMA 4.1
   New Metrics:
   - Re-arrange Retiring Level 2 into Light\_Operations & Heavy\_Operations. Light\_Operations replaces
