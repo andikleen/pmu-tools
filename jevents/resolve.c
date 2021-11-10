@@ -544,7 +544,7 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 			char *gs;
 			int ret;
 
-			asprintf(&gs, "/sys/devices/uncore_%s_*", pmu);
+			asprintf(&gs, "/sys/devices/uncore_%s_[0-9]", pmu);
 			ret = glob(gs, 0, NULL, &extra->pmus);
 			free(gs);
 			if (ret)
