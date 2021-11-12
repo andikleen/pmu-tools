@@ -391,8 +391,7 @@ def MEM_Parallel_Requests(self, EV, level):
 
 # Run duration time in seconds
 def Time(self, EV, level):
-    val = EV("interval-s", 0)
-    return (val < 1)
+    return EV("interval-s", 0)
 
 # Socket actual clocks when any core is active on that socket
 def Socket_CLKS(self, EV, level):
@@ -3320,7 +3319,7 @@ class Metric_Time:
     def compute(self, EV):
         try:
             self.val = Time(self, EV, 0)
-            self.thresh = (self.val < 1)
+            self.thresh = True
         except ZeroDivisionError:
             handle_error_metric(self, "Time zero division")
     desc = """

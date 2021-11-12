@@ -483,8 +483,7 @@ def Kernel_CPI(self, EV, level):
 
 # Run duration time in seconds
 def Time(self, EV, level):
-    val = EV("interval-s", 0)
-    return (val < 1)
+    return EV("interval-s", 0)
 
 # Instructions per Far Branch ( Far Branches apply upon transition from application to operating system, handling interrupts, exceptions) [lower number means higher occurrence rate]
 def IpFarBranch(self, EV, level):
@@ -4061,7 +4060,7 @@ class Metric_Time:
     def compute(self, EV):
         try:
             self.val = Time(self, EV, 0)
-            self.thresh = (self.val < 1)
+            self.thresh = True
         except ZeroDivisionError:
             handle_error_metric(self, "Time zero division")
     desc = """
