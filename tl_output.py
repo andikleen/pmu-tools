@@ -94,7 +94,9 @@ class Output(object):
         self.printedversion = set()
         self.no_header = args.no_csv_header
         self.no_footer = args.no_csv_footer
+        self.abbrev = args.abbrev
         self.valcsv = None
+        self.last_prefix = ""
 
     def flushfiles(self):
         if self.logfiles:
@@ -179,6 +181,13 @@ def fmt_below(below):
         return "<"
     return ""
 
+def short_hdr(hdr, last):
+    n = os.path.commonprefix((hdr, last))
+    if "." not in n:
+        return hdr
+    n = n[:n.rfind(".")]
+    return "..." + hdr[len(n)+1:]
+
 class OutputHuman(Output):
     """Generate human readable single-column output."""
     def __init__(self, logfile, args, version, cpu):
@@ -209,7 +218,12 @@ class OutputHuman(Output):
             else:
                 self.logf.write("%6.9f " % timestamp)
 
-    def print_line_header(self, area, hdr):
+    def print_line_header(self, area, ohdr):
+        if "Info" in area or not self.abbrev:
+            hdr = ohdr
+        else:
+            hdr = short_hdr(ohdr, self.last_prefix)
+            self.last_prefix = ohdr
         if area:
             hdr = "%-14s %s" % (area, hdr)
         self.logf.write("%-*s " % (self.hdrlen, hdr))
