@@ -173,6 +173,9 @@ int parse_events(struct eventlist *el, char *events)
 				while ((err = jevent_next_pmu(&e->extra, &attr)) == 1) {
 					ne = new_event(el, s);
 					add_event(el, ne);
+					ne->group_leader = e->group_leader;
+					ne->end_group = e->end_group;
+					ne->ingroup = e->ingroup;
 					ne->attr = attr;
 					ne->orig = e;
 					ne->uncore = e->uncore;
@@ -204,6 +207,9 @@ int parse_events(struct eventlist *el, char *events)
 						}
 						ne = new_event(el, multi_pmu_strs[n]);
 						add_event(el, ne);
+						ne->group_leader = multi_pmu_events[n]->group_leader;
+						ne->end_group = multi_pmu_events[n]->end_group;
+						ne->ingroup = multi_pmu_events[n]->ingroup;
 						ne->attr = multi_pmu_events[n]->attr;
 						ne->orig = multi_pmu_events[n];
 						ne->uncore = multi_pmu_events[n]->uncore;
