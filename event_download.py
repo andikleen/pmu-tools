@@ -143,7 +143,7 @@ def parse_map_file(match, key=None, link=True, onlyprint=False, acceptfile=False
                 if len(n) > 0:
                     print("Cannot parse", n)
                 continue
-            cpu, version, name, typ = n
+            cpu, version, name, typ, *_ = n
             if not (fnmatch(cpu, match) or fnmatch(cpu, match2) or
                     fnmatch(match2, cpu) or fnmatch(match, cpu)):
                 continue
