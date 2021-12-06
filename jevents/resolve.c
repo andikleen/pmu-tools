@@ -473,15 +473,16 @@ err_free:
   your index after calling this.
   Returns 0 on success, -1 on error.
 */
-static int remove_glob(glob_t *glob, size_t index) {
+int remove_glob(glob_t *glob, size_t index)
+{
 	size_t i;
 
-	if(index >= glob->gl_pathc) {
+	if (index >= glob->gl_pathc) {
 		return -1;
 	}
 
 	free(glob->gl_pathv[index]);
-	for(i = index + 1; i < glob->gl_pathc; i++) {
+	for (i = index + 1; i < glob->gl_pathc; i++) {
 		glob->gl_pathv[i - 1] = glob->gl_pathv[i];
 	}
 	glob->gl_pathc--;
@@ -584,15 +585,15 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 			size_t pmui;
 			int underscores;
 			char *path_ptr;
-			for(pmui = 0; pmui < extra->pmus.gl_pathc; pmui++) {
+			for (pmui = 0; pmui < extra->pmus.gl_pathc; pmui++) {
 				/* Make path_ptr point to the character after the second
 				   underscore. */
 				path_ptr = extra->pmus.gl_pathv[pmui];
 				underscores = 0;
-				while(*path_ptr) {
-					if(*path_ptr == '_') {
+				while (*path_ptr) {
+					if (*path_ptr == '_') {
 						underscores++;
-					} else if((underscores > 1) && !isdigit(*path_ptr)) {
+					} else if ((underscores > 1) && !isdigit(*path_ptr)) {
 						remove_glob(&extra->pmus, pmui);
 						pmui--;
 						break;
