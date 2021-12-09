@@ -85,8 +85,7 @@ def Frontend_Latency_Cycles(self, EV, level):
     return EV(lambda EV , level : min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("IDQ_UOPS_NOT_DELIVERED.CYCLES_0_UOPS_DELIV.CORE", level)) , level )
 
 def HighIPC(self, EV, level):
-    val = IPC(self, EV, level) / Pipeline_Width
-    return (val > 0.35)
+    return IPC(self, EV, level) / Pipeline_Width
 
 def ITLB_Miss_Cycles(self, EV, level):
     return (12 * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION", level))
@@ -128,8 +127,7 @@ def IPC(self, EV, level):
 
 # Uops Per Instruction
 def UPI(self, EV, level):
-    val = Retired_Slots(self, EV, level) / EV("INST_RETIRED.ANY", level)
-    return (val > 1.05)
+    return Retired_Slots(self, EV, level) / EV("INST_RETIRED.ANY", level)
 
 # Cycles Per Instruction (per Logical Processor)
 def CPI(self, EV, level):
@@ -169,8 +167,7 @@ def Instructions(self, EV, level):
 
 # Fraction of Uops delivered by the DSB (aka Decoded ICache; or Uop Cache)
 def DSB_Coverage(self, EV, level):
-    val = EV("IDQ.DSB_UOPS", level) / Fetched_Uops(self, EV, level)
-    return (val < 0.7) and HighIPC(self, EV, 1)
+    return EV("IDQ.DSB_UOPS", level) / Fetched_Uops(self, EV, level)
 
 # Average CPU Utilization
 def CPU_Utilization(self, EV, level):
@@ -194,8 +191,7 @@ def SMT_2T_Utilization(self, EV, level):
 
 # Fraction of cycles spent in the Operating System (OS) Kernel mode
 def Kernel_Utilization(self, EV, level):
-    val = EV("CPU_CLK_UNHALTED.THREAD_P:SUP", level) / EV("CPU_CLK_UNHALTED.THREAD", level)
-    return (val > 0.05)
+    return EV("CPU_CLK_UNHALTED.THREAD_P:SUP", level) / EV("CPU_CLK_UNHALTED.THREAD", level)
 
 # Cycles Per Instruction for the Operating System (OS) Kernel mode
 def Kernel_CPI(self, EV, level):
@@ -223,8 +219,7 @@ def Socket_CLKS(self, EV, level):
 
 # Instructions per Far Branch ( Far Branches apply upon transition from application to operating system, handling interrupts, exceptions) [lower number means higher occurrence rate]
 def IpFarBranch(self, EV, level):
-    val = EV("INST_RETIRED.ANY", level) / EV("BR_INST_RETIRED.FAR_BRANCH:USER", level)
-    return (val < 1000000)
+    return EV("INST_RETIRED.ANY", level) / EV("BR_INST_RETIRED.FAR_BRANCH:USER", level)
 
 # Event groups
 
@@ -443,7 +438,7 @@ class Fetch_Bandwidth:
     def compute(self, EV):
         try:
             self.val = self.Frontend_Bound.compute(EV) - self.Fetch_Latency.compute(EV)
-            self.thresh = (self.val > 0.1) and self.parent.thresh and HighIPC(self, EV, 2)
+            self.thresh = (self.val > 0.1) and self.parent.thresh and (HighIPC(self, EV, 2) > 0.35)
         except ZeroDivisionError:
             handle_error(self, "Fetch_Bandwidth zero division")
         return self.val
@@ -1310,7 +1305,7 @@ class Metric_DSB_Coverage:
     def compute(self, EV):
         try:
             self.val = DSB_Coverage(self, EV, 0)
-            self.thresh = (self.val < 0.7) and HighIPC(self, EV, 1)
+            self.thresh = (self.val < 0.7) and (HighIPC(self, EV, 1) > 0.35)
         except ZeroDivisionError:
             handle_error_metric(self, "DSB_Coverage zero division")
     desc = """
@@ -1537,7 +1532,7 @@ class Metric_Time:
     def compute(self, EV):
         try:
             self.val = Time(self, EV, 0)
-            self.thresh = True
+            self.thresh = (self.val < 1)
         except ZeroDivisionError:
             handle_error_metric(self, "Time zero division")
     desc = """
