@@ -870,7 +870,7 @@ class Store_Fwd_Blk:
     def compute(self, EV):
         try:
             self.val = 13 * EV("LD_BLOCKS.STORE_FORWARD", 4) / CLKS(self, EV, 4)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Store_Fwd_Blk zero division")
@@ -902,7 +902,7 @@ class Lock_Latency:
     def compute(self, EV):
         try:
             self.val = Mem_Lock_St_Fraction(self, EV, 4) * ORO_Demand_RFO_C1(self, EV, 4) / CLKS(self, EV, 4)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Lock_Latency zero division")
@@ -928,7 +928,7 @@ class Split_Loads:
     def compute(self, EV):
         try:
             self.val = Load_Miss_Real_Latency(self, EV, 4) * EV("LD_BLOCKS.NO_SR", 4) / CLKS(self, EV, 4)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Split_Loads zero division")
@@ -1060,7 +1060,7 @@ class Contested_Accesses:
     def compute(self, EV):
         try:
             self.val = (Mem_XSNP_HitM_Cost(self, EV, 4) * LOAD_XSNP_HITM(self, EV, 4) + Mem_XSNP_Hit_Cost(self, EV, 4) * LOAD_XSNP_MISS(self, EV, 4)) / CLKS(self, EV, 4)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Contested_Accesses zero division")
@@ -1089,7 +1089,7 @@ class Data_Sharing:
     def compute(self, EV):
         try:
             self.val = Mem_XSNP_Hit_Cost(self, EV, 4) * LOAD_XSNP_HIT(self, EV, 4) / CLKS(self, EV, 4)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Data_Sharing zero division")
@@ -1117,7 +1117,7 @@ class L3_Hit_Latency:
     def compute(self, EV):
         try:
             self.val = Mem_XSNP_None_Cost(self, EV, 4) * LOAD_L3_HIT(self, EV, 4) / CLKS(self, EV, 4)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "L3_Hit_Latency zero division")
@@ -1172,7 +1172,7 @@ class DRAM_Bound:
     def compute(self, EV):
         try:
             self.val = (1 - Mem_L3_Hit_Fraction(self, EV, 3)) * EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3) / CLKS(self, EV, 3)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "DRAM_Bound zero division")
@@ -1254,7 +1254,7 @@ class Local_DRAM:
     def compute(self, EV):
         try:
             self.val = Mem_Local_DRAM_Cost(self, EV, 5) * LOAD_LCL_MEM(self, EV, 5) / CLKS(self, EV, 5)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Local_DRAM zero division")
@@ -1279,7 +1279,7 @@ class Remote_DRAM:
     def compute(self, EV):
         try:
             self.val = Mem_Remote_DRAM_Cost(self, EV, 5) * LOAD_RMT_MEM(self, EV, 5) / CLKS(self, EV, 5)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Remote_DRAM zero division")
@@ -1304,7 +1304,7 @@ class Remote_Cache:
     def compute(self, EV):
         try:
             self.val = (Mem_Remote_HitM_Cost(self, EV, 5) * LOAD_RMT_HITM(self, EV, 5) + Mem_Remote_Fwd_Cost(self, EV, 5) * LOAD_RMT_FWD(self, EV, 5)) / CLKS(self, EV, 5)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Remote_Cache zero division")
@@ -1384,7 +1384,7 @@ class False_Sharing:
     def compute(self, EV):
         try:
             self.val = (Mem_Remote_HitM_Cost(self, EV, 4) * EV("OFFCORE_RESPONSE.DEMAND_RFO.LLC_MISS.REMOTE_HITM", 4) + Mem_XSNP_HitM_Cost(self, EV, 4) * EV("OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.HITM_OTHER_CORE", 4)) / CLKS(self, EV, 4)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "False_Sharing zero division")
@@ -1435,7 +1435,7 @@ class DTLB_Store:
     def compute(self, EV):
         try:
             self.val = (Mem_STLB_Hit_Cost * EV("DTLB_STORE_MISSES.STLB_HIT", 4) + EV("DTLB_STORE_MISSES.WALK_DURATION", 4)) / CLKS(self, EV, 4)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.05) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "DTLB_Store zero division")
@@ -2061,7 +2061,7 @@ class Assists:
     def compute(self, EV):
         try:
             self.val = Avg_Assist_Cost * EV("OTHER_ASSISTS.ANY_WB_ASSIST", 4) / SLOTS(self, EV, 4)
-            self.val = max(self.val, 1)
+            self.val = min(self.val, 1)
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Assists zero division")
