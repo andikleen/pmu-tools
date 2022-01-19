@@ -60,16 +60,20 @@ static struct event *new_event(struct eventlist *el, char *s)
 				 sizeof(struct efd) * el->num_cpus, 1);
 	int i;
 
+	e->event = strdup(s);
+	for (i = 0; i < el->num_cpus; i++)
+		e->efd[i].fd = -1;
+	return e;
+}
+
+static void add_event(struct eventlist *el, struct event *e)
+{
 	e->next = NULL;
 	if (!el->eventlist)
 		el->eventlist = e;
 	if (el->eventlist_last)
 		el->eventlist_last->next = e;
 	el->eventlist_last = e;
-	e->event = strdup(s);
-	for (i = 0; i < el->num_cpus; i++)
-		e->efd[i].fd = -1;
-	return e;
 }
 
 static char *grab_event(char *s, char **next)
@@ -148,7 +152,9 @@ int parse_events(struct eventlist *el, char *events)
 			goto err;
 		}
 		e->uncore = jevent_pmu_uncore(e->extra.decoded);
-		if (e->extra.multi_pmu) {
+		if (!(e->extra.multi_pmu)) {
+			add_event(el, e);
+		} else {
 			attr = e->attr;
 
 			if (ingroup) {
@@ -166,6 +172,10 @@ int parse_events(struct eventlist *el, char *events)
 			} else {
 				while ((err = jevent_next_pmu(&e->extra, &attr)) == 1) {
 					ne = new_event(el, s);
+					add_event(el, ne);
+					ne->group_leader = e->group_leader;
+					ne->end_group = e->end_group;
+					ne->ingroup = e->ingroup;
 					ne->attr = attr;
 					ne->orig = e;
 					ne->uncore = e->uncore;
@@ -196,6 +206,10 @@ int parse_events(struct eventlist *el, char *events)
 							goto err;
 						}
 						ne = new_event(el, multi_pmu_strs[n]);
+						add_event(el, ne);
+						ne->group_leader = multi_pmu_events[n]->group_leader;
+						ne->end_group = multi_pmu_events[n]->end_group;
+						ne->ingroup = multi_pmu_events[n]->ingroup;
 						ne->attr = multi_pmu_events[n]->attr;
 						ne->orig = multi_pmu_events[n];
 						ne->uncore = multi_pmu_events[n]->uncore;

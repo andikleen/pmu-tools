@@ -40,6 +40,7 @@
 #include <sys/fcntl.h>
 #include <glob.h>
 #include <assert.h>
+#include <ctype.h>
 
 #ifndef PERF_ATTR_SIZE_VER1
 #define PERF_ATTR_SIZE_VER1	72
@@ -463,6 +464,33 @@ err_free:
 }
 
 /**
+  remove_glob - Removes a globbed path from the structure.
+  @glob: a pointer to a glob_t struct.
+  @index: the index to remove from the glob_t struct.
+
+  Note that, if you call this while iterating over indices
+  in the glob_t struct, you will need to subtract one from
+  your index after calling this.
+  Returns 0 on success, -1 on error.
+*/
+int remove_glob(glob_t *glob, size_t index)
+{
+	size_t i;
+
+	if (index >= glob->gl_pathc) {
+		return -1;
+	}
+
+	free(glob->gl_pathv[index]);
+	for (i = index + 1; i < glob->gl_pathc; i++) {
+		glob->gl_pathv[i - 1] = glob->gl_pathv[i];
+	}
+	glob->gl_pathc--;
+
+	return 0;
+}
+
+/**
  * jevent_name_to_attr_extra - Resolve perf style event to perf_attr
  * @str: perf style event (e.g. cpu/event=1/)
  * @attr: perf_attr to fill in.
@@ -544,11 +572,36 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 			char *gs;
 			int ret;
 
-			asprintf(&gs, "/sys/devices/uncore_%s_*", pmu);
+			/* Glob the uncore PMUs that match this pattern */
+			asprintf(&gs, "/sys/devices/uncore_%s_[0-9]*", pmu);
 			ret = glob(gs, 0, NULL, &extra->pmus);
 			free(gs);
 			if (ret)
 				return -1;
+
+			/* In the above glob, the pattern "[0-9]*" could match
+			   one digit followed by non-digits. Remove these from
+			   the list of PMUs (very unlikely). */
+			size_t pmui;
+			int underscores;
+			char *path_ptr;
+			for (pmui = 0; pmui < extra->pmus.gl_pathc; pmui++) {
+				/* Make path_ptr point to the character after the second
+				   underscore. */
+				path_ptr = extra->pmus.gl_pathv[pmui];
+				underscores = 0;
+				while (*path_ptr) {
+					if (*path_ptr == '_') {
+						underscores++;
+					} else if ((underscores > 1) && !isdigit(*path_ptr)) {
+						remove_glob(&extra->pmus, pmui);
+						pmui--;
+						break;
+					}
+					path_ptr++;
+				}
+			}
+
 			if (try_pmu_type(&type, strrchr(extra->pmus.gl_pathv[0], '/'), pmu, NULL) < 0)
 				goto err_free;
 			extra->next_pmu = 0;
