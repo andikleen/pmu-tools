@@ -868,15 +868,15 @@ class EmapNativeJSON(object):
             td_event("perf_metrics.fetch_latency", "topdown-fetch-lat", "Number of slots frontend was bound by memory fetch latency", "39")
 
 pmu_to_type = {
-    "cpu_core": "hybrid core",
-    "cpu_atom": "hybrid atom",
+    "cpu_core": "hybridcore",
+    "cpu_atom": "hybridatom",
     "cpu": "core",
 }
 
 def json_with_extra(el, eventmap_is_file, pmu):
     name = event_download.eventlist_name(el, pmu_to_type[pmu])
     if pmu_to_type != "core" and not os.path.exists(name):
-        name = event_download.eventlist_name(el, "core")
+        name = event_download.eventlist_name(el, pmu_to_type[pmu])
     emap = EmapNativeJSON(name, pmu)
     if not emap or emap.error:
         print("parsing", name, "failed", file=sys.stderr)

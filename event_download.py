@@ -216,7 +216,7 @@ def download_current(link=False, onlyprint=False):
        Returns >0 when a event list is found"""
     return download(get_cpustr(), link=link, onlyprint=onlyprint)
 
-def eventlist_name(name=None, key="core"):
+def eventlist_name(name=None, key=["core", "hybridcore"]):
     if not name:
         name = get_cpustr()
     cache = getdir()
