@@ -3638,8 +3638,6 @@ def init_runner_list():
         runner_list[0].cpu_list = get_cpu_list("/sys/devices/cpu_core")
         if len(runner_list[0].cpu_list) == 0:
             sys.exit("cpu_core fallback has no cpus")
-        print("runner_list", runner_list)
-        print("cpu_list", runner_list[0].cpu_list)
     # no hybrid
     else:
         runner_list = [Runner(args.level, idle_threshold, pmu="cpu")]
