@@ -3526,7 +3526,8 @@ def suggest_desc(runner):
         "s" if len(printer.bottlenecks) > 1 else "",
         (" for " + runner.pmu.replace("cpu_", "")) if runner.pmu and runner.pmu != "cpu" else ""),
         file=sys.stderr)
-    print_once("Add --run-sample to find locations")
+    if not args.run_sample:
+        print_once("Add --run-sample to find locations")
 
 def sysctl(name):
     try:
