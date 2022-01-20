@@ -123,7 +123,8 @@ def cpu_without_step(match):
     return "%s-%s-%s" % tuple(n[:3])
 
 allowed_chars = string.ascii_letters + '_-.' + string.digits
-def parse_map_file(match, key=None, link=True, onlyprint=False, acceptfile=False):
+def parse_map_file(match, key=None, link=True, onlyprint=False,
+                   acceptfile=False, hybridkey=None):
     match2 = cpu_without_step(match)
     files = []
     dir = getdir()
@@ -156,13 +157,18 @@ def parse_map_file(match, key=None, link=True, onlyprint=False, acceptfile=False
                 continue
             if key is not None and typ not in key:
                 continue
+            if hybridkey and len(n) >= 7 and n[6] != hybridkey:
+                continue
             cpu = sanitize(cpu, allowed_chars)
             url = urlpath + name
             matchfn = match
             if matchfn == "*":
                 matchfn = cpu
             if ".json" not in matchfn:
-                fn = "%s-%s.json" % (matchfn, sanitize(typ, allowed_chars))
+                if hybridkey:
+                    fn = "%s-%s-%s.json" % (matchfn, sanitize(typ, allowed_chars), hybridkey)
+                else:
+                    fn = "%s-%s.json" % (matchfn, sanitize(typ, allowed_chars))
             path = os.path.join(dir, fn)
             if acceptfile and os.path.exists(path):
                 if onlyprint:
@@ -221,9 +227,9 @@ def download(match, key=None, link=True, onlyprint=False, acceptfile=False):
 def download_current(link=False, onlyprint=False):
     """Download JSON event list for current cpu.
        Returns >0 when a event list is found"""
-    return download(get_cpustr(), link=link, onlyprint=onlyprint)
+    return download(get_cpustr(), link=link, onlyprint=onlyprint, )
 
-def eventlist_name(name=None, key=["core", "hybridcore"]):
+def eventlist_name(name=None, key="core", hybridkey=None):
     if not name:
         name = get_cpustr()
     cache = getdir()
@@ -231,20 +237,24 @@ def eventlist_name(name=None, key=["core", "hybridcore"]):
     if os.path.exists(fn):
         return fn
     if ".json" not in name:
-        fn = "%s-%s.json" % (name, key)
-    if "/" in fn:
-        return fn
-    fn = "%s/%s" % (cache, fn)
+        if hybridkey:
+            fn = "%s-%s-%s.json" % (name, key, hybridkey)
+        else:
+            fn = "%s-%s.json" % (name, key)
+    if "/" not in fn:
+        fn = "%s/%s" % (cache, fn)
     if not os.path.exists(fn):
-        files = parse_map_file(name, key, acceptfile=True)
+        files = parse_map_file(name, key, acceptfile=True, hybridkey=hybridkey)
         if files:
             return files[0]
         name = cpu_without_step(name)
         if "*" in fn:
             fn = "%s/%s" % (cache, name)
+        elif hybridkey:
+            fn = "%s/%s-%s-%s.json" % (cache, name, key, hybridkey)
         else:
             fn = "%s/%s-%s.json" % (cache, name, key)
-        files = parse_map_file(name, key, acceptfile=True)
+        files = parse_map_file(name, key, acceptfile=True, hybridkey=hybridkey)
         if files:
             fn = files[0]
     return fn
