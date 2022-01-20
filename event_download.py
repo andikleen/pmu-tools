@@ -109,6 +109,13 @@ def getfile(url, dir, fn):
     o.close()
     f.close()
 
+printed = set()
+
+def warn_once(msg):
+    if msg not in printed:
+        print(msg, file=sys.stderr)
+        printed.add(msg)
+
 def cpu_without_step(match):
     if match.count("-") < 3:
         return match
@@ -196,14 +203,14 @@ def parse_map_file(match, key=None, link=True, onlyprint=False, acceptfile=False
             getfile(urlpath + "/readme.txt", dir, "readme.txt")
     except URLError as e:
         print("Cannot access event server:", e, file=sys.stderr)
-        print("""
+        warn_once("""
 If you need a proxy to access the internet please set it with:
 \texport https_proxy=http://proxyname...
 If you are not connected to the internet please run this on a connected system:
 \tevent_download.py '%s'
 and then copy ~/.cache/pmu-events to the system under test
 To get events for all possible CPUs use:
-\tevent_download.py -a""" % match, file=sys.stderr)
+\tevent_download.py -a""" % match)
     except OSError as e:
         print("Cannot write events file:", e, file=sys.stderr)
     return files
