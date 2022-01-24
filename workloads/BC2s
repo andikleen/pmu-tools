@@ -1,0 +1,2 @@
+#!/bin/sh
+echo '3^615312' | bc > /dev/null
