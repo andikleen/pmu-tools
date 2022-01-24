@@ -1760,7 +1760,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat.compute_errors()
     runner.idle_keys |= hidden_keys
     if nothing:
-        print("Nothing measured for", " ".join(sorted(nothing)), file=sys.stderr)
+        print("%s: Nothing measured%s" % (runner.pmu, " for " if len(nothing) > 0 and not "" in nothing else ""), " ".join(sorted(nothing)), file=sys.stderr)
     if runner.printer.numprint == 0 and not args.quiet and runner.olist:
         print("No node %scrossed threshold" % (
                 "for %s " % runner_name(runner) if len(runner_list) > 1 else ""),file=sys.stderr)
@@ -3193,8 +3193,6 @@ class Runner(object):
         # now keep what is both in fmatch and sibmatch and mgroups
         # assume that mgroups matches do not need propagation
         self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or select_node(obj)]
-        if len(self.olist) == 0:
-            sys.exit("All nodes disabled")
 
     def setup_children(self):
         for obj in self.olist:
@@ -3279,8 +3277,6 @@ class Runner(object):
         if errata_warn_nodes and not args.ignore_errata:
             pwrap_not_quiet("Nodes " + " ".join(x.name for x in errata_warn_nodes) + " have errata " +
                         " ".join(errata_warn_names))
-        if len(self.olist) == 0:
-            sys.exit("No usable events found")
         self.clear_ectx()
 
     def propagate_siblings(self):
@@ -3506,6 +3502,8 @@ def suggest_bottlenecks(runner):
                     ",".join(children + parents),
                     mux))
         if args.drilldown:
+            if len(runner_list) > 1:
+                print("Please make sure workload does not move between core types for drilldown", file=sys.stderr)
             if args.nodes:
                 args.nodes += ","
             else:
@@ -4025,13 +4023,17 @@ if args.valcsv:
 
 # XXX use runner_restart
 def runner_first_init():
-    offset = 0
+    nnodes = 0
     for r in runner_list:
         runner_init(r)
+        nnodes += len(r.olist)
+    if nnodes == 0:
+        sys.exit("No nodes enabled")
 
     if args.nodes:
         check_nodes(runner_list, args.nodes)
 
+    offset = 0
     for r in runner_list:
         r.set_ectx()
         r.sched.schedule(r.olist)
@@ -4079,8 +4081,12 @@ def measure_and_sample(runner_list, count):
             if not args.quiet:
                 print("Rerunning workload", file=sys.stderr)
             offset = 0
+            nnodes = 0
             for r in runner_list:
                 offset = runner_restart(r, offset)
+                nnodes += len(r.olist)
+            if nnodes == 0:
+                sys.exit("No nodes enabled")
         else:
             break
     return ret, count
