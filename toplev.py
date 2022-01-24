@@ -1895,7 +1895,7 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             runner.clear_ectx()
             for ret, res, rev, interval, valstats, env in do_execute(
                     [runner],
-                    summary, runner.cpu_list, evstr, flat_rmap,
+                    summary, evstr, flat_rmap,
                     out, rest, resoff, flat_events):
                 ret = max(ret, ret)
                 lresults.append([res, rev, interval, valstats, env])
@@ -1952,8 +1952,6 @@ def runner_split(runner_list, res, rev):
 
 def execute(runner_list, out, rest, summary):
     evstr, flat_events, flat_rmap = "", [], []
-    allowed_threads = []
-    seen_cpus = set()
     for runner in runner_list:
         new_events = [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
         if len(new_events) == 0:
@@ -1966,14 +1964,10 @@ def execute(runner_list, out, rest, summary):
         flat_events += new_flat_events
         flat_rmap += [event_rmap(e) for e in new_flat_events]
         runner.clear_ectx()
-        for cpu in runner.cpu_list:
-            if cpu not in seen_cpus:
-                allowed_threads.append(cpu)
-                seen_cpus.add(cpu)
     ctx = SaveContext()
     for ret, res, rev, interval, valstats, env in do_execute(
             runner_list, summary,
-            allowed_threads, evstr, flat_rmap, out, rest, Counter(), None):
+            evstr, flat_rmap, out, rest, Counter(), None):
         if summary:
             summary.add(res, rev, valstats, env)
         for runner, res, rev in runner_split(runner_list, res, rev):
@@ -2043,15 +2037,15 @@ def find_runner(rlist, off, title, event):
             if r.sched.offset <= off < r.sched.offset+len(r.sched.evnum):
                 return r, off - r.sched.offset
         elif r.cpu_list:
-            for k in r.cpu_list:
-                if title == "%d" % k:
-                    # For hybrid, non cpu events like msr/tsc/ get expanded over all CPUs.
-                    # and leak into the other runner who doesn't know anything about them.
-                    if (not event.startswith("cpu") and
-                            (off >= len(r.sched.evnum) or
-                             event != r.sched.evnum[off])):
-                        return None, 0
-                    return r, off
+            # in the per cpu case each hybrid cpu has its own line, so no offsets for the runners
+            # but need to handle leaks below
+            if int(title) in r.cpu_list:
+                # For hybrid, non cpu events like msr/tsc/ get expanded over all CPUs.
+                # and leak into the other runner who doesn't know anything about them.
+                # XXX check does not handle dups
+                if not event.startswith("cpu") and (off >= len(r.sched.evnum) or event != r.sched.evnum[off]):
+                    return None, 0
+                return r, off
         else:
             return r, off
     assert 0
@@ -2059,6 +2053,9 @@ def find_runner(rlist, off, title, event):
 def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum):
     r, off = find_runner(rlist, off, title, event)
     if r is None:
+        return r
+    # cannot check because it's an event that needs to be expanded first
+    if not event.startswith("cpu") and title and int(title) not in r.cpu_list:
         return r
     if revnum is None:
         revnum = r.sched.evnum
@@ -2078,10 +2075,9 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum):
         sys.exit("Input corruption")
     return r
 
-def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, resoff, revnum):
+def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
     res = defaultdict(list)
     rev = defaultdict(list)
-    skipped = Counter()
     valstats = defaultdict(list)
     env = dict()
     account = defaultdict(Stat)
@@ -2182,10 +2178,9 @@ def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, res
         # code later relies on stripping ku flags
         event = remove_qual(event)
 
-        runner = check_event(rlist, event, len(res[title]) + skipped[title],
+        runner = check_event(rlist, event, len(res[title]),
                 title, prev_interval, origl, revnum, linenum)
         if runner is None:
-            skipped[title] += 1
             linenum += 1
             continue
 
@@ -2223,7 +2218,7 @@ def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, res
                     [k in runner.cpu_list for k in cpu.coreids[cpu.cputocore[num]]]))
 
         def add(t):
-            if runner.cpu_list and is_number(title) and ignored_cpu(int(title)):
+            if runner.cpu_list and is_number(t) and ignored_cpu(int(t)):
                 return
 
             res[t].append(val)
@@ -2236,7 +2231,7 @@ def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, res
 
         def dup_val(l):
             for j in l:
-                if j in allowed_threads:
+                if j in runner.cpu_list:
                     add("%d" % j)
 
         # power/uncore events are only output once for every socket
@@ -2255,7 +2250,7 @@ def do_execute(rlist, summary, allowed_threads, evstr, flat_rmap, out, rest, res
             dup_val(cpu.coreids[(socket, core)])
         # duration time is only output once, except with --cpu/-C (???)
         elif event.startswith("duration_time") and is_number(title) and not args.cpu and not args.core:
-            dup_val(runner.cpu_list if runner.cpu_list else allowed_threads)
+            dup_val(runner.cpu_list)
         else:
             add(title)
 
