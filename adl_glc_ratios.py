@@ -128,7 +128,7 @@ def ORO_DRD_Any_Cycles(self, EV, level):
     return EV(lambda EV , level : min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("OFFCORE_REQUESTS_OUTSTANDING.CYCLES_WITH_DATA_RD", level)) , level )
 
 def ORO_DRD_BW_Cycles(self, EV, level):
-    return EV(lambda EV , level : min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("OFFCORE_REQUESTS_OUTSTANDING.ALL_DATA_RD:c4", level)) , level )
+    return EV(lambda EV , level : min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("OFFCORE_REQUESTS_OUTSTANDING.DATA_RD:c4", level)) , level )
 
 def PERF_METRICS_SUM(self, EV, level):
     return ((EV("PERF_METRICS.FRONTEND_BOUND", level) / EV("TOPDOWN.SLOTS", level)) + (EV("PERF_METRICS.BAD_SPECULATION", level) / EV("TOPDOWN.SLOTS", level)) + (EV("PERF_METRICS.RETIRING", level) / EV("TOPDOWN.SLOTS", level)) + (EV("PERF_METRICS.BACKEND_BOUND", level) / EV("TOPDOWN.SLOTS", level))) if topdown_use_fixed else 0
@@ -394,7 +394,7 @@ def L2MPKI(self, EV, level):
 
 # L2 cache misses per kilo instruction for all request types (including speculative)
 def L2MPKI_All(self, EV, level):
-    return 1000 *((EV("OFFCORE_REQUESTS.ALL_DATA_RD", level) - EV("OFFCORE_REQUESTS.DEMAND_DATA_RD", level)) + EV("L2_RQSTS.ALL_DEMAND_MISS", level) + EV("L2_RQSTS.SWPF_MISS", level)) / Instructions(self, EV, level)
+    return 1000 *((EV("OFFCORE_REQUESTS.DATA_RD", level) - EV("OFFCORE_REQUESTS.DEMAND_DATA_RD", level)) + EV("L2_RQSTS.ALL_DEMAND_MISS", level) + EV("L2_RQSTS.SWPF_MISS", level)) / Instructions(self, EV, level)
 
 # L2 cache misses per kilo instruction for all demand loads  (including speculative)
 def L2MPKI_Load(self, EV, level):
