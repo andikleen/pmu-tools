@@ -877,8 +877,11 @@ pmu_to_type = {
 def json_with_extra(el, eventmap_is_file, pmu):
     typ = pmu_to_type[pmu]
     name = event_download.eventlist_name(el, key=typ[0], hybridkey=typ[1])
-    if not os.path.exists(name) and pmu == "cpu_core": # handle forces
-        name = event_download.eventlist_name(el, "core")
+    if not os.path.exists(name):
+        if pmu == "cpu_core":
+            name = event_download.eventlist_name(el, "core")
+        else:
+            name = event_download.eventlist_name(el, "hybridcore")
     emap = EmapNativeJSON(name, pmu)
     if not emap or emap.error:
         print("parsing", name, "failed", file=sys.stderr)
