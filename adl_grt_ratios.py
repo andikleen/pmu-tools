@@ -18,7 +18,7 @@ version = "2.0"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
-
+use_aux = False
 
 def handle_error(obj, msg):
     print_error(msg)
@@ -678,7 +678,7 @@ renaming."""
 
 class Backend_Bound:
     name = "Backend_Bound"
-    domain = "Cycles"
+    domain = "Slots"
     area = "BE"
     level = 1
     htoff = False
@@ -695,12 +695,16 @@ class Backend_Bound:
             handle_error(self, "Backend_Bound zero division")
         return self.val
     desc = """
-Counts the total number of cycles  that were not consumed by
-the backend due to backend stalls.  Counts backend stalls,
-in cycles, due to an outstanding request which is memory
-bound vs core bound.   These are not slot based events and
-therefore can not be precisely added or subtracted from the
-Backend_Bound_Aux subevents."""
+Counts the total number of issue slots  that were not
+consumed by the backend due to backend stalls.  Note that
+uops must be available for consumption in order for this
+event to count.  If a uop is not available (IQ is empty),
+this event will not count.   The rest of these subevents
+count backend stalls, in cycles, due to an outstanding
+request which is memory bound vs core bound.   The subevents
+are not slot based events and therefore can not be precisely
+added or subtracted from the Backend_Bound_Aux subevents
+which are slot based."""
 
 
 class Core_Bound:
@@ -985,7 +989,13 @@ Counts the total number of issue slots  that were not
 consumed by the backend due to backend stalls.  Note that
 UOPS must be available for consumption in order for this
 event to count.  If a uop is not available (IQ is empty),
-this event will not count."""
+this event will not count.  All of these subevents count
+backend stalls, in slots, due to a resource limitation.
+These are not cycle based events and therefore can not be
+precisely added or subtracted from the Backend_Bound
+subevents which are cycle based.  These subevents are
+supplementary to Backend_Bound and can be used to analyze
+results from a resource perspective at allocation."""
 
 
 class Resource_Bound:
@@ -1009,7 +1019,7 @@ class Resource_Bound:
     desc = """
 Counts the total number of issue slots  that were not
 consumed by the backend due to backend stalls.  Note that
-UOPS must be available for consumption in order for this
+uops must be available for consumption in order for this
 event to count.  If a uop is not available (IQ is empty),
 this event will not count."""
 
@@ -2033,17 +2043,27 @@ class Setup:
         n = L2_Bound() ; r.run(n) ; o["L2_Bound"] = n
         n = L3_Bound() ; r.run(n) ; o["L3_Bound"] = n
         n = DRAM_Bound() ; r.run(n) ; o["DRAM_Bound"] = n
-        n = Backend_Bound_Aux() ; r.run(n) ; o["Backend_Bound_Aux"] = n
-        n = Resource_Bound() ; r.run(n) ; o["Resource_Bound"] = n
+        if use_aux:
+            n = Backend_Bound_Aux() ; r.run(n) ; o["Backend_Bound_Aux"] = n
+        if use_aux:
+            n = Resource_Bound() ; r.run(n) ; o["Resource_Bound"] = n
         n = Mem_Scheduler() ; r.run(n) ; o["Mem_Scheduler"] = n
-        n = ST_Buffer() ; r.run(n) ; o["ST_Buffer"] = n
-        n = LD_Buffer() ; r.run(n) ; o["LD_Buffer"] = n
-        n = RSV() ; r.run(n) ; o["RSV"] = n
-        n = Non_Mem_Scheduler() ; r.run(n) ; o["Non_Mem_Scheduler"] = n
-        n = Register() ; r.run(n) ; o["Register"] = n
-        n = Reorder_Buffer() ; r.run(n) ; o["Reorder_Buffer"] = n
-        n = Alloc_Restriction() ; r.run(n) ; o["Alloc_Restriction"] = n
-        n = Serialization() ; r.run(n) ; o["Serialization"] = n
+        if use_aux:
+            n = ST_Buffer() ; r.run(n) ; o["ST_Buffer"] = n
+        if use_aux:
+            n = LD_Buffer() ; r.run(n) ; o["LD_Buffer"] = n
+        if use_aux:
+            n = RSV() ; r.run(n) ; o["RSV"] = n
+        if use_aux:
+            n = Non_Mem_Scheduler() ; r.run(n) ; o["Non_Mem_Scheduler"] = n
+        if use_aux:
+            n = Register() ; r.run(n) ; o["Register"] = n
+        if use_aux:
+            n = Reorder_Buffer() ; r.run(n) ; o["Reorder_Buffer"] = n
+        if use_aux:
+            n = Alloc_Restriction() ; r.run(n) ; o["Alloc_Restriction"] = n
+        if use_aux:
+            n = Serialization() ; r.run(n) ; o["Serialization"] = n
         n = Retiring() ; r.run(n) ; o["Retiring"] = n
         n = Base() ; r.run(n) ; o["Base"] = n
         n = FP_uops() ; r.run(n) ; o["FP_uops"] = n
@@ -2082,16 +2102,26 @@ class Setup:
         o["L2_Bound"].parent = o["Load_Store_Bound"]
         o["L3_Bound"].parent = o["Load_Store_Bound"]
         o["DRAM_Bound"].parent = o["Load_Store_Bound"]
-        o["Resource_Bound"].parent = o["Backend_Bound_Aux"]
-        o["Mem_Scheduler"].parent = o["Resource_Bound"]
-        o["ST_Buffer"].parent = o["Mem_Scheduler"]
-        o["LD_Buffer"].parent = o["Mem_Scheduler"]
-        o["RSV"].parent = o["Mem_Scheduler"]
-        o["Non_Mem_Scheduler"].parent = o["Resource_Bound"]
-        o["Register"].parent = o["Resource_Bound"]
-        o["Reorder_Buffer"].parent = o["Resource_Bound"]
-        o["Alloc_Restriction"].parent = o["Resource_Bound"]
-        o["Serialization"].parent = o["Resource_Bound"]
+        if use_aux:
+            o["Resource_Bound"].parent = o["Backend_Bound_Aux"]
+        if use_aux:
+            o["Mem_Scheduler"].parent = o["Resource_Bound"]
+        if use_aux:
+            o["ST_Buffer"].parent = o["Mem_Scheduler"]
+        if use_aux:
+            o["LD_Buffer"].parent = o["Mem_Scheduler"]
+        if use_aux:
+            o["RSV"].parent = o["Mem_Scheduler"]
+        if use_aux:
+            o["Non_Mem_Scheduler"].parent = o["Resource_Bound"]
+        if use_aux:
+            o["Register"].parent = o["Resource_Bound"]
+        if use_aux:
+            o["Reorder_Buffer"].parent = o["Resource_Bound"]
+        if use_aux:
+            o["Alloc_Restriction"].parent = o["Resource_Bound"]
+        if use_aux:
+            o["Serialization"].parent = o["Resource_Bound"]
         o["Base"].parent = o["Retiring"]
         o["FP_uops"].parent = o["Base"]
         o["Other_Ret"].parent = o["Base"]
@@ -2146,11 +2176,16 @@ class Setup:
         o["Load_Store_Bound"].Mem_Scheduler = o["Mem_Scheduler"]
         o["Load_Store_Bound"].Store_Bound = o["Store_Bound"]
         o["Store_Bound"].Mem_Scheduler = o["Mem_Scheduler"]
-        o["Backend_Bound_Aux"].Backend_Bound = o["Backend_Bound"]
-        o["Resource_Bound"].Backend_Bound = o["Backend_Bound"]
-        o["ST_Buffer"].Mem_Scheduler = o["Mem_Scheduler"]
-        o["LD_Buffer"].Mem_Scheduler = o["Mem_Scheduler"]
-        o["RSV"].Mem_Scheduler = o["Mem_Scheduler"]
+        if use_aux:
+            o["Backend_Bound_Aux"].Backend_Bound = o["Backend_Bound"]
+        if use_aux:
+            o["Resource_Bound"].Backend_Bound = o["Backend_Bound"]
+        if use_aux:
+            o["ST_Buffer"].Mem_Scheduler = o["Mem_Scheduler"]
+        if use_aux:
+            o["LD_Buffer"].Mem_Scheduler = o["Mem_Scheduler"]
+        if use_aux:
+            o["RSV"].Mem_Scheduler = o["Mem_Scheduler"]
 
         # siblings cross-tree
 
