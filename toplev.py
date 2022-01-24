@@ -1597,8 +1597,10 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
     post = ""
-    if len(res.keys()) > 1 and len(runner_list) > 1:
-        post = "-" + runner_name(runner)
+    if len(runner_list) > 1:
+        if len(res.keys()) > 1:
+            post += "-"
+        post += runner_name(runner)
     out.set_cpus(display_keys(runner, keys, mode, post))
     runner.printer.numprint = 0
     if smt_mode:
