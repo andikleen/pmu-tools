@@ -2057,7 +2057,7 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum):
     if r is None:
         return r
     # cannot check because it's an event that needs to be expanded first
-    if not event.startswith("cpu") and title and int(title) not in r.cpu_list:
+    if not event.startswith("cpu") and is_number(title) and int(title) not in r.cpu_list:
         return r
     if revnum is None:
         revnum = r.sched.evnum
