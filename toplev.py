@@ -3855,7 +3855,7 @@ def check_root():
         print("Warning: Needs root or echo -1 > /proc/sys/kernel/perf_event_paranoid",
                 file=sys.stderr)
 
-def extra_setup(runner, rest):
+def extra_setup_once(runner, rest):
     if not args.no_util:
         import perf_metrics
         perf_metrics.Setup(runner)
@@ -3868,7 +3868,18 @@ def extra_setup(runner, rest):
         import linux_metrics
         linux_metrics.Setup(runner)
 
-    if args.tsx and cpu.has_tsx and cpu.cpu in tsx_cpus:
+    if args.power and feat.supports_power:
+        if not args.quiet and not args.import_ and not args.print:
+            print("Running with --power. Will measure complete system.")
+        if args.single_thread:
+            print("--single-thread conflicts with --power")
+        check_root()
+        rest = add_args(rest, "-a")
+
+    return rest
+
+def extra_setup(runner):
+    if args.tsx and cpu.has_tsx and cpu.cpu in tsx_cpus and runner.pmu in ("cpu", "cpu_core"):
         import tsx_metrics
         tsx_metrics.Setup(runner)
 
@@ -3876,17 +3887,10 @@ def extra_setup(runner, rest):
         import frequency
         frequency.SetupCPU(runner, cpu)
 
-if args.power and feat.supports_power:
-    if not args.quiet and not args.import_ and not args.print:
-        print("Running with --power. Will measure complete system.")
-    if args.single_thread:
-        print("--single-thread conflicts with --power")
-    check_root()
-    rest = add_args(rest, "-a")
-
-def runner_extra_init():
+def runner_extra_init(rest):
+    ret = extra_setup_once(runner_list[0], rest)
     for r in runner_list:
-        extra_setup(r, rest)
+        extra_setup(r)
 
     if args.nodes:
         check_nodes(runner_list, args.nodes)
@@ -3894,7 +3898,9 @@ def runner_extra_init():
     for r in runner_list:
         r.setup_children()
 
-runner_extra_init()
+    return rest
+
+rest = runner_extra_init(rest)
 
 if smt_mode and not os.getenv('FORCEHT'):
     # do not need SMT mode if no objects have Core scope
