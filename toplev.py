@@ -2419,6 +2419,9 @@ def compare_event(aname, bname):
     fields = ('val','event','cmask','edge','inv')
     return map_fields(a, fields) == map_fields(b, fields)
 
+def is_hybrid():
+    return ocperf.file_exists("/sys/devices/cpu/format/any")
+
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     """get measurement result, possibly wrapping in UVal"""
 
@@ -2461,7 +2464,8 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
         ev = ev.lower()
         assert (rmap_ev == canon_event(ev).replace("/k", "/") or
                 compare_event(rmap_ev, ev) or
-                rmap_ev == "dummy")
+                rmap_ev == "dummy" or
+                (rmap_ev.endswith("_any") and not is_hybrid()))
 
     try:
         vv = res[index]
