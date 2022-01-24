@@ -582,6 +582,8 @@ g.add_argument('--exclusive', help='Use exclusive groups. Requires new kernel an
 g.add_argument('--thread',
         help="Enable per thread SMT measurements for pre-ICL, at the cost of more multiplexing.",
         action='store_true')
+g.add_argument('--aux', help='Enable auxilliary hierarchy nodes on some models',
+            action='store_true')
 
 g = p.add_argument_group('Query nodes')
 g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit, ^ for full match',
@@ -3772,6 +3774,7 @@ def model_setup(runner, cpuname):
     elif cpuname == "adl" and runner.pmu == "cpu_atom":
         import adl_grt_ratios
         model = adl_grt_ratios
+        model.use_aux = args.aux
     elif cpuname == "slm":
         import slm_ratios
         model = slm_ratios
