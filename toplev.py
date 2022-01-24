@@ -3982,7 +3982,10 @@ def setup_cpus(rest, cpu):
             start += part
     else:
         for r in runner_list:
-            r.cpu_list = list(allowed_threads)
+            if r.cpu_list:
+                r.cpu_list = sorted(list(set(r.cpu_list) & set(allowed_threads)))
+            else:
+                r.cpu_list = list(allowed_threads)
     return rest
 
 rest = setup_cpus(rest, cpu)
