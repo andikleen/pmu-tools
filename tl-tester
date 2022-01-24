@@ -24,6 +24,7 @@ set -u
 
 DEFAULTCPU=skl
 [ ! -r /sys/devices/cpu/format/any ] && DEFAULTCPU=icl
+[ -d /sys/devices/cpu_atom ] && DEFAULTCPU=adl
 
 WRAP=${WRAP:-}
 DCPU=${DCPU:-$DEFAULTCPU}
@@ -160,7 +161,11 @@ $WRAP ./toplev.py --force-cpu skl $OPT --filterquals --nodes '!+Bad_Speculation.
 [ -z "$NORES" ] && grep IpMispredict log$$
 [ -z "$NORES" ] && grep Branch_Mispredicts log$$
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
+if [ -d /sys/devices/cpu_atom ] ; then
+$WRAP ./toplev --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $(./cputop 'type=="core"' taskset) $LOADLONG
+else
 $WRAP ./toplev --force-cpu skl --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $LOADLONG
+fi
 [ -z "$NORES" ] && grep Branch_Misprediction_Cost log$$
 #[ -z "$NORES" ] && grep IpMispredict log$$
 [ -z "$NORES" ] && grep Branch_Mispredicts log$$
@@ -302,11 +307,11 @@ done
 
 for j in $NOSMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$j" ] && continue
-$WRAP ./toplev.py --perf --force-cpu $j $OPT -l1 $LOAD 2>&1 | tee log$$.$j
+$WRAP ./toplev.py --perf --filterquals --force-cpu $j $OPT -l1 $LOAD 2>&1 | tee log$$.$j
 # SLM now needs two groups
 [ $j != "slm" ] && onegroup log$$.$j
 checklog log$$.$j
-$WRAP ./toplev.py --force-cpu $j $ALL $OPT $LOAD 2>&1 | tee log$$.$j
+$WRAP ./toplev.py --filterquals --force-cpu $j $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
 done
@@ -368,7 +373,11 @@ $WRAP ./toplev.py $SHOPT --import x$$.csv.gz -o y$$.out.gz
 rm x$$.csv.gz y$$.out.gz
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics $NOMULTIPLEX --columns -l4 $LOADQUICK
+if [ -d /sys/devices/cpu_atom ] ; then
+[ -z "$ONLYCPU" ] && $WRAP ./toplev.py --force-cpu adl $OPT --cpu 0,1,2,3 --stats --metrics --per-core --columns -l4 $LOAD
+else
 [ -z "$ONLYCPU" ] && $WRAP ./toplev.py --force-cpu bdw $OPT --cpu 0,1,2,3 --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns --filterquals -l4 $LOAD
+fi
 DURATION_TIME=0 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
 #NUM_RUNNERS=2 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
 #NUM_RUNNERS=2 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all -a -A $LOAD
