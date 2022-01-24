@@ -2401,7 +2401,7 @@ def event_rmap(e):
     return n
 
 def iscycles(ev):
-    return ev == "cycles" or ev == "cpu_clk_unhalted.thread"
+    return ev == "cycles" or ev == "cpu_clk_unhalted.thread" or ev == "cpu_clk_unhalted.core"
 
 # compare events to handle name aliases
 def compare_event(aname, bname):
