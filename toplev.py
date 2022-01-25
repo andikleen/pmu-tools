@@ -78,7 +78,7 @@ known_cpus = (
              167, )), # RKL as ICL for now
     ("tgl", (140, 141, )),
     ("icx", (106, 108, )),
-    ("adl", (154, )),
+    ("adl", (154, 151, )),
 )
 
 eventlist_alias = {
