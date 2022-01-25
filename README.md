@@ -105,6 +105,8 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* Support for running on Alderlake with a hybrid Goldencove / Gracemont model
+  Add a new --aux option to control the auxillary nodes on Atom.
 * toplev now supports a --abbrev option to abbreviate node names
 * Add experimental --thread option to support per SMT thread measurements on pre ICL
   CPUs.
