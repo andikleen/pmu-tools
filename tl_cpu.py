@@ -183,10 +183,10 @@ class CPU(object):
         self.standard_counters = { "cpu": ("0,1,2,3",) }
         if self.cpu == "adl":
             newcounters = {
-                    "cpu_core": 8,
-                    "cpu": 4,
-                    "cpu_atom": 6,
-                }
+                "cpu_core": 8,
+                "cpu": 4,
+                "cpu_atom": 6,
+            }
             self.standard_counters = {
                 "cpu_core": ("0,1,2,3,4,5,6,7", "0,1,2,3", ),
                 "cpu": ("0,1,2,3,4,5,6,7", "0,1,2,3", ),

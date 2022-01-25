@@ -1761,7 +1761,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat.compute_errors()
     runner.idle_keys |= hidden_keys
     if nothing:
-        print("%s: Nothing measured%s" % (runner.pmu, " for " if len(nothing) > 0 and not "" in nothing else ""), " ".join(sorted(nothing)), file=sys.stderr)
+        print("%s: Nothing measured%s" % (runner.pmu, " for " if len(nothing) > 0 and "" not in nothing else ""), " ".join(sorted(nothing)), file=sys.stderr)
     if runner.printer.numprint == 0 and not args.quiet and runner.olist:
         print("No node %scrossed threshold" % (
                 "for %s " % runner_name(runner) if len(runner_list) > 1 else ""),file=sys.stderr)
@@ -3896,7 +3896,7 @@ def extra_setup(runner):
         frequency.SetupCPU(runner, cpu)
 
 def runner_extra_init(rest):
-    ret = extra_setup_once(runner_list[0], rest)
+    rest = extra_setup_once(runner_list[0], rest)
     for r in runner_list:
         extra_setup(r)
 
