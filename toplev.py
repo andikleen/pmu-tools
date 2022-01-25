@@ -582,7 +582,8 @@ g.add_argument('--exclusive', help='Use exclusive groups. Requires new kernel an
 g.add_argument('--thread',
         help="Enable per thread SMT measurements for pre-ICL, at the cost of more multiplexing.",
         action='store_true')
-g.add_argument('--aux', help='Enable auxilliary hierarchy nodes on some models',
+g.add_argument('--aux', help='Enable auxilliary hierarchy nodes on some models. '
+                             'Auxiliary nodes offer alternate views of the same bottleneck component, which can impact observed bottleneck percentage totals',
             action='store_true')
 
 g = p.add_argument_group('Query nodes')
