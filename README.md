@@ -107,6 +107,9 @@ on newer Linux kernels.
 
 * Support for running on Alderlake with a hybrid Goldencove / Gracemont model
   Add a new --aux option to control the auxillary nodes on Atom.
+  --cputype atom/core is supported to filter on core types.
+* cputop supports an atom/core shortcut to generate the cpu mask of
+  hybrid CPUs. Use like toplev $(cputop core cpuset) workload
 * toplev now supports a --abbrev option to abbreviate node names
 * Add experimental --thread option to support per SMT thread measurements on pre ICL
   CPUs.
