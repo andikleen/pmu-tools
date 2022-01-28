@@ -1448,7 +1448,7 @@ class ValidEvents(object):
         self.valid_events = [r"cpu(_core|_atom)?/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*",
                              r"msr.*", "emulation-faults",
                              r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy",
-                             "slots", r"topdown-(fe-bound|be-bound|retiring|bad-spec)"]
+                             "slots", r"topdown-(fe-bound|be-bound|retiring|bad-spec|heavy-ops|br-mispredict|fetch-lat|mem-bound)"]
         self.update()
 
     def add_event(self, ev):
