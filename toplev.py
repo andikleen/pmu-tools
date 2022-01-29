@@ -342,7 +342,7 @@ def limited_overflow(evlist, num):
             return False
         return True
 
-    assigned = Counter([ectx.limited_counters[remove_qual(x)] for x in evlist if x in ectx.limited_counters])
+    assigned = Counter([ectx.limited_counters[remove_qual(x)] for x in evlist if remove_qual(x) in ectx.limited_counters])
     gc = GenericCounters()
     return any([x > 1 and gen_overflow(k, gc, x) for k, x in assigned.items()]), gc.num
 
