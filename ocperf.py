@@ -881,7 +881,7 @@ def json_with_extra(el, eventmap_is_file, pmu):
         if pmu == "cpu_core":
             name = event_download.eventlist_name(el, "core")
         else:
-            name = event_download.eventlist_name(el, "hybridcore")
+            name = event_download.eventlist_name(el, "hybridcore", hybridkey="Core")
     emap = EmapNativeJSON(name, pmu)
     if not emap or emap.error:
         print("parsing", name, "failed", file=sys.stderr)
