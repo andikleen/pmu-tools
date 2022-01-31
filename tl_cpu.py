@@ -95,6 +95,7 @@ class CPU(object):
         return False
 
     def __init__(self, known_cpus, nocheck, env):
+        self.vendor = ""
         self.env = env
         self.model = 0
         self.cpu = None
@@ -135,6 +136,7 @@ class CPU(object):
                     cpunum = int(n[2])
                     self.allcpus.append(cpunum)
                 elif (n[0], n[2]) == ("vendor_id", "GenuineIntel"):
+                    self.vendor = n[2]
                     seen.add("vendor_id")
                 elif (len(n) > 3 and
                         (n[0], n[1], n[3]) == ("cpu", "family", "6")):

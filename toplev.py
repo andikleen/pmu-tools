@@ -3549,7 +3549,7 @@ if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
         print("(echo 0 | sudo tee /proc/sys/kernel/nmi_watchdog or\n echo kernel.nmi_watchdog=0 >> /etc/sysctl.conf ; sysctl -p as root)", file=sys.stderr)
 
 if cpu.cpu is None:
-    sys.exit("Unsupported CPU model %d" % (cpu.model,))
+    sys.exit("Unsupported CPU model %s %d" % (cpu.vendor, cpu.model,))
 
 kv = os.getenv("KERNEL_VERSION")
 if not kv:
