@@ -186,6 +186,8 @@ def parse_map_file(match, key=None, link=True, onlyprint=False,
                     print("error accessing", path)
                     continue
                 try:
+                    fn = fn.replace("01234", "4")
+                    fn = fn.replace("56789ABCDEF", "5") # XXX
                     getfile(url, dir, fn)
                 except URLError as e:
                     print("error accessing %s: %s" % (url, e), file=sys.stderr)
