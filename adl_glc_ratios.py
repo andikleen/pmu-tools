@@ -1,6 +1,6 @@
 # -*- coding: latin-1 -*-
 #
-# auto generated TopDown/TMA 4.3-full-perf description for Intel 12th gen Core (code name Alderlake) with Golden Cove
+# auto generated TopDown/TMA 4.31-full-perf description for Intel 12th gen Core (code name Alderlake) with Golden Cove
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -16,7 +16,7 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.3-full-perf"
+version = "4.31-full-perf"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
@@ -57,7 +57,7 @@ def Branching_Retired(self, EV, level):
     return (EV("BR_INST_RETIRED.COND", level) + 3 * EV("BR_INST_RETIRED.NEAR_CALL", level) + Br_DoI_Jumps(self, EV, level)) / SLOTS(self, EV, level)
 
 def Core_Bound_Cycles(self, EV, level):
-    return EV("CYCLE_ACTIVITY.STALLS_TOTAL", level) - EV("EXE_ACTIVITY.BOUND_ON_LOADS", level) + Few_Uops_Executed_Threshold(self, EV, level)
+    return EV("CYCLE_ACTIVITY.STALLS_TOTAL", level) - EV("EXE_ACTIVITY.BOUND_ON_LOADS:c5", level) + Few_Uops_Executed_Threshold(self, EV, level)
 
 def DurationTimeInSeconds(self, EV, level):
     return EV("interval-ms", 0) / 1000
@@ -354,8 +354,12 @@ def L2_Cache_Fill_BW(self, EV, level):
 def L3_Cache_Fill_BW(self, EV, level):
     return 64 * EV("LONGEST_LAT_CACHE.MISS", level) / OneBillion / Time(self, EV, level)
 
-# Average per-core data access bandwidth to the L3 cache [GB / sec]
+# Average per-thread data access bandwidth to the L3 cache [GB / sec]
 def L3_Cache_Access_BW(self, EV, level):
+    return 64 * EV("OFFCORE_REQUESTS.ALL_REQUESTS", level) / OneBillion / Time(self, EV, level)
+
+# Average per-core data access bandwidth to the L3 cache [GB / sec]
+def L3_Cache_Access_BWL3_Cache_Access_BW(self, EV, level):
     return 64 * EV("OFFCORE_REQUESTS.ALL_REQUESTS", level) / OneBillion / Time(self, EV, level)
 
 # L1 cache true misses per kilo instruction for retired demand loads
@@ -1014,7 +1018,7 @@ class L1_Bound:
     metricgroup = ['CacheMisses', 'MemoryBound', 'TmaL3mem']
     def compute(self, EV):
         try:
-            self.val = max((EV("EXE_ACTIVITY.BOUND_ON_LOADS", 3) - EV("MEMORY_ACTIVITY.STALLS_L1D_MISS", 3)) / CLKS(self, EV, 3) , 0 )
+            self.val = max((EV("EXE_ACTIVITY.BOUND_ON_LOADS:c5", 3) - EV("MEMORY_ACTIVITY.STALLS_L1D_MISS", 3)) / CLKS(self, EV, 3) , 0 )
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "L1_Bound zero division")
@@ -1746,8 +1750,8 @@ class Ports_Utilization:
     metricgroup = ['PortsUtil']
     def compute(self, EV):
         try:
-            self.val = Core_Bound_Cycles(self, EV, 3) / CLKS(self, EV, 3) if (EV("ARITH.DIVIDER_ACTIVE", 3)<(EV("CYCLE_ACTIVITY.STALLS_TOTAL", 3) - EV("EXE_ACTIVITY.BOUND_ON_LOADS", 3))) else Few_Uops_Executed_Threshold(self, EV, 3) / CLKS(self, EV, 3)
-            EV("EXE_ACTIVITY.BOUND_ON_LOADS", 3)
+            self.val = Core_Bound_Cycles(self, EV, 3) / CLKS(self, EV, 3) if (EV("ARITH.DIVIDER_ACTIVE", 3)<(EV("CYCLE_ACTIVITY.STALLS_TOTAL", 3) - EV("EXE_ACTIVITY.BOUND_ON_LOADS:c5", 3))) else Few_Uops_Executed_Threshold(self, EV, 3) / CLKS(self, EV, 3)
+            EV("EXE_ACTIVITY.BOUND_ON_LOADS:c5", 3)
             EV("ARITH.DIVIDER_ACTIVE", 3)
             EV("CYCLE_ACTIVITY.STALLS_TOTAL", 3)
             self.thresh = (self.val > 0.2) and self.parent.thresh
@@ -1779,7 +1783,7 @@ class Ports_Utilized_0:
     metricgroup = ['PortsUtil']
     def compute(self, EV):
         try:
-            self.val = (EV("CYCLE_ACTIVITY.STALLS_TOTAL", 4) - EV("EXE_ACTIVITY.BOUND_ON_LOADS", 4)) / CLKS(self, EV, 4)
+            self.val = (EV("CYCLE_ACTIVITY.STALLS_TOTAL", 4) - EV("EXE_ACTIVITY.BOUND_ON_LOADS:c5", 4)) / CLKS(self, EV, 4)
             self.thresh = (self.val > 0.2) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Ports_Utilized_0 zero division")
@@ -3566,11 +3570,11 @@ sec]"""
 
 class Metric_L3_Cache_Access_BW:
     name = "L3_Cache_Access_BW"
-    domain = "GB/sec"
+    domain = "Metric"
     maxval = 0
     server = False
     errcount = 0
-    area = "Info.Memory"
+    area = "Info.Memory.Thread"
     metricgroup = ['Mem', 'MemoryBW', 'Offcore']
     sibling = None
 
@@ -3580,6 +3584,27 @@ class Metric_L3_Cache_Access_BW:
             self.thresh = True
         except ZeroDivisionError:
             handle_error_metric(self, "L3_Cache_Access_BW zero division")
+    desc = """
+Average per-thread data access bandwidth to the L3 cache [GB
+/ sec]"""
+
+
+class Metric_L3_Cache_Access_BWL3_Cache_Access_BW:
+    name = "L3_Cache_Access_BWL3_Cache_Access_BW"
+    domain = "Core_Metric"
+    maxval = 0
+    server = False
+    errcount = 0
+    area = "Info.Memory.Core"
+    metricgroup = ['Mem', 'MemoryBW', 'Offcore']
+    sibling = None
+
+    def compute(self, EV):
+        try:
+            self.val = L3_Cache_Access_BWL3_Cache_Access_BW(self, EV, 0)
+            self.thresh = True
+        except ZeroDivisionError:
+            handle_error_metric(self, "L3_Cache_Access_BWL3_Cache_Access_BW zero division")
     desc = """
 Average per-core data access bandwidth to the L3 cache [GB /
 sec]"""
@@ -4155,6 +4180,7 @@ class Setup:
         n = Metric_L2_Cache_Fill_BW() ; r.metric(n) ; o["L2_Cache_Fill_BW"] = n
         n = Metric_L3_Cache_Fill_BW() ; r.metric(n) ; o["L3_Cache_Fill_BW"] = n
         n = Metric_L3_Cache_Access_BW() ; r.metric(n) ; o["L3_Cache_Access_BW"] = n
+        n = Metric_L3_Cache_Access_BWL3_Cache_Access_BW() ; r.metric(n) ; o["L3_Cache_Access_BWL3_Cache_Access_BW"] = n
         n = Metric_L1MPKI() ; r.metric(n) ; o["L1MPKI"] = n
         n = Metric_L1MPKI_Load() ; r.metric(n) ; o["L1MPKI_Load"] = n
         n = Metric_L2MPKI() ; r.metric(n) ; o["L2MPKI"] = n
