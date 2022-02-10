@@ -3372,7 +3372,9 @@ class Runner(object):
                 cpu.ht and
                 not single_thread and has_core_node(self)):
             if not feat.supports_percore:
-                self.olist = filternot(core_node, self.olist)
+		self.olist = filternot(lambda obj:
+			safe_ref(obj, 'domain') in self.ectx.core_domains,
+			self.olist)
         else:
             rest = add_args(rest, "--percore-show-thread")
         return rest
