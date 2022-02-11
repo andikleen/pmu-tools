@@ -177,7 +177,8 @@ class EventContext(object):
         self.outgroup_events = set(["dummy", "duration_time", "msr/tsc/"])
         self.sched_ignore_events = set([])
         self.require_pebs_events = set([])
-        self.core_domains = set(["Slots", "CoreClocks", "CoreMetric"])
+        self.core_domains = set(["Slots", "CoreClocks", "CoreMetric",
+            "Core_Execution", "Core_Clocks", "Core_Metric"])
         self.limited_counters = dict(limited_counters_base)
         self.limited_set = set(self.limited_counters.keys())
         self.fixed_events = set([x for x in self.limited_counters
@@ -3372,9 +3373,9 @@ class Runner(object):
                 cpu.ht and
                 not single_thread and has_core_node(self)):
             if not feat.supports_percore:
-		self.olist = filternot(lambda obj:
-			safe_ref(obj, 'domain') in self.ectx.core_domains,
-			self.olist)
+                self.olist = filternot(lambda obj:
+                        safe_ref(obj, 'domain') in self.ectx.core_domains,
+                        self.olist)
         else:
             rest = add_args(rest, "--percore-show-thread")
         return rest
@@ -3574,7 +3575,7 @@ def setup_metrics(model, pmu):
     force_metrics = os.getenv("FORCEMETRICS") is not None
     model.topdown_use_fixed = (force_metrics or
             os.path.exists("/sys/devices/%s/events/topdown-fe-bound" % pmu))
-    ectx.core_domains = set(["CoreClocks", "CoreMetric"])
+    ectx.core_domains = ectx.core_domains - set(["Slots"])
     ectx.slots_available = (force_metrics or
             os.path.exists("/sys/devices/%s/events/slots" % pmu))
 
