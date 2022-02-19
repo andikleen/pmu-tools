@@ -86,6 +86,7 @@ known_cpus = (
              183, )), # RPL as ADL
     ("spr", (143, )),
     ("ehl", (150, )),
+    ("mtl", (186, )),
 )
 
 eventlist_alias = {
@@ -3820,6 +3821,13 @@ def model_setup(runner, cpuname):
         import adl_grt_ratios
         model = adl_grt_ratios
         model.use_aux = args.aux
+    elif cpuname == "mtl":
+        if runner.pmu == "cpu_atom":
+            sys.exit("MTL Atom model not implemented yet")
+        import mtl_rwc_ratios
+        setup_metrics(mtl_rwc_ratios, runner.pmu)
+        mtl_rwc_ratios.smt_enabled = cpu.ht
+        model = mtl_rwc_ratios
     elif cpuname == "slm":
         import slm_ratios
         model = slm_ratios
