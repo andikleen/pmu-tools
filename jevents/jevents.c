@@ -63,7 +63,7 @@ static const char *json_default_name(char *type)
 	emap = getenv("EVENTMAP");
 	if (emap) {
 		if (access(emap, R_OK) == 0)
-			return emap;
+			return strdup(emap);
 		free(idstr);
 		if (asprintf(&idstr, "%s%s", emap, type) < 0)
 			goto out;
@@ -270,7 +270,7 @@ static struct msrmap *lookup_msr(char *map, jsmntok_t *val)
  * in perf format and a description passed.
  *
  * Call func with each event in the json file
- * Return: -1 on failure, otherwise 0.
+ * Return: negative on failure, otherwise 0.
  */
 int json_events(const char *fn,
 	  int (*func)(void *data, char *name, char *event, char *desc, char *pmu),
@@ -286,6 +286,8 @@ int json_events(const char *fn,
 
 	if (!fn)
 		fn = json_default_name("-core");
+	if (!fn)
+		return -ENOMEM;
 	tokens = parse_json(fn, &map, &size, &len);
 	if (!tokens) {
 		if(!orig_fn)
