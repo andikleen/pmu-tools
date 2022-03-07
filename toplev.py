@@ -1006,10 +1006,6 @@ if args.parallel:
 
 rest = [x for x in rest if x != "--"]
 
-if args.version:
-    print("toplev")
-    sys.exit(0)
-
 if args.cpu:
     rest = ["--cpu", args.cpu] + rest
 if args.pid:
@@ -3809,6 +3805,10 @@ def runner_emaps():
     return version
 
 version = runner_emaps()
+
+if args.version:
+    print("toplev, CPU: %s, TMA version: %s"%(cpu.cpu, version))
+    sys.exit(0)
 
 if args.gen_script:
     args.quiet = True
