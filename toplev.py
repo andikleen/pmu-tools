@@ -3807,7 +3807,7 @@ def runner_emaps():
 version = runner_emaps()
 
 if args.version:
-    print("toplev, CPU: %s, TMA version: %s"%(cpu.cpu, version))
+    print("toplev, CPU: %s, TMA version: %s" % (cpu.cpu, version))
     sys.exit(0)
 
 if args.gen_script:
