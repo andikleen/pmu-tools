@@ -94,7 +94,7 @@ class CPU(object):
             return True
         return False
 
-    def __init__(self, known_cpus, nocheck, env):
+    def __init__(self, known_cpus=(), nocheck=False, env=Env()):
         self.vendor = ""
         self.env = env
         self.model = 0
