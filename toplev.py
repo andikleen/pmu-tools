@@ -3100,7 +3100,7 @@ def check_nodes(runner_list, nodesarg):
                     return True
         return False
 
-    valid = [o for o in options if valid_node(o)]
+    valid = list(map(valid_node, options))
     if not all(valid):
         sys.exit("Unknown node(s) in --nodes: " +
                  " ".join([o for o, v in zip(options, valid) if not v]))
