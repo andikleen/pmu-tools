@@ -2384,7 +2384,7 @@ def event_ectx(ev):
     return ectx if ectx else runner_list[0].ectx
 
 def do_event_rmap(e, ectx_):
-    n = canon_event(ectx_.emap.getperf(e))
+    n = ectx_.emap.getperf(e)
     if ectx_.emap.getevent(n, nocheck=event_nocheck):
         return n
     if e in non_json_events:

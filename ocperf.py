@@ -256,6 +256,7 @@ class Event(object):
         self.val = val
         self.name = name
         self.extra = ""
+        self.userextra = ""
         self.msr = 0
         self.msrval = 0
         self.desc = desc
@@ -418,6 +419,7 @@ class UncoreEvent(object):
         else:
             e.errata = None
         self.extra = ''
+        self.userextra = ''
 
     #  {
     # "Unit": "CBO",
@@ -704,11 +706,13 @@ class EmapNativeJSON(object):
             # hack for now. Avoid ambiguity with :p
             # Should handle qualmap properly here
             extra = extra.replace("period=", "sample-after=")
+            userextra = extra
             extra = extra_set(extra)
             ev = self.events[e]
             ev_extra = extra_set(ev.extra)
             if extra and merge_extra(ev_extra, extra) > ev_extra:
                 ev = copy.deepcopy(self.events[e])
+                ev.userextra = userextra
                 ev.extra = "".join(sorted(merge_extra(ev_extra, extra)))
                 return ev
             return self.events[e]
@@ -749,7 +753,11 @@ class EmapNativeJSON(object):
 
     def getperf(self, p):
         if p in self.pevents:
-            return self.pevents[p].name
+            e = self.pevents[p]
+            n = e.name
+            if e.userextra:
+                n += ":" + e.userextra
+            return n
         return p
 
     def dumpevents(self, f=sys.stdout, human=True, uncore=True):
