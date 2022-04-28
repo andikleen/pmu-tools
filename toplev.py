@@ -3213,7 +3213,7 @@ class Runner(object):
         self.do_run(obj)
 
     def metric(self, obj):
-        obj.thresh = True
+        obj.thresh = -1
         obj.metric = True
         obj.level = 0
         obj.sibling = None
@@ -3316,9 +3316,11 @@ class Runner(object):
                 obj.parent.thresh = True
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
+            if obj.thresh == -1:
+                obj.thresh = True
             if args.force_bn and obj.name in args.force_bn:
                 obj.thresh = True
-            if obj.thresh != oldthresh:
+            if obj.thresh != oldthresh and oldthresh != -1:
                 changed += 1
             if stat:
                 stat.referenced |= ref
