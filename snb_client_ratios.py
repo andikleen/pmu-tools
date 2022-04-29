@@ -1,6 +1,6 @@
 # -*- coding: latin-1 -*-
 #
-# auto generated TopDown/TMA 4.3-full-perf description for Intel 2nd gen Core (code named SandyBridge)
+# auto generated TopDown/TMA 4.4-full-perf description for Intel 2nd gen Core (code named SandyBridge)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -16,7 +16,7 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.3-full-perf"
+version = "4.4-full-perf"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
@@ -54,6 +54,9 @@ def Backend_Bound_Cycles(self, EV, level):
 def DurationTimeInSeconds(self, EV, level):
     return EV("interval-ms", 0) / 1000
 
+def Exe_Ports(self, EV, level):
+    return 6
+
 def Execute_Cycles(self, EV, level):
     return (EV("UOPS_DISPATCHED.CORE:c1", level) / 2) if smt_enabled else EV("UOPS_DISPATCHED.CORE:c1", level)
 
@@ -85,7 +88,8 @@ def Frontend_Latency_Cycles(self, EV, level):
     return EV(lambda EV , level : min(EV("CPU_CLK_UNHALTED.THREAD", level) , EV("IDQ_UOPS_NOT_DELIVERED.CYCLES_0_UOPS_DELIV.CORE", level)) , level )
 
 def HighIPC(self, EV, level):
-    return IPC(self, EV, level) / Pipeline_Width
+    val = IPC(self, EV, level) / Pipeline_Width
+    return val
 
 def ITLB_Miss_Cycles(self, EV, level):
     return (12 * EV("ITLB_MISSES.STLB_HIT", level) + EV("ITLB_MISSES.WALK_DURATION", level))
@@ -127,7 +131,9 @@ def IPC(self, EV, level):
 
 # Uops Per Instruction
 def UPI(self, EV, level):
-    return Retired_Slots(self, EV, level) / EV("INST_RETIRED.ANY", level)
+    val = Retired_Slots(self, EV, level) / EV("INST_RETIRED.ANY", level)
+    self.thresh = (val > 1.05)
+    return val
 
 # Cycles Per Instruction (per Logical Processor)
 def CPI(self, EV, level):
@@ -153,7 +159,7 @@ def CoreIPC(self, EV, level):
 def FLOPc(self, EV, level):
     return FLOP_Count(self, EV, level) / CORE_CLKS(self, EV, level)
 
-# Instruction-Level-Parallelism (average number of uops executed when there is at least 1 uop executed)
+# Instruction-Level-Parallelism (average number of uops executed when there is execution) per-core
 def ILP(self, EV, level):
     return EV("UOPS_DISPATCHED.THREAD", level) / Execute_Cycles(self, EV, level)
 
@@ -165,9 +171,15 @@ def CORE_CLKS(self, EV, level):
 def Instructions(self, EV, level):
     return EV("INST_RETIRED.ANY", level)
 
+# Average number of Uops retired in cycles where at least one uop has retired.
+def Retire(self, EV, level):
+    return Retired_Slots(self, EV, level) / EV("UOPS_RETIRED.RETIRE_SLOTS:c1", level)
+
 # Fraction of Uops delivered by the DSB (aka Decoded ICache; or Uop Cache)
 def DSB_Coverage(self, EV, level):
-    return EV("IDQ.DSB_UOPS", level) / Fetched_Uops(self, EV, level)
+    val = EV("IDQ.DSB_UOPS", level) / Fetched_Uops(self, EV, level)
+    self.thresh = (val < 0.7) and HighIPC(self, EV, 1)
+    return val
 
 # Average CPU Utilization
 def CPU_Utilization(self, EV, level):
@@ -177,7 +189,7 @@ def CPU_Utilization(self, EV, level):
 def Average_Frequency(self, EV, level):
     return Turbo_Utilization(self, EV, level) * EV("msr/tsc/", 0) / OneBillion / Time(self, EV, level)
 
-# Giga Floating Point Operations Per Second
+# Giga Floating Point Operations Per Second. Aggregate across all supported options of: FP precisions, scalar and vector instructions, vector-width and AMX engine.
 def GFLOPs(self, EV, level):
     return (FLOP_Count(self, EV, level) / OneBillion) / Time(self, EV, level)
 
@@ -191,7 +203,9 @@ def SMT_2T_Utilization(self, EV, level):
 
 # Fraction of cycles spent in the Operating System (OS) Kernel mode
 def Kernel_Utilization(self, EV, level):
-    return EV("CPU_CLK_UNHALTED.THREAD_P:SUP", level) / EV("CPU_CLK_UNHALTED.THREAD", level)
+    val = EV("CPU_CLK_UNHALTED.THREAD_P:SUP", level) / EV("CPU_CLK_UNHALTED.THREAD", level)
+    self.thresh = (val > 0.05)
+    return val
 
 # Cycles Per Instruction for the Operating System (OS) Kernel mode
 def Kernel_CPI(self, EV, level):
@@ -211,7 +225,9 @@ def MEM_Parallel_Requests(self, EV, level):
 
 # Run duration time in seconds
 def Time(self, EV, level):
-    return EV("interval-s", 0)
+    val = EV("interval-s", 0)
+    self.thresh = (val < 1)
+    return val
 
 # Socket actual clocks when any core is active on that socket
 def Socket_CLKS(self, EV, level):
@@ -219,7 +235,9 @@ def Socket_CLKS(self, EV, level):
 
 # Instructions per Far Branch ( Far Branches apply upon transition from application to operating system, handling interrupts, exceptions) [lower number means higher occurrence rate]
 def IpFarBranch(self, EV, level):
-    return EV("INST_RETIRED.ANY", level) / EV("BR_INST_RETIRED.FAR_BRANCH:USER", level)
+    val = EV("INST_RETIRED.ANY", level) / EV("BR_INST_RETIRED.FAR_BRANCH:USER", level)
+    self.thresh = (val < 1000000)
+    return val
 
 # Event groups
 
@@ -315,7 +333,7 @@ class Branch_Resteers:
     area = "FE"
     level = 3
     htoff = False
-    sample = ['BR_MISP_RETIRED.ALL_BRANCHES:pp']
+    sample = ['BR_MISP_RETIRED.ALL_BRANCHES']
     errcount = 0
     sibling = None
     server = False
@@ -438,7 +456,7 @@ class Fetch_Bandwidth:
     def compute(self, EV):
         try:
             self.val = self.Frontend_Bound.compute(EV) - self.Fetch_Latency.compute(EV)
-            self.thresh = (self.val > 0.1) and self.parent.thresh and (HighIPC(self, EV, 2) > 0.35)
+            self.thresh = (self.val > 0.1) and self.parent.thresh and HighIPC(self, EV, 2)
         except ZeroDivisionError:
             handle_error(self, "Fetch_Bandwidth zero division")
         return self.val
@@ -831,7 +849,7 @@ class Ports_Utilization:
     def compute(self, EV):
         try:
             self.val = (Backend_Bound_Cycles(self, EV, 3) - EV("RESOURCE_STALLS.SB", 3) - STALLS_MEM_ANY(self, EV, 3)) / CLKS(self, EV, 3)
-            self.thresh = (self.val > 0.2) and self.parent.thresh
+            self.thresh = (self.val > 0.15) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Ports_Utilization zero division")
         return self.val
@@ -930,9 +948,9 @@ class FP_Arith:
         return self.val
     desc = """
 This metric represents overall arithmetic floating-point
-(FP) operations fraction the CPU has executed (retired on
-AVX stack). Note this metric's value may exceed its parent
-due to use of \"Uops\" CountDomain and FMA double-counting."""
+(FP) operations fraction the CPU has executed (retired).
+Note this metric's value may exceed its parent due to use of
+\"Uops\" CountDomain and FMA double-counting."""
 
 
 class X87_Use:
@@ -957,10 +975,8 @@ class X87_Use:
 This metric serves as an approximation of legacy x87 usage.
 It accounts for instructions beyond X87 FP arithmetic
 operations; hence may be used as a thermometer to avoid X87
-high usage and preferably upgrade to modern ISA. Tip:
-consider compiler flags to generate newer AVX (or SSE)
-instruction sets; which typically perform better and feature
-vectors."""
+high usage and preferably upgrade to modern ISA. See Tip
+under Tuning Hint."""
 
 
 class FP_Scalar:
@@ -983,8 +999,8 @@ class FP_Scalar:
         return self.val
     desc = """
 This metric approximates arithmetic floating-point (FP)
-scalar uops fraction the CPU has executed (retired). May
-overcount due to FMA double counting."""
+scalar uops fraction the CPU has retired. May overcount due
+to FMA double counting."""
 
 
 class FP_Vector:
@@ -1001,15 +1017,15 @@ class FP_Vector:
     def compute(self, EV):
         try:
             self.val = FP_Arith_Vector(self, EV, 4) / EV("UOPS_DISPATCHED.THREAD", 4)
-            self.thresh = (self.val > 0.2) and self.parent.thresh
+            self.val = min(self.val, 1)
+            self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "FP_Vector zero division")
         return self.val
     desc = """
 This metric approximates arithmetic floating-point (FP)
-vector uops fraction the CPU has executed (retired)
-aggregated across all vector widths. May overcount due to
-FMA double counting."""
+vector uops fraction the CPU has retired aggregated across
+all vector widths. May overcount due to FMA double counting."""
 
 
 class Heavy_Operations:
@@ -1033,8 +1049,9 @@ class Heavy_Operations:
     desc = """
 This metric represents fraction of slots where the CPU was
 retiring heavy-weight operations -- instructions that
-require two or more uops. This highly-correlates with the
-uop length of these instructions/flows."""
+require two or more uops or microcoded sequences. This
+highly-correlates with the uop length of these
+instructions/sequences."""
 
 
 class Microcode_Sequencer:
@@ -1233,7 +1250,7 @@ Floating Point Operations Per Cycle"""
 class Metric_ILP:
     name = "ILP"
     domain = "Core_Metric"
-    maxval = 10
+    maxval = Exe_Ports(0,0,0)
     server = False
     errcount = 0
     area = "Info.Core"
@@ -1248,7 +1265,7 @@ class Metric_ILP:
             handle_error_metric(self, "ILP zero division")
     desc = """
 Instruction-Level-Parallelism (average number of uops
-executed when there is at least 1 uop executed)"""
+executed when there is execution) per-core"""
 
 
 class Metric_CORE_CLKS:
@@ -1292,6 +1309,27 @@ class Metric_Instructions:
 Total number of retired Instructions"""
 
 
+class Metric_Retire:
+    name = "Retire"
+    domain = "Metric"
+    maxval = 0
+    server = False
+    errcount = 0
+    area = "Info.Pipeline"
+    metricgroup = ['Pipeline', 'Ret']
+    sibling = None
+
+    def compute(self, EV):
+        try:
+            self.val = Retire(self, EV, 0)
+            self.thresh = True
+        except ZeroDivisionError:
+            handle_error_metric(self, "Retire zero division")
+    desc = """
+Average number of Uops retired in cycles where at least one
+uop has retired."""
+
+
 class Metric_DSB_Coverage:
     name = "DSB_Coverage"
     domain = "Metric"
@@ -1305,7 +1343,7 @@ class Metric_DSB_Coverage:
     def compute(self, EV):
         try:
             self.val = DSB_Coverage(self, EV, 0)
-            self.thresh = (self.val < 0.7) and (HighIPC(self, EV, 1) > 0.35)
+            self.thresh = (self.val < 0.7) and HighIPC(self, EV, 1)
         except ZeroDivisionError:
             handle_error_metric(self, "DSB_Coverage zero division")
     desc = """
@@ -1370,7 +1408,9 @@ class Metric_GFLOPs:
         except ZeroDivisionError:
             handle_error_metric(self, "GFLOPs zero division")
     desc = """
-Giga Floating Point Operations Per Second"""
+Giga Floating Point Operations Per Second. Aggregate across
+all supported options of: FP precisions, scalar and vector
+instructions, vector-width and AMX engine."""
 
 
 class Metric_Turbo_Utilization:
@@ -1479,7 +1519,7 @@ Average external Memory Bandwidth Use for reads and writes
 
 class Metric_MEM_Request_Latency:
     name = "MEM_Request_Latency"
-    domain = "Metric"
+    domain = "Clocks_Latency"
     maxval = 1000
     server = False
     errcount = 0
@@ -1662,6 +1702,7 @@ class Setup:
         n = Metric_ILP() ; r.metric(n) ; o["ILP"] = n
         n = Metric_CORE_CLKS() ; r.metric(n) ; o["CORE_CLKS"] = n
         n = Metric_Instructions() ; r.metric(n) ; o["Instructions"] = n
+        n = Metric_Retire() ; r.metric(n) ; o["Retire"] = n
         n = Metric_DSB_Coverage() ; r.metric(n) ; o["DSB_Coverage"] = n
         n = Metric_CPU_Utilization() ; r.metric(n) ; o["CPU_Utilization"] = n
         n = Metric_Average_Frequency() ; r.metric(n) ; o["Average_Frequency"] = n
@@ -1715,6 +1756,8 @@ class Setup:
         o["LCP"].sibling = (o["DSB_Switches"], o["Fetch_Bandwidth"],)
         o["MS_Switches"].sibling = (o["Microcode_Sequencer"],)
         o["Fetch_Bandwidth"].sibling = (o["DSB_Switches"], o["LCP"],)
+        o["FP_Scalar"].sibling = (o["FP_Vector"],)
+        o["FP_Vector"].sibling = (o["FP_Scalar"],)
         o["Microcode_Sequencer"].sibling = (o["MS_Switches"],)
         o["DSB_Coverage"].sibling = (o["DSB_Switches"], o["LCP"], o["Fetch_Bandwidth"],)
         o["DRAM_BW_Use"].sibling = (o["MEM_Bandwidth"],)

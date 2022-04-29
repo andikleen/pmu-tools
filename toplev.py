@@ -79,6 +79,7 @@ known_cpus = (
     ("tgl", (140, 141, )),
     ("icx", (106, 108, )),
     ("adl", (154, 151, )),
+    ("spr", (143, )),
 )
 
 eventlist_alias = {
@@ -87,7 +88,8 @@ eventlist_alias = {
     167: "GenuineIntel-6-7E", # use ICL list for RKL for now
 }
 
-tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx")
+tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx", "spr"
+        )
 
 hybrid_cpus = ("adl", )
 
@@ -3757,6 +3759,11 @@ def model_setup(runner, cpuname):
         # work around kernel constraint table bug in some kernel versions
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
+    elif cpu.cpu == "spr":
+        import spr_server_ratios
+        spr_server_ratios.smt_enabled = cpu.ht
+        model = spr_server_ratios
+        setup_metrics(model, runner.pmu)
     elif cpuname == "icl":
         import icl_client_ratios
         icl_client_ratios.smt_enabled = cpu.ht

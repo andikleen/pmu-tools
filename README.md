@@ -105,6 +105,21 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* Update to Ahmad Yasin's TMA 4.4
+  Add support for Sapphire Rapids servers
+  New breakdown of Heavy_Operations, add new nodes for Assists, Page Faults
+  A new Int_Operations level 3 node, including Integer Vector and Shuffle
+  Support for RDT MBA stalls.
+  AMX and FP16 support
+  Better FP_Vector breakdown
+  Support 4wide MITE breakdown.
+  Add new Info.Pipeline Metrics group.
+  Support for Retired/Executed uops and String instruction cycles
+  Frequency of microcode assits.
+  Add Core_Bound_Likely for SMT and IpSWF for software prefetches.
+  Cache bandwidth is split per processor and per core.
+  Snoop Metric group for cross processor snoops.
+  Various bug fixes and improvements.
 * Support for running on Alderlake with a hybrid Goldencove / Gracemont model
   Add a new --aux option to control the auxillary nodes on Atom.
   --cputype atom/core is supported to filter on core types.

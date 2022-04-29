@@ -106,7 +106,7 @@ ALLCPUS="$ONLYCPU"
 NOSMTCPUS=" "
 DCPU=$ONLYCPU
 else
-SMTCPUS="${SMTCPUS:-snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl icx adl}"
+SMTCPUS="${SMTCPUS:-snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl icx adl spr}"
 NOSMTCPUS="${NOSMTCPUS:-slm simple}"
 ALLCPUS="${ALLCPUS:-$SMTCPUS $NOSMTCPUS}"
 fi

@@ -617,6 +617,8 @@ class EmapNativeJSON(object):
                 code = gethex('code')
                 umask = gethex('umask')
             except ValueError:
+                if ocverbose:
+                    print("cannot parse event", name)
                 continue
             anyf = 0
             if name in fixed_counters:
