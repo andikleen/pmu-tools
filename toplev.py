@@ -148,16 +148,26 @@ limited_counters_base = {
     "cycles": FIXED_BASE + 1,
     "ref-cycles": FIXED_BASE + 2,
     "slots": FIXED_BASE + 3,
+    "cpu/slots/": FIXED_BASE + 3,
     "cpu_core/slots/": FIXED_BASE + 3,
     "topdown.slots": FIXED_BASE + 3,
-    "topdown-fe-bound": METRICS_BASE + 0,
     "cpu_core/topdown-fe-bound/": METRICS_BASE + 0,
-    "topdown-be-bound": METRICS_BASE + 1,
+    "cpu/topdown-fe-bound/": METRICS_BASE + 0,
     "cpu_core/topdown-be-bound/": METRICS_BASE + 1,
-    "topdown-bad-spec": METRICS_BASE + 2,
+    "cpu/topdown-be-bound/": METRICS_BASE + 1,
     "cpu_core/topdown-bad-spec/": METRICS_BASE + 2,
-    "topdown-retiring": METRICS_BASE + 3,
+    "cpu/topdown-bad-spec/": METRICS_BASE + 2,
     "cpu_core/topdown-retiring/": METRICS_BASE + 3,
+    "cpu/topdown-retiring/": METRICS_BASE + 3,
+    "cpu_core/topdown-heavy-ops/": METRICS_BASE + 4,
+    "cpu/topdown-heavy-ops/": METRICS_BASE + 4,
+    "cpu_core/topdown-heavy-ops/": METRICS_BASE + 4,
+    "cpu/topdown-br-mispredict/": METRICS_BASE + 5,
+    "cpu_core/topdown-br-mispredict/": METRICS_BASE + 5,
+    "cpu_core/topdown-mem-bound/": METRICS_BASE + 6,
+    "cpu/topdown-mem-bound/": METRICS_BASE + 6,
+    "cpu/topdown-fetch-lat/": METRICS_BASE + 7,
+    "cpu_core/topdown-fetch-lat/": METRICS_BASE + 7,
     "cpu/cycles-ct/": 2,
     "cpu_core/cycles-ct/": 2,
 }
@@ -166,6 +176,7 @@ promotable_limited = set((
     "instructions",
     "cycles",
     "slots",
+    "cpu/slots/",
     "cpu_core/slots/")
 )
 
@@ -350,11 +361,12 @@ def limited_overflow(evlist, num):
     return any([x > 1 and gen_overflow(k, gc, x) for k, x in assigned.items()]), gc.num
 
 # limited to first four counters on ICL+
+# XXX cannot handle nmi watchdog on counter 0..3 case
 def limit4_overflow(evlist):
     return sum([remove_qual(x) in ectx.limit4_events for x in evlist]) > 4
 
 def ismetric(x):
-    return x.startswith(("topdown-", "cpu_core/topdown-"))
+    return x.startswith(("topdown-", "cpu_core/topdown-", "cpu/topdown-"))
 
 resources = ("frontend=", "offcore_rsp=", "ldlat=", "in_tx_cp=", "cycles-ct")
 
@@ -387,7 +399,7 @@ FORCE_SPLIT = 100
 metrics_own_group = True
 
 def is_slots(x):
-    return remove_qual(x) in ("slots", "cpu_core/slots/")
+    return remove_qual(x) in ("slots", "cpu_core/slots/", "cpu/slots/")
 
 def needed_counters(evlist):
     evset = set(evlist)
@@ -1376,8 +1388,6 @@ def raw_event(i, name="", period=False, nopebs=True, initialize=False):
             name = "T" + name
         if args.filterquals:
             e.filter_qual()
-        if nopebs and 'extra' in e.__dict__:
-            e.extra = e.extra.replace("p", "")
         i = e.output(noname=True, name=name, period=period, noexplode=True)
     if initialize:
         initialize_event(orig_i, i, e)
@@ -3376,8 +3386,8 @@ class Runner(object):
                 self.olist = filternot(lambda obj:
                         safe_ref(obj, 'domain') in self.ectx.core_domains,
                         self.olist)
-        else:
-            rest = add_args(rest, "--percore-show-thread")
+            else:
+                rest = add_args(rest, "--percore-show-thread")
         return rest
 
 def runner_restart(runner, offset):
@@ -3449,14 +3459,14 @@ def do_sample(sample_obj, rest, count, ret):
     if no_pebs:
         for j in nsamp:
             # initialize ectx.require_pebs_events
-            raw_event(j[0], nopebs=False, initialize=True)
+            raw_event(j[0], initialize=True)
         nnopebs = {x[0] for x in nsamp if force_pebs(x[0])}
         if nnopebs and not args.quiet:
             for j in nnopebs:
                 print("sample event %s not (currently) supported in virtualization" % j, file=sys.stderr)
         nsamp = [x for x in nsamp if x[0] not in nnopebs]
 
-    sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True, nopebs=False) for s in nsamp]
+    sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True) for s in nsamp]
     sl = add_filter(sl)
     sample = ",".join([x for x in sl if x])
     if no_pebs:
@@ -3930,8 +3940,9 @@ if smt_mode and not os.getenv('FORCEHT'):
 def runner_filter(rest):
     for r in runner_list:
         rest = r.filter_per_core(args.single_thread, rest)
+    return rest
 
-runner_filter(rest)
+rest = runner_filter(rest)
 
 if not smt_mode and not args.single_thread and not args.no_aggr:
     hybrid = cpu.cpu in hybrid_cpus

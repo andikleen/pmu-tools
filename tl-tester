@@ -199,7 +199,7 @@ onegroup() {
 	if [ -n "$NUM_RUNNERS" ] && [ "$NUM_RUNNERS" -gt 1 ] ; then return ; fi
 	case "$OPT" in *--drilldown*) return ;; esac
 	grep perf $1 |
-		 sed -E -e 's/topdown-retiring,?//;s/topdown-be-bound,?//;s/topdown-fe-bound,?//;s/slots,?//;s/topdown-bad-spec,?//;s/\{\}//' |
+		sed -E -e 's/cpu.//g;s/cpu_core.//g;s/topdown-retiring\/?,?//;s/topdown-be-bound\/?,?//;s/topdown-fe-bound\/?,?//;s/slots,?//;s/topdown-bad-spec\/?,?//;s/\{\/?,?\}//' |
 		tr -cd '{}' |
 		awk ' { if ($1 != "{}") { print "more than one group for L1" ; exit(1); } } '
 }
