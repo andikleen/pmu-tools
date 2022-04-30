@@ -359,10 +359,13 @@ def limited_overflow(evlist, num):
     gc = GenericCounters()
     return any([x > 1 and gen_overflow(k, gc, x) for k, x in assigned.items()]), gc.num
 
+# we limit to 3 events because one could be taken up by the nmi watchdog
+# and also there's some kernel issue that sometimes only 3 fit on ICL
+LIMIT4_MAX_EVENTS = 3
+
 # limited to first four counters on ICL+
-# XXX cannot handle nmi watchdog on counter 0..3 case
 def limit4_overflow(evlist):
-    return sum([remove_qual(x) in ectx.limit4_events for x in evlist]) > 4
+    return sum([remove_qual(x) in ectx.limit4_events for x in evlist]) > LIMIT4_MAX_EVENTS
 
 def ismetric(x):
     return x.startswith(("topdown-", "cpu_core/topdown-", "cpu/topdown-"))
