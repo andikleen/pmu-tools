@@ -4046,7 +4046,7 @@ else:
     out = tl_output.OutputHuman(args.output, args, version, cpu)
 
 if args.valcsv:
-    out.valcsv = csv.writer(args.valcsv, lineterminator='\n')
+    out.valcsv = csv.writer(args.valcsv, lineterminator='\n', delimiter=';')
     if not args.no_csv_header:
         out.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
                              "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
