@@ -88,8 +88,8 @@ eventlist_alias = {
     167: "GenuineIntel-6-7E", # use ICL list for RKL for now
 }
 
-tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx", "spr"
-        )
+tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx",
+            "spr")
 
 hybrid_cpus = ("adl", )
 
@@ -161,7 +161,6 @@ limited_counters_base = {
     "cpu/topdown-retiring/": METRICS_BASE + 3,
     "cpu_core/topdown-heavy-ops/": METRICS_BASE + 4,
     "cpu/topdown-heavy-ops/": METRICS_BASE + 4,
-    "cpu_core/topdown-heavy-ops/": METRICS_BASE + 4,
     "cpu/topdown-br-mispredict/": METRICS_BASE + 5,
     "cpu_core/topdown-br-mispredict/": METRICS_BASE + 5,
     "cpu_core/topdown-mem-bound/": METRICS_BASE + 6,
