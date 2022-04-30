@@ -1388,6 +1388,9 @@ def raw_event(i, name="", period=False, nopebs=True, initialize=False):
         if args.filterquals:
             e.filter_qual()
         i = e.output(noname=True, name=name, period=period, noexplode=True)
+        m = re.search(r'(topdown-[a-z-]+)', i)
+        if m and not cached_exists("/sys/devices/%s/events/%s" % (ectx.emap.pmu, m.group(1))):
+            i = "dummy"
     if initialize:
         initialize_event(orig_i, i, e)
     return i
