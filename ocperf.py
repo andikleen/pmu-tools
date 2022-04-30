@@ -280,7 +280,8 @@ class Event(object):
         if self.pname:
             e = self.pname
         else:
-            e = "event=0x%x,umask=0x%x%s" % (val & 0xff, (val >> 8) & 0xff, extra)
+            e = "event=0x%x,umask=0x%x" % (val & 0xff, (val >> 8) & 0xff)
+        e += extra
         if version.has_name:
             if name:
                 e += ",name=" + name
@@ -311,12 +312,7 @@ class Event(object):
         else:
             p = self.output_newstyle(extra=",".join(newe),
                     noname=noname, period=period, name=name)
-            if self.pname:
-                ename = p
-                if extra:
-                    ename += ":" + extra
-            else:
-                ename = "%s/%s/" % (self.pmu, p) + extra
+            ename = "%s/%s/" % (self.pmu, p) + extra
         return ename
 
     def filter_qual(self):
@@ -861,10 +857,7 @@ class EmapNativeJSON(object):
         def td_event(name, pname, desc, counter):
             e = Event(name, 0, desc)
             e.counter = counter
-            if self.pmu != "cpu":
-                e.pname = "%s/%s/" % (self.pmu, pname)
-            else:
-                e.pname = pname
+            e.pname = pname
             self.add_event(e)
         td_event("perf_metrics.retiring", "topdown-retiring", "Number of slots the pipeline was frontend bound.", "32")
         td_event("perf_metrics.bad_speculation", "topdown-bad-spec", "Number of slots the pipeline was doing bad speculation.", "33")
