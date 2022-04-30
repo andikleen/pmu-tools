@@ -125,8 +125,8 @@ elif cputype == "icx":
 else:
     sys.exit("Unknown CPU " + cputype)
 
-import aux
-cpu_aux = aux.Aux()
+import ucaux
+cpu_aux = ucaux.Aux()
 
 def lookup_event(name):
     if name in uc.events:
