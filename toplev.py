@@ -4029,11 +4029,6 @@ rest = setup_cpus(rest, cpu)
 if args.pinned:
     run_l1_parallel = True
 
-if args.repl:
-    import code
-    code.interact(banner='toplev repl', local=locals())
-    sys.exit(0)
-
 if args.json:
     if args.csv:
         sys.exit("Cannot combine --csv with --json")
@@ -4140,6 +4135,11 @@ def report_not_supported(runner_list):
         notfound_caches.update(r.ectx.notfound_cache)
     if notfound_caches and any(["not supported" not in x for x in notfound_caches.values()]) and not args.quiet:
         print("Some events not found. Consider running event_download to update event lists", file=sys.stderr)
+
+if args.repl:
+    import code
+    code.interact(banner='toplev repl', local=locals())
+    sys.exit(0)
 
 if args.sample_repeat:
     cnt = 1
