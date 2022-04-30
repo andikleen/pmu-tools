@@ -3769,11 +3769,13 @@ def model_setup(runner, cpuname):
         # work around kernel constraint table bug in some kernel versions
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
+        smt_mode = cpu.ht
     elif cpu.cpu == "spr":
         import spr_server_ratios
         spr_server_ratios.smt_enabled = cpu.ht
         model = spr_server_ratios
         setup_metrics(model, runner.pmu)
+        smt_mode = cpu.ht
     elif cpuname == "icl":
         import icl_client_ratios
         icl_client_ratios.smt_enabled = cpu.ht
@@ -3782,6 +3784,7 @@ def model_setup(runner, cpuname):
         # work around kernel constraint table bug in some kernel versions
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
+        smt_mode = cpu.ht
     elif cpuname == "tgl":
         import icl_client_ratios
         icl_client_ratios.smt_enabled = cpu.ht
@@ -3789,11 +3792,13 @@ def model_setup(runner, cpuname):
         setup_metrics(model, runner.pmu)
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
+        smt_mode = cpu.ht
     elif cpuname == "adl" and runner.pmu in ("cpu_core", "cpu"):
         import adl_glc_ratios
         setup_metrics(adl_glc_ratios, runner.pmu)
         adl_glc_ratios.smt_enabled = cpu.ht
         model = adl_glc_ratios
+        smt_mode = cpu.ht
     elif cpuname == "adl" and runner.pmu == "cpu_atom":
         import adl_grt_ratios
         model = adl_grt_ratios
