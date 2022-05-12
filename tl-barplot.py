@@ -5,7 +5,7 @@ from __future__ import print_function
 import os
 import re
 import argparse
-from math import isnan
+from math import isnan, trunc
 from collections import defaultdict
 import matplotlib
 if os.getenv('DISPLAY') is None:
@@ -135,7 +135,7 @@ for l in tldata.level_order(data):
         low = min([min(ratios[x]) for x in non_null])
         high = max([max(ratios[x]) for x in non_null])
         if not isnan(low) and not isnan(high):
-            ax.yaxis.set_ticks([low, math.trunc(((high - low) / 2.0) / 100.) * 100., high])
+            ax.yaxis.set_ticks([low, trunc(((high - low) / 2.0) / 100.) * 100., high])
     else:
         stack = ax.stackplot(timestamps, *r, colors=all_colors)
         ax.set_ylim(0, 100)
