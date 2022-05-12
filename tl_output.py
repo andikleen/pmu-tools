@@ -526,5 +526,5 @@ class OutputJSON(Output):
         self.nodes = defaultdict(dict)
         self.headers = OrderedDict()
 
-    def remark(self, v):
+    def remark(self, m):
         pass

@@ -4,11 +4,12 @@
 import sys
 import argparse
 import os
+import csv
 import matplotlib
 if os.getenv("DISPLAY") is None:
     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import csv
+
 
 ap = argparse.ArgumentParser(usage='Plot already normalized CSV data')
 ap.add_argument('--output', '-o', help='Output to file. Otherwise show.',
