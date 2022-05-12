@@ -1363,7 +1363,7 @@ def initialize_event(name, i, e):
         else:
             ectx.outgroup_events.add(add_filter_event(i))
 
-def raw_event(i, name="", period=False, nopebs=True, initialize=False):
+def raw_event(i, name="", period=False, initialize=False):
     e = None
     orig_i = i
     if i == "cycles" and (cpu.cpu in hybrid_cpus or cached_exists("/sys/devices/cpu_core")):
