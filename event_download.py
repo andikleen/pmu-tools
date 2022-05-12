@@ -103,12 +103,6 @@ def getfile(url, dirfn, fn):
                 raise
             print("retrying download")
             continue
-        except IncompleteRead:
-            tries += 1
-            if tries >= NUM_TRIES:
-                raise
-            print("retrying download")
-            continue
         break
     o = open(os.path.join(dirfn, fn), "wb")
     o.write(data)
