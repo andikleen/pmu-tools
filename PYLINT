@@ -1,2 +1,2 @@
 #!/bin/sh
-pylint -d C0301,C0116,invalid-name,multiple-imports,missing-module-docstring,missing-class-docstring,redefined-outer-name,too-few-public-methods,attribute-defined-outside-init,multiple-statements $(ls *.py | grep -v ratios)
+pylint -d too-many-arguments,too-many-instance-attributes,import-outside-toplevel,consider-using-f-string,consider-using-with,global-statement,redundant-u-string-prefix,C0301,C0116,invalid-name,multiple-imports,missing-module-docstring,missing-class-docstring,redefined-outer-name,too-few-public-methods,attribute-defined-outside-init,multiple-statements $(ls *.py | grep -v ratios)
