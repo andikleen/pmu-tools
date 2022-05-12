@@ -448,16 +448,11 @@ def event_group(evlist):
         else:
             g = list(g)
             e = ",".join(g)
-            n = needed_counters(g)
-            if n <= ectx.counters:
-                e = "{%s}" % e
-                if args.exclusive:
-                    e += ":e"
-                elif args.pinned and all([ismetric(x) or is_slots(x) for x in g]):
-                    e += ":D"
-            else:
-                # the scheduler should have avoided that
-                warn("group %s with %d does not fit in pmu" % (e, n))
+            e = "{%s}" % e
+            if args.exclusive:
+                e += ":e"
+            elif args.pinned and all([ismetric(x) or is_slots(x) for x in g]):
+                e += ":D"
             l.append(e)
     return ",".join(l)
 
