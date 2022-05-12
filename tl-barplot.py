@@ -5,7 +5,7 @@ from __future__ import print_function
 import os
 import re
 import argparse
-import math
+from math import isnan
 from collections import defaultdict
 import matplotlib
 if os.getenv('DISPLAY') is None:
@@ -81,9 +81,9 @@ for h in data.headers:
 
 def valid_row(r):
     s = sum(r)
-    #if sum([0 if math.isnan(x) else 1 for x in r]) < len(r)/80.:
+    #if sum([0 if isnan(x) else 1 for x in r]) < len(r)/80.:
     #    return False
-    return s != 0.0 and s != float('nan')
+    return s != 0.0 and not isnan(s)
 
 def get_colors(non_null):
     if 'brewer2mpl' in globals():
@@ -123,7 +123,7 @@ for l in tldata.level_order(data):
     ax = plt.subplot2grid((numplots, 1), (n, 0), sharex=xaxis)
     plt.tight_layout()
     set_title(ax, l)
-    r = [[y if y == y else 0.0 for y in ratios[x]] for x in non_null]
+    r = [[y if not isnan(y) else 0.0 for y in ratios[x]] for x in non_null]
 
     if gen_level.is_metric(non_null[0]):
         for j, name in zip(r, non_null):
@@ -134,7 +134,7 @@ for l in tldata.level_order(data):
                          prop={'size':6})
         low = min([min(ratios[x]) for x in non_null])
         high = max([max(ratios[x]) for x in non_null])
-        if not math.isnan(low) and not math.isnan(high):
+        if not isnan(low) and not isnan(high):
             ax.yaxis.set_ticks([low, math.trunc(((high - low) / 2.0) / 100.) * 100., high])
     else:
         stack = ax.stackplot(timestamps, *r, colors=all_colors)

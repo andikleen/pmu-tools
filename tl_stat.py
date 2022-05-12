@@ -28,9 +28,6 @@ def combine_valstat(l):
         return []
     return ValStat(geoadd([x.stddev for x in l]), min([x.multiplex for x in l]))
 
-def isnan(x):
-    return x != x
-
 class ComputeStat:
     """Maintain statistics on measurement data."""
     def __init__(self, quiet):

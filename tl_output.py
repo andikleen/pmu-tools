@@ -19,8 +19,8 @@ import re
 import sys
 import json
 import os
+from math import isnan
 from collections import defaultdict, Counter, OrderedDict
-from tl_stat import isnan
 from tl_uval import UVal, combine_uval
 from tl_io import flex_open_w
 
