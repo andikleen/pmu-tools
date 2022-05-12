@@ -61,9 +61,9 @@ def set_columns(worksheet, c, lengths):
         lengths[col] = max(len(j) + 5, lengths[col])
         worksheet.set_column(col, col, lengths[col])
 
-worksheets = dict()
-rows = dict()
-headers = dict()
+worksheets = {}
+rows = {}
+headers = {}
 
 def get_worksheet(name):
     if name in worksheets:
@@ -83,7 +83,7 @@ def create_sheet(name, infh, delimiter=',', version=None):
     worksheet = get_worksheet(name)
     cf = csv.reader(infh, delimiter=delimiter)
     row = 0
-    title = dict()
+    title = {}
     titlerow = []
     summary = False
     for c in cf:

@@ -23,7 +23,7 @@ rc = csv.reader(inf)
 
 num = 0
 timestamps = []
-columns = dict()
+columns = {}
 for r in rc:
     num += 1
     if num == 1:

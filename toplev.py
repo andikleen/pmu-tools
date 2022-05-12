@@ -184,7 +184,7 @@ event_nocheck = False
 class EventContext(object):
     """Event related context for a given target CPU."""
     def __init__(self, pmu):
-        self.constraint_fixes = dict()
+        self.constraint_fixes = {}
         self.errata_whitelist = []
         self.outgroup_events = set(["dummy", "duration_time", "msr/tsc/"])
         self.sched_ignore_events = set([])
@@ -195,11 +195,11 @@ class EventContext(object):
         self.limited_set = set(self.limited_counters.keys())
         self.fixed_events = set([x for x in self.limited_counters
                                  if FIXED_BASE <= self.limited_counters[x] <= SPECIAL_END])
-        self.errata_events = dict()
-        self.errata_warn_events = dict()
+        self.errata_events = {}
+        self.errata_warn_events = {}
         self.limit4_events = set()
-        self.notfound_cache = dict()
-        self.rmap_cache = dict()
+        self.notfound_cache = {}
+        self.rmap_cache = {}
         self.slots_available = False
         self.emap = None
         if pmu is None or pmu not in cpu.counters:
@@ -255,7 +255,7 @@ def test_debug_print(x):
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
-exists_cache = dict()
+exists_cache = {}
 
 def cached_exists(fn):
     if fn in exists_cache:
@@ -2096,7 +2096,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
     res = defaultdict(list)
     rev = defaultdict(list)
     valstats = defaultdict(list)
-    env = dict()
+    env = {}
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
@@ -2862,7 +2862,7 @@ class Scheduler(object):
     def __init__(self):
         self.evnum = [] # flat global list
         self.evgroups = [] # of Group
-        self.og_groups = dict()
+        self.og_groups = {}
         # list of groups that still have generic counters, for faster
         # duplicate checks
         self.evgroups_nf = []
@@ -3136,7 +3136,7 @@ class Runner(object):
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         self.reset()
-        self.odict = dict()
+        self.odict = {}
         self.max_level = max_level
         self.max_node_level = 0
         self.idle_threshold = idle_threshold
@@ -3157,8 +3157,8 @@ class Runner(object):
 
     def do_run(self, obj):
         obj.res = None
-        obj.res_map = dict()
-        obj.group_map = dict()
+        obj.res_map = {}
+        obj.group_map = {}
         self.olist.append(obj)
         self.odict[obj.name] = obj
         if has(obj, 'metricgroup'):
@@ -3401,8 +3401,8 @@ def runner_restart(runner, offset):
     runner.printer.emap = emap
     runner.olist = runner.full_olist
     for o in runner.olist:
-        o.group_map = dict()
-        o.res_map = dict()
+        o.group_map = {}
+        o.res_map = {}
     runner.filter_nodes()
     runner.collect()
     runner.set_ectx()
@@ -4135,7 +4135,7 @@ def report_idle(runner_list):
                 idle_range_list(ik), file=sys.stderr)
 
 def report_not_supported(runner_list):
-    notfound_caches = dict()
+    notfound_caches = {}
     for r in runner_list:
         notfound_caches.update(r.ectx.notfound_cache)
     if notfound_caches and any(["not supported" not in x for x in notfound_caches.values()]) and not args.quiet:

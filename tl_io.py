@@ -15,7 +15,7 @@ import subprocess
 if sys.version_info.major == 3:
     popentext = dict(universal_newlines=True)
 else:
-    popentext = dict()
+    popentext = {}
 
 def popen_stdout(cmd):
     return subprocess.Popen(cmd, stdout=subprocess.PIPE, **popentext)

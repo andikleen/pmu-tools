@@ -36,7 +36,7 @@ class TLData:
         self.mtime = mtime
         csvf = csv.reader(open(self.fn, 'r'))
         prevts = None
-        val = dict()
+        val = {}
         for r in csvf:
             if r[0].strip().startswith("#"):
                 continue
@@ -56,7 +56,7 @@ class TLData:
             if prevts and ts != prevts:
                 self.times.append(prevts)
                 self.vals.append(val)
-                val = dict()
+                val = {}
             val[key] = pct
             n = gen_level.level_name(name)
             if cpu:

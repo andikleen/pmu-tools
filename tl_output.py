@@ -276,7 +276,7 @@ class OutputColumns(OutputHuman):
     """Human-readable output data in per-cpu columns."""
     def __init__(self, logfile, args, version, cpu):
         OutputHuman.__init__(self, logfile, args, version, cpu)
-        self.nodes = dict()
+        self.nodes = {}
         self.timestamp = None
         self.cpunames = set()
         self.printed_header = False
@@ -292,7 +292,7 @@ class OutputColumns(OutputHuman):
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
-            self.nodes[key] = dict()
+            self.nodes[key] = {}
         assert title not in self.nodes[key]
         self.nodes[key][title] = (val, unit, desc, sample, bn, below, idle)
 
@@ -337,7 +337,7 @@ class OutputColumns(OutputHuman):
                 write(" %-*s%s" % (self.unitlen, ("  " if unit[0] != "%" else "") + unit, vs))
             write("\n")
             self.print_desc(desc, sample)
-        self.nodes = dict()
+        self.nodes = {}
 
     def reset(self, name):
         Output.reset(self, name)
@@ -348,7 +348,7 @@ class OutputColumnsCSV(OutputColumns):
 
     def __init__(self, logfile, sep, args, version, cpu):
         OutputColumns.__init__(self, logfile, args, version, cpu)
-        self.writer = dict()
+        self.writer = {}
         if self.logfiles:
             for n, f in self.logfiles.items():
                 self.writer[n] = csv.writer(f, delimiter=sep, lineterminator='\n')
@@ -362,7 +362,7 @@ class OutputColumnsCSV(OutputColumns):
         self.timestamp = timestamp
         key = (area, hdr)
         if key not in self.nodes:
-            self.nodes[key] = dict()
+            self.nodes[key] = {}
         assert title not in self.nodes[key]
         self.nodes[key][title] = (val, unit + " " + fmt_below(below), desc, sample)
 
@@ -378,7 +378,7 @@ class OutputColumnsCSV(OutputColumns):
             ts = [convert_ts(self.timestamp)] if self.timestamp else []
             l = ts + [key[0], key[1]]
             vlist = []
-            ol = dict()
+            ol = {}
             desc, sample = "", ""
             for cpuname in cpunames:
                 if cpuname in node:
@@ -402,7 +402,7 @@ class OutputColumnsCSV(OutputColumns):
             else:
                 l += ["", ""]
             self.writer[self.curname].writerow(l)
-        self.nodes = dict()
+        self.nodes = {}
 
     print_footer = Output.print_footer_all
 
@@ -410,7 +410,7 @@ class OutputCSV(Output):
     """Output data in CSV format."""
     def __init__(self, logfile, sep, args, version, cpu):
         Output.__init__(self, logfile, version, cpu, args)
-        self.writer = dict()
+        self.writer = {}
         if self.logfiles:
             for n, f in self.logfiles.items():
                 self.writer[n] = csv.writer(f, delimiter=sep, lineterminator='\n')
@@ -503,7 +503,7 @@ class OutputJSON(Output):
                 if hdr in ("Frontend_Bound", "Backend_Bound", "BadSpeculation", "Retiring"): # XXX
                     key = title + "Level1"
                     if key not in nodes:
-                        nodes[key] = dict()
+                        nodes[key] = {}
                     nodes[title + "Level1"][hdr] = val
                 elif hdr.count(".") >= 1:
                     dot = hdr.rindex(".")

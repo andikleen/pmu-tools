@@ -53,7 +53,7 @@ except ImportError:
               '#F88017', '#C11B17', '#17BFC2', '#C48793')  # 20
 
 cur_colors = collections.defaultdict(lambda: all_colors)
-assigned = dict()
+assigned = {}
 
 if args.file:
     inf = open(args.file, "r")
@@ -61,8 +61,8 @@ else:
     inf = sys.stdin
 
 rc = csv.reader(inf)
-timestamps = dict()
-value = dict()
+timestamps = {}
+value = {}
 
 def isnum(x):
     return re.match(r'[0-9.]+', x)

@@ -1135,7 +1135,7 @@ Specify the -e events before -c default or event has no overflow field.""", file
 if sys.version_info.major == 3:
     popentext = dict(text=True)
 else:
-    popentext = dict()
+    popentext = {}
 
 def get_pager():
     f = sys.stdout
