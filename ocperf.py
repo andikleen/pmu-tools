@@ -1030,6 +1030,7 @@ def process_events(event, print_only, period, noexplode):
             for emap in emap_list:
                 if emap.pmu == m.group(1):
                     ev = emap.getevent(m.group(2))
+                    break
             else:
                 ev = emap_list[0].getevent(m.group(2))
             end = m.group(3) + "/"
