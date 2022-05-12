@@ -90,7 +90,7 @@ def getdir():
 
 NUM_TRIES = 3
 
-def getfile(url, dir, fn):
+def getfile(url, dirfn, fn):
     tries = 0
     print("Downloading", url, "to", fn)
     while True:
@@ -104,7 +104,7 @@ def getfile(url, dir, fn):
             print("retrying download")
             continue
         break
-    o = open(os.path.join(dir, fn), "wb")
+    o = open(os.path.join(dirfn, fn), "wb")
     o.write(data)
     o.close()
     f.close()
@@ -127,21 +127,21 @@ def parse_map_file(match, key=None, link=True, onlyprint=False,
                    acceptfile=False, hybridkey=None):
     match2 = cpu_without_step(match)
     files = []
-    dir = getdir()
+    dirfn = getdir()
     try:
         mfn = os.getenv("MAPFILE")
         if mfn:
             mapfn = mfn
             acceptfile = True
         else:
-            mapfn = os.path.join(dir, mapfile)
+            mapfn = os.path.join(dirfn, mapfile)
         if onlyprint and not os.path.exists(mapfn) and not mfn:
             print("Download", mapfn, "first for --print")
             return []
         if acceptfile and os.path.exists(mapfn):
             pass
         elif not onlyprint and not mfn:
-            getfile(modelpath, dir, mapfile)
+            getfile(modelpath, dirfn, mapfile)
         models = open(mapfn)
         for j in models:
             if j.startswith("Family-model"):
@@ -169,7 +169,7 @@ def parse_map_file(match, key=None, link=True, onlyprint=False,
                     fn = "%s-%s-%s.json" % (matchfn, sanitize(typ, allowed_chars), hybridkey)
                 else:
                     fn = "%s-%s.json" % (matchfn, sanitize(typ, allowed_chars))
-            path = os.path.join(dir, fn)
+            path = os.path.join(dirfn, fn)
             if acceptfile and os.path.exists(path):
                 if onlyprint:
                     print(path)
@@ -188,7 +188,7 @@ def parse_map_file(match, key=None, link=True, onlyprint=False,
                 try:
                     fn = fn.replace("01234", "4")
                     fn = fn.replace("56789ABCDEF", "5") # XXX
-                    getfile(url, dir, fn)
+                    getfile(url, dirfn, fn)
                 except URLError as e:
                     print("error accessing %s: %s" % (url, e), file=sys.stderr)
                     if match == '*':
@@ -198,17 +198,17 @@ def parse_map_file(match, key=None, link=True, onlyprint=False,
                 lname = re.sub(r'.*/', '', name)
                 lname = sanitize(lname, allowed_chars)
                 try:
-                    os.remove(os.path.join(dir, lname))
+                    os.remove(os.path.join(dirfn, lname))
                 except OSError:
                     pass
                 try:
-                    os.symlink(fn, os.path.join(dir, lname))
+                    os.symlink(fn, os.path.join(dirfn, lname))
                 except OSError as e:
                     print("Cannot link %s to %s:" % (name, lname), e, file=sys.stderr)
             files.append(fn)
         models.close()
-        if not onlyprint and not os.path.exists(os.path.join(dir, "readme.txt")) and not mfn:
-            getfile(urlpath + "/readme.txt", dir, "readme.txt")
+        if not onlyprint and not os.path.exists(os.path.join(dirfn, "readme.txt")) and not mfn:
+            getfile(urlpath + "/readme.txt", dirfn, "readme.txt")
     except URLError as e:
         print("Cannot access event server:", e, file=sys.stderr)
         warn_once("""
