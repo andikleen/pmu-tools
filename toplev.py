@@ -207,6 +207,7 @@ class EventContext(object):
         self.standard_counters = cpu.standard_counters[pmu]
         self.counters = cpu.counters[pmu]
         self.limit4_counters = cpu.limit4_counters[pmu]
+        self.force_metrics = False
 
 ectx = None
 
@@ -1391,9 +1392,10 @@ def raw_event(i, name="", period=False, nopebs=True, initialize=False):
         if args.filterquals:
             e.filter_qual()
         i = e.output(noname=True, name=name, period=period, noexplode=True)
-        m = re.search(r'(topdown-[a-z-]+)', i)
-        if m and not cached_exists("/sys/devices/%s/events/%s" % (ectx.emap.pmu, m.group(1))):
-            i = "dummy"
+        if not ectx.force_metrics:
+            m = re.search(r'(topdown-[a-z-]+)', i)
+            if m and not cached_exists("/sys/devices/%s/events/%s" % (ectx.emap.pmu, m.group(1))):
+                i = "dummy"
     if initialize:
         initialize_event(orig_i, i, e)
     return i
@@ -3587,11 +3589,11 @@ def ht_warning():
                 file=sys.stderr)
 
 def setup_metrics(model, pmu):
-    force_metrics = os.getenv("FORCEMETRICS") is not None
-    model.topdown_use_fixed = (force_metrics or
+    ectx.force_metrics = os.getenv("FORCEMETRICS") is not None
+    model.topdown_use_fixed = (ectx.force_metrics or
             os.path.exists("/sys/devices/%s/events/topdown-fe-bound" % pmu))
     ectx.core_domains = ectx.core_domains - set(["Slots"])
-    ectx.slots_available = (force_metrics or
+    ectx.slots_available = (ectx.force_metrics or
             os.path.exists("/sys/devices/%s/events/slots" % pmu))
 
 def parse_cpu_list(s):
