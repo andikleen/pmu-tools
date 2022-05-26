@@ -1553,13 +1553,32 @@ def verify_rev(rev, cpus):
             assert o == rev[cpus[0]][ind]
         assert len(rev[k]) == len(rev[cpus[0]])
 
+idle_events = frozenset(("cycles", "cpu/event=0x3c,umask=0x0,any=1/", "cpu/event=0x3c,umask=0x0/", "r20003c", "cpu/event=0xa4,umask=0x1/"))
+
+def is_cycles(ev):
+    ev = ev.replace("cpu_atom", "cpu").replace("cpu_core", "cpu").replace("/k", "/").replace("/u", "/").replace(":u","").replace(":k", "")
+    return ev in idle_events
+
+def find_cycles(rev):
+    for l in rev.values():
+        for idle_ev in l:
+            if is_cycles(idle_ev):
+                return idle_ev
+    return ""
+
 IDLE_MARKER_THRESHOLD = 0.05
 
 def find_idle_keys(res, rev, idle_thresh):
-    cycles = { k: max([0] + [val for val, ev in zip(res[k], rev[k])
-                    if ev in ("cycles", "cpu/event=0x3c,umask=0x0,any=1/")])
+    if sum([len(res[k]) for k in res.keys()]) == 0:
+        return set()
+    idle_ev = find_cycles(rev)
+    if idle_ev == "":
+        warn_once("no idle detection because no cycle event found")
+        return set()
+    cycles = { k: max([0] + [val for val, ev in zip(res[k], rev[k]) if ev == idle_ev])
                for k in res.keys() }
-    if not cycles:
+    if sum(cycles.values()) == 0:
+        print_once("no idle detection because cycles counts are zero")
         return set()
     max_cycles = max(cycles.values())
     return {k for k in cycles.keys() if cycles[k] < max_cycles * idle_thresh}
