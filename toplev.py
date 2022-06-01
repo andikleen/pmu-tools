@@ -3389,12 +3389,15 @@ class Runner(object):
         return changed
 
     def list_metric_groups(self):
-        print("MetricGroups:")
+        if not args.quiet:
+            print("MetricGroups:")
         mg = sorted(self.metricgroups.keys())
-        if args.csv:
-            print("\n".join(mg))
+        if args.quiet or args.csv:
+            pre = ""
         else:
-            pwrap(" ".join(mg), indent="        ")
+            pre = "\t"
+        for j in mg:
+            print(pre + j)
 
     def list_nodes(self, title, filt, rest):
         def match(rest, n, fn):
@@ -3403,15 +3406,20 @@ class Runner(object):
                                     n == x[:-1] or fn == x[:-1]
                                     for x in rest])
 
-        if title:
+        if title and not args.quiet:
             print("%s:" % title)
         for obj in self.olist:
             fn = full_name(obj)
-            sep = args.csv if args.csv else "\n\t"
+            if args.csv:
+                pre, sep, dsep = "", "\n", ""
+            elif args.quiet:
+                pre, sep, dsep = "", "\n", "\n"
+            else:
+                pre, sep, dsep = "\t", "\n", "\n\t"
             if filt(obj) and match(rest, obj.name, fn):
                 print(fn, end=sep)
                 if not args.no_desc:
-                    print(obj_desc(obj, sep=sep))
+                    print(pre + obj_desc(obj, sep=dsep))
 
     def filter_per_core(self, single_thread, rest):
         if ("Slots" not in self.ectx.core_domains and
