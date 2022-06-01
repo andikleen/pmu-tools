@@ -2660,6 +2660,9 @@ def node_filter(obj, default, sibmatch, mgroups):
             nodes = nodes[1:]
 
         for j in nodes.split(","):
+            j = j.strip()
+            if j == "":
+                continue
             i = 0
             if j[0] == '^' or j[0] == '-':
                 if match(j[1:]):
@@ -3134,6 +3137,8 @@ def check_nodes(runner_list, nodesarg):
         nodesarg = nodesarg[1:]
     options = [opt_obj_name(s) for s in nodesarg.split(",")]
     def valid_node(s):
+        if s == "":
+            return True
         for r in runner_list:
             if s in r.odict:
                 return True
