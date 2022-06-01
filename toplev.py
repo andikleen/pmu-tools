@@ -442,6 +442,7 @@ def needed_counters(evlist):
 def event_group(evlist):
     evlist = add_filter(evlist)
     l = []
+    pgroup = False
     for is_og, g in groupby(evlist, lambda x: x in ectx.outgroup_events):
         if is_og or args.no_group:
             l += g
@@ -451,8 +452,16 @@ def event_group(evlist):
             e = "{%s}" % e
             if args.exclusive:
                 e += ":e"
-            elif args.pinned and all([ismetric(x) or is_slots(x) for x in g]):
-                e += ":D"
+            elif args.pinned:
+                slots_or_metric = [ismetric(x) or is_slots(x) for x in g]
+                if all(slots_or_metric):
+                    e += ":D"
+                    assert pgroup is False
+                    assert is_slots(g[0])
+                    pgroup = True
+                else:
+                    assert not any(slots_or_metric)
+
             l.append(e)
     return ",".join(l)
 
