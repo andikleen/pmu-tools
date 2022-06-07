@@ -80,6 +80,7 @@ known_cpus = (
     ("icx", (106, 108, )),
     ("adl", (154, 151, )),
     ("spr", (143, )),
+    ("ehl", (150, )),
 )
 
 eventlist_alias = {
@@ -3853,6 +3854,9 @@ def model_setup(runner, cpuname):
         import knl_ratios
         knl_ratios.smt_enabled = smt_mode = cpu.ht
         model = knl_ratios
+    elif cpuname == "ehl":
+        import ehl_ratios
+        model = ehl_ratios
     else:
         ht_warning()
         import simple_ratios

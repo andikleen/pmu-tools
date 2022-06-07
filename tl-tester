@@ -107,7 +107,7 @@ NOSMTCPUS=" "
 DCPU=$ONLYCPU
 else
 SMTCPUS="${SMTCPUS:-snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl icx adl spr}"
-NOSMTCPUS="${NOSMTCPUS:-slm simple}"
+NOSMTCPUS="${NOSMTCPUS:-slm simple ehl}"
 ALLCPUS="${ALLCPUS:-$SMTCPUS $NOSMTCPUS}"
 fi
 
@@ -309,7 +309,7 @@ for j in $NOSMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$j" ] && continue
 $WRAP ./toplev.py --perf --filterquals --force-cpu $j $OPT -l1 $LOAD 2>&1 | tee log$$.$j
 # SLM now needs two groups
-[ $j != "slm" ] && onegroup log$$.$j
+[ $j != "slm" -a $j != "ehl" ] && onegroup log$$.$j
 checklog log$$.$j
 $WRAP ./toplev.py --filterquals --force-cpu $j $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j

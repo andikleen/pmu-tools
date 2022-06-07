@@ -208,6 +208,8 @@ class CPU(object):
                 self.limit4_counters = { "cpu": "0,1,2,3" }
             else:
                 newcounters = { "cpu": 4 }
+        elif self.cpu == "ehl":
+            newcounters = { "cpu": 4 }
         else:
             newcounters = { "cpu": 8 }
         if self.counters is None:
