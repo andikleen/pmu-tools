@@ -3984,11 +3984,6 @@ def runner_extra_init(rest):
 
 rest = runner_extra_init(rest)
 
-if smt_mode and not os.getenv('FORCEHT'):
-    # do not need SMT mode if no objects have Core scope
-    if not any_core_node():
-        smt_mode = False
-
 def runner_filter(rest):
     for r in runner_list:
         rest = r.filter_per_core(args.single_thread, rest)
@@ -4119,6 +4114,12 @@ def runner_first_init():
         r.clear_ectx()
 
 runner_first_init()
+
+# XXX reenable for drill down
+if smt_mode and not os.getenv('FORCEHT'):
+    # do not need SMT mode if no objects have Core scope
+    if not any_core_node():
+        smt_mode = False
 
 def suggest(runner):
     printer = runner.printer
