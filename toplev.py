@@ -4181,6 +4181,7 @@ def measure_and_sample(runner_list, count):
                 check_root()
                 rrest = add_args(rrest, "-a")
                 rrest = add_args(rrest, "-A")
+                global full_system
                 full_system = True
             if nnodes == 0:
                 sys.exit("No nodes enabled")
