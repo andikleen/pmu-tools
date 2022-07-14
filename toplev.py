@@ -3175,6 +3175,7 @@ class Runner(object):
         self.idle_threshold = idle_threshold
         self.ectx = EventContext(pmu)
         self.pmu = pmu
+        self.full_olist = []
 
     def set_ectx(self):
         #print("set_ectx", sys._getframe(1).f_code.co_name, file=sys.stderr)
@@ -3193,6 +3194,7 @@ class Runner(object):
         obj.res_map = {}
         obj.group_map = {}
         self.olist.append(obj)
+        self.full_olist.append(obj)
         self.odict[obj.name] = obj
         if has(obj, 'metricgroup'):
             for j in obj.metricgroup:
@@ -3201,8 +3203,6 @@ class Runner(object):
 
     # remove unwanted nodes after their parent relationship has been set up
     def filter_nodes(self):
-        self.full_olist = list(self.olist)
-
         add_met, remove_met = parse_metric_group(args.metric_group, self.metricgroups)
 
         add_obj = {self.odict[x] for x in add_met}
@@ -3440,7 +3440,7 @@ def runner_restart(runner, offset):
     emap = runner.printer.emap
     runner.reset()
     runner.printer.emap = emap
-    runner.olist = runner.full_olist
+    runner.olist = list(runner.full_olist)
     for o in runner.olist:
         o.group_map = {}
         o.res_map = {}
