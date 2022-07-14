@@ -4005,6 +4005,17 @@ if not smt_mode and not args.single_thread and not args.no_aggr:
     if args.per_core and multi == 1 and not hybrid:
         rest = add_args(rest, "--per-core")
 
+def runner_node_filter():
+    for r in runner_list:
+        r.filter_nodes()
+
+runner_node_filter()
+orig_smt_mode = smt_mode
+if smt_mode and not os.getenv('FORCEHT'):
+    # do not need SMT mode if no objects have Core scope
+    if not any_core_node():
+        smt_mode = False
+
 full_system = False
 if not args.single_thread and smt_mode:
     if not args.quiet and not args.import_:
@@ -4117,12 +4128,6 @@ def runner_first_init():
 
 runner_first_init()
 
-# XXX reenable for drill down
-if smt_mode and not os.getenv('FORCEHT'):
-    # do not need SMT mode if no objects have Core scope
-    if not any_core_node():
-        smt_mode = False
-
 def suggest(runner):
     printer = runner.printer
     if printer.bottlenecks and not args.quiet:
@@ -4132,13 +4137,14 @@ def suggest(runner):
     return False
 
 def measure_and_sample(runner_list, count):
+    rrest = rest
     while True:
         summary = Summary()
         try:
             if args.no_multiplex and not args.import_:
-                ret = execute_no_multiplex(runner_list, out, rest, summary)
+                ret = execute_no_multiplex(runner_list, out, rrest, summary)
             else:
-                ret = execute(runner_list, out, rest, summary)
+                ret = execute(runner_list, out, rrest, summary)
         except KeyboardInterrupt:
             ret = 1
         print_summary(summary, out)
@@ -4165,6 +4171,17 @@ def measure_and_sample(runner_list, count):
             for r in runner_list:
                 offset = runner_restart(r, offset)
                 nnodes += len(r.olist)
+            global smt_mode
+            smt_mode = orig_smt_mode
+            if smt_mode and not os.getenv('FORCEHT'):
+                if not any_core_node():
+                    smt_mode = False
+            # XXX do all checks for incompatible arguments like top level
+            if smt_mode and not args.single_thread:
+                check_root()
+                rrest = add_args(rrest, "-a")
+                rrest = add_args(rrest, "-A")
+                full_system = True
             if nnodes == 0:
                 sys.exit("No nodes enabled")
         else:
