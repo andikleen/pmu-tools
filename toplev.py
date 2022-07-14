@@ -1581,6 +1581,8 @@ IDLE_MARKER_THRESHOLD = 0.05
 def find_idle_keys(res, rev, idle_thresh):
     if sum([len(res[k]) for k in res.keys()]) == 0:
         return set()
+    if len(res.keys()) == 1:
+        return set()
     idle_ev = find_cycles(rev)
     if idle_ev == "":
         warn_once("no idle detection because no cycle event found")
