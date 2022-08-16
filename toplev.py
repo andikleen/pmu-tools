@@ -311,7 +311,7 @@ class PerfFeatures(object):
             self.supports_duration_time = int(dt)
         else:
             self.supports_duration_time = (perf_version >= (5,2) or
-                    works(self.perf + " list duration_time | grep duration_time"))
+                    works(self.perf + " stat -e duration_time true"))
         # guests don't support offcore response
         if event_nocheck:
             self.has_max_precise = True
