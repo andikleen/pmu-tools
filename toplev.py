@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2012-2020, Intel Corporation
+# Copyright (c) 2012-2022, Intel Corporation
 # Author: Andi Kleen
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -48,7 +48,8 @@ from copy import copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter, OrderedDict
 from itertools import compress, groupby, chain
-from listutils import cat_unique, dedup, filternot, not_list, append_dict, zip_longest, flatten, findprefix, dummy_dict
+from listutils import cat_unique, dedup, filternot, not_list, append_dict, \
+        zip_longest, flatten, findprefix, dummy_dict
 from objutils import has, safe_ref, map_fields
 
 from tl_stat import ComputeStat, ValStat, combine_valstat
