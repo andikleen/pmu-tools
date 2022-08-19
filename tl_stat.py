@@ -15,6 +15,7 @@ from __future__ import print_function
 import sys
 import math
 from collections import namedtuple
+from tl_io import warn, warn_no_assert
 
 ValStat = namedtuple('ValStat', ['stddev', 'multiplex'])
 
@@ -51,25 +52,23 @@ class ComputeStat:
         if len(res.keys()) > 0:
             r = res[list(res.keys())[0]]
             if len(r) != len(evnum):
-                print("results len %d does not match event len %d" % (len(r), len(evnum)),
-                      file=sys.stderr)
+                warn("results len %d does not match event len %d" % (len(r), len(evnum)))
                 return
             if len(referenced) != len(r) and not self.quiet:
                 dummies = {i for i, d in enumerate(evnum) if d == "dummy"}
                 notr = set(range(len(r))) - referenced - dummies
                 if notr:
-                    print("%d results not referenced: " % (len(notr)),
-                          " ".join(["%d" % x for x in sorted(notr)]),
-                          file=sys.stderr)
+                    warn_no_assert("%d results not referenced: " % (len(notr)) +
+                          " ".join(["%d" % x for x in sorted(notr)]))
 
     def compute_errors(self):
         if self.errcount > 0 and self.errors != self.prev_errors:
-            if not self.quiet:
-                print("%d nodes had zero counts: " % (self.errcount), end='', file=sys.stderr)
-                print(" ".join(sorted(self.errors)), file=sys.stderr)
+            warn_no_assert(("%d nodes had zero counts: " % (self.errcount)) +
+                 " ".join(sorted(self.errors)))
             self.errcount = 0
             self.prev_errors = self.errors
             self.errors = set()
-        if self.mismeasured and self.mismeasured > self.prev_mismeasured and not self.quiet:
-            print("Mismeasured (out of bound values):", " ".join(sorted(self.mismeasured)))
+        if self.mismeasured and self.mismeasured > self.prev_mismeasured:
+            warn_no_assert("Mismeasured (out of bound values):" +
+                    " ".join(sorted(self.mismeasured)))
             self.prev_mismeasured = self.mismeasured

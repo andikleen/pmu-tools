@@ -13,7 +13,7 @@
 import math
 import logging
 import operator
-
+from tl_io import warn
 
 log = logging.getLogger(__name__)
 TEMPVAL = 'anon'
@@ -217,7 +217,7 @@ class UVal:
             elif op == div_op or op == operator.truediv:
                 u = 0.
                 if A != 0:
-                    log.warning("Error prop failed because of DIV/0: {} {} {}", lhs, op, rhs)
+                    warn("Error prop failed because of DIV/0: {} {} {}", lhs, op, rhs)
 
         elif op in (operator.add, operator.sub):
             sgn = 1 if op == operator.add else -1

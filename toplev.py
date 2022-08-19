@@ -57,7 +57,10 @@ import tl_output
 import ocperf
 import event_download
 from tl_uval import UVal
-from tl_io import flex_open_r, flex_open_w, popentext
+from tl_io import flex_open_r, flex_open_w, popentext, warn, warn_once, \
+        warn_once_no_assert, print_once, test_mode, test_debug_print,   \
+        obj_debug_print, debug_print, warn_no_assert,                   \
+        set_args as io_set_args
 
 known_cpus = (
     ("snb", (42, )),
@@ -213,46 +216,6 @@ class EventContext(object):
 ectx = None
 
 smt_mode = False
-
-test_mode = os.getenv("TL_TESTER")
-
-def warn(msg):
-    print("warning: " + msg, file=sys.stderr)
-    if test_mode:
-        assert 0
-
-warned = set()
-
-def warn_once(msg):
-    if msg not in warned:
-        warn(msg)
-        warned.add(msg)
-    if test_mode:
-        assert 0
-
-def warn_once_no_assert(msg):
-    if msg not in warned:
-        print("warning: " + msg, file=sys.stderr)
-        warned.add(msg)
-    if test_mode:
-        assert 0
-
-def print_once(msg):
-    if msg not in warned:
-        print(msg)
-        warned.add(msg)
-
-def debug_print(x):
-    if args.debug:
-        print(x, file=sys.stderr)
-
-def obj_debug_print(obj, x):
-    if args.debug or (args.dfilter and obj.name in args.dfilter):
-        print(x, file=sys.stderr)
-
-def test_debug_print(x):
-    if args.debug or test_mode:
-        print(x, file=sys.stderr)
 
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
@@ -716,6 +679,7 @@ p.add_argument('--no-json-footer', action='store_true', help=argparse.SUPPRESS) 
 p.add_argument('--no-csv-header', action='store_true', help=argparse.SUPPRESS) # no header/version for CSV
 p.add_argument('--no-csv-footer', action='store_true', help=argparse.SUPPRESS) # no version for CSV
 args, rest = p.parse_known_args()
+io_set_args(args)
 
 if args.setvar:
     for j in args.setvar:
@@ -1386,10 +1350,12 @@ def raw_event(i, name="", period=False, initialize=False):
         if e is None:
             if i not in ectx.notfound_cache:
                 ectx.notfound_cache[i] = extramsg[0]
-                print("%s %s" % (i, extramsg[0]), file=sys.stderr)
+                if not args.quiet:
+                    print("%s %s" % (i, extramsg[0]), file=sys.stderr)
             return "dummy"
         if has(e, 'perfqual') and not cached_exists("/sys/devices/%s/format/%s"  % (ectx.emap.pmu, e.perfqual)):
-            print("%s event not supported in hypervisor or architectural mode" % i, file=sys.stderr)
+            if not args.quiet:
+                print("%s event not supported in hypervisor or architectural mode" % i, file=sys.stderr)
             return "dummy"
 
         if re.match("^[0-9]", name):
@@ -1589,7 +1555,7 @@ def find_idle_keys(res, rev, idle_thresh):
         return set()
     cycles = { k: max([0] + [val for val, ev in zip(res[k], rev[k]) if ev == idle_ev])
                for k in res.keys() }
-    if sum(cycles.values()) == 0:
+    if sum(cycles.values()) == 0 and not args.quiet:
         print_once("no idle detection because cycles counts are zero")
         return set()
     max_cycles = max(cycles.values())
@@ -1802,7 +1768,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat.referenced_check(res, runner.sched.evnum)
     stat.compute_errors()
     runner.idle_keys |= hidden_keys
-    if nothing:
+    if nothing and not args.quiet:
         print("%s: Nothing measured%s" % (runner.pmu, " for " if len(nothing) > 0 and "" not in nothing else ""), " ".join(sorted(nothing)), file=sys.stderr)
     if runner.printer.numprint == 0 and not args.quiet and runner.olist:
         print("No node %scrossed threshold" % (
@@ -1847,7 +1813,8 @@ def print_check_keys(runner, res, rev, valstats, out, interval, env):
         if len(runner_list) == 1:
             sys.exit("All measured values 0. perf broken?")
         else:
-            print("Measured values for %s all 0" % runner_name(runner), file=sys.stderr)
+            if not args.quiet:
+                print("Measured values for %s all 0" % runner_name(runner), file=sys.stderr)
             return
     if args.interval and interval is None:
         interval = float('nan')
@@ -1949,9 +1916,10 @@ def execute_no_multiplex(runner_list, out, rest, summary):
                     resoff[t] += len(res[t])
             if n > 0:
                 if len(lresults) != len(results):
-                    print("Original run had %d intervals, this run has %d. "
-                          "Workload run time not stable?" %
-                          (len(lresults), len(results)), file=sys.stderr)
+                    if not args.quiet:
+                        print("Original run had %d intervals, this run has %d. "
+                              "Workload run time not stable?" %
+                            (len(lresults), len(results)), file=sys.stderr)
                     if len(lresults) > len(results):
                         # throw away excessive intervals
                         lresults = lresults[:len(results)]
@@ -2318,8 +2286,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         set_interval(env, interval_dur if interval_dur else args.interval/1000.,
                      interval if interval else float('NaN'))
     else:
-        print("warning: cannot determine time duration. Per second metrics may be wrong. Use -Ixxx.",
-                file=sys.stderr)
+        warn_no_assert("cannot determine time duration. Per second metrics may be wrong. Use -Ixxx.")
         set_interval(env, 0, 0)
     ret = prun.wait()
     print_account(account)
@@ -2434,7 +2401,7 @@ def do_event_rmap(e, ectx_):
         return n
     if e in non_json_events:
         return e
-    print("rmap: cannot find %s, using dummy" % e, file=sys.stderr)
+    warn("rmap: cannot find %s, using dummy" % e)
     return "dummy"
 
 def event_rmap(e):
@@ -2523,7 +2490,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
             try:
                 vv = vv[cpuoff]
             except IndexError:
-                warn_once("warning: Partial CPU thread data from perf for %s" %
+                warn_once("Partial CPU thread data from perf for %s" %
                         obj.name)
                 return 0.0
     if st[index].stddev or st[index].multiplex != 100.0:
@@ -3494,9 +3461,7 @@ def do_sample(sample_obj, rest, count, ret):
              for x in nsamp]
     if nsamp != samples:
         missing = [x[0] for x in set(samples) - set(nsamp)]
-        if not args.quiet:
-            print("warning: update kernel to handle sample events:", file=sys.stderr)
-            print("\n".join(missing), file=sys.stderr)
+        warn("Update kernel to handle sample events:" + "\n".join(missing))
 
     def force_pebs(ev):
         return ev in ectx.require_pebs_events
@@ -3509,7 +3474,7 @@ def do_sample(sample_obj, rest, count, ret):
         nnopebs = {x[0] for x in nsamp if force_pebs(x[0])}
         if nnopebs and not args.quiet:
             for j in nnopebs:
-                print("sample event %s not (currently) supported in virtualization" % j, file=sys.stderr)
+                warn_no_assert("sample event %s not (currently) supported in virtualization" % j)
         nsamp = [x for x in nsamp if x[0] not in nnopebs]
 
     sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True) for s in nsamp]
@@ -3566,7 +3531,7 @@ def suggest_bottlenecks(runner):
                     ",".join(children + parents),
                     mux))
         if args.drilldown:
-            if len(runner_list) > 1:
+            if len(runner_list) > 1 and not args.quiet:
                 print("Please make sure workload does not move between core types for drilldown", file=sys.stderr)
             if args.nodes:
                 args.nodes += ","
