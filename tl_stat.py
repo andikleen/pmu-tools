@@ -12,7 +12,6 @@
 #
 # Maintain error data on perf measurements
 from __future__ import print_function
-import sys
 import math
 from collections import namedtuple
 from tl_io import warn, warn_no_assert

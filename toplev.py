@@ -59,7 +59,7 @@ import ocperf
 import event_download
 from tl_uval import UVal
 from tl_io import flex_open_r, flex_open_w, popentext, warn, warn_once, \
-        warn_once_no_assert, print_once, test_mode, test_debug_print,   \
+        warn_once_no_assert, print_once, test_debug_print,              \
         obj_debug_print, debug_print, warn_no_assert,                   \
         set_args as io_set_args
 
