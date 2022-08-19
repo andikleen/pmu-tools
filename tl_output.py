@@ -102,8 +102,7 @@ class Output(object):
         if self.logfiles:
             for j in self.logfiles.values():
                 j.flush()
-        elif self.logf != sys.stderr and self.logf != sys.stdout:
-            self.logf.flush()
+        self.logf.flush()
 
     # pass all possible hdrs in advance to compute suitable padding
     def set_hdr(self, hdr, area):

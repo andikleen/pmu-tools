@@ -3057,8 +3057,7 @@ class Printer(object):
         if bn:
             self.bottlenecks.add(bn)
 
-        if safe_ref(out, 'logf') == sys.stderr:
-            out.logf.flush()
+        out.logf.flush()
 
         # determine all objects to print
         olist = [o for o in olist if should_print_obj(o, match)]
