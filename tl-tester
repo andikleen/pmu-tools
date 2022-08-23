@@ -238,7 +238,7 @@ fi
 if [ $j = "adl" ] ; then
 FORCECOUNTERS=8 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events -l1 --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
 else
-FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events -l1 --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
+FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events -l1 --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
 fi
 [ $j != "knl" ] && onegroup log$$.$j
 checklog log$$.$j
