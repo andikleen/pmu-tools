@@ -1666,8 +1666,10 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             onemore = False
             iterations = COMPUTE_ITER if COMPUTE_ITER else default_compute_iter
             for _ in range(iterations):
+                env['num_merged'] = 1
                 changed = runner.compute(merged_res, rev[j], merged_st, env, thread_node, used_stat)
                 verify_rev(rev, cpus)
+                env['num_merged'] = len(cpus)
                 changed += runner.compute(combined_res, rev[cpus[0]], combined_st, env, core_node, used_stat)
                 if changed == 0 and COMPUTE_ITER is None:
                     # do always one more so that any thresholds depending on a later node are caught
