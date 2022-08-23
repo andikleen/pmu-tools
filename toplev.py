@@ -992,7 +992,8 @@ if args.parallel:
         args.pjobs = multiprocessing.cpu_count()
     sys.exit(run_parallel(args, env))
 
-rest = [x for x in rest if x != "--"]
+if rest[:1] == ["--"]:
+    rest = rest[1:]
 
 if args.cpu:
     rest = ["--cpu", args.cpu] + rest

@@ -97,7 +97,7 @@ set -x
 LOAD="${LOAD:--- gcc -O3 -o /dev/null longhello.c}"
 LOADQUICK="${LOADQUICK:--- gcc -O3 -o /dev/null hello.c}"
 LOADLONG=${LOADLONG:-./workloads/BC2s}
-LOAD0="-- taskset -c 0 $LOAD"
+LOAD0="-- taskset -c 0 ${LOAD/--/}"
 
 set -o pipefail
 
