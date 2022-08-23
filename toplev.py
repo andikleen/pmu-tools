@@ -1278,6 +1278,29 @@ class PerfRun(object):
         if self.perf:
             self.perf.kill()
 
+class SamplePerfRun(object):
+    def __init__(self):
+        self.pi = self.pr = self.ps = None
+
+    def execute(self, evsamples, pargs):
+        s = subprocess
+        pr = s.Popen([feat.perf, "record",
+                                   "-W",
+                                   "-e", ",".join(evsamples),
+                                   "-o", "-"] + pargs,
+                                   stdout=s.PIPE)
+        pi = s.Popen([feat.perf, "inject"],
+                                 stdin=pr.stdout,
+                                 stdout=s.PIPE)
+        ps = s.Popen([feat.perf, "script",
+                                   "-i", "-",
+                                   "-F", "comm,weight,event,period"],
+                                   stdin=pi.stdout,
+                                   stdout=s.PIPE)
+        pi.stdout.close()
+        pr.stdout.close()
+        self.pr, self.pi, self.ps = pr, pi, ps
+
 def separator(x):
     if x.startswith("cpu"):
         return ""
@@ -2365,6 +2388,11 @@ def ev_collect(ev, level, obj):
 
     ev = adjust_ev(ev, level)
 
+    if level === 999:
+        if ev not in obj.evsamples:
+            obj.evsamples.append(ev)
+        return DummyArith()
+
     key = (ev, level, obj.name)
     if key not in obj.evlevels:
         if ev.startswith("TOPDOWN.SLOTS") or ev.startswith("PERF_METRICS."):
@@ -3138,6 +3166,7 @@ class Runner(object):
         self.idle_keys = set()
         self.sched = Scheduler()
         self.printer = Printer(self.metricgroups)
+        self.evsamples = OrderedDict()
 
     def __init__(self, max_level, idle_threshold, pmu=None):
         # always needs to be filtered by olist:
@@ -3259,12 +3288,14 @@ class Runner(object):
         errata_warn_names = set()
         min_kernel = []
         for obj in self.olist:
+            obj.evsamples = OrderedDict()
             obj.evlevels = []
             obj.compute(lambda ev, level: ev_collect(ev, level, obj))
             obj.val = None
             obj.evlist = [x[0] for x in obj.evlevels]
             obj.evnum = raw_events(obj.evlist, initialize=True)
             obj.nc = needed_counters(dedup(obj.evnum))
+            self.evsamples |= obj.evsamples
 
             # work arounds for lots of different problems
             unsup = [x for x in obj.evlist if unsup_event(x, unsup_events, min_kernel)]
