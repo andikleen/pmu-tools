@@ -51,6 +51,11 @@ case "$PERF" in
 *fake-perf.py) NORES=1 ;;
 esac
 
+FOURCOUNTERS=""
+if `$PERF stat -e '{branches,branches,branches,branches,branches}' -x, true | grep -q "not supported"` ; then
+	FOURCOUNTERS=1
+fi
+
 export TL_TESTER=1
 
 dumplogs() {
@@ -197,6 +202,7 @@ $WRAP ./toplev -h > /dev/null
 onegroup() {
 	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
 	if [ -n "$NOGROUP" ] ; then return ; fi
+	if [ -n "$FOURCOUNTERS" ] ; then return ; fi
 	if [ -n "$NUM_RUNNERS" ] && [ "$NUM_RUNNERS" -gt 1 ] ; then return ; fi
 	case "$OPT" in *--drilldown*) return ;; esac
 	grep perf $1 |
