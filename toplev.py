@@ -44,6 +44,7 @@ import bisect
 import random
 import io
 import glob
+import multiprocessing
 from copy import copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter, OrderedDict
@@ -1278,29 +1279,6 @@ class PerfRun(object):
         if self.perf:
             self.perf.kill()
 
-class SamplePerfRun(object):
-    def __init__(self):
-        self.pi = self.pr = self.ps = None
-
-    def execute(self, evsamples, pargs):
-        s = subprocess
-        pr = s.Popen([feat.perf, "record",
-                                   "-W",
-                                   "-e", ",".join(evsamples),
-                                   "-o", "-"] + pargs,
-                                   stdout=s.PIPE)
-        pi = s.Popen([feat.perf, "inject"],
-                                 stdin=pr.stdout,
-                                 stdout=s.PIPE)
-        ps = s.Popen([feat.perf, "script",
-                                   "-i", "-",
-                                   "-F", "comm,weight,event,period"],
-                                   stdin=pi.stdout,
-                                   stdout=s.PIPE)
-        pi.stdout.close()
-        pr.stdout.close()
-        self.pr, self.pi, self.ps = pr, pi, ps
-
 def separator(x):
     if x.startswith("cpu"):
         return ""
@@ -2388,7 +2366,7 @@ def ev_collect(ev, level, obj):
 
     ev = adjust_ev(ev, level)
 
-    if level === 999:
+    if level == 999:
         if ev not in obj.evsamples:
             obj.evsamples.append(ev)
         return DummyArith()
