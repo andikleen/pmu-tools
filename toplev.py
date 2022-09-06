@@ -716,6 +716,8 @@ def init_xlsx(args):
         sys.exit("--perf-output not allowed with --xlsx")
     if args.csv:
         sys.exit("-c / --csv not allowed with --xlsx")
+    if args.thread:
+        sys.exit("--thread not supported with --xlsx") # XXX
     if not args.xlsx.endswith(".xlsx"):
         sys.exit("--xlsx must end in .xlsx")
     xlsx_base = re.sub(r'\.xlsx$', '.csv', args.xlsx)
