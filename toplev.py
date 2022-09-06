@@ -98,7 +98,7 @@ eventlist_alias = {
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx",
             "spr")
 
-hybrid_cpus = ("adl", )
+hybrid_cpus = ("adl", "mtl", )
 
 non_json_events = set(("dummy", "duration_time"))
 
