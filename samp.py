@@ -10,16 +10,19 @@ except ImportError:
 class SamplePerfRun(object):
     """Run perf record in background to collect Timed PEBS information
        and generate averages for event weights."""
-    def __init__(self):
+    def __init__(self, filterperf):
         self.pi = self.pr = self.ps = None
         self.events_sum = Counter()
         self.events_num = Counter()
+        self.filterperf = filterperf
+        self.first = True
 
     def execute(self, perf, evsamples, pargs, interval):
         self.perf = perf
         self.interval = interval
         pr = subp.Popen([perf, "record",
                                    "-W",
+                                   "-B",
                                    "-e", ",".join(evsamples),
                                    "-o", "-"] + pargs,
                                    stdout=subp.PIPE)
@@ -54,7 +57,8 @@ class SamplePerfRun(object):
             comm = l[:16].strip()
             n = l[17:].replace(":", "").split()
             ts, event, weight = float(n[0]), n[1], int(n[2])
-            if comm == self.perf: # XXX pid would be better
+            # this is mismatched with stat which doesn't exclude
+            if self.filterperf and comm == self.perf: # XXX pid would be better
                 continue
             if first_ts is None:
                 first_ts = ts
@@ -77,7 +81,10 @@ class SamplePerfRun(object):
     # returns (timestamp, dict-of-event-weights) or None for timeout or () for end
     def get_events(self):
         try:
-            return self.queue.get(True, 1) # XXX 1s is too long
+            # XXX 1s is too long
+            e = self.queue.get(True, 2 if self.first else 1)
+            self.first = False
+            return e
         except Empty:
             return None
 
@@ -85,7 +92,7 @@ class SamplePerfRun(object):
         self.child.join()
 
 if __name__ == '__main__':        
-    s = SamplePerfRun()
+    s = SamplePerfRun(True)
     s.execute("perf", ["mem_trans_retired.load_latency_gt_4:pp"], ["-a", "./workloads/BC1s"], 1.0)
     s.start()
     while True:
