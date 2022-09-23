@@ -1164,6 +1164,7 @@ class PerfRun(object):
         self.skip_line = False
         self.perf = None
         self.offset = None
+        self.samp = None
 
     def handle_inputsubset(self, f, iss):
         m = re.match(r'(\d+)-?(\d+)?$', iss)
@@ -1406,7 +1407,11 @@ def perf_args(evstr, rest):
 
 def setup_perf(evstr, rest):
     prun = PerfRun()
+    if evsamples:
+        prun.samp = samp.PerfSampleRun()
     inf = prun.execute(perf_args(evstr, rest))
+    if evsamples:
+        prun.samp.execute(feat.perf, evsamples, ..., ...)
     return inf, prun
 
 class Stat(object):
@@ -2446,8 +2451,11 @@ def compare_event(aname, bname):
 def is_hybrid():
     return ocperf.file_exists("/sys/devices/cpu/format/any")
 
-def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
+def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, evsamples):
     """get measurement result, possibly wrapping in UVal"""
+
+    if level == 999:
+        return evsamples[ev]
 
     ev = adjust_ev(ev, level)
 
@@ -2455,7 +2463,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
         scale = { "interval-s":  1e9,
                   "interval-ns": 1,
                   "interval-ms": 1e6 }[ev]
-        return lookup_res(res, rev, "duration_time", obj, env, level, referenced, cpuoff, st)/scale
+        return lookup_res(res, rev, "duration_time", obj, env, level, referenced, cpuoff, st, evsamples)/scale
 
     if ev in env:
         return env[ev]
@@ -2471,7 +2479,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     #
     if isinstance(ev, types.LambdaType):
         return sum([ev(lambda ev, level:
-                  lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
+                  lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level, evsamples)
                   for off in range(env['num_merged'])])
 
     index = obj.res_map[(ev, level, obj.name)]
@@ -3348,7 +3356,7 @@ class Runner(object):
             if 'parent' in obj.__dict__ and obj.parent and obj.parent not in self.olist:
                 obj.parent.thresh = True
             obj.compute(lambda e, level:
-                            lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
+                            lookup_res(res, rev, e, obj, env, level, ref, -1, valstats, self.evsamples))
             if obj.thresh == -1:
                 obj.thresh = True
             if args.force_bn and obj.name in args.force_bn:
