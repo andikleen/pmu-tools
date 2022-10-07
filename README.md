@@ -18,7 +18,7 @@ or symlink the tool you're interested in to /usr/local/bin or ~/bin. The tools a
 find their python dependencies.
 
 When first run, toplev / ocperf will automatically download the Intel event lists from
-https://download.01.org. This requires working internet access. Later runs can
+https://github.com/intel/perfmon. This requires working internet access. Later runs can
 be done offline. It's also possible to download the event lists ahead, see
 [pmu-tools offline](https://github.com/andikleen/pmu-tools/wiki/Running-ocperf-toplev-when-not-on-the-internet)
 
