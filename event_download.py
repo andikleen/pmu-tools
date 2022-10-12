@@ -32,7 +32,7 @@ import os
 import string
 from fnmatch import fnmatch
 
-urlpath = 'https://raw.githubusercontent.com/intel/perfmon/main'
+urlpath = os.environ.get('PERFMONDIR', 'https://raw.githubusercontent.com/intel/perfmon/main')
 mapfile = 'mapfile.csv'
 modelpath = urlpath + "/" + mapfile
 
