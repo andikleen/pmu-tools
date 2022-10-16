@@ -69,9 +69,9 @@ class SamplePerfRun(object):
                 first_ts = ts
         self.flush(ts)
         self.queue.put(())
-        self.pr.wait()    
-        self.pi.wait()    
-        self.ps.wait()    
+        self.pr.wait()
+        self.pi.wait()
+        self.ps.wait()
 
     def start(self):
         self.queue = multip.Queue()
@@ -91,7 +91,7 @@ class SamplePerfRun(object):
     def finish(self):
         self.child.join()
 
-if __name__ == '__main__':        
+if __name__ == '__main__':
     s = SamplePerfRun(True)
     s.execute("perf", ["mem_trans_retired.load_latency_gt_4:pp"], ["-a", "./workloads/BC1s"], 1.0)
     s.start()
@@ -101,4 +101,3 @@ if __name__ == '__main__':
             break
         print(l)
     s.finish()
-    

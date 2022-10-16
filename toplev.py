@@ -545,6 +545,9 @@ g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
 g.add_argument('--user', help='Only measure user code', action='store_true')
 g.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
 g.add_argument('--pid', '-p', help=argparse.SUPPRESS)
+g.add_argument('--tid', '-t', help=argparse.SUPPRESS)
+g.add_argument('--cgroup', '-G', help=argparse.SUPPRESS)
+g.add_argument('--all-cpus', '-a', action='store_true', help=argparse.SUPPRESS)
 g.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
 g.add_argument('--no-aggr', '-A', help='Measure every CPU', action='store_true')
 g.add_argument('--cputype', help='Limit to hybrid cpu type (atom or core)', choices=['atom', 'core'])
@@ -1004,6 +1007,12 @@ if args.cpu:
     rest = ["--cpu", args.cpu] + rest
 if args.pid:
     rest = ["--pid", args.pid] + rest
+if args.tid:
+    rest = ["--tid", args.tid] + rest
+if args.cgroup:
+    rest = ["--cgroup", args.cgroup] + rest
+if args.all_cpus:
+    rest = ["-a"] + rest
 if args.csv and len(args.csv) != 1:
     sys.exit("--csv/-x argument can be only a single character")
 
@@ -1411,7 +1420,20 @@ def setup_perf(evstr, rest):
         prun.samp = samp.PerfSampleRun()
     inf = prun.execute(perf_args(evstr, rest))
     if evsamples:
-        prun.samp.execute(feat.perf, evsamples, ..., ...)
+        pargs = []
+        if args.all_cpus:
+            pargs.append("-a")
+        if args.cgroup:
+            pargs += ["-G", args.cgroup]
+        if args.pid:
+            pargs += ["--pid", args.pid]
+        if args.tid:
+            pargs += ["--tid", args.tid]
+        if len(pargs) == 0:
+            pargs = rest # XXX instead run nested
+        else:
+            pargs += ["sleep", 1]
+        prun.samp.execute(feat.perf, evsamples, pargs, args.interval)
     return inf, prun
 
 class Stat(object):
