@@ -209,11 +209,11 @@ cat >top2$$ <<EOL
 /sys/devices/uncore_cbox_1
 /sys/devices/uncore_cbox_1/format/umask
 EOL
-TOPOLOGY=top2$$ UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1'
-TOPOLOGY=top2$$ UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_0'
-TOPOLOGY=top2$$ UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_1'
-TOPOLOGY=top2$$ UNCORE=haswell_uncore_* checknotp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1' --noexplode
-TOPOLOGY=top2$$ UNCORE=haswell_uncore_* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox[^_]' --noexplode
+TOPOLOGY=top2$$ UNCORE=haswell_uncore* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1'
+TOPOLOGY=top2$$ UNCORE=haswell_uncore* checkp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_0'
+TOPOLOGY=top2$$ UNCORE=haswell_uncore* checknotp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_1'
+TOPOLOGY=top2$$ UNCORE=haswell_uncore* checknotp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1' --noexplode
+TOPOLOGY=top2$$ UNCORE=haswell_uncore* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox[^_]' --noexplode
 
 TOPOLOGY=top2$$ EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
 
