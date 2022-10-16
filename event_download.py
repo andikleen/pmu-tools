@@ -20,6 +20,7 @@
 # env:
 # CPUINFO=... override /proc/cpuinfo file
 # MAPFILE=... override mapfile.csv
+# PERFMONDIR=... override download prefix for perfmon data, can be a local clone (file:///tmp/perfmon)
 from __future__ import print_function
 import sys
 import re
