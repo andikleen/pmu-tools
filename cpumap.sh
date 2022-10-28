@@ -23,3 +23,4 @@ cpus[clx]=GenuineIntel-6-55-5
 cpus[icl]=GenuineIntel-6-7E
 cpus[icx]=GenuineIntel-6-6A
 cpus[adl]=GenuineIntel-6-9A
+cpus[spr]=GenuineIntel-6-8F
