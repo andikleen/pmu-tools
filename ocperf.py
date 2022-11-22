@@ -573,7 +573,12 @@ def json_open(name):
     d = open(name, "rb").read()
     if not isinstance(d, str):
         d = d.decode('utf-8')
-    return json.loads(d)
+
+    json_data = json.loads(d)
+    if 'Events' in json_data:
+        json_data = json_data['Events']
+
+    return json_data
 
 class EmapNativeJSON(object):
     """Read an event table."""
