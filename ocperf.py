@@ -575,7 +575,7 @@ def json_open(name):
         d = d.decode('utf-8')
 
     json_data = json.loads(d)
-    if 'Events' in json_data:
+    if isinstance(json_data, dict) and 'Events' in json_data:
         json_data = json_data['Events']
 
     return json_data
