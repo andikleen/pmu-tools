@@ -42,6 +42,7 @@ import types
 import csv
 import bisect
 import random
+import json
 import io
 import glob
 import multiprocessing
@@ -642,6 +643,7 @@ g.add_argument('--force-hypervisor', help='Assume running under hypervisor (no u
                action='store_true')
 g.add_argument('--no-uncore', help='Disable uncore events', action='store_true')
 g.add_argument('--no-check', help='Do not check that PMU units exist', action='store_true')
+g.add_argument('--ret-latency', help='Read JSON file with Retire latencies. Can specify path inside JSON file with :, for example foo.json:6-cores:MEAN')
 
 g = p.add_argument_group('Additional information')
 g.add_argument('--print-group', '-g', help='Print event group assignments',
@@ -928,6 +930,34 @@ def run_parallel(args, env):
         ret = do_xlsx(env)
     # XXX graph
     return ret
+
+ret_latency = None
+
+if args.ret_latency:
+    try:
+        l = args.ret_latency.split(":")
+        ret_latency = json.loads(open(l[0]).read())
+    except FileNotFoundError:
+        sys.exit("Cannot open %s" % l[0])
+
+def lookup_retlat(event):
+    try:
+        l = args.ret_latency.split(":")
+        o = retire_lat[event]
+        for k in l[1:]:
+            if k in o[0] or k.upper() in o[0]:
+                o = o[0][k]
+                # XXX check for remaining arguments
+                break
+            if k not in o[1] and k.upper() in o[1]:
+                k = k.upper()
+                o = o[1][k]
+        if type(o) is list:
+            o = o[0]["MEAN"]
+        return o
+    except KeyError as e:
+        print("bad key", e)
+        return 1.0 # XXX
 
 if args.idle_threshold:
     idle_threshold = args.idle_threshold / 100.
@@ -1416,10 +1446,11 @@ def perf_args(evstr, rest):
 
 def setup_perf(evstr, rest):
     prun = PerfRun()
-    if evsamples:
-        prun.samp = samp.PerfSampleRun()
+    #if evsamples:
+    #    prun.samp = samp.PerfSampleRun()
     inf = prun.execute(perf_args(evstr, rest))
-    if evsamples:
+    #if evsamples:
+    if False:
         pargs = []
         if args.all_cpus:
             pargs.append("-a")
@@ -2477,6 +2508,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, evsamples)
     """get measurement result, possibly wrapping in UVal"""
 
     if level == 999:
+        return lookup_retlat(ev)
         return evsamples[ev]
 
     ev = adjust_ev(ev, level)
