@@ -1,3 +1,25 @@
+* toplev update to Ahmad Yasin's TMA 4.5:
+    
+    Info metrics on I-cache, Mispredicts, Load latencies & TLBs. Tuned MEM latencies for SPR.
+    New Informative Metrics & Groups
+    - Info.Bad_Spec group with details on mispredicted branch-type: IpMisp_{Cond_Taken, Cond_Ntaken, Ret, Indirect}
+    - Info.Memory.TLBs 3 metrics for STLB MPKI per code/load/store
+    - Info.Memory.ORO 4 metrics for memory latencies and MLP: Load_L2_Miss_Latency, Data/Load_L2_MLP [all] Load_L3_Miss_Latency [ICL onwards]
+    - Info.Frontend group now includes: 
+    ** L2MPKI_Code[_All] new metrics for miss-rate of code fetches (2 metrics) [SKL onwards]
+    ** ICache_Miss_Latency: Average Latency for L1 instruction cache misses
+    ** IpUnknown_Branch: Instructions per speculative Unknown Branch (BAClear) (lower number means higher occurrence rate)
+    ** Fetch_UpC: # Fetch Uops per Cycle
+    - New UPI_Data_Transmit_BW [SPR]
+    Increased accuracy of
+    - Memory access latencies [SPR]
+    Key Enhancements & fixes
+    - patched (PMU for) MS_Switches, DSB_Coverage, LSD_Coverage [ADL onwards]
+    - reduce # events (multiplexing) for GFLOPs, FLOPc, IpFLOP, FP_Scalar and FP_Vector [BDW onwards]
+    - further reduce multiplexing via #FP16 parameter for workloads with no use of FP16 / AMX [SPR]
+    - renamed UPI to UopPI to avoid overloadings UPI metric name in servers [all]
+    - more bug fixes: Core_Bound_Likely, Decoder0_Alone, Few_Uops_Instructions, Int_Operations, L1MPKI, MEM_Parallel_Requests, MEM_Parallel_Reads, Taging, Thresholds.
+
 * interval-normalize has a new --normalize-cpu option to normalize multi CPU
   CSV files from toplev or perf
 * toplev now supports an experimental --drilldown option to automatically rerun
