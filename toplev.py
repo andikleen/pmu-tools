@@ -1746,7 +1746,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 runner.reset_thresh()
                 runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
                                combined_st, env, nodeselect, stat)
-                printer.print_res(runner.olist, out, interval, "all", nodeselect, None, False)
+                bn = find_bn(runner.olist, lambda x: True)
+                printer.print_res(runner.olist, out, interval, "", nodeselect, bn, False)
     elif mode != OUTPUT_THREAD:
         packages = set()
         for j in keys:
