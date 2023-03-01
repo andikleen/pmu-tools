@@ -246,4 +246,3 @@ For bugs please open an issue on https://github.com/andikleen/pmu-tools/issues
 ocperf, toplev, ucevent, parser are under GPLv2, jevents is under the modified BSD license.
 
 Andi Kleen
-pmu-tools@halobates.de
