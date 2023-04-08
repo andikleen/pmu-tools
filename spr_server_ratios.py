@@ -101,7 +101,7 @@ def FP_Arith_Scalar(self, EV, level):
 
 # Floating Point computational (arithmetic) Operations Count
 def FP_Arith_Vector(self, EV, level):
-    return EV("FP_ARITH_INST_RETIRED.128B_PACKED_DOUBLE:u0x3c", level) + EV("FP_ARITH_INST_RETIRED2.VECTOR", level)
+    return EV("FP_ARITH_INST_RETIRED.128B_PACKED_DOUBLE:u0xfc", level) + EV("FP_ARITH_INST_RETIRED2.VECTOR", level)
 
 def HighIPC(self, EV, level):
     val = IPC(self, EV, level) / Pipeline_Width
