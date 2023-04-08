@@ -2912,16 +2912,16 @@ class Scheduler(object):
             # heuristics
 
             duped = []
-            for e in evnum:
+            for ind, e in enumerate(evnum):
                 if e in self.event_to_group:
                     g = self.event_to_group[e]
                     debug_print("dedup %s %s to %s" % (obj.name, e, " ".join([x.name for x in g.objl])))
                     g.objl.add(obj)
                     update_group_map(g.evnum, obj, g)
-                    duped.append(e)
+                    duped.append(ind)
             # need to remove in place so that caller sees it
-            for e in duped:
-                evnum.remove(e)
+            for ind in reversed(duped):
+                del evnum[ind]
             if len(evnum) == 0:
                 debug_print("%s fully deduped" % obj.name)
                 return True
