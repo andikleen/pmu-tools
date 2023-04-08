@@ -2872,6 +2872,7 @@ class Scheduler(object):
         # duplicate checks
         self.evgroups_nf = []
         self.nextgnum = 0
+        self.event_to_group = {}
 
     # should avoid adding those in the first place instead
     def dummy_unreferenced(self, olist):
@@ -2899,10 +2900,31 @@ class Scheduler(object):
                 evlev = evlev[n:]
                 evnum = evnum[n:]
 
+    # may modify evnum
     def add_duplicate(self, evnum, obj):
         evset = set(evnum)
         num_gen = num_generic_counters(evset)
         full = set()
+
+        if has(obj, 'area') and obj.area.startswith("Info.Bot"):
+            # reuse any previous event independent of group subsets
+            # for bottleneck nodes which are too large for the usual
+            # heuristics
+
+            duped = []
+            for e in evnum:
+                if e in self.event_to_group:
+                    g = self.event_to_group[e]
+                    debug_print("dedup %s %s to %s" % (obj.name, e, " ".join([x.name for x in g.objl])))
+                    g.objl.add(obj)
+                    update_group_map(g.evnum, obj, g)
+                    duped.append(e)
+            # need to remove in place so that caller sees it
+            for e in duped:
+                evnum.remove(e)
+            if len(evnum) == 0:
+                debug_print("%s fully deduped" % obj.name)
+                return True
 
         for g in reversed(self.evgroups_nf if num_gen else self.evgroups):
             if g.outgroup:
@@ -2925,6 +2947,8 @@ class Scheduler(object):
                 for k in evnum:
                     if k not in g.evnum:
                         g.evnum.append(k)
+                    if k not in self.event_to_group:
+                        self.event_to_group[k] = g
                 g.objl.add(obj)
                 update_group_map(g.evnum, obj, g)
                 return True
@@ -2946,6 +2970,9 @@ class Scheduler(object):
         if not self.add_duplicate(evnum, obj):
             g = Group(evnum, [obj], self.nextgnum)
             obj_debug_print(obj, "add %s %s to group %d" % (evnum, list(map(event_rmap, evnum)), g.num))
+            for k in evnum:
+                if k not in self.event_to_group:
+                    self.event_to_group[k] = g
             self.nextgnum += 1
             self.evgroups.append(g)
             self.evgroups_nf.append(g)
