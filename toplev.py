@@ -2913,7 +2913,7 @@ class Scheduler(object):
 
             duped = []
             for ind, e in enumerate(evnum):
-                if e in self.event_to_group:
+                if e in self.event_to_group and "cpu/topdown" not in e:
                     g = self.event_to_group[e]
                     debug_print("dedup %s %s to %s" % (obj.name, e, " ".join([x.name for x in g.objl])))
                     g.objl.add(obj)
