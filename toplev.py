@@ -101,6 +101,12 @@ hybrid_cpus = ("adl", )
 
 non_json_events = set(("dummy", "duration_time"))
 
+# tunables (tunable with --tune)
+
+BOTTLENECK_LEVEL_INC = 1
+IDLE_MARKER_THRESHOLD = 0.05
+SIB_THRESH = 0.05
+
 # handle kernels that don't support all events
 unsup_pebs = (
     ("BR_MISP_RETIRED.ALL_BRANCHES:pp", (("hsw",), (3, 18), None)),
@@ -1547,8 +1553,6 @@ def find_cycles(rev):
                 return idle_ev
     return ""
 
-IDLE_MARKER_THRESHOLD = 0.05
-
 def find_idle_keys(res, rev, idle_thresh):
     if sum([len(res[k]) for k in res.keys()]) == 0:
         return set()
@@ -2664,8 +2668,6 @@ def node_filter(obj, default, sibmatch, mgroups):
                         return True
     return default
 
-SIB_THRESH = 0.05
-
 def _find_bn(bn, level):
     siblings = sorted([x for x in bn if x.level - 1 == level], key=lambda x: x.val, reverse=True)
     if len(siblings) == 0:
@@ -3537,8 +3539,6 @@ def do_sample(sample_obj, rest, count, ret):
             print("Run `" + feat.perf + " report%s%s' to show the sampling results" % (
                 (" -i %s" % perf_data) if perf_data != "perf.data" else "",
                 " --no-branch-history" if "-b" in extra_args else ""))
-
-BOTTLENECK_LEVEL_INC = 1
 
 def suggest_bottlenecks(runner):
     def gen_bn(o):
