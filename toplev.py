@@ -103,6 +103,8 @@ non_json_events = set(("dummy", "duration_time"))
 
 # tunables (tunable with --tune)
 
+DEDUP_AREA = "Info.Bot*"
+DEDUP_NODE = ""
 BOTTLENECK_LEVEL_INC = 1
 IDLE_MARKER_THRESHOLD = 0.05
 SIB_THRESH = 0.05
@@ -2863,6 +2865,12 @@ def print_group(g):
           (" [%d counters]" % needed_counters(g.evnum)) +
           (" [%d]" % g.base if args.debug else ""), 75, "  ")
 
+def match_patlist(l, s):
+    for x in l.split(","):
+        if fnmatch(s, x):
+            return True
+    return False
+
 class Scheduler(object):
     """Schedule events into groups."""
 
@@ -2908,7 +2916,8 @@ class Scheduler(object):
         num_gen = num_generic_counters(evset)
         full = set()
 
-        if has(obj, 'area') and obj.area.startswith("Info.Bot"):
+        if ((has(obj, 'area') and match_patlist(DEDUP_AREA, obj.area)) or
+            match_patlist(DEDUP_NODE, obj.name)):
             # reuse any previous event independent of group subsets
             # for bottleneck nodes which are too large for the usual
             # heuristics
