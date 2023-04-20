@@ -941,6 +941,9 @@ if args.ret_latency:
         sys.exit("Cannot open %s" % l[0])
 
 def lookup_retlat(event):
+    if ret_latency is None:
+        print("No --ret-latency for", event)
+        return 1.0
     try:
         l = args.ret_latency.split(":")
         o = retire_lat[event]
@@ -2426,7 +2429,7 @@ def ev_collect(ev, level, obj):
 
     if level == 999:
         if ev not in obj.evsamples:
-            obj.evsamples.append(ev)
+            obj.evsamples[ev] = 0
         return DummyArith()
 
     key = (ev, level, obj.name)
