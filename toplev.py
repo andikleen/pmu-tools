@@ -3638,6 +3638,8 @@ def setup_metrics(model, pmu):
     ectx.force_metrics = os.getenv("FORCEMETRICS") is not None
     model.topdown_use_fixed = (ectx.force_metrics or
             os.path.exists("/sys/devices/%s/events/topdown-fe-bound" % pmu))
+    if args.no_group:
+        model.topdown_use_fixed = False
     ectx.core_domains = ectx.core_domains - set(["Slots"])
     ectx.slots_available = (ectx.force_metrics or
             os.path.exists("/sys/devices/%s/events/slots" % pmu))
