@@ -2507,12 +2507,11 @@ def compare_event(aname, bname):
 def is_hybrid():
     return ocperf.file_exists("/sys/devices/cpu/format/any")
 
-def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, evsamples):
+def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     """get measurement result, possibly wrapping in UVal"""
 
     if level == 999:
         return lookup_retlat(ev)
-        return evsamples[ev]
 
     ev = adjust_ev(ev, level)
 
@@ -2520,7 +2519,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, evsamples)
         scale = { "interval-s":  1e9,
                   "interval-ns": 1,
                   "interval-ms": 1e6 }[ev]
-        return lookup_res(res, rev, "duration_time", obj, env, level, referenced, cpuoff, st, evsamples)/scale
+        return lookup_res(res, rev, "duration_time", obj, env, level, referenced, cpuoff, st)/scale
 
     if ev in env:
         return env[ev]
@@ -2536,7 +2535,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, evsamples)
     #
     if isinstance(ev, types.LambdaType):
         return sum([ev(lambda ev, level:
-                  lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level, evsamples)
+                  lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
                   for off in range(env['num_merged'])])
 
     index = obj.res_map[(ev, level, obj.name)]
@@ -3413,7 +3412,7 @@ class Runner(object):
             if 'parent' in obj.__dict__ and obj.parent and obj.parent not in self.olist:
                 obj.parent.thresh = True
             obj.compute(lambda e, level:
-                            lookup_res(res, rev, e, obj, env, level, ref, -1, valstats, self.evsamples))
+                            lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
             if obj.thresh == -1:
                 obj.thresh = True
             if args.force_bn and obj.name in args.force_bn:
