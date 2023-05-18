@@ -3635,14 +3635,24 @@ def ht_warning():
                 file=sys.stderr)
 
 def setup_metrics(model, pmu):
-    ectx.force_metrics = os.getenv("FORCEMETRICS") is not None
-    model.topdown_use_fixed = (ectx.force_metrics or
-            os.path.exists("/sys/devices/%s/events/topdown-fe-bound" % pmu))
+    fmenv = os.getenv("FORCEMETRICS")
+    ectx.force_metrics = fmenv is not None
+    if ectx.force_metrics:
+        try:
+            ectx.metrics_override = int(fmenv)
+        except ValueError:
+            ectx.metrics_override = 0
+    if ectx.force_metrics:
+        model.topdown_use_fixed = ectx.metrics_override
+    else:
+        model.topdown_use_fixed = os.path.exists("/sys/devices/%s/events/topdown-fe-bound" % pmu)
     if args.no_group:
         model.topdown_use_fixed = False
     ectx.core_domains = ectx.core_domains - set(["Slots"])
-    ectx.slots_available = (ectx.force_metrics or
-            os.path.exists("/sys/devices/%s/events/slots" % pmu))
+    if ectx.force_metrics:
+        ectx.slots_available = ectx.metrics_override
+    else:
+        ectx.slots_available = os.path.exists("/sys/devices/%s/events/slots" % pmu)
 
 def parse_cpu_list(s):
     l = []
