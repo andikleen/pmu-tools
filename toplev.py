@@ -2917,7 +2917,7 @@ class Scheduler(object):
         full = set()
 
         if ((has(obj, 'area') and match_patlist(DEDUP_AREA, obj.area)) or
-            match_patlist(DEDUP_NODE, obj.name)):
+                match_patlist(DEDUP_NODE, obj.name)):
             # reuse any previous event independent of group subsets
             # for bottleneck nodes which are too large for the usual
             # heuristics
