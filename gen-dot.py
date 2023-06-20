@@ -12,8 +12,8 @@ if len(sys.argv) > first and sys.argv[first] == "simple":
     import simple_ratios
     m = simple_ratios
 else:
-    import ivb_client_ratios
-    m = ivb_client_ratios
+    import adl_glc_ratios
+    m = adl_glc_ratios
 
 def has(obj, name):
     return name in obj.__class__.__dict__
