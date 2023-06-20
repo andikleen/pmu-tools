@@ -90,6 +90,8 @@ for fn in glob.glob("/sys/devices/cpu_*/cpus"):
     cpus = open(fn).read()
     for j in cpus.split(","):
         m = re.match(r'(\d+)(-\d+)?', j)
+        if m is None:
+            continue
         if m.group(2):
             for k in range(int(m.group(1)), int(m.group(2)[1:])+1):
                 types[k] = typ

@@ -3658,6 +3658,8 @@ def parse_cpu_list(s):
     l = []
     for j in s.split(","):
         m = re.match(r'(\d+)(-\d+)?', j)
+        if m is None:
+            continue
         if m.group(2):
             for k in range(int(m.group(1)), int(m.group(2)[1:])+1):
                 l.append(k)
