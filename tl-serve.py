@@ -273,7 +273,7 @@ class TLHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def serve_file(self, fn, mime):
         with open(fn, "r") as f:
             self.header(mime)
-            self.wfile.write(f.read())
+            self.wfile.write(f.read().encode('utf-8'))
 
     def do_GET(self):
         if self.path == "/":
