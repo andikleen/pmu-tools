@@ -2674,6 +2674,9 @@ def _find_bn(bn, level):
     siblings = sorted([x for x in bn if x.level - 1 == level], key=lambda x: x.val, reverse=True)
     if len(siblings) == 0:
         return None
+    # remove overlap nodes
+    while has(siblings[0], 'overlap') and siblings[0].overlap and len(siblings) > 1:
+        siblings = siblings[1:]
     # ambigious
     if level > 0 and len(siblings) > 1 and siblings[0].val - siblings[1].val <= SIB_THRESH:
         return None
