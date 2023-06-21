@@ -32,7 +32,7 @@ modelid_map = {
     (0x9e, ): "CFL",
 }
 
-cpus_8gpc = set(["icl", "tgl", "icx", "spr"]) # XXX handle hybrid ADL
+cpus_8gpc = set(["icl", "tgl", "icx", "spr", "sprmax"]) # XXX handle hybrid ADL
 
 def num_offline_cpus():
     cpus = glob.glob("/sys/devices/system/cpu/cpu[0-9]*/online")
@@ -221,6 +221,9 @@ class CPU(object):
         if self.cpu in cpus_8gpc:
             self.standard_counters = { "cpu": ("0,1,2,3,4,5,6,7", "0,1,2,3", ) }
             self.limit4_counters = { "cpu": "0,1,2,3" }
+
+        if self.cpu == "spr" and "Max" in self.name:
+            self.cpu = "sprmax"
 
         try:
             self.pmu_name = open("/sys/devices/cpu/caps/pmu_name").read().strip()

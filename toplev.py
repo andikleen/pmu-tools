@@ -86,6 +86,7 @@ known_cpus = (
              183, )), # RPL as ADL
     ("spr", (143, )),
     ("ehl", (150, )),
+    ("sprmax", ()),
 )
 
 eventlist_alias = {
@@ -95,7 +96,7 @@ eventlist_alias = {
 }
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx",
-            "spr")
+            "spr", "sprmax")
 
 hybrid_cpus = ("adl", )
 
@@ -950,6 +951,8 @@ pversion = ocperf.PerfVersion()
 def gen_cpu_name(cpu):
     if cpu == "simple":
         return event_download.get_cpustr()
+    if cpu == "sprmax":
+        cpu = "spr"
     for j in known_cpus:
         if cpu == j[0]:
             if isinstance(j[1][0], tuple):
@@ -3118,6 +3121,9 @@ class Printer(object):
         # step 3: print
         for i, obj in enumerate(olist):
             val = get_uval(obj)
+            if has(obj, 'maxval') and obj.maxval is not None:
+                maxval = UVal(obj.name, obj.maxval)
+                val = min(val, maxval)
             desc = obj_desc_runtime(obj, olist[i + 1:])
             if obj.metric:
                 out.metric(obj_area(obj), obj.name, val, timestamp,
@@ -3844,6 +3850,12 @@ def model_setup(runner, cpuname):
         import spr_server_ratios
         spr_server_ratios.smt_enabled = cpu.ht
         model = spr_server_ratios
+        setup_metrics(model, runner.pmu)
+        smt_mode = cpu.ht
+    elif cpu.cpu == "sprmax":
+        import spr_max_server_ratios
+        spr_max_server_ratios.smt_enabled = cpu.ht
+        model = spr_max_server_ratios
         setup_metrics(model, runner.pmu)
         smt_mode = cpu.ht
     elif cpuname == "icl":
