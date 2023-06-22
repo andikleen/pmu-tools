@@ -3779,6 +3779,9 @@ def init_model(model, runner):
     if "model" in model.__dict__:
         model.model = cpu.modelid
 
+    if "Num_CPUs" in model.__dict__:
+        model.Num_CPUs = lambda a, b, c: len(cpu.allcpus)
+
     tune_model(model)
 
     return version
