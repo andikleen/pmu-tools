@@ -451,6 +451,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --single-thread  --per-thread --p
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-perf --no-desc --power -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc $ALL --abbrev --no-group $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --sw -l4 $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --all --no-sort $LOAD
 FORCE_COUNTERS=4 \
 $WRAP ./toplev.py --perf -l1 --force-cpu $DCPU $OPT --single-thread --user $LOAD | tee log$$
 onegroup log$$

@@ -105,6 +105,8 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev has a new --no-sort option to disable grouping metrics with tree nodes.
+
 ## TMA 4.6 release
 * toplev updated to Ahmad Yasin's TMA 4.6
   * Support for Intel Xeon Max processors (SPRHBM)
