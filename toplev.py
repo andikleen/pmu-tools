@@ -2148,7 +2148,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         if prun.skip_first_line():
             continue
         if args.interval:
-            m = re.match(r"\s+([0-9.]{9,}|SUMMARY);(.*)", l)
+            m = re.match(r"\s*([0-9.]{9,}|SUMMARY);(.*)", l)
             if m:
                 interval = float(m.group(1)) if m.group(1) != "SUMMARY" else 0.0
                 l = m.group(2)
