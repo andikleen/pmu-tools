@@ -2085,10 +2085,10 @@ def find_runner(rlist, off, title, event):
 def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum):
     r, off = find_runner(rlist, off, title, event)
     if r is None:
-        return r, False
+        return r, False, event
     # cannot check because it's an event that needs to be expanded first
     if not event.startswith("cpu") and is_number(title) and int(title) not in r.cpu_list:
-        return r, False
+        return r, False, event
     if revnum is None:
         revnum = r.sched.evnum
     if event.startswith("uncore"):
@@ -2097,14 +2097,14 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum):
     if event != expected_ev:
         # work around perf bug that incorrectly expands uncore events in some versions
         if off > 0 and event == remove_qual(revnum[off - 1]):
-            return None, False
+            return None, False, expected_ev
         # some perf version don't output <not counted/supported due to dd15480a3d67
         # if the event is expected within a small window assume it's not counted
         # and reuse the value for the next
         if any([event == remove_qual(x) for x in revnum[off:off+PERF_SKIP_WINDOW]]):
             if args.debug:
                 print("missing value for", expected_ev, event, off, revnum[off:off+PERF_SKIP_WINDOW])
-            return r, True
+            return r, True, expected_ev
         print("Event in input does not match schedule (%s vs expected %s [pmu:%s/ind:%d/tit:%s/int:%f+%d])." % (
                 event, expected_ev, r.pmu, off, title, prev_interval, linenum),
                 file=sys.stderr)
@@ -2112,7 +2112,7 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum):
         if args.import_:
             sys.exit("Different arguments than original toplev?")
         sys.exit("Input corruption")
-    return r, False
+    return r, False, event
 
 def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
     res = defaultdict(list)
@@ -2222,7 +2222,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         # code later relies on stripping ku flags
         event = remove_qual(event)
 
-        runner, skip = check_event(rlist, event, len(res[title]),
+        runner, skip, event = check_event(rlist, event, len(res[title]),
                                    title, prev_interval, origl, revnum, linenum)
         if runner is None:
             linenum += 1
@@ -2281,15 +2281,18 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
                 if j in runner.cpu_list:
                     add("%d" % j)
 
+        def uncore_event(event):
+            return re.match(r'power|uncore', event)
+
         # power/uncore events are only output once for every socket
-        if (re.match(r'power|uncore', event) and
+        if (uncore_event(event) and
                 is_number(title) and
                 (not ((args.core or args.cpu) and not args.single_thread))):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
             dup_val(cpu.sockettocpus[socket])
         # per core events are only output once per core
-        elif re.match(r'(S\d+-)?(D\d+-)?C\d+', title) and (smt_mode or args.no_aggr):
+        elif (re.match(r'(S\d+-)?(D\d+-)?C\d+', title) or uncore_event(event)) and (smt_mode or args.no_aggr):
             m = re.match(r'(?:S(\d+)-)?(?:D(\d+)-)?C(\d+)', title)
             if m.group(2): # XXX
                 warn_once("die topology not supported currently")
