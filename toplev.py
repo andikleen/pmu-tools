@@ -2160,6 +2160,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
             continue
         if prun.skip_first_line():
             continue
+        origl = l
         if args.interval:
             m = re.match(r"\s*([0-9.]{9,}|SUMMARY);(.*)", l)
             if m:
@@ -2184,6 +2185,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
             elif not l[:1].isspace():
                 # these are likely bogus summary lines printed by v5.8 perf stat
                 # just ignore
+                skip = False
                 continue
 
         if prun.skip_input():
@@ -2227,6 +2229,8 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         if runner is None:
             linenum += 1
             continue
+        if skip:
+            l = origl
 
         multiplex = float('nan')
         event = event.rstrip()
@@ -2291,8 +2295,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
             dup_val(cpu.sockettocpus[socket])
-        # per core events are only output once per core
-        elif (re.match(r'(S\d+-)?(D\d+-)?C\d+', title) or uncore_event(event)) and (smt_mode or args.no_aggr):
+        elif re.match(r'(S\d+-)?(D\d+-)?C\d+', title) and (smt_mode or args.no_aggr):
             m = re.match(r'(?:S(\d+)-)?(?:D(\d+)-)?C(\d+)', title)
             if m.group(2): # XXX
                 warn_once("die topology not supported currently")
