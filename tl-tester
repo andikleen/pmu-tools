@@ -38,6 +38,7 @@ NOCPUS="${NOCPUS:-}"
 NUM_RUNNERS="${NUM_RUNNERS:-}"
 NOMULTIPLEX="${NOMULTIPLEX:---no-multiplex --perf}"
 ONLYCPU="${ONLYCPU:-}"
+PJOBS=${PJOBS:-2} # XXX increase
 
 if [ -n "$WRAP" ] ; then
 	PYTHON=$WRAP
@@ -573,14 +574,14 @@ $WRAP ./toplev.py --import perfo0.$$.csv $ARG -o log1.$$ --perf-output perfo1.$$
 diff -u perfo0.$$.csv perfo1.$$.csv | head
 diff -u perfv0.$$.csv perfv1.$$.csv | head
 diff -wu log0.$$ log1.$$
-$WRAP ./toplev.py --parallel --import perfo0.$$.csv $ARG -o log2.$$ --perf-output perfo2.$$.csv --valcsv perfv2.$$.csv
+$WRAP ./toplev.py --parallel --pjobs $PJOBS --import perfo0.$$.csv $ARG -o log2.$$ --perf-output perfo2.$$.csv --valcsv perfv2.$$.csv
 diff -u perfo1.$$.csv perfo2.$$.csv | head
 diff -u perfv1.$$.csv perfv2.$$.csv | head
 diff -wu log1.$$ log2.$$
-$WRAP ./toplev.py --parallel --import perfo0.$$.csv $ARG --json -o j$$.json
+$WRAP ./toplev.py --parallel --pjobs $PJOBS --import perfo0.$$.csv $ARG --json -o j$$.json
 cat j$$.json | $PYTHON -m json.tool
 if $PYTHON -c 'import xlsxwriter' ; then
-$WRAP ./toplev.py --parallel --import perfo0.$$.csv $ARG --xlsx x$$.xlsx
+$WRAP ./toplev.py --parallel --pjobs $PJOBS --import perfo0.$$.csv $ARG --xlsx x$$.xlsx
 rm x$$.xlsx
 fi
 rm log[012].$$ perf[ov][012].$$.csv j$$.json
