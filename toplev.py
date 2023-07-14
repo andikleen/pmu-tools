@@ -3223,15 +3223,11 @@ class Runner(object):
         self.full_olist = []
 
     def set_ectx(self):
-        #print("set_ectx", sys._getframe(1).f_code.co_name, file=sys.stderr)
         global ectx
-        assert ectx is None
         ectx = self.ectx
 
     def clear_ectx(self):
-        #print("clear_ectx", sys._getframe(1).f_code.co_name, file=sys.stderr)
         global ectx
-        assert ectx is not None
         ectx = None
 
     def do_run(self, obj):
