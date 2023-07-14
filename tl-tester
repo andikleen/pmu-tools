@@ -15,7 +15,7 @@
 # NOCPUS=1  skip individual CPU tests
 # MATCH=cpu in cpu loops only run for CPU cpu
 # NUM_RUNNERS=n Run toplev with multiple runners for hybrid testing
-# ONLYCPU=cpu  Only test cpu
+# ONLYCPU=cpu  Only test cpu type. cur for current CPU (makes test suite run much faster)
 # NOMULTIPLEX=" " Disable no multiplex 
 
 set -e
@@ -44,6 +44,10 @@ if [ -n "$WRAP" ] ; then
 	PYTHON=$WRAP
 else
 	PYTHON=python
+fi
+
+if [ "$ONLYCPU" = "cur" ] ; then
+	ONLYCPU=`./toplev --show-cpu | cut -d ' ' -f 1`
 fi
 
 OPT="${OPT:-}"
