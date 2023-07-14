@@ -109,7 +109,7 @@ DEDUP_NODE = ""
 BOTTLENECK_LEVEL_INC = 1
 IDLE_MARKER_THRESHOLD = 0.05
 SIB_THRESH = 0.05
-PERF_SKIP_WINDOW = 3
+PERF_SKIP_WINDOW = 15
 
 # handle kernels that don't support all events
 unsup_pebs = (
