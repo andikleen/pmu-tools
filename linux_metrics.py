@@ -186,6 +186,6 @@ class Setup:
             r.force_metric(BlockIOs())
             r.force_metric(NetworkTX())
             r.force_metric(NetworkRX())
-        elif sys.argv[0].find("toplev") >= 0 and not "--import" in sys.argv and not warned:
+        elif sys.argv[0].find("toplev") >= 0 and "--import" not in sys.argv and not warned:
             warned = True
             print("Need to be root for trace point Linux software metrics.", file=sys.stderr)
