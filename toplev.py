@@ -375,17 +375,19 @@ FORCE_SPLIT = 100
 metrics_own_group = True
 
 def is_slots(x):
-    return remove_qual(x) in ("slots", "cpu_core/slots/", "cpu/slots/")
+    return remove_qual(x) in ("slots", "cpu_core/slots/", "cpu/slots/",
+                "cpu/slots,percore=1/", "cpu_core/slots,percore=1/")
 
 def needed_counters(evlist):
     evset = set(evlist)
     num = num_generic_counters(evset)
 
     metrics = [ismetric(x) for x in evlist]
+    slots = [is_slots(x) for x in evlist]
 
-    if any(metrics):
+    if any(metrics) or any(slots):
         # slots must be first if metrics are present
-        if not is_slots(evlist[0]) and any(map(is_slots, evlist)):
+        if any(map(is_slots, evlist)) and not is_slots(evlist[0]):
             debug_print("split for slots %s" % evlist)
             return FORCE_SPLIT
         # force split if there are other events.
