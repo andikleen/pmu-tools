@@ -90,9 +90,6 @@ known_cpus = (
 )
 
 eventlist_alias = {
-    140: "GenuineIntel-6-7E", # use ICL list for TGL for now
-    141: "GenuineIntel-6-7E", # use ICL list for TGL for now
-    167: "GenuineIntel-6-7E", # use ICL list for RKL for now
 }
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx",
