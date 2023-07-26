@@ -92,7 +92,7 @@ known_cpus = (
 eventlist_alias = {
 }
 
-tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "tgl", "icx",
+tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "icx",
             "spr", "sprmax")
 
 hybrid_cpus = ("adl", )
