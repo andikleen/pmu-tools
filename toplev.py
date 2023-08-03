@@ -2223,6 +2223,11 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         # code later relies on stripping ku flags
         event = remove_qual(event)
 
+        # duplicated duration_time in perf ~6.5. was already added from the first.
+        if event == "duration_time" and count == "<not counted>":
+            linenum += 1
+            continue
+
         runner, skip, event = check_event(rlist, event, len(res[title]),
                                    title, prev_interval, origl, revnum, linenum)
         if runner is None:
@@ -2301,6 +2306,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
             socket, core = int(m.group(1)), int(m.group(3))
             dup_val(cpu.coreids[(socket, core)])
         # duration time is only output once, except with --cpu/-C (???)
+        # except perf 6.2+ outputs it with -A on all cpus, but not counting except the first
         elif event.startswith("duration_time") and is_number(title) and not args.cpu and not args.core:
             dup_val(runner.cpu_list)
         else:
