@@ -454,6 +454,7 @@ FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics  --per-thre
 rm out$$-*
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --all --single-thread  --per-thread --per-core --per-socket --filterquals --summary -a -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-perf --no-desc --power -l4 $LOAD
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --quiet -vl1 --nodes +Time,+Instructions $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc $ALL --abbrev --no-group $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --sw -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --all --no-sort $LOAD
