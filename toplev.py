@@ -107,6 +107,7 @@ BOTTLENECK_LEVEL_INC = 1
 IDLE_MARKER_THRESHOLD = 0.05
 SIB_THRESH = 0.05
 PERF_SKIP_WINDOW = 15
+KEEP_UNREF = False
 
 # handle kernels that don't support all events
 unsup_pebs = (
@@ -2934,7 +2935,7 @@ class Scheduler(object):
             if len(ref) < len(g.evnum):
                 for i in range(len(g.evnum)):
                     if i not in ref:
-                        test_debug_print("unreferenced %s %s [%d] %s" % (g.evnum[i],
+                        print("unreferenced %s %s [%d] %s" % (g.evnum[i],
                                          event_rmap(g.evnum[i]), i,
                                          " ".join([o.name for o in g.objl])))
                         g.evnum[i] = "dummy"
@@ -3088,7 +3089,8 @@ class Scheduler(object):
         if args.no_multiplex or distribute_uncore:
             self.evgroups = do_distribute_uncore(self.evgroups)
 
-        self.dummy_unreferenced(olist)
+        if not KEEP_UNREF:
+            self.dummy_unreferenced(olist)
         self.allocate_bases()
 
         if args.print_group:
