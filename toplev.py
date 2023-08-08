@@ -3154,7 +3154,7 @@ class Printer(object):
         # step 3: print
         for i, obj in enumerate(olist):
             val = get_uval(obj)
-            if has(obj, 'maxval') and obj.maxval is not None:
+            if has(obj, 'maxval') and obj.maxval is not None and obj.maxval != 0:
                 maxval = UVal(obj.name, obj.maxval)
                 val = min(val, maxval)
             desc = obj_desc_runtime(obj, olist[i + 1:])
