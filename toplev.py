@@ -2710,8 +2710,7 @@ def _find_bn(bn, level):
     if len(siblings) == 0:
         return None
     # remove overlap nodes
-    while has(siblings[0], 'overlap') and siblings[0].overlap and len(siblings) > 1:
-        siblings = siblings[1:]
+    siblings = [x for x in siblings if not (has(x, 'overlap') and x.overlap)]
     # ambigious
     if level > 0 and len(siblings) > 1 and siblings[0].val - siblings[1].val <= SIB_THRESH:
         return None
