@@ -2935,7 +2935,7 @@ class Scheduler(object):
             if len(ref) < len(g.evnum):
                 for i in range(len(g.evnum)):
                     if i not in ref:
-                        print("unreferenced %s %s [%d] %s" % (g.evnum[i],
+                        test_debug_print("unreferenced %s %s [%d] %s" % (g.evnum[i],
                                          event_rmap(g.evnum[i]), i,
                                          " ".join([o.name for o in g.objl])))
                         g.evnum[i] = "dummy"
