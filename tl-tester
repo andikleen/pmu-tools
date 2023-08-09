@@ -38,7 +38,7 @@ NOCPUS="${NOCPUS:-}"
 NUM_RUNNERS="${NUM_RUNNERS:-}"
 NOMULTIPLEX="${NOMULTIPLEX:---no-multiplex --perf}"
 ONLYCPU="${ONLYCPU:-}"
-PJOBS=${PJOBS:-2} # XXX increase
+PJOBS=${PJOBS:-0}
 
 if [ -n "$WRAP" ] ; then
 	PYTHON=$WRAP
