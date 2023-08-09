@@ -1069,12 +1069,10 @@ if args.handle_errata:
     args.ignore_errata = False
 
 ring_filter = ""
-if args.kernel:
+if args.kernel and not args.user:
     ring_filter = 'k'
-if args.user:
+if args.user and not args.kernel:
     ring_filter = 'u'
-if args.user and args.kernel:
-    ring_filter = None
 
 MAX_ERROR = 0.05
 
