@@ -233,8 +233,8 @@ that log the complete PEBS record. When the CPU supports PEBSv2
 	  # alternatively trace-cmd and kernelshark can be also used to dump
 	  # the pebs data
 
-See http://download.intel.com/products/processor/manual/253669.pdf
-18.10.2 for a description of the PEBS fields.
+See the Intel SDM [https://www.intel.com/sdm]
+Volume 3 18.10.2 for a description of the PEBS fields.
 
 Note this doesn't work with standard FC18 kernels, as they broke
 trace points in modules. It works with later and earlier kernels.
