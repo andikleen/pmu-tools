@@ -2084,6 +2084,9 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum):
     r, off = find_runner(rlist, off, title, event)
     if r is None:
         return r, False, event
+    # likely event expanded over all CPUs
+    if event.startswith("cpu") and not event.startswith(r.pmu):
+        return None, False, event
     # cannot check because it's an event that needs to be expanded first
     if not event.startswith("cpu") and is_number(title) and int(title) not in r.cpu_list:
         return r, False, event
