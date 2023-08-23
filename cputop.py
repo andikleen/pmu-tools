@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # query cpu topology and print all matching cpu numbers
 # cputop "query" ["format"]
 # query is a python expression, using variables:

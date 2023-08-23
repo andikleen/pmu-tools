@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # print currently running events on cpu (default 0)
 # event-rmap [cpu-num]
 # xxx no extra modi for now, racy with multi plexing

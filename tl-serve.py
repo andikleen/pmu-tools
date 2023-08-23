@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # serve toplev csv file as http using dygraph
 # toplev.py -I100 -o x.csv -v -x, ...
 # tl-serve.py x.csv [host [port]]

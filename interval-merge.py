@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # merge multiple --perf-output files. requires header
 from __future__ import print_function
 import csv

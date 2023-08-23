@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # mock perf for limited test environments
 from __future__ import print_function
 import sys

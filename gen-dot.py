@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # generate dot diagram of top down tree from module
 from __future__ import print_function
 import sys
