@@ -32,6 +32,8 @@ def flex_open_r(fn):
     if fn.endswith(".gz"):
         gzip = popen_stdout(["gzip", "-d", "-c", fn])
         return gzip.stdout
+    if fn.endswith(".zst"):
+        return popen_stdout(["zstd", "-d", "--stdout", fn]) .stdout
     return open(fn, 'r')
 
 def flex_open_w(fn):
@@ -42,6 +44,8 @@ def flex_open_w(fn):
     if fn.endswith(".gz"):
         gzip = popen_stdinout(["gzip", "-c"], f)
         return gzip.stdin
+    if fn.endswith(".zst"):
+        return popen_stdinout(["zstd", "--stdout"], f).stdin
     return f
 
 test_mode = os.getenv("TL_TESTER")
