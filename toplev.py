@@ -3893,7 +3893,7 @@ def model_setup(runner, cpuname):
         smt_mode = cpu.ht
         if kernel_version < 670: # expect to be fixed in 6.7
             # kernel incorrectly schedules ocr on 0-3 only
-            ectx.constraint_patterns["OCR."] = "0,1,2,3"
+            ectx.constraint_patterns.append(("OCR.", "0,1,2,3", ))
     elif cpu.cpu == "sprmax":
         import spr_max_server_ratios
         spr_max_server_ratios.smt_enabled = cpu.ht
@@ -3902,7 +3902,7 @@ def model_setup(runner, cpuname):
         smt_mode = cpu.ht
         if kernel_version < 670: # expect to be fixed in 6.7
             # kernel incorrectly schedules ocr on 0-3 only
-            ectx.constraint_patterns["OCR."] = "0,1,2,3"
+            ectx.constraint_patterns.append(("OCR.", "0,1,2,3", ))
     elif cpuname == "icl":
         import icl_client_ratios
         icl_client_ratios.smt_enabled = cpu.ht
