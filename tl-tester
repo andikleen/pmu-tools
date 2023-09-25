@@ -574,7 +574,9 @@ rm x$$.xlsx
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 fi
 
-ARG="-a -A --all -I100 --summary --no-desc --no-uncore --nodes=-MUX --no-mux"
+# test --parallel
+# this test is fragile
+ARG="-a -A --all -I100 -v --summary --no-desc --no-uncore --nodes=-MUX --no-mux"
 $WRAP ./toplev.py $ARG -o log0.$$ --perf-output perfo0.$$.csv --valcsv perfv0.$$.csv $LOADLONG
 $WRAP ./toplev.py --import perfo0.$$.csv $ARG -o log1.$$ --perf-output perfo1.$$.csv --valcsv perfv1.$$.csv
 diff -u perfo0.$$.csv perfo1.$$.csv | head
