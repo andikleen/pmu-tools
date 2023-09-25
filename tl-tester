@@ -345,6 +345,7 @@ rm perfo$$.csv perfs$$.csv
 # always on native CPU
 $WRAP ./toplev.py --all --valcsv val$$.csv --perf-output perfo$$.csv -o log$$ $LOADLONG
 [ -z "$NORES" ] && grep -v "not supported" log$$
+[ -z "$NORES" ] && grep -v "not " val$$.csv
 rm val$$.csv perfo$$.csv log$$
 
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --raw -v -l3 --no-desc -a $LOAD
