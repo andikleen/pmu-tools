@@ -43,7 +43,7 @@ PJOBS=${PJOBS:-0}
 if [ -n "$WRAP" ] ; then
 	PYTHON=$WRAP
 else
-	PYTHON=python
+	PYTHON=python3
 fi
 
 if [ "$ONLYCPU" = "cur" ] ; then
