@@ -1184,7 +1184,7 @@ class PerfRun(object):
             off = int(m.group(1))
             f.seek(off)
             if m.group(2):
-                self.end_seek_offset = int(m.group(2))
+                self.end_seek_offset = int(m.group(2)) + 1
             if off:
                 self.skip_to_next_ts = True
                 self.skip_line = True
@@ -1199,7 +1199,7 @@ class PerfRun(object):
                 sys.exit("--subset %s out of range" % iss)
             f.seek(chunk * nth)
             if m.group(3) is None:
-                self.end_seek_offset = chunk * (1+nth)
+                self.end_seek_offset = chunk * (1+nth) + 1
             if chunk * nth != 0:
                 self.skip_to_next_ts = True
                 self.skip_line = True
@@ -1207,10 +1207,10 @@ class PerfRun(object):
         m = re.match('sample:([0-9.]+)%?$', iss)
         if m:
             self.sample_prob = float(m.group(1)) / 100.
-            self.random = random.Random()
             s = os.getenv("TLSEED")
             if s:
                 self.random.seed(int(s))
+            self.random = random.Random()
             self.sampling = False
             return
         sys.exit("Unparseable --subset %s" % iss)
