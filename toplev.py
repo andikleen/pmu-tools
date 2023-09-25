@@ -2102,7 +2102,10 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum):
         revnum = r.sched.evnum
     if event.startswith("uncore"):
         event = re.sub(r'_[0-9]+', '', event)
-    expected_ev = remove_qual(revnum[off])
+    try:
+        expected_ev = remove_qual(revnum[off])
+    except IndexError:
+        sys.exit("Out of range event %s offset %d. %s" % (event, off, "Mismatch in toplev arguments from recording?" if args.import_ else ""))
     if event != expected_ev:
         # work around perf bug that incorrectly expands uncore events in some versions
         if off > 0 and event == remove_qual(revnum[off - 1]):
