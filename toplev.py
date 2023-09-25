@@ -217,7 +217,10 @@ class EventContext(object):
         self.rmap_cache = {}
         self.slots_available = False
         self.emap = None
-        if pmu is None or pmu not in cpu.counters:
+        if (pmu is None
+            or pmu not in cpu.counters
+            or pmu not in cpu.standard_counters
+            or pmu not in cpu.limit4_counters):
             pmu = "cpu"
         self.standard_counters = cpu.standard_counters[pmu]
         self.counters = cpu.counters[pmu]
