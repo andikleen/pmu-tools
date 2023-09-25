@@ -199,6 +199,7 @@ class EventContext(object):
     """Event related context for a given target CPU."""
     def __init__(self, pmu):
         self.constraint_fixes = {}
+        self.constraint_patterns = []
         self.errata_whitelist = []
         self.outgroup_events = set(["dummy", "duration_time", "msr/tsc/"])
         self.sched_ignore_events = set([])
@@ -1332,8 +1333,12 @@ def initialize_event(name, i, e):
                 # CPUs
                 ectx.limited_counters[i] = int(e.counter.split(",")[0])
             ectx.limited_set.add(i)
-        if e.name.upper() in ectx.constraint_fixes:
-            e.counter = ectx.constraint_fixes[e.name.upper()]
+        nameu = e.name.upper()
+        if nameu in ectx.constraint_fixes:
+            e.counter = ectx.constraint_fixes[nameu]
+        for k, v in ectx.constraint_patterns:
+            if nameu.startswith(k):
+                e.counter = v
         if e.counter == ectx.limit4_counters:
             ectx.limit4_events.add(i)
         if e.errata and e.errata != "0" and e.errata != "null":
@@ -3886,12 +3891,18 @@ def model_setup(runner, cpuname):
         model = spr_server_ratios
         setup_metrics(model, runner.pmu)
         smt_mode = cpu.ht
+        if kernel_version < 670: # expect to be fixed in 6.7
+            # kernel incorrectly schedules ocr on 0-3 only
+            ectx.constraint_patterns["OCR."] = "0,1,2,3"
     elif cpu.cpu == "sprmax":
         import spr_max_server_ratios
         spr_max_server_ratios.smt_enabled = cpu.ht
         model = spr_max_server_ratios
         setup_metrics(model, runner.pmu)
         smt_mode = cpu.ht
+        if kernel_version < 670: # expect to be fixed in 6.7
+            # kernel incorrectly schedules ocr on 0-3 only
+            ectx.constraint_patterns["OCR."] = "0,1,2,3"
     elif cpuname == "icl":
         import icl_client_ratios
         icl_client_ratios.smt_enabled = cpu.ht
@@ -3915,6 +3926,9 @@ def model_setup(runner, cpuname):
         adl_glc_ratios.smt_enabled = cpu.ht
         model = adl_glc_ratios
         smt_mode = cpu.ht
+        if kernel_version < 670: # expect to be fixed in 6.7
+            # kernel incorrectly schedules ocr on 0-3 only
+            ectx.constraint_patterns.append(("OCR.", "0,1,2,3", ))
     elif cpuname == "adl" and runner.pmu == "cpu_atom":
         import adl_grt_ratios
         model = adl_grt_ratios
