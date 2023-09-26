@@ -1207,10 +1207,10 @@ class PerfRun(object):
         m = re.match('sample:([0-9.]+)%?$', iss)
         if m:
             self.sample_prob = float(m.group(1)) / 100.
+            self.random = random.Random()
             s = os.getenv("TLSEED")
             if s:
                 self.random.seed(int(s))
-            self.random = random.Random()
             self.sampling = False
             return
         sys.exit("Unparseable --subset %s" % iss)
