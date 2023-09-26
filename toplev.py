@@ -3578,7 +3578,8 @@ def do_sample(sample_obj, rest, count, ret):
     if no_pebs:
         sample = re.sub(r'/p+', '/', sample)
         sample = re.sub(r':p+', '', sample)
-    print("Sampling:")
+    if not args.quiet:
+        print("Sampling:")
     extra_args = args.sample_args.replace("+", "-").split()
     perf_data = args.sample_basename
     if count is not None:
@@ -3661,7 +3662,7 @@ if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
     # XXX should probe if nmi watchdog runs on fixed or generic counter
     for j in cpu.counters.keys():
         cpu.counters[j] -= 1 # FIXME
-    if not args.quiet:
+    if not args.quiet and not args.import_:
         print("Consider disabling nmi watchdog to minimize multiplexing", file=sys.stderr)
         print("(echo 0 | sudo tee /proc/sys/kernel/nmi_watchdog or\n echo kernel.nmi_watchdog=0 >> /etc/sysctl.conf ; sysctl -p as root)", file=sys.stderr)
 

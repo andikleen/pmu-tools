@@ -14,7 +14,7 @@
 from __future__ import print_function
 import math
 from collections import namedtuple
-from tl_io import warn, warn_no_assert
+from tl_io import warn, warn_no_assert, warn_test
 
 ValStat = namedtuple('ValStat', ['stddev', 'multiplex'])
 
@@ -53,17 +53,16 @@ class ComputeStat:
             if len(r) != len(evnum):
                 warn("results len %d does not match event len %d" % (len(r), len(evnum)))
                 return
-            if len(referenced) != len(r) and not self.quiet:
+            if len(referenced) != len(r):
                 dummies = {i for i, d in enumerate(evnum) if d == "dummy"}
                 notr = set(range(len(r))) - referenced - dummies
                 if notr:
-                    warn_no_assert("%d results not referenced: " % (len(notr)) +
+                    warn_test("%d results not referenced: " % (len(notr)) +
                           " ".join(["%d" % x for x in sorted(notr)]))
 
     def compute_errors(self):
-        if self.errcount > 0 and self.errors != self.prev_errors:
-            warn_no_assert(("%d nodes had zero counts: " % (self.errcount)) +
-                 " ".join(sorted(self.errors)))
+        if self.errcount > 0 and self.errors != self.prev_errors and not self.quiet:
+            warn_no_assert("%d nodes had zero counts: " % (self.errcount))
             self.errcount = 0
             self.prev_errors = self.errors
             self.errors = set()

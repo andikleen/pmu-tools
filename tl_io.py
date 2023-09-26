@@ -60,6 +60,10 @@ def warn_no_assert(msg):
     if not args.quiet:
         print("warning: " + msg, file=sys.stderr)
 
+def warn_test(msg):
+    if test_mode:
+        warn_no_assert(msg)
+
 def warn(msg):
     warn_no_assert(msg)
     if test_mode:
