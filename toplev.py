@@ -193,6 +193,8 @@ promotable_limited = set((
     "cpu_core/slots/")
 )
 
+Undef = -1
+
 event_nocheck = False
 
 class EventContext(object):
@@ -3116,7 +3118,7 @@ def should_print_obj(obj, match):
     assert not isinstance(obj.val, DummyArith)
     if obj.val is None:
         return False
-    if obj.thresh or args.verbose:
+    if obj.thresh or obj.metric or args.verbose:
         if not match(obj):
             pass
         elif obj.metric:
@@ -3315,8 +3317,7 @@ class Runner(object):
 
     def reset_thresh(self):
         for obj in self.olist:
-            if not obj.metric:
-                obj.thresh = False
+            obj.thresh = -1 if obj.metric else False
 
     def run(self, obj):
         obj.thresh = False
@@ -3325,7 +3326,7 @@ class Runner(object):
         self.do_run(obj)
 
     def metric(self, obj):
-        obj.thresh = -1
+        obj.thresh = Undef
         obj.metric = True
         obj.level = 0
         obj.sibling = None
@@ -3396,20 +3397,22 @@ class Runner(object):
     def propagate_siblings(self):
         changed = [0]
 
-        def propagate(k, changed):
+        def propagate(k, changed, srco):
+            if args.debug:
+                print("propagate", srco.name, "->", k.name)
             if not k.thresh:
                 k.thresh = True
                 changed[0] += 1
 
         for obj in self.olist:
             if obj in self.sibmatch:
-                propagate(obj, changed)
+                propagate(obj, changed, obj)
             if obj.thresh and obj.sibling:
                 if isinstance(obj.sibling, (list, tuple)):
                     for k in obj.sibling:
-                        propagate(k, changed)
+                        propagate(k, changed, obj)
                 else:
-                    propagate(obj.sibling, changed)
+                    propagate(obj.sibling, changed, obj)
         return changed[0]
 
     def compute(self, res, rev, valstats, env, match, stat):
@@ -3428,15 +3431,16 @@ class Runner(object):
                 obj.parent.thresh = True
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
-            if obj.thresh == -1:
-                obj.thresh = True
+            # compatibility for models that don't set thresh for metrics
+            if obj.thresh == Undef:
+                obj.thresh = False
             if args.force_bn and obj.name in args.force_bn:
                 obj.thresh = True
-            if obj.thresh != oldthresh and oldthresh != -1:
+            if obj.thresh != oldthresh and oldthresh != Undef:
                 changed += 1
             if stat:
                 stat.referenced |= ref
-            if not obj.res_map and not all([x in env for x in obj.evnum]):
+            if not obj.res_map and not all([x in env for x in obj.evnum]) and not args.quiet:
                 print("%s not measured" % (obj.__class__.__name__,), file=sys.stderr)
             if not obj.metric and not check_ratio(obj.val):
                 obj.thresh = False
