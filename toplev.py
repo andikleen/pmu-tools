@@ -3662,6 +3662,7 @@ def sysctl(name):
     return val
 
 # check nmi watchdog
+# XXX need to get this state from CSV import
 if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
     # XXX should probe if nmi watchdog runs on fixed or generic counter
     for j in cpu.counters.keys():
