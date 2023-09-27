@@ -192,6 +192,12 @@ class UVal:
         """other / self"""
         return UVal._calc(operator.truediv, other, self)
 
+    def __nonzero__(self): # python 2
+        return self.value != 0.0
+
+    def __bool__(self): # python 3
+        return self.value != 0.0
+
     #########################
     # uncertainty propagator
     #########################

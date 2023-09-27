@@ -193,7 +193,7 @@ promotable_limited = set((
     "cpu_core/slots/")
 )
 
-Undef = -1
+Undef = UVal("undef", 0)
 
 event_nocheck = False
 
@@ -3317,7 +3317,7 @@ class Runner(object):
 
     def reset_thresh(self):
         for obj in self.olist:
-            obj.thresh = -1 if obj.metric else False
+            obj.thresh = Undef
 
     def run(self, obj):
         obj.thresh = False
