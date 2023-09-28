@@ -589,6 +589,7 @@ g.add_argument('--thread',
 g.add_argument('--aux', help='Enable auxilliary hierarchy nodes on some models. '
                              'Auxiliary nodes offer alternate views of the same bottleneck component, which can impact observed bottleneck percentage totals',
             action='store_true')
+g.add_argument("--fp16", help='Enable FP16 support in some models', action='store_true')
 
 g = p.add_argument_group('Query nodes')
 g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit, ^ for full match',
@@ -3833,6 +3834,12 @@ def init_model(model, runner):
 
     if "Num_CPUs" in model.__dict__:
         model.Num_CPUs = lambda a, b, c: len(cpu.allcpus)
+
+    if args.fp16:
+        if "FP16" in model.__dict__:
+            model.FP16 = lambda a, b, c: True
+        else:
+            sys.exit("--fp16 option but no support in model")
 
     tune_model(model)
 
