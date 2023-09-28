@@ -606,6 +606,7 @@ g.add_argument('--force-events', help='Assume kernel supports all events. May gi
                action='store_true')
 g.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true', default=True)
 g.add_argument('--handle-errata', help='Disable events with errata', action='store_true')
+g.add_argument('--reserved-counters', default=0, help='Assume N generic counters are used elsewhere', type=int)
 
 g = p.add_argument_group('Output')
 g.add_argument('--per-core', help='Aggregate output per core', action='store_true')
@@ -3670,6 +3671,9 @@ if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
     if not args.quiet and not args.import_:
         print("Consider disabling nmi watchdog to minimize multiplexing", file=sys.stderr)
         print("(echo 0 | sudo tee /proc/sys/kernel/nmi_watchdog or\n echo kernel.nmi_watchdog=0 >> /etc/sysctl.conf ; sysctl -p as root)", file=sys.stderr)
+
+for j in cpu.counters.keys():
+    cpu.counters[j] -= args.reserved_counters
 
 if cpu.cpu is None:
     sys.exit("Unsupported CPU model %s %d" % (cpu.vendor, cpu.model,))
