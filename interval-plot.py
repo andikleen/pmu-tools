@@ -30,6 +30,8 @@ delimeter must be ,
 this is for data that is not normalized.''')
 p.add_argument('--xkcd', action='store_true', help='enable xkcd mode')
 p.add_argument('--style', help='set mpltools style (e.g. ggplot)')
+p.add_argument('-l', '--level', type=int, help='max level to plot', default=2)
+p.add_argument('-m', '--metric', action='store_true', help='show metrics')
 p.add_argument('file', help='CSV file to plot (or stdin)', nargs='?')
 p.add_argument('--output', '-o', help='Output to file. Otherwise show.',
                nargs='?')
@@ -67,12 +69,25 @@ value = {}
 def isnum(x):
     return re.match(r'[0-9.]+', x)
 
+def skip_event(event, unit):
+    # heuristic to figure out nodes. should enhance CSV to add area
+    is_node = re.match(r'(% )?Slots( <)?', unit) or "." in event
+    level = event.count(".") + 1
+    #print(event, "level", level, "unit", unit)
+    if args.level and is_node and level > args.level:
+        return True
+    if args.metric is False and not is_node:
+        return True
+    return False
+
 val = ""
 for row in rc:
     r = csv_formats.parse_csv_row(row)
     if r is None:
         continue
     ts, cpu, event, val = r.ts, r.cpu, r.ev, r.val
+    if ts == "SUMMARY" or skip_event(event, r.unit):
+        continue
     if event not in assigned:
         level = gen_level.get_level(event)
         assigned[event] = cur_colors[level][0]
