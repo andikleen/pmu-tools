@@ -103,3 +103,19 @@ def parse_csv_row(row, error_exit=False):
     if error_exit:
         sys.exit(1)
     return None
+
+if __name__ == '__main__':
+    def check(l, fields):
+        n = l.split(",")
+        r = parse_csv_row(n)
+        assert r is not None
+        rd = r._asdict()
+        for a, v in fields.items():
+            assert rd[a] == n[v]
+
+    check('1.001131873,S0,Backend_Bound.Memory_Bound,13.3,% Slots <,,,0.0,3.0,,', {
+            "ts": 0,
+            "cpu": 1,
+            "ev": 2,
+            "val" : 3,
+            "unit": 4 })
