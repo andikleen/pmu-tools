@@ -23,7 +23,7 @@ def is_ts(n):
     return re.match(r'\s*[0-9.]+', n) is not None or n == "SUMMARY"
 
 def is_unit(n):
-    return re.match(r'[a-zA-Z]*', n) is not None
+    return re.match(r'(% )?[a-zA-Z]*( <)?', n) is not None
 
 def is_running(n):
     return is_number(n)
@@ -44,19 +44,19 @@ formats = (
         (is_ts, is_cpu, is_val, is_unit, is_event),
 # 0.100879059,402.603109,,task-clock,402596410,100.00    new perf with unit without cpu and stats
         (is_ts, is_val, is_unit, is_event, is_running, is_enabled),
+# 1.001131873,S0,Backend_Bound.Memory_Bound,13.3,% Slots <,,,0.0,3.0,,
 # 0.200584389,0,FrontendBound.Branch Resteers,15.87%,above,"",  toplev w/ cpu
-        (is_ts, is_cpu, is_event, is_val),
+        (is_ts, is_cpu, is_event, is_val, is_unit),
 # 1.001365014,CPU2,1819888,,instructions,93286388,100.00      new perf w/ unit w/ cpu and stats
         (is_ts, is_cpu, is_val, is_unit, is_event, is_running, is_enabled),
 # 0.609113353,S0,4,405.454531,,task-clock,405454468,100.00      perf --per-socket with cores
         (is_ts, is_socket, is_number, is_val, is_unit, is_event, is_running, is_enabled),
 # 0.806231582,S0,4,812751,,instructions                  older perf --per-socket w/ cores w/o stats
         (is_ts, is_socket, is_number, is_val, is_unit, is_event),
-# 0.200584389,FrontendBound.Branch Resteers,15.87%,above,"",    toplev single thread
-        (is_ts, is_event, is_val),
 # 0.936482669,C1-T0,Frontend_Bound.Frontend_Latency.ITLB_Misses,0.39,%below,,itlb_misses.walk_completed,,
 # 0.301553743,C1,Retiring,31.81,%,,,,
-        (is_ts, is_cpu, is_event, is_val),
+# 0.200584389,FrontendBound.Branch Resteers,15.87%,above,"",    toplev single thread
+        (is_ts, is_event, is_val),
 )
 
 fmtmaps = {
@@ -65,14 +65,15 @@ fmtmaps = {
     is_event: 2,
     is_val: 3,
     is_enabled: 4,
-    is_running: 5
+    is_running: 5,
+    is_unit: 6
 }
 
-Row = namedtuple('Row', ['ts', 'cpu', 'ev', 'val', 'enabled', 'running'])
+Row = namedtuple('Row', ['ts', 'cpu', 'ev', 'val', 'enabled', 'running', 'unit'])
 
 def check_format(fmt, row):
     if all([x(n.strip()) for (x, n) in zip(fmt, row)]):
-        vals = [None] * 6
+        vals = [None] * 7
         for i, j in enumerate(fmt):
             if j in fmtmaps:
                 vals[fmtmaps[j]] = row[i]
