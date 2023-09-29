@@ -105,6 +105,8 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* interval-plot has --level and --metrics arguments to configure the inputs. It now defaults to
+level 1 only, no metrics to make the plots more readable.
 * toplev has a new --reserved-counters option to handle systems that reserve some generic counters.
 * toplev has a new --no-sort option to disable grouping metrics with tree nodes.
 ## TMA 4.6 release
