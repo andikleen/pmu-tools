@@ -5,6 +5,8 @@
 # XXX force all these into a single group
 # XXX: force % in caller
 
+import os
+
 def TXCycles(EV, level):
     return EV("cpu/cycles-t/", level) / EV("cycles", level)
 
@@ -75,7 +77,9 @@ When low consider increasing the size of the critical sections to lower overhead
 
 class Setup:
     def __init__(self, r):
-        r.force_metric(TransactionalCycles())
-        r.force_metric(AbortedCycles())
-        r.force_metric(AverageRTM())
-        #r.force_metric(AverageHLE())
+        # XXX allow override
+        if os.path.exists("/sys/devices/cpu/events/cycles-t"):
+            r.force_metric(TransactionalCycles())
+            r.force_metric(AbortedCycles())
+            r.force_metric(AverageRTM())
+            #r.force_metric(AverageHLE())
