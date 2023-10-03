@@ -370,7 +370,7 @@ class OutputColumnsCSV(OutputColumns):
         if not self.printed_header and not self.no_header:
             ts = ["Timestamp"] if self.timestamp else []
             header = ts + ["Area", "Node"] + cpunames + ["Description", "Sample", "Stddev", "Multiplex"]
-            self.writer[self.curname].writerow([x.encode() for x in header])
+            self.writer[self.curname].writerow([x for x in header])
             self.printed_header = True
         for key in sorted(sorted(self.nodes.keys(), key=lambda x: x[1]), key=lambda x: x[0] == ""):
             node = self.nodes[key]
