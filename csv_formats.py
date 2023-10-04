@@ -99,6 +99,8 @@ def parse_csv_row(row, error_exit=False):
         return None
     if ".csv" in row[0]:          # fake-perf output
         return None
+    if "Timestamp" in row[0]:
+        return None
     print("PARSE-ERROR", row, file=sys.stderr)
     if error_exit:
         sys.exit(1)
