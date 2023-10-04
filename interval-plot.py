@@ -33,10 +33,13 @@ p.add_argument('--xkcd', action='store_true', help='enable xkcd mode')
 p.add_argument('--style', help='set mpltools style (e.g. ggplot)')
 p.add_argument('-l', '--level', type=int, help='max level to plot', default=2)
 p.add_argument('-m', '--metric', action='store_true', help='show metrics')
-p.add_argument('file', help='CSV file to plot (or stdin)', nargs='?')
+p.add_argument('-a', '--add', help='add extra plot with metrics (comma separated)', default="")
+p.add_argument('file', help='CSV file to plot (otherwise using stdin). Can be .gz,.xz,.zstd', nargs='?')
 p.add_argument('--output', '-o', help='Output to file. Otherwise show.',
                nargs='?')
 args = p.parse_args()
+
+adds = set(args.add.split(","))
 
 if args.style:
     try:
@@ -75,6 +78,8 @@ def skip_event(event, unit):
     is_node = re.match(r'(% )?Slots( <)?', unit) or "." in event
     level = event.count(".") + 1
     #print(event, "level", level, "unit", unit)
+    if args.add and event in adds:
+        return False
     if args.level and is_node and level > args.level:
         return True
     if args.metric is False and not is_node:
@@ -103,7 +108,8 @@ for row in rc:
     except ValueError:
         value[event].append(0.0)
 
-levels = set(map(gen_level.get_level, assigned.keys()))
+k = set(assigned.keys()) - adds
+levels = set(map(gen_level.get_level, k)) | adds
 
 if args.xkcd:
     try:
@@ -119,7 +125,7 @@ for l in levels:
     t = []
     for j in assigned.keys():
         print(j, gen_level.get_level(j), l)
-        if gen_level.get_level(j) == l:
+        if gen_level.get_level(j) == l or j == l:
             t.append(j)
             if 'style' not in globals():
                 ax.plot(timestamps[j], value[j], assigned[j])
