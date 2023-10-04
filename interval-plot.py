@@ -19,6 +19,7 @@ if os.getenv("DISPLAY") is None:
 import matplotlib.pyplot as plt
 import csv_formats
 import gen_level
+import tl_io
 
 p = argparse.ArgumentParser(
         usage='plot interval CSV output from perf stat/toplev',
@@ -58,7 +59,7 @@ cur_colors = collections.defaultdict(lambda: all_colors)
 assigned = {}
 
 if args.file:
-    inf = open(args.file, "r")
+    inf = tl_io.flex_open_r(args.file)
 else:
     inf = sys.stdin
 
