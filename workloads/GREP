@@ -1,0 +1,2 @@
+#!/bin/sh
+grep -rq foobarfoobar /usr/bin /usr/sbin 2>/dev/null
