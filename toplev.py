@@ -577,7 +577,6 @@ g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to 
                'add /level to specify highest level node to match, '
                'add ^ to match related siblings and metrics, '
                'start with ! to only include specified nodes)')
-g.add_argument('--reduced', help='Use reduced server subset of nodes/metrics', action='store_true')
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
                'comma separated list from --list-metric-groups.', default=None)
 g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
@@ -3285,8 +3284,6 @@ class Runner(object):
         mgroups = set()
 
         def want_node(obj):
-            if args.reduced and has(obj, 'server') and not obj.server:
-                return False
             if args.no_uncore and safe_ref(obj, 'area') == "Info.System":
                 return False
             want = ((obj.metric and args.metrics) or
