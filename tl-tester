@@ -14,7 +14,6 @@
 # LOAD0=..  override test load on cpu 0 (taskset)
 # NOCPUS=1  skip individual CPU tests
 # MATCH=cpu in cpu loops only run for CPU cpu
-# NUM_RUNNERS=n Run toplev with multiple runners for hybrid testing
 # ONLYCPU=cpu  Only test cpu type. cur for current CPU (makes test suite run much faster)
 # NOMULTIPLEX=" " Disable no multiplex 
 
@@ -35,7 +34,6 @@ NOGROUP=${NOGROUP:-}
 NORES="${NORES:-}"
 PERF=${PERF:-perf}
 NOCPUS="${NOCPUS:-}"
-NUM_RUNNERS="${NUM_RUNNERS:-}"
 NOMULTIPLEX="${NOMULTIPLEX:---no-multiplex --perf}"
 ONLYCPU="${ONLYCPU:-}"
 PJOBS=${PJOBS:-0}
@@ -210,7 +208,6 @@ onegroup() {
 	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
 	if [ -n "$NOGROUP" ] ; then return ; fi
 	if [ -n "$FOURCOUNTERS" ] ; then return ; fi
-	if [ -n "$NUM_RUNNERS" ] && [ "$NUM_RUNNERS" -gt 1 ] ; then return ; fi
 	case "$OPT" in *--drilldown*) return ;; esac
 	grep perf $1 |
 		sed -E -e 's/cpu.//g;s/cpu_core.//g;s/topdown-retiring\/?,?//;s/topdown-be-bound\/?,?//;s/topdown-fe-bound\/?,?//;s/slots,?//;s/topdown-bad-spec\/?,?//;s/\{\/?,?\}//;s/\/?u,?//g;s/\{\},?//g' |
@@ -406,8 +403,6 @@ else
 [ -z "$ONLYCPU" ] && $WRAP ./toplev.py --force-cpu bdw $OPT --cpu 0,1,2,3 --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns --filterquals -l4 $LOAD
 fi
 DURATION_TIME=0 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
-#NUM_RUNNERS=2 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
-#NUM_RUNNERS=2 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all -a -A $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD

@@ -26,7 +26,6 @@
 # FORCEMETRICS=1    Force fixed metrics and slots
 # TLSEED=n          Set seed for --subset sample: sampling
 # DURATION_TIME=0   Force not using duration_time
-# NUM_RUNNERS=n     Use n runners to fake hybrid
 
 from __future__ import print_function, division
 import sys
@@ -3745,27 +3744,13 @@ def get_cpu_list(fn):
     return [k for k in read_cpus(fn) if use_cpu(k)]
 
 def init_runner_list():
-    nr = os.getenv("NUM_RUNNERS")
     runner_list = []
     hybrid_pmus = []
     hybrid_pmus = glob.glob("/sys/devices/cpu_*")
     if args.force_cpu and args.force_cpu not in hybrid_cpus:
         hybrid_pmus = hybrid_pmus[:1]
-    # emulated hybrid
-    if nr:
-        if hybrid_pmus:
-            print("Ignoring hybrid PMU(s) %s with NUM_RUNNER" %
-                    " ".join(hybrid_pmus[1:]), file=sys.stderr)
-            hybrid_pmus = hybrid_pmus[:1]
-        if args.cputype:
-            sys.exit("--cputype specified on non hybrid")
-        num_runners = int(nr)
-        for j in range(num_runners):
-            r = Runner(args.level, idle_threshold)
-            runner_list.append(r)
-            r.cpu_list = None
     # real hybrid
-    elif hybrid_pmus and cpu.cpu in hybrid_cpus:
+    if hybrid_pmus and cpu.cpu in hybrid_cpus:
         for j in hybrid_pmus:
             pmuname = os.path.basename(j).replace("cpu_", "")
             if args.cputype and pmuname != args.cputype:
