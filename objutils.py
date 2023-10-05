@@ -8,6 +8,11 @@ def safe_ref(obj, name):
         return obj.__class__.__dict__[name]
     return None
 
+def ref_or(obj, name, alt):
+    if has(obj, name):
+        return obj.__class__.__dict__[name]
+    return alt
+
 def map_fields(obj, fields):
     def map_field(name):
         return safe_ref(obj, name)

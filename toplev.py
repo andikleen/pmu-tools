@@ -49,7 +49,7 @@ from collections import defaultdict, Counter, OrderedDict
 from itertools import compress, groupby, chain
 from listutils import cat_unique, dedup, filternot, not_list, append_dict, \
         zip_longest, flatten, findprefix, dummy_dict
-from objutils import has, safe_ref, map_fields
+from objutils import has, safe_ref, map_fields, ref_or
 
 from tl_stat import ComputeStat, ValStat, combine_valstat
 import tl_cpu
@@ -2643,9 +2643,17 @@ def children_over(l, obj):
     n = [o.thresh for o in l if 'parent' in o.__dict__ and o.parent == obj]
     return any(n)
 
-def obj_desc_runtime(obj, rest, sep="\n\t"):
+def bottleneck_related(obj, bn):
+    if obj == bn:
+        return True
+    if (set(ref_or(bn, 'metricgroup', [])) & set(ref_or(obj, 'metricgroup', []))) - set(['TmaL1', 'TmaL2']):
+        return True
+    return False
+
+def obj_desc_runtime(obj, rest, bn):
+    sep = "\n\t"
     # hide description if children are also printed
-    if children_over(rest, obj):
+    if children_over(rest, obj) or (not args.desc and not bottleneck_related(obj, bn)):
         desc = ""
     else:
         desc = obj_desc(obj)
@@ -3172,7 +3180,7 @@ class Printer(object):
             if has(obj, 'maxval') and obj.maxval is not None and obj.maxval != 0:
                 maxval = UVal(obj.name, obj.maxval)
                 val = min(val, maxval)
-            desc = obj_desc_runtime(obj, olist[i + 1:])
+            desc = obj_desc_runtime(obj, olist[i + 1:], bn)
             if obj.metric:
                 out.metric(obj_area(obj), obj.name, val, timestamp,
                         desc,
