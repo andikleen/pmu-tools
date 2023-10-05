@@ -11,6 +11,7 @@ class TLData:
     times[n] All time stamps
     vals[n]  All values, as dicts mapping (name, cpu)->float
     levels{name} All levels (includes metrics), name->list of fields
+    units{name}  All units, name->unit
     headers(set) All headers (including metrics)
     metrics(set) All metrics
     helptxt[col] All help texts.
@@ -25,9 +26,10 @@ class TLData:
         self.metrics = set()
         self.headers = set()
         self.mtime = None
-        self.helptxt = dict()
+        self.helptxt = {}
         self.cpus = set()
         self.verbose = verbose
+        self.units = {}
 
     def update(self):
         mtime = os.path.getmtime(self.fn)
@@ -42,17 +44,21 @@ class TLData:
                 continue
             if r[0] == "Timestamp" or r[0] == "CPUs":
                 continue
+            # 1.001088024,C1,Frontend_Bound,42.9,% Slots,,frontend_retired.latency_ge_4:pp,0.0,100.0,<==,Y
             if re.match(r'[CS]?\d+.*', r[1]):
-                ts, cpu, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4], r[5]
+                ts, cpu, name, pct, unit, helptxt = r[0], r[1], r[2], r[3], r[4], r[5]
             else:
-                ts, name, pct, state, helptxt = r[0], r[1], r[2], r[3], r[4]
+                ts, name, pct, unit, helptxt = r[0], r[1], r[2], r[3], r[4]
                 cpu = None
             key = (name, cpu)
             ts, pct = float(ts), float(pct.replace("%", ""))
             if name not in self.helptxt or self.helptxt[name] == "":
                 self.helptxt[name] = helptxt
-            if state == "below" and not self.verbose:
-                continue
+            if unit.endswith("<"):
+                unit = unit[:-2]
+                if not self.verbose:
+                    continue
+            self.units[name] = unit
             if prevts and ts != prevts:
                 self.times.append(prevts)
                 self.vals.append(val)

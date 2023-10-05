@@ -208,7 +208,9 @@ def gen_html_cpu(cpu):
         }
 
         if name in data.metrics:
-            unit = gen_level.get_unit(list(data.levels[name])[0])
+            unit = None
+            if name in data.units: # XXX handle CPU-METRIC
+                unit = data.units[name]
             if unit:
                 opts["ylabel"] = unit
         else:
