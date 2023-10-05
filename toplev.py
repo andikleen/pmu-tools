@@ -628,7 +628,7 @@ g.add_argument('--graph', help='Automatically graph interval output with tl-barp
                action='store_true')
 g.add_argument("--graph-cpu", help="CPU to graph using --graph")
 g.add_argument('--title', help='Set title of graph')
-g.add_argument('--quiet', help='Avoid unnecessary status output', action='store_true')
+g.add_argument('-q', '--quiet', help='Avoid unnecessary status output', action='store_true')
 g.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
                 action='store_true')
 g.add_argument('--columns', help='Print CPU output in multiple columns for each node', action='store_true')
