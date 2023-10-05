@@ -14,7 +14,6 @@ try:
     import BaseHTTPServer
 except ImportError:
     import http.server as BaseHTTPServer
-import gen_level
 import tldata
 
 ap = argparse.ArgumentParser(usage="Serve toplev csv file as http or generate in directory")
