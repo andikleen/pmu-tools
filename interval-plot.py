@@ -75,7 +75,7 @@ def isnum(x):
 
 def skip_event(event, unit):
     # heuristic to figure out nodes. should enhance CSV to add area
-    is_node = re.match(r'(% )?Slots( <)?', unit) or "." in event
+    is_node = unit and (re.match(r'(% )?Slots( <)?', unit) or "." in event)
     level = event.count(".") + 1
     #print(event, "level", level, "unit", unit)
     if args.add and event in adds:
