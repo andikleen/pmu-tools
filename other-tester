@@ -18,10 +18,10 @@ for args in "" "-A" "--per-socket" "--per-core" "-r2" ; do
 
 # interval-normalize.py
 
-${PERF} stat -I100 $args -a -x, -o x$$.csv sleep 1
+${PERF} stat -e cycles,branches,instructions,branch-misses,context-switches,page-faults -I100 $args -a -x, -o x$$.csv sleep 1
 
-$WRAP interval-normalize.py --error-exit < x$$.csv
-$WRAP interval-normalize.py --error-exit < x$$.csv > y$$.csv
+$WRAP interval-normalize.py --error-exit x$$.csv
+$WRAP interval-normalize.py --error-exit x$$.csv > y$$.csv
 
 grep -vq PARSE-ERROR y$$.csv
 if [ -z "$NORES" ] ; then
