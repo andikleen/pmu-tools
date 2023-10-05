@@ -1,8 +1,5 @@
 # generate levels for events from the model
 # utility module for other tools
-# the model used must be a superset of all
-import re
-
 l1 = set(("Frontend_Bound", "Backend_Bound", "Retiring", "Bad_Speculation"))
 
 def get_level(name):
