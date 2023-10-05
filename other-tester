@@ -3,6 +3,8 @@
 # PERF=... override perf binary
 # NORES=1 don't check measurement results
 
+PYTHON=${PYTHON:-python3}
+
 . ./cpumap.sh
 set -e
 PERF=${PERF:-perf}
@@ -102,6 +104,8 @@ curl http://localhost:9001 > /dev/null
 kill %1
 sleep 1
 wait %1
+
+$PYTHON csv_formats.py
 
 rm x$$.csv xn$$.csv
 
