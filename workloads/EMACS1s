@@ -1,2 +1,2 @@
 #!/bin/sh
-emacs --batch -q --eval '(dotimes (i 9000000) 0)'
+emacs --batch -q --eval '(dotimes (i 9000000) 0)' 2> /dev/null
