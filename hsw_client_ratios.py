@@ -293,12 +293,15 @@ def L2MPKI(self, EV, level):
 def L3MPKI(self, EV, level):
     return 1000 * EV("MEM_LOAD_UOPS_RETIRED.L3_MISS", level) / EV("INST_RETIRED.ANY", level)
 
+# Average per-thread data fill bandwidth to the L1 data cache [GB / sec]
 def L1D_Cache_Fill_BW(self, EV, level):
     return 64 * EV("L1D.REPLACEMENT", level) / OneBillion / Time(self, EV, level)
 
+# Average per-thread data fill bandwidth to the L2 cache [GB / sec]
 def L2_Cache_Fill_BW(self, EV, level):
     return 64 * EV("L2_LINES_IN.ALL", level) / OneBillion / Time(self, EV, level)
 
+# Average per-thread data fill bandwidth to the L3 cache [GB / sec]
 def L3_Cache_Fill_BW(self, EV, level):
     return 64 * EV("LONGEST_LAT_CACHE.MISS", level) / OneBillion / Time(self, EV, level)
 
@@ -2626,7 +2629,8 @@ class Metric_L1D_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L1D_Cache_Fill_BW zero division")
     desc = """
-"""
+Average per-thread data fill bandwidth to the L1 data cache
+[GB / sec]"""
 
 
 class Metric_L2_Cache_Fill_BW:
@@ -2645,7 +2649,8 @@ class Metric_L2_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L2_Cache_Fill_BW zero division")
     desc = """
-"""
+Average per-thread data fill bandwidth to the L2 cache [GB /
+sec]"""
 
 
 class Metric_L3_Cache_Fill_BW:
@@ -2664,7 +2669,8 @@ class Metric_L3_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L3_Cache_Fill_BW zero division")
     desc = """
-"""
+Average per-thread data fill bandwidth to the L3 cache [GB /
+sec]"""
 
 
 class Metric_Page_Walks_Utilization:

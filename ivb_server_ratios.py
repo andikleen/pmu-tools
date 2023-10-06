@@ -301,6 +301,7 @@ def Instructions(self, EV, level):
 def Retire(self, EV, level):
     return Retired_Slots(self, EV, level) / EV("UOPS_RETIRED.RETIRE_SLOTS:c1", level)
 
+# Instruction-Level-Parallelism (average number of uops executed when there is execution) per physical core
 def Execute(self, EV, level):
     return EV("UOPS_EXECUTED.THREAD", level) / Execute_Cycles(self, EV, level)
 
@@ -346,12 +347,15 @@ def L2MPKI(self, EV, level):
 def L3MPKI(self, EV, level):
     return 1000 * EV("MEM_LOAD_UOPS_RETIRED.LLC_MISS", level) / EV("INST_RETIRED.ANY", level)
 
+# Average per-thread data fill bandwidth to the L1 data cache [GB / sec]
 def L1D_Cache_Fill_BW(self, EV, level):
     return 64 * EV("L1D.REPLACEMENT", level) / OneBillion / Time(self, EV, level)
 
+# Average per-thread data fill bandwidth to the L2 cache [GB / sec]
 def L2_Cache_Fill_BW(self, EV, level):
     return 64 * EV("L2_LINES_IN.ALL", level) / OneBillion / Time(self, EV, level)
 
+# Average per-thread data fill bandwidth to the L3 cache [GB / sec]
 def L3_Cache_Fill_BW(self, EV, level):
     return 64 * EV("LONGEST_LAT_CACHE.MISS", level) / OneBillion / Time(self, EV, level)
 
@@ -2732,7 +2736,7 @@ uop has retired."""
 
 class Metric_Execute:
     name = "Execute"
-    domain = "Metric"
+    domain = "Core_Metric"
     maxval = Exe_Ports
     errcount = 0
     area = "Info.Pipeline"
@@ -2746,7 +2750,8 @@ class Metric_Execute:
         except ZeroDivisionError:
             handle_error_metric(self, "Execute zero division")
     desc = """
-"""
+Instruction-Level-Parallelism (average number of uops
+executed when there is execution) per physical core"""
 
 
 class Metric_DSB_Coverage:
@@ -2950,7 +2955,8 @@ class Metric_L1D_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L1D_Cache_Fill_BW zero division")
     desc = """
-"""
+Average per-thread data fill bandwidth to the L1 data cache
+[GB / sec]"""
 
 
 class Metric_L2_Cache_Fill_BW:
@@ -2969,7 +2975,8 @@ class Metric_L2_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L2_Cache_Fill_BW zero division")
     desc = """
-"""
+Average per-thread data fill bandwidth to the L2 cache [GB /
+sec]"""
 
 
 class Metric_L3_Cache_Fill_BW:
@@ -2988,7 +2995,8 @@ class Metric_L3_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L3_Cache_Fill_BW zero division")
     desc = """
-"""
+Average per-thread data fill bandwidth to the L3 cache [GB /
+sec]"""
 
 
 class Metric_Page_Walks_Utilization:
