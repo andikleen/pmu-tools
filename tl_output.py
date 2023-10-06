@@ -107,7 +107,7 @@ class Output(object):
     # pass all possible hdrs in advance to compute suitable padding
     def set_hdr(self, hdr, area):
         if area:
-            hdr = "%-14s %s" % (area, hdr)
+            hdr = "%-16s %s" % (area, hdr)
         self.hdrlen = max(len(hdr) + 1, self.hdrlen)
 
     def set_below(self, below):
@@ -224,7 +224,7 @@ class OutputHuman(Output):
             hdr = short_hdr(ohdr, self.last_prefix)
             self.last_prefix = ohdr
         if area:
-            hdr = "%-14s %s" % (area, hdr)
+            hdr = "%-16s %s" % (area, hdr)
         self.logf.write("%-*s " % (self.hdrlen, hdr))
 
     # timestamp Timestamp in interval mode
@@ -252,7 +252,7 @@ class OutputHuman(Output):
                     ("  " if unit and unit[0] != "%" else "") + unit,
                     val.format_value(unit),
                     fmt_below(below),
-                    unitlen=self.unitlen + 1,
+                    unitlen=self.unitlen + 2,
                     belowlen=self.belowlen)
         if not self.args.no_mux and val.multiplex != 100.0:
             vals += " " + val.format_mux()
