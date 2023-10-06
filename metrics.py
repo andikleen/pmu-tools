@@ -8,11 +8,10 @@ class MetricBase(object):
     name = ""
     domain = ""
     area = ""
-    server = False
     htoff = False
     sample = []
     sibling = None
-    metricgroup = []
+    metricgroup = frozenset([])
     desc = "Missing description"
 
     def __init__(self, **kwargs):
@@ -42,7 +41,7 @@ class FrontendBound(MetricBase):
     desc = ("\n"
             "This category reflects slots where the Frontend of the\n"
             "processor undersupplies its Backend.")
-    metricgroup = ['TopDownL1']
+    metricgroup = frozenset(['TopDownL1'])
 
 class FrontendLatency(MetricBase):
     level = 2
@@ -61,7 +60,7 @@ class FrontendLatency(MetricBase):
     errcount = 0
     sibling = None
     server = False
-    metricgroup = ['Frontend_Bound', 'TopDownL2']
+    metricgroup = frozenset(['Frontend_Bound', 'TopDownL2'])
 
 class BadSpeculation(MetricBase):
     level = 1
@@ -77,7 +76,7 @@ class BadSpeculation(MetricBase):
             "predicted branches are categorized under Bad Speculation\n"
             "category. Incorrect data speculation followed by Memory\n"
             "Ordering Nukes is another example.")
-    metricgroup = ['Bad_Speculation', 'TopDownL1']
+    metricgroup = frozenset(['Bad_Speculation', 'TopDownL1'])
 
 class Retiring(MetricBase):
     level = 1
@@ -100,7 +99,7 @@ class Retiring(MetricBase):
             "essentially lets more computations be done without\n"
             "significantly increasing number of instructions thus\n"
             "improving the performance.")
-    metricgroup = ['TopDownL1']
+    metricgroup = frozenset(['TopDownL1'])
 
 class BackendBound(MetricBase):
     level = 1
@@ -119,7 +118,7 @@ class BackendBound(MetricBase):
             "categorized under Backend Bound. Backend Bound is further\n"
             "divided into two main categories: Memory Bound and Core\n"
             "Bound.")
-    metricgroup = ['TopDownL1']
+    metricgroup = frozenset(['TopDownL1'])
 
 class ICacheMisses(MetricBase):
     level = 3
@@ -131,7 +130,7 @@ class ICacheMisses(MetricBase):
             "due to instruction cache misses.. Using compiler's Profile-\n"
             "Guided Optimization (PGO) can reduce i-cache misses through\n"
             "improved hot code layout.")
-    metricgroup = ['Frontend_Latency']
+    metricgroup = frozenset(['Frontend_Latency'])
 
 class ITLBMisses(MetricBase):
     level = 3
@@ -147,7 +146,7 @@ class ITLBMisses(MetricBase):
             "getlbfs;https://research.fb.com/publications/optimizing-\n"
             "function-placement-for-large-scale-data-center-\n"
             "applications-2/\n")
-    metricgroup = ['Frontend_Latency', 'TLB']
+    metricgroup = frozenset(['Frontend_Latency', 'TLB'])
 
 class BranchResteers(MetricBase):
     level = 3
@@ -161,7 +160,7 @@ class BranchResteers(MetricBase):
             "branchy code with lots of miss-predictions might get\n"
             "categorized under Branch Resteers. Note the value of this\n"
             "node may overlap with its siblings.")
-    metricgroup = ['Bad_Speculation', 'Frontend_Latency']
+    metricgroup = frozenset(['Bad_Speculation', 'Frontend_Latency'])
 
 class MSSwitches(MetricBase):
     level = 3
@@ -181,7 +180,7 @@ class MSSwitches(MetricBase):
             "deliver long uop flows required by CISC instructions like\n"
             "CPUID; or uncommon conditions like Floating Point Assists\n"
             "when dealing with Denormals.")
-    metricgroup = ['Frontend_Latency', 'Microcode_Sequencer']
+    metricgroup = frozenset(['Frontend_Latency', 'Microcode_Sequencer'])
 
 class IFetchLine(MetricBase):
     name = "IFetchLine"
@@ -190,4 +189,4 @@ class IFetchLine(MetricBase):
     desc = ("\n"
             "This metric represents cycles fraction the fetch stalls\n"
             "due to an instruction cache miss.")
-    metricgroup = []
+    metricgroup = frozenset([])

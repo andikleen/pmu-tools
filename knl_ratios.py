@@ -9,38 +9,37 @@ slm.set_clks_event_name("CPU_CLK_UNHALTED.THREAD")
 smt_enabled = False
 
 class CyclesPerUop(slm.CyclesPerUop):
-    server = True
+    pass
 
 # LEVEL 1
 class FrontendBound(slm.FrontendBound):
-    server = True
+    pass
 
 class BackendBound(slm.BackendBound):
-    server = True
+    pass
 
 class BadSpeculation(slm.BadSpeculation):
-    server = True
+    pass
 
 class Retiring(slm.Retiring):
-    server = True
+    pass
 
 # LEVEL 2
 class FrontendLatency(slm.FrontendLatency):
-    server = True
+    pass
 
 # LEVEL 3
 class ICacheMisses(slm.ICacheMisses):
-    server = True
     # Override _compute(), since KNL does not have
     # the DECODE_RESTRICTION.PDCACHE_WRONG event
     def _compute(self, ev):
         return slm.icache_line_fetch_cost(ev, self.level)
 
 class ITLBMisses(slm.ITLBMisses):
-    server = True
+    pass
 
 class MSSwitches(slm.MSSwitches):
-    server = True
+    pass
 
 class Setup(object):
     def __init__(self, runner):

@@ -1,6 +1,6 @@
 # -*- coding: latin-1 -*-
 #
-# auto generated TopDown/TMA 4.6-full-perf description for Intel Xeon E5 (code named SandyBridge EP)
+# auto generated TopDown/TMA 4.7-full description for Intel Xeon E5 (code named SandyBridge EP)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -16,7 +16,7 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.6-full-perf"
+version = "4.7-full"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
@@ -123,7 +123,7 @@ def Retire_Fraction(self, EV, level):
 def Retired_Slots(self, EV, level):
     return EV("UOPS_RETIRED.RETIRE_SLOTS", level)
 
-# Number of logical processors (enabled) on the target system
+# Number of logical processors (enabled or online) on the target system
 def Num_CPUs(self, EV, level):
     return 8 if smt_enabled else 4
 
@@ -161,13 +161,13 @@ def CoreIPC(self, EV, level):
 def FLOPc(self, EV, level):
     return FLOP_Count(self, EV, level) / CORE_CLKS(self, EV, level)
 
-# Instruction-Level-Parallelism (average number of uops executed when there is execution) per-core
+# Instruction-Level-Parallelism (average number of uops executed when there is execution) per logical-processor
 def ILP(self, EV, level):
     return EV("UOPS_DISPATCHED.THREAD", level) / Execute_Cycles(self, EV, level)
 
 # Core actual clocks when any Logical Processor is active on the Physical Core
 def CORE_CLKS(self, EV, level):
-    return ((EV("CPU_CLK_UNHALTED.THREAD", level) / 2) * (1 + EV("CPU_CLK_UNHALTED.ONE_THREAD_ACTIVE", level) / EV("CPU_CLK_UNHALTED.REF_XCLK", level))) if ebs_mode else(EV("CPU_CLK_UNHALTED.THREAD_ANY", level) / 2) if smt_enabled else CLKS(self, EV, level)
+    return (EV("CPU_CLK_UNHALTED.THREAD_ANY", level) / 2) if smt_enabled else CLKS(self, EV, level)
 
 # Total number of retired Instructions
 def Instructions(self, EV, level):
@@ -199,7 +199,7 @@ def Core_Frequency(self, EV, level):
 def Uncore_Frequency(self, EV, level):
     return Socket_CLKS(self, EV, level) / 1e9 / Time(self, EV, level)
 
-# Giga Floating Point Operations Per Second. Aggregate across all supported options of: FP precisions, scalar and vector instructions, vector-width ([SNB+] .; [SPR] and AMX engine.)
+# Giga Floating Point Operations Per Second. Aggregate across all supported options of: FP precisions, scalar and vector instructions, vector-width  .
 def GFLOPs(self, EV, level):
     return (FLOP_Count(self, EV, level) / OneBillion) / Time(self, EV, level)
 
@@ -225,7 +225,7 @@ def Kernel_CPI(self, EV, level):
 def DRAM_BW_Use(self, EV, level):
     return (64 *(EV("UNC_M_CAS_COUNT.RD", level) + EV("UNC_M_CAS_COUNT.WR", level)) / OneBillion) / Time(self, EV, level)
 
-# Average latency of data read request to external memory (in nanoseconds). Accounts for demand loads and L1/L2 prefetches. ([RKL+]memory-controller only)
+# Average latency of data read request to external memory (in nanoseconds). Accounts for demand loads and L1/L2 prefetches. 
 def MEM_Read_Latency(self, EV, level):
     return OneBillion *(EV("UNC_C_TOR_OCCUPANCY.MISS_OPCODE:Match=0x182", level) / EV("UNC_C_TOR_INSERTS.MISS_OPCODE:Match=0x182", level)) / (Socket_CLKS(self, EV, level) / Time(self, EV, level))
 
@@ -261,8 +261,7 @@ class Frontend_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['TmaL1', 'PGO']
+    metricgroup = frozenset(['TmaL1', 'PGO'])
     maxval = None
     def compute(self, EV):
         try:
@@ -297,13 +296,12 @@ class Fetch_Latency:
     sample = ['RS_EVENTS.EMPTY_END']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['Frontend', 'TmaL2']
+    metricgroup = frozenset(['Frontend', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
             self.val = Pipeline_Width * Frontend_Latency_Cycles(self, EV, 2) / SLOTS(self, EV, 2)
-            self.thresh = (self.val > 0.10) and self.parent.thresh
+            self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "Fetch_Latency zero division")
         return self.val
@@ -325,8 +323,7 @@ class ITLB_Misses:
     sample = ['ITLB_MISSES.WALK_COMPLETED']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['BigFootprint', 'FetchLat', 'MemoryTLB']
+    metricgroup = frozenset(['BigFootprint', 'FetchLat', 'MemoryTLB'])
     maxval = None
     def compute(self, EV):
         try:
@@ -355,8 +352,7 @@ class Branch_Resteers:
     sample = ['BR_MISP_RETIRED.ALL_BRANCHES']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['FetchLat']
+    metricgroup = frozenset(['FetchLat'])
     maxval = None
     def compute(self, EV):
         try:
@@ -384,9 +380,8 @@ class MS_Switches:
     sample = ['IDQ.MS_SWITCHES']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['FetchLat', 'MicroSeq']
-    maxval = 1
+    metricgroup = frozenset(['FetchLat', 'MicroSeq'])
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = MS_Switches_Cost * EV("IDQ.MS_SWITCHES", 3) / CLKS(self, EV, 3)
@@ -418,8 +413,7 @@ class LCP:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['FetchLat']
+    metricgroup = frozenset(['FetchLat'])
     maxval = None
     def compute(self, EV):
         try:
@@ -444,8 +438,7 @@ class DSB_Switches:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['DSBmiss', 'FetchLat']
+    metricgroup = frozenset(['DSBmiss', 'FetchLat'])
     maxval = None
     def compute(self, EV):
         try:
@@ -478,13 +471,12 @@ class Fetch_Bandwidth:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['FetchBW', 'Frontend', 'TmaL2']
+    metricgroup = frozenset(['FetchBW', 'Frontend', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
             self.val = self.Frontend_Bound.compute(EV) - self.Fetch_Latency.compute(EV)
-            self.thresh = (self.val > 0.1) and self.parent.thresh and HighIPC(self, EV, 2)
+            self.thresh = (self.val > 0.2)
         except ZeroDivisionError:
             handle_error(self, "Fetch_Bandwidth zero division")
         return self.val
@@ -506,8 +498,7 @@ class Bad_Speculation:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['TmaL1']
+    metricgroup = frozenset(['TmaL1'])
     maxval = None
     def compute(self, EV):
         try:
@@ -536,8 +527,7 @@ class Branch_Mispredicts:
     sample = ['BR_MISP_RETIRED.ALL_BRANCHES:pp']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['BadSpec', 'BrMispredicts', 'TmaL2']
+    metricgroup = frozenset(['BadSpec', 'BrMispredicts', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
@@ -568,8 +558,7 @@ class Machine_Clears:
     sample = ['MACHINE_CLEARS.COUNT']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['BadSpec', 'MachineClears', 'TmaL2']
+    metricgroup = frozenset(['BadSpec', 'MachineClears', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
@@ -599,8 +588,7 @@ class Backend_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['TmaL1']
+    metricgroup = frozenset(['TmaL1'])
     maxval = None
     def compute(self, EV):
         try:
@@ -632,8 +620,7 @@ class Memory_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['Backend', 'TmaL2']
+    metricgroup = frozenset(['Backend', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
@@ -663,8 +650,7 @@ class DTLB_Load:
     sample = ['MEM_UOPS_RETIRED.STLB_MISS_LOADS:pp']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['MemoryTLB']
+    metricgroup = frozenset(['MemoryTLB'])
     maxval = None
     def compute(self, EV):
         try:
@@ -695,8 +681,7 @@ class L3_Bound:
     sample = ['MEM_LOAD_UOPS_RETIRED.LLC_HIT:pp']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['CacheHits', 'MemoryBound', 'TmaL3mem']
+    metricgroup = frozenset(['CacheHits', 'MemoryBound', 'TmaL3mem'])
     maxval = None
     def compute(self, EV):
         try:
@@ -721,9 +706,8 @@ class DRAM_Bound:
     sample = ['MEM_LOAD_UOPS_RETIRED.LLC_MISS:pp']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['MemoryBound', 'TmaL3mem']
-    maxval = 1
+    metricgroup = frozenset(['MemoryBound', 'TmaL3mem'])
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (1 - Mem_L3_Hit_Fraction(self, EV, 3)) * EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3) / CLKS(self, EV, 3)
@@ -746,8 +730,7 @@ class MEM_Bandwidth:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['MemoryBW', 'Offcore']
+    metricgroup = frozenset(['MemoryBW', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:
@@ -759,19 +742,20 @@ class MEM_Bandwidth:
     desc = """
 This metric estimates fraction of cycles where the core's
 performance was likely hurt due to approaching bandwidth
-limits of external memory (DRAM).  The underlying heuristic
-assumes that a similar off-core traffic is generated by all
-IA cores. This metric does not aggregate non-data-read
-requests by this logical processor; requests from other IA
-Logical Processors/Physical Cores/sockets; or other non-IA
-devices like GPU; hence the maximum external memory
-bandwidth limits may or may not be approached when this
-metric is flagged (see Uncore counters for that).. Improve
-data accesses to reduce cacheline transfers from/to memory.
-Examples: 1) Consume all bytes of a each cacheline before it
-is evicted (e.g. reorder structure elements and split non-
-hot ones), 2) merge computed-limited with BW-limited loops,
-3) NUMA optimizations in multi-socket system. Note: software
+limits of external memory - DRAM ([SPR-HBM] and/or HBM).
+The underlying heuristic assumes that a similar off-core
+traffic is generated by all IA cores. This metric does not
+aggregate non-data-read requests by this logical processor;
+requests from other IA Logical Processors/Physical
+Cores/sockets; or other non-IA devices like GPU; hence the
+maximum external memory bandwidth limits may or may not be
+approached when this metric is flagged (see Uncore counters
+for that).. Improve data accesses to reduce cacheline
+transfers from/to memory. Examples: 1) Consume all bytes of
+a each cacheline before it is evicted (e.g. reorder
+structure elements and split non-hot ones), 2) merge
+computed-limited with BW-limited loops, 3) NUMA
+optimizations in multi-socket system. Note: software
 prefetches will not help BW-limited application.."""
 
 
@@ -784,8 +768,7 @@ class MEM_Latency:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['MemoryLat', 'Offcore']
+    metricgroup = frozenset(['MemoryLat', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:
@@ -797,11 +780,12 @@ class MEM_Latency:
     desc = """
 This metric estimates fraction of cycles where the
 performance was likely hurt due to latency from external
-memory (DRAM).  This metric does not aggregate requests from
-other Logical Processors/Physical Cores/sockets (see Uncore
-counters for that).. Improve data accesses or interleave
-them with compute. Examples: 1) Data layout re-structuring,
-2) Software Prefetches (also through the compiler).."""
+memory - DRAM ([SPR-HBM] and/or HBM).  This metric does not
+aggregate requests from other Logical Processors/Physical
+Cores/sockets (see Uncore counters for that).. Improve data
+accesses or interleave them with compute. Examples: 1) Data
+layout re-structuring, 2) Software Prefetches (also through
+the compiler).."""
 
 
 class Store_Bound:
@@ -813,8 +797,7 @@ class Store_Bound:
     sample = ['MEM_UOPS_RETIRED.ALL_STORES:pp']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['MemoryBound', 'TmaL3mem']
+    metricgroup = frozenset(['MemoryBound', 'TmaL3mem'])
     maxval = None
     def compute(self, EV):
         try:
@@ -841,8 +824,7 @@ class Core_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['Backend', 'TmaL2', 'Compute']
+    metricgroup = frozenset(['Backend', 'TmaL2', 'Compute'])
     maxval = None
     def compute(self, EV):
         try:
@@ -873,8 +855,7 @@ class Divider:
     sample = ['ARITH.FPU_DIV_ACTIVE']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     maxval = None
     def compute(self, EV):
         try:
@@ -900,8 +881,7 @@ class Ports_Utilization:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['PortsUtil']
+    metricgroup = frozenset(['PortsUtil'])
     maxval = None
     def compute(self, EV):
         try:
@@ -934,8 +914,7 @@ class Retiring:
     sample = ['UOPS_RETIRED.RETIRE_SLOTS']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['TmaL1']
+    metricgroup = frozenset(['TmaL1'])
     maxval = None
     def compute(self, EV):
         try:
@@ -972,8 +951,7 @@ class Light_Operations:
     sample = ['INST_RETIRED.PREC_DIST']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['Retire', 'TmaL2']
+    metricgroup = frozenset(['Retire', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
@@ -992,10 +970,9 @@ program. A uops-per-instruction (see UopPI metric) ratio of
 running on Intel Core/Xeon products. While this often
 indicates efficient X86 instructions were executed; high
 value does not necessarily mean better performance cannot be
-achieved. ([ICL+] Note this may undercount due to
-approximation using indirect events; [ADL+] .). Focus on
-techniques that reduce instruction count or result in more
-efficient instructions generation such as vectorization."""
+achieved. . Focus on techniques that reduce instruction
+count or result in more efficient instructions generation
+such as vectorization."""
 
 
 class FP_Arith:
@@ -1007,8 +984,7 @@ class FP_Arith:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['HPC']
+    metricgroup = frozenset(['HPC'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1033,8 +1009,7 @@ class X87_Use:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['Compute']
+    metricgroup = frozenset(['Compute'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1062,8 +1037,7 @@ class FP_Scalar:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['Compute', 'Flops']
+    metricgroup = frozenset(['Compute', 'Flops'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1088,9 +1062,8 @@ class FP_Vector:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['Compute', 'Flops']
-    maxval = 1
+    metricgroup = frozenset(['Compute', 'Flops'])
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = FP_Arith_Vector(self, EV, 4) / EV("UOPS_DISPATCHED.THREAD", 4)
@@ -1114,9 +1087,8 @@ class FP_Vector_128b:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['Compute', 'Flops']
-    maxval = 1
+    metricgroup = frozenset(['Compute', 'Flops'])
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (EV("FP_COMP_OPS_EXE.SSE_SCALAR_DOUBLE", 5) + EV("FP_COMP_OPS_EXE.SSE_PACKED_DOUBLE", 5)) / EV("UOPS_DISPATCHED.THREAD", 5)
@@ -1140,9 +1112,8 @@ class FP_Vector_256b:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['Compute', 'Flops']
-    maxval = 1
+    metricgroup = frozenset(['Compute', 'Flops'])
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (EV("SIMD_FP_256.PACKED_DOUBLE", 5) + EV("SIMD_FP_256.PACKED_SINGLE", 5)) / EV("UOPS_DISPATCHED.THREAD", 5)
@@ -1166,8 +1137,7 @@ class Heavy_Operations:
     sample = []
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['Retire', 'TmaL2']
+    metricgroup = frozenset(['Retire', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1181,8 +1151,7 @@ This metric represents fraction of slots where the CPU was
 retiring heavy-weight operations -- instructions that
 require two or more uops or micro-coded sequences. This
 highly-correlates with the uop length of these
-instructions/sequences. ([ICL+] Note this may overcount due
-to approximation using indirect events; [ADL+] .)"""
+instructions/sequences."""
 
 
 class Microcode_Sequencer:
@@ -1194,8 +1163,7 @@ class Microcode_Sequencer:
     sample = ['IDQ.MS_UOPS']
     errcount = 0
     sibling = None
-    server = False
-    metricgroup = ['MicroSeq']
+    metricgroup = frozenset(['MicroSeq'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1218,10 +1186,9 @@ class Metric_IPC:
     name = "IPC"
     domain = "Metric"
     maxval = Pipeline_Width + 2
-    server = False
     errcount = 0
     area = "Info.Thread"
-    metricgroup = ['Ret', 'Summary']
+    metricgroup = frozenset(['Ret', 'Summary'])
     sibling = None
 
     def compute(self, EV):
@@ -1237,11 +1204,10 @@ Instructions Per Cycle (per Logical Processor)"""
 class Metric_UopPI:
     name = "UopPI"
     domain = "Metric"
-    maxval = 2
-    server = False
+    maxval = 2.0
     errcount = 0
     area = "Info.Thread"
-    metricgroup = ['Pipeline', 'Ret', 'Retire']
+    metricgroup = frozenset(['Pipeline', 'Ret', 'Retire'])
     sibling = None
 
     def compute(self, EV):
@@ -1258,10 +1224,9 @@ class Metric_CPI:
     name = "CPI"
     domain = "Metric"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Thread"
-    metricgroup = ['Pipeline', 'Mem']
+    metricgroup = frozenset(['Pipeline', 'Mem'])
     sibling = None
 
     def compute(self, EV):
@@ -1278,10 +1243,9 @@ class Metric_CLKS:
     name = "CLKS"
     domain = "Count"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Thread"
-    metricgroup = ['Pipeline']
+    metricgroup = frozenset(['Pipeline'])
     sibling = None
 
     def compute(self, EV):
@@ -1299,10 +1263,9 @@ class Metric_SLOTS:
     name = "SLOTS"
     domain = "Count"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Thread"
-    metricgroup = ['TmaL1']
+    metricgroup = frozenset(['TmaL1'])
     sibling = None
 
     def compute(self, EV):
@@ -1320,10 +1283,9 @@ class Metric_Execute_per_Issue:
     name = "Execute_per_Issue"
     domain = "Metric"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Thread"
-    metricgroup = ['Cor', 'Pipeline']
+    metricgroup = frozenset(['Cor', 'Pipeline'])
     sibling = None
 
     def compute(self, EV):
@@ -1342,10 +1304,9 @@ class Metric_CoreIPC:
     name = "CoreIPC"
     domain = "Core_Metric"
     maxval = Pipeline_Width + 2
-    server = False
     errcount = 0
     area = "Info.Core"
-    metricgroup = ['Ret', 'SMT', 'TmaL1']
+    metricgroup = frozenset(['Ret', 'SMT', 'TmaL1'])
     sibling = None
 
     def compute(self, EV):
@@ -1362,11 +1323,10 @@ core)"""
 class Metric_FLOPc:
     name = "FLOPc"
     domain = "Core_Metric"
-    maxval = 10
-    server = False
+    maxval = 10.0
     errcount = 0
     area = "Info.Core"
-    metricgroup = ['Ret', 'Flops']
+    metricgroup = frozenset(['Ret', 'Flops'])
     sibling = None
 
     def compute(self, EV):
@@ -1381,12 +1341,11 @@ Floating Point Operations Per Cycle"""
 
 class Metric_ILP:
     name = "ILP"
-    domain = "Core_Metric"
+    domain = "Metric"
     maxval = Exe_Ports
-    server = False
     errcount = 0
     area = "Info.Core"
-    metricgroup = ['Backend', 'Cor', 'Pipeline', 'PortsUtil']
+    metricgroup = frozenset(['Backend', 'Cor', 'Pipeline', 'PortsUtil'])
     sibling = None
 
     def compute(self, EV):
@@ -1397,17 +1356,16 @@ class Metric_ILP:
             handle_error_metric(self, "ILP zero division")
     desc = """
 Instruction-Level-Parallelism (average number of uops
-executed when there is execution) per-core"""
+executed when there is execution) per logical-processor"""
 
 
 class Metric_CORE_CLKS:
     name = "CORE_CLKS"
     domain = "Count"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Core"
-    metricgroup = ['SMT']
+    metricgroup = frozenset(['SMT'])
     sibling = None
 
     def compute(self, EV):
@@ -1425,10 +1383,9 @@ class Metric_Instructions:
     name = "Instructions"
     domain = "Count"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = ['Summary', 'TmaL1']
+    metricgroup = frozenset(['Summary', 'TmaL1'])
     sibling = None
 
     def compute(self, EV):
@@ -1445,10 +1402,9 @@ class Metric_Retire:
     name = "Retire"
     domain = "Metric"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Pipeline"
-    metricgroup = ['Pipeline', 'Ret']
+    metricgroup = frozenset(['Pipeline', 'Ret'])
     sibling = None
 
     def compute(self, EV):
@@ -1465,11 +1421,10 @@ uop has retired."""
 class Metric_DSB_Coverage:
     name = "DSB_Coverage"
     domain = "Metric"
-    maxval = 1
-    server = False
+    maxval = 1.0
     errcount = 0
     area = "Info.Frontend"
-    metricgroup = ['DSB', 'Fed', 'FetchBW']
+    metricgroup = frozenset(['DSB', 'Fed', 'FetchBW'])
     sibling = None
 
     def compute(self, EV):
@@ -1490,10 +1445,9 @@ class Metric_CPU_Utilization:
     name = "CPU_Utilization"
     domain = "Metric"
     maxval = 200
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['HPC', 'Summary']
+    metricgroup = frozenset(['HPC', 'Summary'])
     sibling = None
 
     def compute(self, EV):
@@ -1510,10 +1464,9 @@ class Metric_CPUs_Utilized:
     name = "CPUs_Utilized"
     domain = "Metric"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['Summary']
+    metricgroup = frozenset(['Summary'])
     sibling = None
 
     def compute(self, EV):
@@ -1530,10 +1483,9 @@ class Metric_Core_Frequency:
     name = "Core_Frequency"
     domain = "SystemMetric"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['Summary', 'Power']
+    metricgroup = frozenset(['Summary', 'Power'])
     sibling = None
 
     def compute(self, EV):
@@ -1551,10 +1503,9 @@ class Metric_Uncore_Frequency:
     name = "Uncore_Frequency"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['SoC']
+    metricgroup = frozenset(['SoC'])
     sibling = None
 
     def compute(self, EV):
@@ -1571,10 +1522,9 @@ class Metric_GFLOPs:
     name = "GFLOPs"
     domain = "Metric"
     maxval = 200
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['Cor', 'Flops', 'HPC']
+    metricgroup = frozenset(['Cor', 'Flops', 'HPC'])
     sibling = None
 
     def compute(self, EV):
@@ -1586,17 +1536,16 @@ class Metric_GFLOPs:
     desc = """
 Giga Floating Point Operations Per Second. Aggregate across
 all supported options of: FP precisions, scalar and vector
-instructions, vector-width ([SNB+] .; [SPR] and AMX engine.)"""
+instructions, vector-width  ."""
 
 
 class Metric_Turbo_Utilization:
     name = "Turbo_Utilization"
     domain = "Core_Metric"
-    maxval = 10
-    server = False
+    maxval = 10.0
     errcount = 0
     area = "Info.System"
-    metricgroup = ['Power']
+    metricgroup = frozenset(['Power'])
     sibling = None
 
     def compute(self, EV):
@@ -1612,11 +1561,10 @@ Average Frequency Utilization relative nominal frequency"""
 class Metric_SMT_2T_Utilization:
     name = "SMT_2T_Utilization"
     domain = "Core_Metric"
-    maxval = 1
-    server = False
+    maxval = 1.0
     errcount = 0
     area = "Info.System"
-    metricgroup = ['SMT']
+    metricgroup = frozenset(['SMT'])
     sibling = None
 
     def compute(self, EV):
@@ -1633,11 +1581,10 @@ were active"""
 class Metric_Kernel_Utilization:
     name = "Kernel_Utilization"
     domain = "Metric"
-    maxval = 1
-    server = False
+    maxval = 1.0
     errcount = 0
     area = "Info.System"
-    metricgroup = ['OS']
+    metricgroup = frozenset(['OS'])
     sibling = None
 
     def compute(self, EV):
@@ -1655,10 +1602,9 @@ class Metric_Kernel_CPI:
     name = "Kernel_CPI"
     domain = "Metric"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['OS']
+    metricgroup = frozenset(['OS'])
     sibling = None
 
     def compute(self, EV):
@@ -1676,10 +1622,9 @@ class Metric_DRAM_BW_Use:
     name = "DRAM_BW_Use"
     domain = "GB/sec"
     maxval = 200
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['HPC', 'MemOffcore', 'MemoryBW', 'SoC']
+    metricgroup = frozenset(['HPC', 'MemOffcore', 'MemoryBW', 'SoC'])
     sibling = None
 
     def compute(self, EV):
@@ -1697,10 +1642,9 @@ class Metric_MEM_Read_Latency:
     name = "MEM_Read_Latency"
     domain = "NanoSeconds"
     maxval = 1000
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['Mem', 'MemoryLat', 'SoC']
+    metricgroup = frozenset(['Mem', 'MemoryLat', 'SoC'])
     sibling = None
 
     def compute(self, EV):
@@ -1712,17 +1656,16 @@ class Metric_MEM_Read_Latency:
     desc = """
 Average latency of data read request to external memory (in
 nanoseconds). Accounts for demand loads and L1/L2
-prefetches. ([RKL+]memory-controller only)"""
+prefetches."""
 
 
 class Metric_MEM_Parallel_Reads:
     name = "MEM_Parallel_Reads"
     domain = "SystemMetric"
     maxval = 100
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['Mem', 'MemoryBW', 'SoC']
+    metricgroup = frozenset(['Mem', 'MemoryBW', 'SoC'])
     sibling = None
 
     def compute(self, EV):
@@ -1740,10 +1683,9 @@ class Metric_Time:
     name = "Time"
     domain = "Seconds"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['Summary']
+    metricgroup = frozenset(['Summary'])
     sibling = None
 
     def compute(self, EV):
@@ -1760,10 +1702,9 @@ class Metric_Socket_CLKS:
     name = "Socket_CLKS"
     domain = "Count"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['SoC']
+    metricgroup = frozenset(['SoC'])
     sibling = None
 
     def compute(self, EV):
@@ -1780,10 +1721,9 @@ class Metric_IpFarBranch:
     name = "IpFarBranch"
     domain = "Inst_Metric"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = ['Branches', 'OS']
+    metricgroup = frozenset(['Branches', 'OS'])
     sibling = None
 
     def compute(self, EV):
