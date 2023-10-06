@@ -2668,7 +2668,6 @@ def bottleneck_related(obj, bn):
     return False
 
 def obj_desc_runtime(obj, rest, bn):
-    sep = "\n\t"
     # hide description if children are also printed
     if children_over(rest, obj) or (not args.desc and not bottleneck_related(obj, bn)):
         desc = ""
