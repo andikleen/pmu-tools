@@ -1,2 +1,2 @@
 #!/bin/bash
-cat $(which perf) | time xz -c > /dev/null
+cat $(which perf) | xz -c > /dev/null

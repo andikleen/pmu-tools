@@ -1,3 +1,3 @@
 #!/bin/sh
 P=`which perf`
-cat $P $P $P $P $P $P $P $P $P $P $P $P $P $P $P | time zstd -z --single-thread -9 > /dev/null
+cat $P $P $P $P $P $P $P $P $P $P $P $P $P $P $P | zstd -z --single-thread -9 > /dev/null
