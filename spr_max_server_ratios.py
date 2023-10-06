@@ -711,7 +711,7 @@ def Offcore_Read_L3M_PKI(self, EV, level):
 # High-Bandwidth Memory (HBM) accesses per kilo instruction for reads-to-core requests (speculative; including in-core HW prefetches)
 def Offcore_Read_HBM_PKI(self, EV, level):
     EV("OCR.DEMAND_DATA_RD.PMM", level)
-    return 0 if Memory(self, EV, level)> 2 else 1000 * EV("OCR.DEMAND_DATA_RD.PMM", level) / Instructions(self, EV, level)
+    return Offcore_Read_L3M_PKI(self, EV, level) if Memory(self, EV, level)> 2 else 1000 * EV("OCR.DEMAND_DATA_RD.PMM", level) / Instructions(self, EV, level)
 
 # Off-core accesses per kilo instruction for modified write requests
 def Offcore_MWrite_Any_PKI(self, EV, level):
@@ -796,7 +796,7 @@ def R2C_DRAM_BW(self, EV, level):
 # Average HBM BW for Reads-to-Core. See R2C_Offcore_BW.
 def R2C_HBM_BW(self, EV, level):
     EV("OCR.DEMAND_DATA_RD.PMM", level)
-    return 0 if Memory(self, EV, level)> 2 else 64 * EV("OCR.DEMAND_DATA_RD.PMM", level) / 1e9 / Time(self, EV, level)
+    return R2C_DRAM_BW(self, EV, level) if Memory(self, EV, level)> 2 else 64 * EV("OCR.DEMAND_DATA_RD.PMM", level) / 1e9 / Time(self, EV, level)
 
 # Average latency of data read request to external memory (in nanoseconds). Accounts for demand loads and L1/L2 prefetches. memory-controller only
 def MEM_Read_Latency(self, EV, level):
@@ -1884,7 +1884,7 @@ class DRAM_Bound:
     maxval = 1.0
     def compute(self, EV):
         try:
-            self.val = 0 if HBM_Only(self, EV, 3) else MEM_Bound_Ratio(self, EV, 3) - self.HBM_Bound.compute(EV)
+            self.val = self.HBM_Bound.compute(EV) if HBM_Only(self, EV, 3) else MEM_Bound_Ratio(self, EV, 3) - self.HBM_Bound.compute(EV)
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "DRAM_Bound zero division")
