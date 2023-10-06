@@ -3139,15 +3139,13 @@ def should_print_obj(obj, match, thresh_mg, bn):
         return False
     if obj.thresh or obj.metric or args.verbose:
         if not match(obj):
-            pass
-        elif args.only_bottleneck and obj != bn:
-            if args.node_metrics and 'group_select' in obj.__dict__ and set(get_mg(obj)) & set(get_mg(bn)):
-                return True
             return False
+        elif args.only_bottleneck and obj != bn:
+            return args.node_metrics and 'group_select' in obj.__dict__ and set(get_mg(obj)) & set(get_mg(bn))
         elif obj.metric:
             if args.node_metrics and 'group_select' in obj.__dict__ and not (set(get_mg(obj)) & thresh_mg):
                 return False
-            if args.verbose or obj.val != 0:
+            if args.verbose or (obj.metric and obj.thresh and obj.val != 0.0):
                 return True
         elif check_ratio(obj.val): # somewhat redundant
             thresh_mg |= set(get_mg(obj)) - tma_mgroups
@@ -3469,8 +3467,8 @@ class Runner(object):
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
             # compatibility for models that don't set thresh for metrics
-            if obj.thresh == Undef:
-                obj.thresh = False
+            if isinstance(obj.thresh, UVal) and obj.name == "Undef":
+                obj.thresh = True
             if args.force_bn and obj.name in args.force_bn:
                 obj.thresh = True
             if obj.thresh != oldthresh and oldthresh != Undef:
