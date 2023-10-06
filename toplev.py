@@ -98,6 +98,8 @@ hybrid_cpus = ("adl", )
 
 non_json_events = set(("dummy", "duration_time"))
 
+tma_mgroups = set()
+
 # tunables (tunable with --tune)
 
 DEDUP_AREA = "Info.Bot*"
@@ -579,6 +581,7 @@ g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to 
                'start with ! to only include specified nodes)')
 g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
                'comma separated list from --list-metric-groups.', default=None)
+g.add_argument('--areas', help='Add specific areas. Comma separate list, wildcards allowed')
 g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
 g.add_argument('--exclusive', help='Use exclusive groups. Requires new kernel and new perf', action='store_true')
 g.add_argument('--thread',
@@ -587,7 +590,10 @@ g.add_argument('--thread',
 g.add_argument('--aux', help='Enable auxilliary hierarchy nodes on some models. '
                              'Auxiliary nodes offer alternate views of the same bottleneck component, which can impact observed bottleneck percentage totals',
             action='store_true')
-g.add_argument("--fp16", help='Enable FP16 support in some models', action='store_true')
+g.add_argument('--fp16', help='Enable FP16 support in some models', action='store_true')
+g.add_argument('--node-metrics', '-N', help='Add metrics related to selected nodes, but hide when node is not crossing threshold',
+                action='store_true')
+g.add_argument('--bottlenecks', '-B', help='Show bottlenecks view of Info.Bottleneck metrics', action='store_true')
 
 g = p.add_argument_group('Query nodes')
 g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit, ^ for full match',
@@ -607,17 +613,20 @@ g.add_argument('--ignore-errata', help='Do not disable events with errata', acti
 g.add_argument('--handle-errata', help='Disable events with errata', action='store_true')
 g.add_argument('--reserved-counters', default=0, help='Assume N generic counters are used elsewhere', type=int)
 
-g = p.add_argument_group('Output')
+g = p.add_argument_group('Filtering output')
+g.add_argument('--only-bottleneck', help='Only print topdown bottleneck and associated metrics (unless overriden with --nodes)', action='store_true')
+g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. '
+               'Note this can result in bogus values, as the TopDown methodology relies on thresholds '
+               'to correctly characterize workloads. Values not crossing threshold are marked with <.',
+               action='store_true')
+
+g = p.add_argument_group('Output format')
 g.add_argument('--per-core', help='Aggregate output per core', action='store_true')
 g.add_argument('--per-socket', help='Aggregate output per socket', action='store_true')
 g.add_argument('--per-thread', help='Aggregate output per CPU thread', action='store_true')
 g.add_argument('--global', help='Aggregate output for all CPUs', action='store_true', dest='global_')
 g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
 g.add_argument('--desc', help='Force event descriptions', action='store_true')
-g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. '
-               'Note this can result in bogus values, as the TopDown methodology relies on thresholds '
-               'to correctly characterize workloads. Values not crossing threshold are marked with <.',
-               action='store_true')
 g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
 g.add_argument('--output', '-o', help='Set output file')
 g.add_argument('--split-output', help='Generate multiple output files, one for each specified '
@@ -1046,6 +1055,10 @@ if args.all:
     args.metrics = True
     args.frequency = True
     args.level = 6
+
+if args.only_bottleneck:
+    args.quiet = True
+    args.no_version = True
 
 if args.graph:
     if not args.interval:
@@ -2639,6 +2652,9 @@ def obj_desc(obj, sep="\n\t"):
 
     return desc
 
+def get_mg(obj):
+    return ref_or(obj, 'metricgroup', [])
+
 # only check direct children, the rest are handled recursively
 def children_over(l, obj):
     n = [o.thresh for o in l if 'parent' in o.__dict__ and o.parent == obj]
@@ -2647,7 +2663,7 @@ def children_over(l, obj):
 def bottleneck_related(obj, bn):
     if obj == bn:
         return True
-    if (set(ref_or(bn, 'metricgroup', [])) & set(ref_or(obj, 'metricgroup', []))) - set(['TmaL1', 'TmaL2']):
+    if (set(get_mg(bn)) & set(get_mg(obj))) - tma_mgroups:
         return True
     return False
 
@@ -2663,11 +2679,6 @@ def obj_desc_runtime(obj, rest, bn):
 Warning: Hyper Threading may lead to incorrect measurements for this node.
 Suggest to re-measure with HT off (run cputop.py "thread == 1" offline | sh)."""
     return desc
-
-def get_mg(obj):
-    if has(obj, 'metricgroup'):
-        return obj.metricgroup
-    return []
 
 def node_filter(obj, default, sibmatch, mgroups):
     if args.nodes:
@@ -3123,17 +3134,24 @@ class Scheduler(object):
         if args.print_group:
             self.print_group_summary(olist)
 
-def should_print_obj(obj, match):
+def should_print_obj(obj, match, thresh_mg, bn):
     assert not isinstance(obj.val, DummyArith)
     if obj.val is None:
         return False
     if obj.thresh or obj.metric or args.verbose:
         if not match(obj):
             pass
+        elif args.only_bottleneck and obj != bn:
+            if args.node_metrics and 'group_select' in obj.__dict__ and set(get_mg(obj)) & set(get_mg(bn)):
+                return True
+            return False
         elif obj.metric:
+            if args.node_metrics and 'group_select' in obj.__dict__ and not (set(get_mg(obj)) & thresh_mg):
+                return False
             if args.verbose or obj.val != 0:
                 return True
-        elif check_ratio(obj.val):
+        elif check_ratio(obj.val): # somewhat redundant
+            thresh_mg |= set(get_mg(obj)) - tma_mgroups
             return True
     return False
 
@@ -3168,7 +3186,8 @@ class Printer(object):
         out.logf.flush()
 
         # determine all objects to print
-        olist = [o for o in olist if should_print_obj(o, match)]
+        thresh_mg = set()
+        olist = [o for o in olist if should_print_obj(o, match, thresh_mg, bn)]
 
         # sort by metric group
         olist = olist_by_metricgroup(olist, self.metricgroups)
@@ -3292,24 +3311,36 @@ class Runner(object):
         self.sibmatch = set()
         mgroups = set()
 
-        def want_node(obj):
-            if args.no_uncore and safe_ref(obj, 'area') == "Info.System":
+        def want_node(obj, mgroups, tma_mgroups):
+            area = safe_ref(obj, 'area')
+            if args.no_uncore and area == "Info.System":
                 return False
+            if args.areas and area and any([fnmatch(area, p) for p in args.areas.split(",")]):
+                return True
+            if args.bottlenecks and area == "Info.Bottleneck":
+                return True
+
             want = ((obj.metric and args.metrics) or
                     (('force_metric' in obj.__dict__) and obj.force_metric) or
                     obj.name in add_met or
                     obj in parents) and obj.name not in remove_met
             if not obj.metric and obj.level <= self.max_level:
                 want = True
-            return node_filter(obj, want, self.sibmatch, mgroups)
+            want = node_filter(obj, want, self.sibmatch, mgroups)
+            mg = get_mg(obj)
+            tma_mgroups |= set([x for x in mg if x.startswith("Tma")])
+            if args.node_metrics and want and not obj.metric:
+                mgroups |= set(mg) - tma_mgroups
+            return want
 
         # this updates sibmatch
-        fmatch = [want_node(x) for x in self.olist]
+        fmatch = [want_node(x, mgroups, tma_mgroups) for x in self.olist]
 
         def select_node(obj):
             if obj in self.sibmatch:
                 return True
             if set(get_mg(obj)) & mgroups:
+                obj.group_select = True
                 return True
             return False
 

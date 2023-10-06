@@ -105,6 +105,12 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev has new options:
+  * --node-metrics or -N collects and shows metrics related to selected TMA nodes if their nodes
+  cross the threshold. With --drilldown it will show only the metrics of the bottleneck.
+  * --areas can select nodes and metrics by area
+  * --bottlenecks or -B shows the bottleneck view metrics (equivalent to --areas Info.Bottleneck)
+  * --only-bottleneck only shows the bottleneck, as well as its associated metrics if enabled.
 * interval-plot has --level and --metrics arguments to configure the inputs. It now defaults to
 level 1 only, no metrics to make the plots more readable.
 * toplev has a new --reserved-counters option to handle systems that reserve some generic counters.
