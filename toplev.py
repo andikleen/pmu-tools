@@ -697,6 +697,7 @@ p.add_argument('--no-json-header', action='store_true', help=argparse.SUPPRESS) 
 p.add_argument('--no-json-footer', action='store_true', help=argparse.SUPPRESS) # no ] for json
 p.add_argument('--no-csv-header', action='store_true', help=argparse.SUPPRESS) # no header/version for CSV
 p.add_argument('--no-csv-footer', action='store_true', help=argparse.SUPPRESS) # no version for CSV
+p.add_argument('--no-version', action='store_true', help="Don't print version")
 args, rest = p.parse_known_args()
 io_set_args(args)
 

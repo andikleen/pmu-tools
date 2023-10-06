@@ -152,7 +152,7 @@ class Output(object):
         self.curname_nologf = name
 
     def print_version(self):
-        if self.no_header:
+        if self.no_header or self.args.no_version:
             return
         if self.curname not in self.printedversion:
             if self.logfiles:
@@ -167,7 +167,7 @@ class Output(object):
         pass
 
     def print_footer_all(self):
-        if self.no_footer:
+        if self.no_footer or self.args.no_version:
             return
         if self.logfiles:
             for f in self.logfiles.values():
