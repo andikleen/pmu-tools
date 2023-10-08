@@ -1108,7 +1108,10 @@ def check_ratio(l):
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
 
 if args.level < 0:
-    args.level = 2 if any([x >= 8 for x in cpu.counters.values()]) else 1
+    if args.bottlenecks:
+        args.level = 4
+    else:
+        args.level = 2 if any([x >= 8 for x in cpu.counters.values()]) else 1
 
 if args.show_cpu:
     print("%s %s %s" % (cpu.true_name, cpu.pmu_name, cpu.name))
