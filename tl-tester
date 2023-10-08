@@ -480,9 +480,9 @@ $WRAP ./toplev -l1 --drilldown -N $OPT --single-thread $LOAD
 # XXX check something based on true bottleneck
 $WRAP ./toplev -l3 -N --single-thread $OPT $LOAD
 $WRAP ./toplev --areas 'Info.Bottleneck,Info.System' -v -o log$$ $OPT $LOAD
-grep Bottleneck log$$
+[ -z "$NORES" ] && grep Bottleneck log$$
 $WRAP ./toplev --bottlenecks -v -o log$$ $OPT $LOAD
-grep Bottleneck log$$
+[ -z "$NORES" ] && grep Bottleneck log$$
 $WRAP ./toplev --only-bottleneck $OPT $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --list-all
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --list-all -x,
