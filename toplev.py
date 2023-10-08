@@ -590,10 +590,13 @@ g.add_argument('--thread',
 g.add_argument('--aux', help='Enable auxilliary hierarchy nodes on some models. '
                              'Auxiliary nodes offer alternate views of the same bottleneck component, which can impact observed bottleneck percentage totals',
             action='store_true')
-g.add_argument('--fp16', help='Enable FP16 support in some models', action='store_true')
 g.add_argument('--node-metrics', '-N', help='Add metrics related to selected nodes, but hide when node is not crossing threshold',
                 action='store_true')
 g.add_argument('--bottlenecks', '-B', help='Show bottlenecks view of Info.Bottleneck metrics', action='store_true')
+
+g = p.add_argument_group('Model tunables')
+g.add_argument('--fp16', help='Enable FP16 support in some models', action='store_true')
+g.add_argument('--hbm-only', help='Enable HBM only mode in some models', action='store_true')
 
 g = p.add_argument_group('Query nodes')
 g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit, ^ for full match',
@@ -2653,7 +2656,7 @@ def obj_desc(obj, sep="\n\t"):
     return desc
 
 def get_mg(obj):
-    return ref_or(obj, 'metricgroup', [])
+    return ref_or(obj, 'metricgroup', frozenset([]))
 
 # only check direct children, the rest are handled recursively
 def children_over(l, obj):
@@ -2663,7 +2666,7 @@ def children_over(l, obj):
 def bottleneck_related(obj, bn):
     if obj == bn:
         return True
-    if (set(get_mg(bn)) & set(get_mg(obj))) - tma_mgroups:
+    if (get_mg(bn) & get_mg(obj)) - tma_mgroups:
         return True
     return False
 
@@ -2727,7 +2730,7 @@ def node_filter(obj, default, sibmatch, mgroups):
                 if has_siblings(j, obj):
                     sibmatch |= set(obj.sibling)
                 if has_mg(j, obj):
-                    mgroups |= set(obj.metricgroup)
+                    mgroups |= obj.metricgroup
                 return True
             if has_siblings(j, obj):
                 for sib in obj.sibling:
@@ -3141,14 +3144,17 @@ def should_print_obj(obj, match, thresh_mg, bn):
         if not match(obj):
             return False
         elif args.only_bottleneck and obj != bn:
+            if args.node_metrics and 'group_select' in obj.__dict__ and get_mg(obj) & get_mg(bn):
+                return True
+        elif args.only_bottleneck and obj != bn:
             return args.node_metrics and 'group_select' in obj.__dict__ and set(get_mg(obj)) & set(get_mg(bn))
         elif obj.metric:
-            if args.node_metrics and 'group_select' in obj.__dict__ and not (set(get_mg(obj)) & thresh_mg):
+            if args.node_metrics and 'group_select' in obj.__dict__ and not (get_mg(obj) & thresh_mg):
                 return False
             if args.verbose or (obj.metric and obj.thresh and obj.val != 0.0):
                 return True
         elif check_ratio(obj.val): # somewhat redundant
-            thresh_mg |= set(get_mg(obj)) - tma_mgroups
+            thresh_mg |= get_mg(obj) - tma_mgroups
             return True
     return False
 
@@ -3336,7 +3342,7 @@ class Runner(object):
         def select_node(obj):
             if obj in self.sibmatch:
                 return True
-            if set(get_mg(obj)) & mgroups:
+            if get_mg(obj) & mgroups:
                 obj.group_select = True
                 return True
             return False
@@ -3859,6 +3865,12 @@ def init_model(model, runner):
             model.FP16 = lambda a, b, c: True
         else:
             sys.exit("--fp16 option but no support in model")
+
+    if args.hbm_only:
+        if "HBM_Only" in model.__dict__:
+            model.HBM_Only = lambda a, b, c: True
+        else:
+            sys.exit("--hbm-only option but no support in model")
 
     tune_model(model)
 

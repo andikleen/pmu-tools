@@ -105,6 +105,32 @@ on newer Linux kernels.
 
 # Recent new features:
 
+## TMA 4.7 release
+* toplev updated to TMA 4.7:
+  * New --hbm-only for sprmax in HBM Only mode. toplev currently cannot auto detect this condition.
+  * New Models
+  ** SPR-HBM: model for Intel Xeon Max (server) processor covering HBM-only mode (on top of cache mode introduced in 4.6 release)
+  * New Features
+  ** Releasing the Bottlenecks View - a rather complete version [SKL onwards]
+  *** Bottlenecks View is An abstraction or summarization of the 100+ TMA tree nodes into a 12-entry vector of familiar performance issues, presented under the Info.Bottlenecks section.
+  ** This release introduces Core_Bound_Est metric: An estimation of total pipeline cost when the execution is compute-bound.
+  ** Besides, balanced distrubtion among Branching Retired, Irregular_Overhead, Mispredictions and Instruction_Fetch_BW as well as
+  ** enhanced Cache_Memory_Latency to account for Stores info better accuracy.
+  * New Tree Metrics (nodes)
+  ** HBM_Bound: stalls due to High Bandwidth Memory (HBM) accesses by loads.
+  * Informative Metrics (see spreadsheet for descriptions)
+  * New: Uncore_Frequency in server models
+  * New: IpPause [CFL onwards]
+  * Key Enhancements & fixes
+  ** Hoisted Serializing_Operation and AMX_Busy to level 3; directly under Core Bound [SKL onwards]
+  ** Swapped semantics of ILP (becomes per-thread) and Execute (per physical core) info metrics
+  ** Moved Nop_Instructions to Level 4 under Other_Light_Op [SKL onwards]
+  ** Moved Shuffles_256b to Level 4 under Other_Light_Op [ADL onwards]
+  ** Renamed Local/Remote_DRAM to Local/Remote_MEM to account for HBM too
+  ** Reduced # events when SMT is off [all]
+  ** Reduced # events for HBM metrics; fixed MEM_Bandwidth/Latency descriptions [SPR-HBM]
+  ** Tuned Threshold for: Branching_Overhead; Fetch_Bandwidth, Ports_Utilized_3m
+
 * toplev has new options:
   * --node-metrics or -N collects and shows metrics related to selected TMA nodes if their nodes
   cross the threshold. With --drilldown it will show only the metrics of the bottleneck.

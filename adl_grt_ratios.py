@@ -181,7 +181,7 @@ class Frontend_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.ALL", 1) / SLOTS(self, EV, 1)
@@ -204,7 +204,7 @@ class Frontend_Latency:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.FRONTEND_LATENCY", 2) / SLOTS(self, EV, 2)
@@ -228,7 +228,7 @@ class Icache:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.ICACHE", 3) / SLOTS(self, EV, 3)
@@ -251,7 +251,7 @@ class ITLB:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.ITLB", 3) / SLOTS(self, EV, 3)
@@ -275,7 +275,7 @@ class Branch_Detect:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.BRANCH_DETECT", 3) / SLOTS(self, EV, 3)
@@ -303,7 +303,7 @@ class Branch_Resteer:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.BRANCH_RESTEER", 3) / SLOTS(self, EV, 3)
@@ -327,7 +327,7 @@ class Frontend_Bandwidth:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.FRONTEND_BANDWIDTH", 2) / SLOTS(self, EV, 2)
@@ -351,7 +351,7 @@ class Cisc:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.CISC", 3) / SLOTS(self, EV, 3)
@@ -374,7 +374,7 @@ class Decode:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.DECODE", 3) / SLOTS(self, EV, 3)
@@ -397,7 +397,7 @@ class Predecode:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.PREDECODE", 3) / SLOTS(self, EV, 3)
@@ -420,7 +420,7 @@ class Other_FB:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.OTHER", 3) / SLOTS(self, EV, 3)
@@ -444,7 +444,7 @@ class Bad_Speculation:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BAD_SPECULATION.ALL", 1) / SLOTS(self, EV, 1)
@@ -475,7 +475,7 @@ class Branch_Mispredicts:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BAD_SPECULATION.MISPREDICT", 2) / SLOTS(self, EV, 2)
@@ -498,7 +498,7 @@ class Machine_Clears:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BAD_SPECULATION.MACHINE_CLEARS", 2) / SLOTS(self, EV, 2)
@@ -523,7 +523,7 @@ class Nuke:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BAD_SPECULATION.NUKE", 3) / SLOTS(self, EV, 3)
@@ -546,7 +546,7 @@ class SMC:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Nuke.compute(EV) * (EV("MACHINE_CLEARS.SMC", 4) / EV("MACHINE_CLEARS.SLOW", 4))
@@ -569,7 +569,7 @@ class Memory_Ordering:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Nuke.compute(EV) * (EV("MACHINE_CLEARS.MEMORY_ORDERING", 4) / EV("MACHINE_CLEARS.SLOW", 4))
@@ -592,7 +592,7 @@ class FP_Assist:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Nuke.compute(EV) * (EV("MACHINE_CLEARS.FP_ASSIST", 4) / EV("MACHINE_CLEARS.SLOW", 4))
@@ -615,7 +615,7 @@ class Disambiguation:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Nuke.compute(EV) * (EV("MACHINE_CLEARS.DISAMBIGUATION", 4) / EV("MACHINE_CLEARS.SLOW", 4))
@@ -638,7 +638,7 @@ class Page_Fault:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Nuke.compute(EV) * (EV("MACHINE_CLEARS.PAGE_FAULT", 4) / EV("MACHINE_CLEARS.SLOW", 4))
@@ -661,7 +661,7 @@ class Fast_Nuke:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BAD_SPECULATION.FASTNUKE", 3) / SLOTS(self, EV, 3)
@@ -686,7 +686,7 @@ class Backend_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.ALL", 1) / SLOTS(self, EV, 1)
@@ -717,7 +717,7 @@ class Core_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = max(0 , self.Backend_Bound.compute(EV) - self.Load_Store_Bound.compute(EV))
@@ -741,7 +741,7 @@ class Load_Store_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = min((EV("TOPDOWN_BE_BOUND.ALL", 2) / SLOTS(self, EV, 2)) , (EV("LD_HEAD.ANY_AT_RET", 2) / CLKS(self, EV, 2)) + self.Store_Bound.compute(EV))
@@ -764,7 +764,7 @@ class Store_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Mem_Scheduler.compute(EV) * (EV("MEM_SCHEDULER_BLOCK.ST_BUF", 3) / EV("MEM_SCHEDULER_BLOCK.ALL", 3))
@@ -787,7 +787,7 @@ class L1_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("LD_HEAD.L1_BOUND_AT_RET", 3) / CLKS(self, EV, 3)
@@ -810,7 +810,7 @@ class Store_Fwd:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("LD_HEAD.ST_ADDR_AT_RET", 4) / CLKS(self, EV, 4)
@@ -834,7 +834,7 @@ class STLB_Hit:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("LD_HEAD.DTLB_MISS_AT_RET", 4) / CLKS(self, EV, 4)
@@ -858,7 +858,7 @@ class STLB_Miss:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("LD_HEAD.PGWALK_AT_RET", 4) / CLKS(self, EV, 4)
@@ -882,7 +882,7 @@ class Other_L1:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("LD_HEAD.OTHER_AT_RET", 4) / CLKS(self, EV, 4)
@@ -906,7 +906,7 @@ class L2_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("MEM_BOUND_STALLS.LOAD_L2_HIT", 3) / CLKS(self, EV, 3)
@@ -929,7 +929,7 @@ class L3_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("MEM_BOUND_STALLS.LOAD_LLC_HIT", 3) / CLKS(self, EV, 3)
@@ -953,7 +953,7 @@ class DRAM_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("MEM_BOUND_STALLS.LOAD_DRAM_HIT", 3) / CLKS(self, EV, 3)
@@ -976,7 +976,7 @@ class Backend_Bound_Aux:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Backend_Bound.compute(EV)
@@ -1008,7 +1008,7 @@ class Resource_Bound:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Backend_Bound.compute(EV)
@@ -1034,7 +1034,7 @@ class Mem_Scheduler:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.MEM_SCHEDULER", 3) / SLOTS(self, EV, 3)
@@ -1058,7 +1058,7 @@ class ST_Buffer:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Mem_Scheduler.compute(EV) * (EV("MEM_SCHEDULER_BLOCK.ST_BUF", 4) / EV("MEM_SCHEDULER_BLOCK.ALL", 4))
@@ -1082,7 +1082,7 @@ class LD_Buffer:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Mem_Scheduler.compute(EV) * EV("MEM_SCHEDULER_BLOCK.LD_BUF", 4) / EV("MEM_SCHEDULER_BLOCK.ALL", 4)
@@ -1106,7 +1106,7 @@ class RSV:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = self.Mem_Scheduler.compute(EV) * EV("MEM_SCHEDULER_BLOCK.RSV", 4) / EV("MEM_SCHEDULER_BLOCK.ALL", 4)
@@ -1130,7 +1130,7 @@ class Non_Mem_Scheduler:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.NON_MEM_SCHEDULER", 3) / SLOTS(self, EV, 3)
@@ -1155,7 +1155,7 @@ class Register:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.REGISTER", 3) / SLOTS(self, EV, 3)
@@ -1179,7 +1179,7 @@ class Reorder_Buffer:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.REORDER_BUFFER", 3) / SLOTS(self, EV, 3)
@@ -1203,7 +1203,7 @@ class Alloc_Restriction:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.ALLOC_RESTRICTIONS", 3) / SLOTS(self, EV, 3)
@@ -1226,7 +1226,7 @@ class Serialization:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.SERIALIZATION", 3) / SLOTS(self, EV, 3)
@@ -1251,7 +1251,7 @@ class Retiring:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_RETIRING.ALL", 1) / SLOTS(self, EV, 1)
@@ -1274,7 +1274,7 @@ class Base:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = (EV("TOPDOWN_RETIRING.ALL", 2) - EV("UOPS_RETIRED.MS", 2)) / SLOTS(self, EV, 2)
@@ -1297,7 +1297,7 @@ class FP_uops:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("UOPS_RETIRED.FPDIV", 3) / SLOTS(self, EV, 3)
@@ -1320,7 +1320,7 @@ class Other_Ret:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = (EV("TOPDOWN_RETIRING.ALL", 3) - EV("UOPS_RETIRED.MS", 3) - EV("UOPS_RETIRED.FPDIV", 3)) / SLOTS(self, EV, 3)
@@ -1343,7 +1343,7 @@ class MS_uops:
     errcount = 0
     sibling = None
     server = False
-    metricgroup = []
+    metricgroup = frozenset([])
     def compute(self, EV):
         try:
             self.val = EV("UOPS_RETIRED.MS", 2) / SLOTS(self, EV, 2)
@@ -1365,7 +1365,7 @@ class Metric_CLKS:
     server = False
     errcount = 0
     area = "Info.Core"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1385,7 +1385,7 @@ class Metric_CLKS_P:
     server = False
     errcount = 0
     area = "Info.Core"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1405,7 +1405,7 @@ class Metric_SLOTS:
     server = False
     errcount = 0
     area = "Info.Core"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1425,7 +1425,7 @@ class Metric_IPC:
     server = False
     errcount = 0
     area = "Info.Core"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1445,7 +1445,7 @@ class Metric_CPI:
     server = False
     errcount = 0
     area = "Info.Core"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1465,7 +1465,7 @@ class Metric_UPI:
     server = False
     errcount = 0
     area = "Info.Core"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1485,7 +1485,7 @@ class Metric_Store_Fwd_Blocks:
     server = False
     errcount = 0
     area = "Info.L1_Bound"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1506,7 +1506,7 @@ class Metric_Address_Alias_Blocks:
     server = False
     errcount = 0
     area = "Info.L1_Bound"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1527,7 +1527,7 @@ class Metric_Load_Splits:
     server = False
     errcount = 0
     area = "Info.L1_Bound"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1547,7 +1547,7 @@ class Metric_IpBranch:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1568,7 +1568,7 @@ class Metric_IpCall:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1589,7 +1589,7 @@ class Metric_IpLoad:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1609,7 +1609,7 @@ class Metric_IpStore:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1629,7 +1629,7 @@ class Metric_IpMispredict:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1650,7 +1650,7 @@ class Metric_IpFarBranch:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1670,7 +1670,7 @@ class Metric_Branch_Mispredict_Ratio:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1690,7 +1690,7 @@ class Metric_Branch_Mispredict_to_Unknown_Branch_Ratio:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1710,7 +1710,7 @@ class Metric_Microcode_Uop_Ratio:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1730,7 +1730,7 @@ class Metric_FPDiv_Uop_Ratio:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1750,7 +1750,7 @@ class Metric_IDiv_Uop_Ratio:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1770,7 +1770,7 @@ class Metric_X87_Uop_Ratio:
     server = False
     errcount = 0
     area = "Info.Inst_Mix"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1790,7 +1790,7 @@ class Metric_Turbo_Utilization:
     server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1810,7 +1810,7 @@ class Metric_Kernel_Utilization:
     server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1830,7 +1830,7 @@ class Metric_CPU_Utilization:
     server = False
     errcount = 0
     area = "Info.System"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1850,7 +1850,7 @@ class Metric_Estimated_Pause_Cost:
     server = False
     errcount = 0
     area = "Info.Bottleneck"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1870,7 +1870,7 @@ class Metric_Cycles_per_Demand_Load_L2_Hit:
     server = False
     errcount = 0
     area = "Info.Memory"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1890,7 +1890,7 @@ class Metric_Cycles_per_Demand_Load_L3_Hit:
     server = False
     errcount = 0
     area = "Info.Memory"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1910,7 +1910,7 @@ class Metric_Cycles_per_Demand_Load_DRAM_Hit:
     server = False
     errcount = 0
     area = "Info.Memory"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1930,7 +1930,7 @@ class Metric_Inst_Miss_Cost_L2Hit_Percent:
     server = False
     errcount = 0
     area = "Info.Frontend"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1950,7 +1950,7 @@ class Metric_Inst_Miss_Cost_L3Hit_Percent:
     server = False
     errcount = 0
     area = "Info.Frontend"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1970,7 +1970,7 @@ class Metric_Inst_Miss_Cost_DRAMHit_Percent:
     server = False
     errcount = 0
     area = "Info.Frontend"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
@@ -1990,7 +1990,7 @@ class Metric_MemLoadPKI:
     server = False
     errcount = 0
     area = "Info.Memory"
-    metricgroup = []
+    metricgroup = frozenset([])
     sibling = None
 
     def compute(self, EV):
