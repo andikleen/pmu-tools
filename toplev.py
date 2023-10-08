@@ -2806,7 +2806,7 @@ def olist_by_metricgroup(l, mg):
                 visited.add(obj)
 
         if has(obj, 'metricgroup'):
-            for g in obj.metricgroup:
+            for g in sorted(obj.metricgroup):
                 for j in mg[g]:
                     if j in valid:
                         add(j)
@@ -3295,7 +3295,7 @@ class Runner(object):
         self.full_olist.append(obj)
         self.odict[obj.name] = obj
         if has(obj, 'metricgroup'):
-            for j in obj.metricgroup:
+            for j in sorted(obj.metricgroup):
                 self.metricgroups[j].append(obj)
         self.max_node_level = max(self.max_node_level, obj.level)
 
