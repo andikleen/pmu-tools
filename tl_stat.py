@@ -62,7 +62,7 @@ class ComputeStat:
 
     def compute_errors(self):
         if self.errcount > 0 and self.errors != self.prev_errors and not self.quiet:
-            warn_no_assert("%d nodes had zero counts" % (self.errcount))
+            warn_no_assert("%d nodes had zero counts: " % (self.errcount))
             self.errcount = 0
             self.prev_errors = self.errors
             self.errors = set()
