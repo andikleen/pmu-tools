@@ -51,8 +51,8 @@ fi
 
 for args in "-l2" "--all -v" "-l3 --single-thread" "--all -a -A"; do
 
-FORCEHT=1 $WRAP toplev.py -v --force-cpu ${DCPU:-hsw} --node +CPU_Utilization -I 100 $args -o x$$.csv -x, ./workloads/BC1s
-$WRAP toplev.py -v --force-cpu ${DCPU:-hsw} --node +CPU_Utilization -I 100 $args -o xn$$.csv -x, ./workloads/BC1s
+FORCEHT=1 $WRAP toplev.py -v --force-cpu ${DCPU:-hsw} --nodes +CPU_Utilization -I 100 $args -o x$$.csv -x, ./workloads/BC1s
+$WRAP toplev.py -v --force-cpu ${DCPU:-hsw} --nodes +CPU_Utilization -I 100 $args -o xn$$.csv -x, ./workloads/BC1s
 $WRAP interval-normalize.py --error-exit < x$$.csv
 $WRAP interval-normalize.py --error-exit < x$$.csv > y$$.csv
 
