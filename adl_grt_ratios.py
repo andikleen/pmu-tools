@@ -1,6 +1,6 @@
 # -*- coding: latin-1 -*-
 #
-# auto generated TopDown/TMA 2.0 description for Intel 12th gen Core (code name Alderlake) with GraceMont
+# auto generated TopDown/TMA 3.51 description for Intel 12th gen Core (code name Alderlake) with GraceMont
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -14,7 +14,7 @@
 # Helpers
 
 print_error = lambda msg: False
-version = "2.0"
+version = "3.51"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
@@ -42,6 +42,9 @@ def handle_error_metric(obj, msg):
 # pipeline allocation width
 def Pipeline_Width(self, EV, level):
     return 5
+
+def MEM_BOUND_STALLS_AT_RET_CORRECTION(self, EV, level):
+    return max((EV("MEM_BOUND_STALLS.LOAD", level) - EV("LD_HEAD.L1_MISS_AT_RET", level)) / CLKS(self, EV, level) , 0 )
 
 def CLKS(self, EV, level):
     return EV("CPU_CLK_UNHALTED.CORE", level)
@@ -76,11 +79,11 @@ def Address_Alias_Blocks(self, EV, level):
 def Load_Splits(self, EV, level):
     return 100 * EV("MEM_UOPS_RETIRED.SPLIT_LOADS", level) / EV("MEM_UOPS_RETIRED.ALL_LOADS", level)
 
-# Instructions per Branch (lower number means higher occurance rate)
+# Instructions per Branch (lower number means higher occurrence rate)
 def IpBranch(self, EV, level):
     return EV("INST_RETIRED.ANY", level) / EV("BR_INST_RETIRED.ALL_BRANCHES", level)
 
-# Instruction per (near) call (lower number means higher occurance rate)
+# Instruction per (near) call (lower number means higher occurrence rate)
 def IpCall(self, EV, level):
     return EV("INST_RETIRED.ANY", level) / EV("BR_INST_RETIRED.CALL", level)
 
@@ -92,9 +95,25 @@ def IpLoad(self, EV, level):
 def IpStore(self, EV, level):
     return EV("INST_RETIRED.ANY", level) / EV("MEM_UOPS_RETIRED.ALL_STORES", level)
 
-# Number of Instructions per non-speculative Branch Misprediction
+# Instructions per retired Branch Misprediction
 def IpMispredict(self, EV, level):
     return EV("INST_RETIRED.ANY", level) / EV("BR_MISP_RETIRED.ALL_BRANCHES", level)
+
+# Instructions per retired conditional Branch Misprediction where the branch was not taken
+def IpMisp_Cond_Ntaken(self, EV, level):
+    return EV("INST_RETIRED.ANY", level) / (EV("BR_MISP_RETIRED.COND", level) - EV("BR_MISP_RETIRED.COND_TAKEN", level))
+
+# Instructions per retired conditional Branch Misprediction where the branch was taken
+def IpMisp_Cond_Taken(self, EV, level):
+    return EV("INST_RETIRED.ANY", level) / EV("BR_MISP_RETIRED.COND_TAKEN", level)
+
+# Instructions per retired return Branch Misprediction
+def IpMisp_Ret(self, EV, level):
+    return EV("INST_RETIRED.ANY", level) / EV("BR_MISP_RETIRED.RETURN", level)
+
+# Instructions per retired indirect call or jump Branch Misprediction
+def IpMisp_Indirect(self, EV, level):
+    return EV("INST_RETIRED.ANY", level) / EV("BR_MISP_RETIRED.INDIRECT", level)
 
 # Instructions per Far Branch
 def IpFarBranch(self, EV, level):
@@ -136,10 +155,6 @@ def Kernel_Utilization(self, EV, level):
 def CPU_Utilization(self, EV, level):
     return EV("CPU_CLK_UNHALTED.REF_TSC", level) / EV("msr/tsc/", 0)
 
-# Estimated Pause cost. In percent
-def Estimated_Pause_Cost(self, EV, level):
-    return 100 * EV("SERIALIZATION.NON_C01_MS_SCB", level) / SLOTS(self, EV, level)
-
 # Cycle cost per L2 hit
 def Cycles_per_Demand_Load_L2_Hit(self, EV, level):
     return EV("MEM_BOUND_STALLS.LOAD_L2_HIT", level) / EV("MEM_LOAD_UOPS_RETIRED.L2_HIT", level)
@@ -180,8 +195,8 @@ class Frontend_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.ALL", 1) / SLOTS(self, EV, 1)
@@ -194,8 +209,8 @@ Counts the number of issue slots  that were not consumed by
 the backend due to frontend stalls."""
 
 
-class Frontend_Latency:
-    name = "Frontend_Latency"
+class Fetch_Latency:
+    name = "Fetch_Latency"
     domain = "Slots"
     area = "FE"
     level = 2
@@ -203,14 +218,14 @@ class Frontend_Latency:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.FRONTEND_LATENCY", 2) / SLOTS(self, EV, 2)
             self.thresh = (self.val > 0.15)
         except ZeroDivisionError:
-            handle_error(self, "Frontend_Latency zero division")
+            handle_error(self, "Fetch_Latency zero division")
         return self.val
     desc = """
 Counts the number of issue slots  that were not delivered by
@@ -218,8 +233,8 @@ the frontend due to frontend bandwidth restrictions due to
 decode, predecode, cisc, and other limitations."""
 
 
-class Icache:
-    name = "Icache"
+class ICache_Misses:
+    name = "ICache_Misses"
     domain = "Slots"
     area = "FE"
     level = 3
@@ -227,22 +242,22 @@ class Icache:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.ICACHE", 3) / SLOTS(self, EV, 3)
             self.thresh = (self.val > 0.05)
         except ZeroDivisionError:
-            handle_error(self, "Icache zero division")
+            handle_error(self, "ICache_Misses zero division")
         return self.val
     desc = """
 Counts the number of issue slots  that were not delivered by
 the frontend due to instruction cache misses."""
 
 
-class ITLB:
-    name = "ITLB"
+class ITLB_Misses:
+    name = "ITLB_Misses"
     domain = "Slots"
     area = "FE"
     level = 3
@@ -250,14 +265,14 @@ class ITLB:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.ITLB", 3) / SLOTS(self, EV, 3)
             self.thresh = (self.val > 0.05)
         except ZeroDivisionError:
-            handle_error(self, "ITLB zero division")
+            handle_error(self, "ITLB_Misses zero division")
         return self.val
     desc = """
 Counts the number of issue slots  that were not delivered by
@@ -274,8 +289,8 @@ class Branch_Detect:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.BRANCH_DETECT", 3) / SLOTS(self, EV, 3)
@@ -302,8 +317,8 @@ class Branch_Resteer:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.BRANCH_RESTEER", 3) / SLOTS(self, EV, 3)
@@ -317,8 +332,8 @@ the frontend due to BTCLEARS, which occurs when the Branch
 Target Buffer (BTB) predicts a taken branch."""
 
 
-class Frontend_Bandwidth:
-    name = "Frontend_Bandwidth"
+class Fetch_Bandwidth:
+    name = "Fetch_Bandwidth"
     domain = "Slots"
     area = "FE"
     level = 2
@@ -326,14 +341,14 @@ class Frontend_Bandwidth:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.FRONTEND_BANDWIDTH", 2) / SLOTS(self, EV, 2)
             self.thresh = (self.val > 0.10)
         except ZeroDivisionError:
-            handle_error(self, "Frontend_Bandwidth zero division")
+            handle_error(self, "Fetch_Bandwidth zero division")
         return self.val
     desc = """
 Counts the number of issue slots  that were not delivered by
@@ -350,8 +365,8 @@ class Cisc:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.CISC", 3) / SLOTS(self, EV, 3)
@@ -373,8 +388,8 @@ class Decode:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.DECODE", 3) / SLOTS(self, EV, 3)
@@ -396,8 +411,8 @@ class Predecode:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.PREDECODE", 3) / SLOTS(self, EV, 3)
@@ -419,8 +434,8 @@ class Other_FB:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_FE_BOUND.OTHER", 3) / SLOTS(self, EV, 3)
@@ -443,11 +458,11 @@ class Bad_Speculation:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
-            self.val = EV("TOPDOWN_BAD_SPECULATION.ALL", 1) / SLOTS(self, EV, 1)
+            self.val = (SLOTS(self, EV, 1) - (EV("TOPDOWN_FE_BOUND.ALL", 1) + EV("TOPDOWN_BE_BOUND.ALL", 1) + EV("TOPDOWN_RETIRING.ALL", 1))) / SLOTS(self, EV, 1)
             self.thresh = (self.val > 0.15)
         except ZeroDivisionError:
             handle_error(self, "Bad_Speculation zero division")
@@ -474,8 +489,8 @@ class Branch_Mispredicts:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BAD_SPECULATION.MISPREDICT", 2) / SLOTS(self, EV, 2)
@@ -497,8 +512,8 @@ class Machine_Clears:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BAD_SPECULATION.MACHINE_CLEARS", 2) / SLOTS(self, EV, 2)
@@ -522,8 +537,8 @@ class Nuke:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BAD_SPECULATION.NUKE", 3) / SLOTS(self, EV, 3)
@@ -545,8 +560,8 @@ class SMC:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Nuke.compute(EV) * (EV("MACHINE_CLEARS.SMC", 4) / EV("MACHINE_CLEARS.SLOW", 4))
@@ -568,8 +583,8 @@ class Memory_Ordering:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Nuke.compute(EV) * (EV("MACHINE_CLEARS.MEMORY_ORDERING", 4) / EV("MACHINE_CLEARS.SLOW", 4))
@@ -591,8 +606,8 @@ class FP_Assist:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Nuke.compute(EV) * (EV("MACHINE_CLEARS.FP_ASSIST", 4) / EV("MACHINE_CLEARS.SLOW", 4))
@@ -614,8 +629,8 @@ class Disambiguation:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Nuke.compute(EV) * (EV("MACHINE_CLEARS.DISAMBIGUATION", 4) / EV("MACHINE_CLEARS.SLOW", 4))
@@ -637,8 +652,8 @@ class Page_Fault:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Nuke.compute(EV) * (EV("MACHINE_CLEARS.PAGE_FAULT", 4) / EV("MACHINE_CLEARS.SLOW", 4))
@@ -660,8 +675,8 @@ class Fast_Nuke:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BAD_SPECULATION.FASTNUKE", 3) / SLOTS(self, EV, 3)
@@ -685,8 +700,8 @@ class Backend_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.ALL", 1) / SLOTS(self, EV, 1)
@@ -716,11 +731,11 @@ class Core_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
-            self.val = max(0 , self.Backend_Bound.compute(EV) - self.Load_Store_Bound.compute(EV))
+            self.val = max(0 , self.Backend_Bound.compute(EV) - self.Memory_Bound.compute(EV))
             self.thresh = (self.val > 0.10)
         except ZeroDivisionError:
             handle_error(self, "Core_Bound zero division")
@@ -731,8 +746,8 @@ are core execution bound and not attributed to outstanding
 demand load or store stalls."""
 
 
-class Load_Store_Bound:
-    name = "Load_Store_Bound"
+class Memory_Bound:
+    name = "Memory_Bound"
     domain = "Cycles"
     area = "BE"
     level = 2
@@ -740,14 +755,14 @@ class Load_Store_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = min((EV("TOPDOWN_BE_BOUND.ALL", 2) / SLOTS(self, EV, 2)) , (EV("LD_HEAD.ANY_AT_RET", 2) / CLKS(self, EV, 2)) + self.Store_Bound.compute(EV))
             self.thresh = (self.val > 0.20)
         except ZeroDivisionError:
-            handle_error(self, "Load_Store_Bound zero division")
+            handle_error(self, "Memory_Bound zero division")
         return self.val
     desc = """
 Counts the number of cycles the core is stalled due to
@@ -763,8 +778,8 @@ class Store_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Mem_Scheduler.compute(EV) * (EV("MEM_SCHEDULER_BLOCK.ST_BUF", 3) / EV("MEM_SCHEDULER_BLOCK.ALL", 3))
@@ -786,8 +801,8 @@ class L1_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("LD_HEAD.L1_BOUND_AT_RET", 3) / CLKS(self, EV, 3)
@@ -800,8 +815,8 @@ Counts the number of cycles that the oldest load of the load
 buffer is stalled at retirement due to a load block."""
 
 
-class Store_Fwd:
-    name = "Store_Fwd"
+class Store_Fwd_Blk:
+    name = "Store_Fwd_Blk"
     domain = "Cycles"
     area = "BE"
     level = 4
@@ -809,14 +824,14 @@ class Store_Fwd:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("LD_HEAD.ST_ADDR_AT_RET", 4) / CLKS(self, EV, 4)
             self.thresh = (self.val > 0.05)
         except ZeroDivisionError:
-            handle_error(self, "Store_Fwd zero division")
+            handle_error(self, "Store_Fwd_Blk zero division")
         return self.val
     desc = """
 Counts the number of cycles that the oldest load of the load
@@ -833,8 +848,8 @@ class STLB_Hit:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("LD_HEAD.DTLB_MISS_AT_RET", 4) / CLKS(self, EV, 4)
@@ -857,8 +872,8 @@ class STLB_Miss:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("LD_HEAD.PGWALK_AT_RET", 4) / CLKS(self, EV, 4)
@@ -881,8 +896,8 @@ class Other_L1:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("LD_HEAD.OTHER_AT_RET", 4) / CLKS(self, EV, 4)
@@ -905,11 +920,11 @@ class L2_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
-            self.val = EV("MEM_BOUND_STALLS.LOAD_L2_HIT", 3) / CLKS(self, EV, 3)
+            self.val = (EV("MEM_BOUND_STALLS.LOAD_L2_HIT", 3) / CLKS(self, EV, 3)) - (MEM_BOUND_STALLS_AT_RET_CORRECTION(self, EV, 3) * EV("MEM_BOUND_STALLS.LOAD_L2_HIT", 3) / EV("MEM_BOUND_STALLS.LOAD", 3))
             self.thresh = (self.val > 0.10)
         except ZeroDivisionError:
             handle_error(self, "L2_Bound zero division")
@@ -928,11 +943,11 @@ class L3_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
-            self.val = EV("MEM_BOUND_STALLS.LOAD_LLC_HIT", 3) / CLKS(self, EV, 3)
+            self.val = (EV("MEM_BOUND_STALLS.LOAD_LLC_HIT", 3) / CLKS(self, EV, 3)) - (MEM_BOUND_STALLS_AT_RET_CORRECTION(self, EV, 3) * EV("MEM_BOUND_STALLS.LOAD_LLC_HIT", 3) / EV("MEM_BOUND_STALLS.LOAD", 3))
             self.thresh = (self.val > 0.10)
         except ZeroDivisionError:
             handle_error(self, "L3_Bound zero division")
@@ -952,11 +967,11 @@ class DRAM_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
-            self.val = EV("MEM_BOUND_STALLS.LOAD_DRAM_HIT", 3) / CLKS(self, EV, 3)
+            self.val = (EV("MEM_BOUND_STALLS.LOAD_DRAM_HIT", 3) / CLKS(self, EV, 3)) - (MEM_BOUND_STALLS_AT_RET_CORRECTION(self, EV, 3) * EV("MEM_BOUND_STALLS.LOAD_DRAM_HIT", 3) / EV("MEM_BOUND_STALLS.LOAD", 3))
             self.thresh = (self.val > 0.10)
         except ZeroDivisionError:
             handle_error(self, "DRAM_Bound zero division")
@@ -964,6 +979,31 @@ class DRAM_Bound:
     desc = """
 Counts the number of cycles the core is stalled due to a
 demand load miss which hit in DRAM or MMIO (Non-DRAM)."""
+
+
+class Other_Load_Store:
+    name = "Other_Load_Store"
+    domain = "Cycles"
+    area = "BE"
+    level = 3
+    htoff = False
+    sample = []
+    errcount = 0
+    sibling = None
+    metricgroup = frozenset([])
+    maxval = None
+    def compute(self, EV):
+        try:
+            self.val = max(0 , self.Memory_Bound.compute(EV) - (self.Store_Bound.compute(EV) + self.L1_Bound.compute(EV) + self.L2_Bound.compute(EV) + self.L3_Bound.compute(EV) + self.DRAM_Bound.compute(EV)))
+            self.thresh = (self.val > 0.10)
+        except ZeroDivisionError:
+            handle_error(self, "Other_Load_Store zero division")
+        return self.val
+    desc = """
+Counts the number of cycles the core is stalled due to a
+demand load miss which hits in the L2, LLC, DRAM or MMIO
+(Non-DRAM) but could not be correctly attributed or cycles
+in which the load miss is waiting on a request buffer."""
 
 
 class Backend_Bound_Aux:
@@ -975,8 +1015,8 @@ class Backend_Bound_Aux:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Backend_Bound.compute(EV)
@@ -1007,8 +1047,8 @@ class Resource_Bound:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Backend_Bound.compute(EV)
@@ -1033,8 +1073,8 @@ class Mem_Scheduler:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.MEM_SCHEDULER", 3) / SLOTS(self, EV, 3)
@@ -1057,8 +1097,8 @@ class ST_Buffer:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Mem_Scheduler.compute(EV) * (EV("MEM_SCHEDULER_BLOCK.ST_BUF", 4) / EV("MEM_SCHEDULER_BLOCK.ALL", 4))
@@ -1081,8 +1121,8 @@ class LD_Buffer:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Mem_Scheduler.compute(EV) * EV("MEM_SCHEDULER_BLOCK.LD_BUF", 4) / EV("MEM_SCHEDULER_BLOCK.ALL", 4)
@@ -1105,8 +1145,8 @@ class RSV:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = self.Mem_Scheduler.compute(EV) * EV("MEM_SCHEDULER_BLOCK.RSV", 4) / EV("MEM_SCHEDULER_BLOCK.ALL", 4)
@@ -1129,8 +1169,8 @@ class Non_Mem_Scheduler:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.NON_MEM_SCHEDULER", 3) / SLOTS(self, EV, 3)
@@ -1154,8 +1194,8 @@ class Register:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.REGISTER", 3) / SLOTS(self, EV, 3)
@@ -1178,8 +1218,8 @@ class Reorder_Buffer:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.REORDER_BUFFER", 3) / SLOTS(self, EV, 3)
@@ -1202,8 +1242,8 @@ class Alloc_Restriction:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.ALLOC_RESTRICTIONS", 3) / SLOTS(self, EV, 3)
@@ -1225,8 +1265,8 @@ class Serialization:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_BE_BOUND.SERIALIZATION", 3) / SLOTS(self, EV, 3)
@@ -1250,8 +1290,8 @@ class Retiring:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("TOPDOWN_RETIRING.ALL", 1) / SLOTS(self, EV, 1)
@@ -1260,7 +1300,7 @@ class Retiring:
             handle_error(self, "Retiring zero division")
         return self.val
     desc = """
-Counts the numer of issue slots  that result in retirement
+Counts the number of issue slots  that result in retirement
 slots."""
 
 
@@ -1273,8 +1313,8 @@ class Base:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = (EV("TOPDOWN_RETIRING.ALL", 2) - EV("UOPS_RETIRED.MS", 2)) / SLOTS(self, EV, 2)
@@ -1287,8 +1327,8 @@ Counts the number of uops that are not from the
 microsequencer."""
 
 
-class FP_uops:
-    name = "FP_uops"
+class FPDIV_uops:
+    name = "FPDIV_uops"
     domain = "Slots"
     area = "RET"
     level = 3
@@ -1296,18 +1336,18 @@ class FP_uops:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("UOPS_RETIRED.FPDIV", 3) / SLOTS(self, EV, 3)
             self.thresh = (self.val > 0.20)
         except ZeroDivisionError:
-            handle_error(self, "FP_uops zero division")
+            handle_error(self, "FPDIV_uops zero division")
         return self.val
     desc = """
-Counts the number of floating point divide uops retired (x87
-and SSE, including x87 sqrt)."""
+Counts the number of floating point divide operations per
+uop."""
 
 
 class Other_Ret:
@@ -1319,8 +1359,8 @@ class Other_Ret:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = (EV("TOPDOWN_RETIRING.ALL", 3) - EV("UOPS_RETIRED.MS", 3) - EV("UOPS_RETIRED.FPDIV", 3)) / SLOTS(self, EV, 3)
@@ -1342,8 +1382,8 @@ class MS_uops:
     sample = []
     errcount = 0
     sibling = None
-    server = False
     metricgroup = frozenset([])
+    maxval = None
     def compute(self, EV):
         try:
             self.val = EV("UOPS_RETIRED.MS", 2) / SLOTS(self, EV, 2)
@@ -1362,7 +1402,6 @@ class Metric_CLKS:
     name = "CLKS"
     domain = "Cycles"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Core"
     metricgroup = frozenset([])
@@ -1382,7 +1421,6 @@ class Metric_CLKS_P:
     name = "CLKS_P"
     domain = "Cycles"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Core"
     metricgroup = frozenset([])
@@ -1402,7 +1440,6 @@ class Metric_SLOTS:
     name = "SLOTS"
     domain = "Cycles"
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Core"
     metricgroup = frozenset([])
@@ -1422,7 +1459,6 @@ class Metric_IPC:
     name = "IPC"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Core"
     metricgroup = frozenset([])
@@ -1442,7 +1478,6 @@ class Metric_CPI:
     name = "CPI"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Core"
     metricgroup = frozenset([])
@@ -1462,7 +1497,6 @@ class Metric_UPI:
     name = "UPI"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Core"
     metricgroup = frozenset([])
@@ -1482,7 +1516,6 @@ class Metric_Store_Fwd_Blocks:
     name = "Store_Fwd_Blocks"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.L1_Bound"
     metricgroup = frozenset([])
@@ -1503,7 +1536,6 @@ class Metric_Address_Alias_Blocks:
     name = "Address_Alias_Blocks"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.L1_Bound"
     metricgroup = frozenset([])
@@ -1524,7 +1556,6 @@ class Metric_Load_Splits:
     name = "Load_Splits"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.L1_Bound"
     metricgroup = frozenset([])
@@ -1544,7 +1575,6 @@ class Metric_IpBranch:
     name = "IpBranch"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1557,15 +1587,14 @@ class Metric_IpBranch:
         except ZeroDivisionError:
             handle_error_metric(self, "IpBranch zero division")
     desc = """
-Instructions per Branch (lower number means higher occurance
-rate)"""
+Instructions per Branch (lower number means higher
+occurrence rate)"""
 
 
 class Metric_IpCall:
     name = "IpCall"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1579,14 +1608,13 @@ class Metric_IpCall:
             handle_error_metric(self, "IpCall zero division")
     desc = """
 Instruction per (near) call (lower number means higher
-occurance rate)"""
+occurrence rate)"""
 
 
 class Metric_IpLoad:
     name = "IpLoad"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1606,7 +1634,6 @@ class Metric_IpStore:
     name = "IpStore"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1626,7 +1653,6 @@ class Metric_IpMispredict:
     name = "IpMispredict"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1639,7 +1665,85 @@ class Metric_IpMispredict:
         except ZeroDivisionError:
             handle_error_metric(self, "IpMispredict zero division")
     desc = """
-Number of Instructions per non-speculative Branch
+Instructions per retired Branch Misprediction"""
+
+
+class Metric_IpMisp_Cond_Ntaken:
+    name = "IpMisp_Cond_Ntaken"
+    domain = ""
+    maxval = 0
+    errcount = 0
+    area = "Info.Inst_Mix"
+    metricgroup = frozenset([])
+    sibling = None
+
+    def compute(self, EV):
+        try:
+            self.val = IpMisp_Cond_Ntaken(self, EV, 0)
+            self.thresh = True
+        except ZeroDivisionError:
+            handle_error_metric(self, "IpMisp_Cond_Ntaken zero division")
+    desc = """
+Instructions per retired conditional Branch Misprediction
+where the branch was not taken"""
+
+
+class Metric_IpMisp_Cond_Taken:
+    name = "IpMisp_Cond_Taken"
+    domain = ""
+    maxval = 0
+    errcount = 0
+    area = "Info.Inst_Mix"
+    metricgroup = frozenset([])
+    sibling = None
+
+    def compute(self, EV):
+        try:
+            self.val = IpMisp_Cond_Taken(self, EV, 0)
+            self.thresh = True
+        except ZeroDivisionError:
+            handle_error_metric(self, "IpMisp_Cond_Taken zero division")
+    desc = """
+Instructions per retired conditional Branch Misprediction
+where the branch was taken"""
+
+
+class Metric_IpMisp_Ret:
+    name = "IpMisp_Ret"
+    domain = ""
+    maxval = 0
+    errcount = 0
+    area = "Info.Inst_Mix"
+    metricgroup = frozenset([])
+    sibling = None
+
+    def compute(self, EV):
+        try:
+            self.val = IpMisp_Ret(self, EV, 0)
+            self.thresh = True
+        except ZeroDivisionError:
+            handle_error_metric(self, "IpMisp_Ret zero division")
+    desc = """
+Instructions per retired return Branch Misprediction"""
+
+
+class Metric_IpMisp_Indirect:
+    name = "IpMisp_Indirect"
+    domain = ""
+    maxval = 0
+    errcount = 0
+    area = "Info.Inst_Mix"
+    metricgroup = frozenset([])
+    sibling = None
+
+    def compute(self, EV):
+        try:
+            self.val = IpMisp_Indirect(self, EV, 0)
+            self.thresh = True
+        except ZeroDivisionError:
+            handle_error_metric(self, "IpMisp_Indirect zero division")
+    desc = """
+Instructions per retired indirect call or jump Branch
 Misprediction"""
 
 
@@ -1647,7 +1751,6 @@ class Metric_IpFarBranch:
     name = "IpFarBranch"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1667,7 +1770,6 @@ class Metric_Branch_Mispredict_Ratio:
     name = "Branch_Mispredict_Ratio"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1687,7 +1789,6 @@ class Metric_Branch_Mispredict_to_Unknown_Branch_Ratio:
     name = "Branch_Mispredict_to_Unknown_Branch_Ratio"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1707,7 +1808,6 @@ class Metric_Microcode_Uop_Ratio:
     name = "Microcode_Uop_Ratio"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1727,7 +1827,6 @@ class Metric_FPDiv_Uop_Ratio:
     name = "FPDiv_Uop_Ratio"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1747,7 +1846,6 @@ class Metric_IDiv_Uop_Ratio:
     name = "IDiv_Uop_Ratio"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1767,7 +1865,6 @@ class Metric_X87_Uop_Ratio:
     name = "X87_Uop_Ratio"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Inst_Mix"
     metricgroup = frozenset([])
@@ -1787,7 +1884,6 @@ class Metric_Turbo_Utilization:
     name = "Turbo_Utilization"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.System"
     metricgroup = frozenset([])
@@ -1807,7 +1903,6 @@ class Metric_Kernel_Utilization:
     name = "Kernel_Utilization"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.System"
     metricgroup = frozenset([])
@@ -1827,7 +1922,6 @@ class Metric_CPU_Utilization:
     name = "CPU_Utilization"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.System"
     metricgroup = frozenset([])
@@ -1843,31 +1937,10 @@ class Metric_CPU_Utilization:
 Average CPU Utilization"""
 
 
-class Metric_Estimated_Pause_Cost:
-    name = "Estimated_Pause_Cost"
-    domain = ""
-    maxval = 0
-    server = False
-    errcount = 0
-    area = "Info.Bottleneck"
-    metricgroup = frozenset([])
-    sibling = None
-
-    def compute(self, EV):
-        try:
-            self.val = Estimated_Pause_Cost(self, EV, 0)
-            self.thresh = True
-        except ZeroDivisionError:
-            handle_error_metric(self, "Estimated_Pause_Cost zero division")
-    desc = """
-Estimated Pause cost. In percent"""
-
-
 class Metric_Cycles_per_Demand_Load_L2_Hit:
     name = "Cycles_per_Demand_Load_L2_Hit"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Memory"
     metricgroup = frozenset([])
@@ -1887,7 +1960,6 @@ class Metric_Cycles_per_Demand_Load_L3_Hit:
     name = "Cycles_per_Demand_Load_L3_Hit"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Memory"
     metricgroup = frozenset([])
@@ -1907,7 +1979,6 @@ class Metric_Cycles_per_Demand_Load_DRAM_Hit:
     name = "Cycles_per_Demand_Load_DRAM_Hit"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Memory"
     metricgroup = frozenset([])
@@ -1927,7 +1998,6 @@ class Metric_Inst_Miss_Cost_L2Hit_Percent:
     name = "Inst_Miss_Cost_L2Hit_Percent"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Frontend"
     metricgroup = frozenset([])
@@ -1947,7 +2017,6 @@ class Metric_Inst_Miss_Cost_L3Hit_Percent:
     name = "Inst_Miss_Cost_L3Hit_Percent"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Frontend"
     metricgroup = frozenset([])
@@ -1967,7 +2036,6 @@ class Metric_Inst_Miss_Cost_DRAMHit_Percent:
     name = "Inst_Miss_Cost_DRAMHit_Percent"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Frontend"
     metricgroup = frozenset([])
@@ -1987,7 +2055,6 @@ class Metric_MemLoadPKI:
     name = "MemLoadPKI"
     domain = ""
     maxval = 0
-    server = False
     errcount = 0
     area = "Info.Memory"
     metricgroup = frozenset([])
@@ -2011,12 +2078,12 @@ class Setup:
     def __init__(self, r):
         o = dict()
         n = Frontend_Bound() ; r.run(n) ; o["Frontend_Bound"] = n
-        n = Frontend_Latency() ; r.run(n) ; o["Frontend_Latency"] = n
-        n = Icache() ; r.run(n) ; o["Icache"] = n
-        n = ITLB() ; r.run(n) ; o["ITLB"] = n
+        n = Fetch_Latency() ; r.run(n) ; o["Fetch_Latency"] = n
+        n = ICache_Misses() ; r.run(n) ; o["ICache_Misses"] = n
+        n = ITLB_Misses() ; r.run(n) ; o["ITLB_Misses"] = n
         n = Branch_Detect() ; r.run(n) ; o["Branch_Detect"] = n
         n = Branch_Resteer() ; r.run(n) ; o["Branch_Resteer"] = n
-        n = Frontend_Bandwidth() ; r.run(n) ; o["Frontend_Bandwidth"] = n
+        n = Fetch_Bandwidth() ; r.run(n) ; o["Fetch_Bandwidth"] = n
         n = Cisc() ; r.run(n) ; o["Cisc"] = n
         n = Decode() ; r.run(n) ; o["Decode"] = n
         n = Predecode() ; r.run(n) ; o["Predecode"] = n
@@ -2033,16 +2100,17 @@ class Setup:
         n = Fast_Nuke() ; r.run(n) ; o["Fast_Nuke"] = n
         n = Backend_Bound() ; r.run(n) ; o["Backend_Bound"] = n
         n = Core_Bound() ; r.run(n) ; o["Core_Bound"] = n
-        n = Load_Store_Bound() ; r.run(n) ; o["Load_Store_Bound"] = n
+        n = Memory_Bound() ; r.run(n) ; o["Memory_Bound"] = n
         n = Store_Bound() ; r.run(n) ; o["Store_Bound"] = n
         n = L1_Bound() ; r.run(n) ; o["L1_Bound"] = n
-        n = Store_Fwd() ; r.run(n) ; o["Store_Fwd"] = n
+        n = Store_Fwd_Blk() ; r.run(n) ; o["Store_Fwd_Blk"] = n
         n = STLB_Hit() ; r.run(n) ; o["STLB_Hit"] = n
         n = STLB_Miss() ; r.run(n) ; o["STLB_Miss"] = n
         n = Other_L1() ; r.run(n) ; o["Other_L1"] = n
         n = L2_Bound() ; r.run(n) ; o["L2_Bound"] = n
         n = L3_Bound() ; r.run(n) ; o["L3_Bound"] = n
         n = DRAM_Bound() ; r.run(n) ; o["DRAM_Bound"] = n
+        n = Other_Load_Store() ; r.run(n) ; o["Other_Load_Store"] = n
         if use_aux:
             n = Backend_Bound_Aux() ; r.run(n) ; o["Backend_Bound_Aux"] = n
         if use_aux:
@@ -2066,22 +2134,22 @@ class Setup:
             n = Serialization() ; r.run(n) ; o["Serialization"] = n
         n = Retiring() ; r.run(n) ; o["Retiring"] = n
         n = Base() ; r.run(n) ; o["Base"] = n
-        n = FP_uops() ; r.run(n) ; o["FP_uops"] = n
+        n = FPDIV_uops() ; r.run(n) ; o["FPDIV_uops"] = n
         n = Other_Ret() ; r.run(n) ; o["Other_Ret"] = n
         n = MS_uops() ; r.run(n) ; o["MS_uops"] = n
 
         # parents
 
-        o["Frontend_Latency"].parent = o["Frontend_Bound"]
-        o["Icache"].parent = o["Frontend_Latency"]
-        o["ITLB"].parent = o["Frontend_Latency"]
-        o["Branch_Detect"].parent = o["Frontend_Latency"]
-        o["Branch_Resteer"].parent = o["Frontend_Latency"]
-        o["Frontend_Bandwidth"].parent = o["Frontend_Bound"]
-        o["Cisc"].parent = o["Frontend_Bandwidth"]
-        o["Decode"].parent = o["Frontend_Bandwidth"]
-        o["Predecode"].parent = o["Frontend_Bandwidth"]
-        o["Other_FB"].parent = o["Frontend_Bandwidth"]
+        o["Fetch_Latency"].parent = o["Frontend_Bound"]
+        o["ICache_Misses"].parent = o["Fetch_Latency"]
+        o["ITLB_Misses"].parent = o["Fetch_Latency"]
+        o["Branch_Detect"].parent = o["Fetch_Latency"]
+        o["Branch_Resteer"].parent = o["Fetch_Latency"]
+        o["Fetch_Bandwidth"].parent = o["Frontend_Bound"]
+        o["Cisc"].parent = o["Fetch_Bandwidth"]
+        o["Decode"].parent = o["Fetch_Bandwidth"]
+        o["Predecode"].parent = o["Fetch_Bandwidth"]
+        o["Other_FB"].parent = o["Fetch_Bandwidth"]
         o["Branch_Mispredicts"].parent = o["Bad_Speculation"]
         o["Machine_Clears"].parent = o["Bad_Speculation"]
         o["Nuke"].parent = o["Machine_Clears"]
@@ -2092,16 +2160,17 @@ class Setup:
         o["Page_Fault"].parent = o["Nuke"]
         o["Fast_Nuke"].parent = o["Machine_Clears"]
         o["Core_Bound"].parent = o["Backend_Bound"]
-        o["Load_Store_Bound"].parent = o["Backend_Bound"]
-        o["Store_Bound"].parent = o["Load_Store_Bound"]
-        o["L1_Bound"].parent = o["Load_Store_Bound"]
-        o["Store_Fwd"].parent = o["L1_Bound"]
+        o["Memory_Bound"].parent = o["Backend_Bound"]
+        o["Store_Bound"].parent = o["Memory_Bound"]
+        o["L1_Bound"].parent = o["Memory_Bound"]
+        o["Store_Fwd_Blk"].parent = o["L1_Bound"]
         o["STLB_Hit"].parent = o["L1_Bound"]
         o["STLB_Miss"].parent = o["L1_Bound"]
         o["Other_L1"].parent = o["L1_Bound"]
-        o["L2_Bound"].parent = o["Load_Store_Bound"]
-        o["L3_Bound"].parent = o["Load_Store_Bound"]
-        o["DRAM_Bound"].parent = o["Load_Store_Bound"]
+        o["L2_Bound"].parent = o["Memory_Bound"]
+        o["L3_Bound"].parent = o["Memory_Bound"]
+        o["DRAM_Bound"].parent = o["Memory_Bound"]
+        o["Other_Load_Store"].parent = o["Memory_Bound"]
         if use_aux:
             o["Resource_Bound"].parent = o["Backend_Bound_Aux"]
         if use_aux:
@@ -2123,7 +2192,7 @@ class Setup:
         if use_aux:
             o["Serialization"].parent = o["Resource_Bound"]
         o["Base"].parent = o["Retiring"]
-        o["FP_uops"].parent = o["Base"]
+        o["FPDIV_uops"].parent = o["Base"]
         o["Other_Ret"].parent = o["Base"]
         o["MS_uops"].parent = o["Retiring"]
 
@@ -2143,6 +2212,10 @@ class Setup:
         n = Metric_IpLoad() ; r.metric(n) ; o["IpLoad"] = n
         n = Metric_IpStore() ; r.metric(n) ; o["IpStore"] = n
         n = Metric_IpMispredict() ; r.metric(n) ; o["IpMispredict"] = n
+        n = Metric_IpMisp_Cond_Ntaken() ; r.metric(n) ; o["IpMisp_Cond_Ntaken"] = n
+        n = Metric_IpMisp_Cond_Taken() ; r.metric(n) ; o["IpMisp_Cond_Taken"] = n
+        n = Metric_IpMisp_Ret() ; r.metric(n) ; o["IpMisp_Ret"] = n
+        n = Metric_IpMisp_Indirect() ; r.metric(n) ; o["IpMisp_Indirect"] = n
         n = Metric_IpFarBranch() ; r.metric(n) ; o["IpFarBranch"] = n
         n = Metric_Branch_Mispredict_Ratio() ; r.metric(n) ; o["Branch_Mispredict_Ratio"] = n
         n = Metric_Branch_Mispredict_to_Unknown_Branch_Ratio() ; r.metric(n) ; o["Branch_Mispredict_to_Unknown_Branch_Ratio"] = n
@@ -2153,7 +2226,6 @@ class Setup:
         n = Metric_Turbo_Utilization() ; r.metric(n) ; o["Turbo_Utilization"] = n
         n = Metric_Kernel_Utilization() ; r.metric(n) ; o["Kernel_Utilization"] = n
         n = Metric_CPU_Utilization() ; r.metric(n) ; o["CPU_Utilization"] = n
-        n = Metric_Estimated_Pause_Cost() ; r.metric(n) ; o["Estimated_Pause_Cost"] = n
         n = Metric_Cycles_per_Demand_Load_L2_Hit() ; r.metric(n) ; o["Cycles_per_Demand_Load_L2_Hit"] = n
         n = Metric_Cycles_per_Demand_Load_L3_Hit() ; r.metric(n) ; o["Cycles_per_Demand_Load_L3_Hit"] = n
         n = Metric_Cycles_per_Demand_Load_DRAM_Hit() ; r.metric(n) ; o["Cycles_per_Demand_Load_DRAM_Hit"] = n
@@ -2169,13 +2241,20 @@ class Setup:
         o["FP_Assist"].Nuke = o["Nuke"]
         o["Disambiguation"].Nuke = o["Nuke"]
         o["Page_Fault"].Nuke = o["Nuke"]
+        o["Core_Bound"].Memory_Bound = o["Memory_Bound"]
         o["Core_Bound"].Mem_Scheduler = o["Mem_Scheduler"]
         o["Core_Bound"].Backend_Bound = o["Backend_Bound"]
         o["Core_Bound"].Store_Bound = o["Store_Bound"]
-        o["Core_Bound"].Load_Store_Bound = o["Load_Store_Bound"]
-        o["Load_Store_Bound"].Mem_Scheduler = o["Mem_Scheduler"]
-        o["Load_Store_Bound"].Store_Bound = o["Store_Bound"]
+        o["Memory_Bound"].Mem_Scheduler = o["Mem_Scheduler"]
+        o["Memory_Bound"].Store_Bound = o["Store_Bound"]
         o["Store_Bound"].Mem_Scheduler = o["Mem_Scheduler"]
+        o["Other_Load_Store"].Mem_Scheduler = o["Mem_Scheduler"]
+        o["Other_Load_Store"].L1_Bound = o["L1_Bound"]
+        o["Other_Load_Store"].L2_Bound = o["L2_Bound"]
+        o["Other_Load_Store"].Memory_Bound = o["Memory_Bound"]
+        o["Other_Load_Store"].Store_Bound = o["Store_Bound"]
+        o["Other_Load_Store"].L3_Bound = o["L3_Bound"]
+        o["Other_Load_Store"].DRAM_Bound = o["DRAM_Bound"]
         if use_aux:
             o["Backend_Bound_Aux"].Backend_Bound = o["Backend_Bound"]
         if use_aux:
