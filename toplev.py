@@ -83,6 +83,8 @@ known_cpus = (
     ("icx", (106, 108, )),
     ("adl", (154, 151,
              183, )), # RPL as ADL
+    ("adl-glc", (154, )),
+    ("adl-grt", (154, )),
     ("spr", (143, )),
     ("ehl", (150, )),
     ("sprmax", ()),
@@ -3989,7 +3991,7 @@ def model_setup(runner, cpuname):
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
         smt_mode = cpu.ht
-    elif cpuname == "adl" and runner.pmu in ("cpu_core", "cpu"):
+    elif (cpuname == "adl" and runner.pmu in ("cpu_core", "cpu")) or cpuname == "adl-glc":
         import adl_glc_ratios
         setup_metrics(adl_glc_ratios, runner.pmu)
         adl_glc_ratios.smt_enabled = cpu.ht
@@ -3998,7 +4000,7 @@ def model_setup(runner, cpuname):
         if kernel_version < 670: # expect to be fixed in 6.7
             # kernel incorrectly schedules ocr on 0-3 only
             ectx.constraint_patterns.append(("OCR.", "0,1,2,3", ))
-    elif cpuname == "adl" and runner.pmu == "cpu_atom":
+    elif (cpuname == "adl" and runner.pmu == "cpu_atom") or cpuname == "adl-grt":
         import adl_grt_ratios
         model = adl_grt_ratios
         model.use_aux = args.aux
