@@ -973,7 +973,10 @@ pversion = ocperf.PerfVersion()
 
 def gen_cpu_name(cpu):
     if cpu == "simple":
-        return event_download.get_cpustr()
+        c = event_download.get_cpustr()
+        if not c.startswith("GenuineIntel"): # fix my github runner
+            c = "GenuineIntel-6-4E"
+        return c
     if cpu == "sprmax":
         cpu = "spr"
     for j in known_cpus:
