@@ -4027,7 +4027,7 @@ def runner_emaps():
         runner.set_ectx()
         runner.ectx.emap = ocperf.find_emap(pmu=runner.pmu if runner.pmu else "cpu")
         runner.printer.emap = ectx.emap
-        if not ectx.emap:
+        if not runner.ectx.emap:
             sys.exit("Unknown CPU or CPU event map not found.")
         if version:
             version += ", "
