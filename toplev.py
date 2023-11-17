@@ -729,7 +729,7 @@ def output_count():
 def multi_output():
     return output_count() > 1
 
-def open_output_files():
+def open_output_files(args):
     if args.valcsv:
         try:
             args.valcsv = flex_open_w(args.valcsv)
@@ -951,7 +951,7 @@ def run_parallel(args, env):
         if not args.keep:
             for j in sums:
                 os.remove(j)
-    open_output_files()
+    open_output_files(args)
     merge_files(valfns, args.valcsv, args)
     merge_files(pofns, args.perf_output, args)
     if args.xlsx:
@@ -960,7 +960,7 @@ def run_parallel(args, env):
     return ret
 
 
-def init_idle_threshold():
+def init_idle_threshold(args):
     if args.idle_threshold:
         idle_threshold = args.idle_threshold / 100.
     elif args.csv or args.xlsx or args.set_xlsx: # not for args.graph
@@ -969,7 +969,7 @@ def init_idle_threshold():
         idle_threshold = 0.05
     return idle_threshold
 
-idle_threshold = init_idle_threshold()
+idle_threshold = init_idle_threshold(args)
 
 event_nocheck = args.import_ or args.no_check
 
@@ -1001,7 +1001,7 @@ if args.tune:
 
 env = tl_cpu.Env()
 
-def update_args():
+def update_args(args):
     if args.force_cpu:
         env.forcecpu = args.force_cpu
         cpuname = gen_cpu_name(args.force_cpu)
@@ -1024,7 +1024,7 @@ def update_args():
     if args.exclusive and args.pinned:
         sys.exit("--exclusive and --pinned cannot be combined")
 
-update_args()
+update_args(args)
 
 def handle_parallel():
     if args.parallel:
@@ -1066,9 +1066,9 @@ def handle_rest(rest):
 
 rest = handle_rest(rest)
 
-open_output_files()
+open_output_files(args)
 
-def update_args2():
+def update_args2(args):
     if args.perf_summary:
         try:
             args.perf_summary = flex_open_w(args.perf_summary)
@@ -1088,9 +1088,9 @@ def update_args2():
         args.quiet = True
         args.no_version = True
 
-update_args2()
+update_args2(args)
 
-def handle_graph():
+def handle_graph(args):
     graphp = None
     if args.graph:
         if not args.interval:
@@ -1115,9 +1115,9 @@ def handle_graph():
         args.output = graphp.stdin
     return graphp
 
-graphp = handle_graph()
+graphp = handle_graph(args)
 
-def init_ring_filter():
+def init_ring_filter(args):
     ring_filter = ""
     if args.kernel and not args.user:
         ring_filter = 'k'
@@ -1125,7 +1125,7 @@ def init_ring_filter():
         ring_filter = 'u'
     return ring_filter
 
-ring_filter = init_ring_filter()
+ring_filter = init_ring_filter(args)
 
 MAX_ERROR = 0.05
 
@@ -1137,7 +1137,7 @@ def check_ratio(l):
 # XXX move into ectx
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
 
-def update_args_cpu():
+def update_args_cpu(args):
     if args.level < 0:
         if args.bottlenecks:
             args.level = 4
@@ -1176,7 +1176,7 @@ def update_args_cpu():
     if cpu.hypervisor or args.no_uncore:
         feat.supports_power = False
 
-update_args_cpu()
+update_args_cpu(args)
 
 def print_perf(r):
     if not (args.perf or args.print):
@@ -4085,7 +4085,7 @@ def setup_pe():
 
 version = runner_emaps(setup_pe())
 
-def handle_misc_options():
+def handle_misc_options(args):
     if args.version:
         print("toplev, CPU: %s, TMA version: %s" % (cpu.cpu, version))
         sys.exit(0)
@@ -4099,7 +4099,7 @@ def handle_misc_options():
         if args.script_record:
             sys.exit("--subset cannot be used with --script-record. Generate temp file with perf stat report -x\\;")
 
-handle_misc_options()
+handle_misc_options(args)
 
 def handle_cmd():
     if args.describe:
@@ -4199,7 +4199,7 @@ def runner_filter(rest):
 
 rest = runner_filter(rest)
 
-def update_smt(rest):
+def update_smt(args, rest):
     if not smt_mode and not args.single_thread and not args.no_aggr:
         hybrid = cpu.cpu in hybrid_cpus
         multi = output_count()
@@ -4213,7 +4213,7 @@ def update_smt(rest):
             rest = add_args(rest, "--per-core")
     return rest
 
-rest = update_smt(rest)
+rest = update_smt(args, rest)
 
 def runner_node_filter():
     for r in runner_list:
@@ -4231,7 +4231,7 @@ def update_smt_mode():
 orig_smt_mode = smt_mode
 smt_mode = update_smt_mode()
 
-def check_full_system(rest):
+def check_full_system(args, rest):
     full_system = False
     if not args.single_thread and smt_mode:
         if not args.quiet and not args.import_:
@@ -4252,11 +4252,11 @@ def check_full_system(rest):
         rest = add_args(rest, "-A")
     return full_system, rest
 
-full_system, rest = check_full_system(rest)
+full_system, rest = check_full_system(args, rest)
 
 output_numcpus = False
 
-def init_perf_output():
+def init_perf_output(args):
     if (args.perf_output or args.perf_summary) and not args.no_csv_header:
         ph = []
         if args.interval:
@@ -4273,9 +4273,9 @@ def init_perf_output():
         if args.perf_summary:
             args.perf_summary.write(";".join(ph) + "\n")
 
-init_perf_output()
+init_perf_output(args)
 
-def setup_cpus(rest, cpu):
+def setup_cpus(args, rest, cpu):
     if args.cpu:
         allcpus = parse_cpu_list(args.cpu)
     else:
@@ -4302,12 +4302,12 @@ def setup_cpus(rest, cpu):
                 r.cpu_list = list(allowed_threads)
     return rest
 
-rest = setup_cpus(rest, cpu)
+rest = setup_cpus(args, rest, cpu)
 
 if args.pinned:
     run_l1_parallel = True
 
-def init_output():
+def init_output(args):
     if args.json:
         if args.csv:
             sys.exit("Cannot combine --csv with --json")
@@ -4325,19 +4325,18 @@ def init_output():
         out = tl_output.OutputHuman(args.output, args, version, cpu)
     return out
 
-out = init_output()
+out = init_output(args)
 
-def init_valcsv():
+def init_valcsv(args):
     if args.valcsv:
         out.valcsv = csv.writer(args.valcsv, lineterminator='\n', delimiter=';')
         if not args.no_csv_header:
             out.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
                                  "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
-
-init_valcsv()
+init_valcsv(args)
 
 # XXX use runner_restart
-def runner_first_init():
+def runner_first_init(args):
     nnodes = 0
     for r in runner_list:
         runner_init(r)
@@ -4356,7 +4355,7 @@ def runner_first_init():
         offset += len(r.sched.evnum)
         r.clear_ectx()
 
-runner_first_init()
+runner_first_init(args)
 
 def suggest(runner):
     printer = runner.printer
