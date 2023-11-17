@@ -583,14 +583,14 @@ $WRAP ./toplev.py --no-version --force-cpu hsx --filterquals $OPT -l4 true
 $WRAP ./toplev.py $NATIVE_ARGS --all --gen-script > script$$
 chmod +x script$$
 OUT=tltest$$ ./script$$ $LOAD
-$WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
+$WRAP ./toplev.py $NATIVE_ARGS --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 
 #if $PERF stat record --quiet true >/dev/null 2>/dev/null ; then
 #$WRAP ./toplev.py $NATIVE_ARGS --script-record --all --gen-script > script$$
 #chmod +x script$$
 #OUT=tltest$$ ./script$$ $LOAD
-#$WRAP ./toplev.py --script-record --all --import tltest$$_perf.data --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
+#$WRAP ./toplev.py $NATIVE_ARGS --script-record --all --import tltest$$_perf.data --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
 #rm tltest$$_perf.data tltest$$_topology tltest$$_cpuinfo script$$
 #fi
 
@@ -598,7 +598,7 @@ if $PYTHON -c 'import xlsxwriter' ; then
 $WRAP ./toplev.py $NATIVE_ARGS --xlsx dummy.xlsx --all --gen-script > script$$
 chmod +x script$$
 OUT=tltest$$ ./script$$ $LOAD
-$WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology --xlsx x$$.xlsx
+$WRAP ./toplev.py $NATIVE_ARGS --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology --xlsx x$$.xlsx
 rm x$$.xlsx
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 fi
