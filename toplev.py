@@ -475,7 +475,7 @@ def del_arg_val(arg, flag):
     i = findprefix(arg, flag, "--")
     del arg[i:i+2 if arg[i] == flag else i+1]
 
-def handle_args():
+def init_args():
     p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
     description='''
 Estimate on which part of the CPU pipeline a workload bottlenecks using the TopDown model.
@@ -721,7 +721,6 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
             os.environ[l[0]] = l[1]
     return args, rest
 
-args, rest = handle_args()
 
 def output_count():
     return args.per_core + args.global_ + args.per_thread + args.per_socket
@@ -969,12 +968,6 @@ def init_idle_threshold(args):
         idle_threshold = 0.05
     return idle_threshold
 
-idle_threshold = init_idle_threshold(args)
-
-event_nocheck = args.import_ or args.no_check
-
-feat = PerfFeatures(args)
-pversion = ocperf.PerfVersion()
 
 def gen_cpu_name(cpu):
     if cpu == "simple":
@@ -995,13 +988,7 @@ def gen_cpu_name(cpu):
     sys.exit("Unknown cpu %s" % cpu)
     return None
 
-if args.tune:
-    for t in args.tune:
-        exec(t)
-
-env = tl_cpu.Env()
-
-def update_args(args):
+def update_args(args, env):
     if args.force_cpu:
         env.forcecpu = args.force_cpu
         cpuname = gen_cpu_name(args.force_cpu)
@@ -1024,9 +1011,7 @@ def update_args(args):
     if args.exclusive and args.pinned:
         sys.exit("--exclusive and --pinned cannot be combined")
 
-update_args(args)
-
-def handle_parallel():
+def handle_parallel(args, env):
     if args.parallel:
         if not args.import_:
             sys.exit("--parallel requires --import")
@@ -1046,9 +1031,7 @@ def handle_parallel():
             args.pjobs = multiprocessing.cpu_count()
         sys.exit(run_parallel(args, env))
 
-handle_parallel()
-
-def handle_rest(rest):
+def handle_rest(args, rest):
     if rest[:1] == ["--"]:
         rest = rest[1:]
     if args.cpu:
@@ -1063,10 +1046,6 @@ def handle_rest(rest):
     if args.set_xlsx:
         set_xlsx(args)
     return rest
-
-rest = handle_rest(rest)
-
-open_output_files(args)
 
 def update_args2(args):
     if args.perf_summary:
@@ -1087,8 +1066,6 @@ def update_args2(args):
     if args.only_bottleneck:
         args.quiet = True
         args.no_version = True
-
-update_args2(args)
 
 def handle_graph(args):
     graphp = None
@@ -1115,8 +1092,6 @@ def handle_graph(args):
         args.output = graphp.stdin
     return graphp
 
-graphp = handle_graph(args)
-
 def init_ring_filter(args):
     ring_filter = ""
     if args.kernel and not args.user:
@@ -1125,17 +1100,12 @@ def init_ring_filter(args):
         ring_filter = 'u'
     return ring_filter
 
-ring_filter = init_ring_filter(args)
-
 MAX_ERROR = 0.05
 
 def check_ratio(l):
     if args.verbose:
         return True
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
-
-# XXX move into ectx
-cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
 
 def update_args_cpu(args):
     if args.level < 0:
@@ -1175,8 +1145,6 @@ def update_args_cpu(args):
 
     if cpu.hypervisor or args.no_uncore:
         feat.supports_power = False
-
-update_args_cpu(args)
 
 def print_perf(r):
     if not (args.perf or args.print):
@@ -3748,7 +3716,7 @@ def sysctl(name):
         return 0
     return val
 
-def update_cpu():
+def update_cpu(args, cpu):
     # check nmi watchdog
     # XXX need to get this state from CSV import
     if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
@@ -3765,17 +3733,13 @@ def update_cpu():
     if cpu.cpu is None:
         sys.exit("Unsupported CPU model %s %d" % (cpu.vendor, cpu.model,))
 
-update_cpu()
-
 def get_kernel():
     kv = os.getenv("KERNEL_VERSION")
     if not kv:
         kv = platform.release()
     return kv_to_key(list(map(int, kv.split(".")[:2])))
 
-kernel_version = get_kernel()
-
-def check_exclusive():
+def check_exclusive(args, kernel_version):
     if args.exclusive:
         if kernel_version < 510:
             sys.exit("--exclusive needs kernel 5.10+")
@@ -3783,8 +3747,6 @@ def check_exclusive():
         metrics_own_group = False
         global run_l1_parallel
         run_l1_parallel = False
-
-check_exclusive()
 
 def ht_warning():
     if cpu.ht and not args.quiet:
@@ -3875,9 +3837,7 @@ def init_runner_list():
 
     return runner_list
 
-runner_list = init_runner_list()
-
-def handle_more_options():
+def handle_more_options(args):
     if args.single_thread:
         cpu.ht = False
 
@@ -3885,8 +3845,6 @@ def handle_more_options():
         if not args.desc:
             args.no_desc = True
         args.no_util = True
-
-handle_more_options()
 
 def tune_model(model):
     if args.tune_model:
@@ -4083,7 +4041,6 @@ def setup_pe():
         pe = lambda e: print_err(e)
     return pe
 
-version = runner_emaps(setup_pe())
 
 def handle_misc_options(args):
     if args.version:
@@ -4099,9 +4056,7 @@ def handle_misc_options(args):
         if args.script_record:
             sys.exit("--subset cannot be used with --script-record. Generate temp file with perf stat report -x\\;")
 
-handle_misc_options(args)
-
-def handle_cmd():
+def handle_cmd(args, runner_list):
     if args.describe:
         args.long_desc = True
         if not rest:
@@ -4121,8 +4076,6 @@ def handle_cmd():
         if any([x.startswith("-") for x in rest]):
             sys.exit("Unknown arguments for --list*/--describe")
         sys.exit(0)
-
-handle_cmd()
 
 def has_core_node(runner):
     res = False
@@ -4177,7 +4130,7 @@ def extra_setup(runner):
         import frequency
         frequency.SetupCPU(runner, cpu)
 
-def runner_extra_init(rest):
+def runner_extra_init(args, rest):
     rest = extra_setup_once(runner_list[0], rest)
     for r in runner_list:
         extra_setup(r)
@@ -4190,14 +4143,10 @@ def runner_extra_init(rest):
 
     return rest
 
-rest = runner_extra_init(rest)
-
-def runner_filter(rest):
+def runner_filter(args, rest):
     for r in runner_list:
         rest = r.filter_per_core(args.single_thread, rest)
     return rest
-
-rest = runner_filter(rest)
 
 def update_smt(args, rest):
     if not smt_mode and not args.single_thread and not args.no_aggr:
@@ -4213,13 +4162,9 @@ def update_smt(args, rest):
             rest = add_args(rest, "--per-core")
     return rest
 
-rest = update_smt(args, rest)
-
 def runner_node_filter():
     for r in runner_list:
         r.filter_nodes()
-
-runner_node_filter()
 
 def update_smt_mode():
     if smt_mode and not os.getenv('FORCEHT'):
@@ -4227,9 +4172,6 @@ def update_smt_mode():
         if not any_core_node():
             return False
     return smt_mode
-
-orig_smt_mode = smt_mode
-smt_mode = update_smt_mode()
 
 def check_full_system(args, rest):
     full_system = False
@@ -4252,8 +4194,6 @@ def check_full_system(args, rest):
         rest = add_args(rest, "-A")
     return full_system, rest
 
-full_system, rest = check_full_system(args, rest)
-
 output_numcpus = False
 
 def init_perf_output(args):
@@ -4272,8 +4212,6 @@ def init_perf_output(args):
             args.perf_output.write(";".join(ph) + "\n")
         if args.perf_summary:
             args.perf_summary.write(";".join(ph) + "\n")
-
-init_perf_output(args)
 
 def setup_cpus(args, rest, cpu):
     if args.cpu:
@@ -4302,11 +4240,6 @@ def setup_cpus(args, rest, cpu):
                 r.cpu_list = list(allowed_threads)
     return rest
 
-rest = setup_cpus(args, rest, cpu)
-
-if args.pinned:
-    run_l1_parallel = True
-
 def init_output(args):
     if args.json:
         if args.csv:
@@ -4325,15 +4258,12 @@ def init_output(args):
         out = tl_output.OutputHuman(args.output, args, version, cpu)
     return out
 
-out = init_output(args)
-
 def init_valcsv(args):
     if args.valcsv:
         out.valcsv = csv.writer(args.valcsv, lineterminator='\n', delimiter=';')
         if not args.no_csv_header:
             out.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
                                  "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
-init_valcsv(args)
 
 # XXX use runner_restart
 def runner_first_init(args):
@@ -4354,8 +4284,6 @@ def runner_first_init(args):
         r.sched.offset = offset
         offset += len(r.sched.evnum)
         r.clear_ectx()
-
-runner_first_init(args)
 
 def suggest(runner):
     printer = runner.printer
@@ -4433,10 +4361,6 @@ def report_not_supported(runner_list):
     if notfound_caches and any(["not supported" not in x for x in notfound_caches.values()]) and not args.quiet:
         print("Some events not found. Consider running event_download to update event lists", file=sys.stderr)
 
-if args.repl:
-    import code
-    code.interact(banner='toplev repl', local=locals())
-    sys.exit(0)
 
 def measure():
     if args.sample_repeat:
@@ -4449,14 +4373,6 @@ def measure():
         ret, count = measure_and_sample(runner_list, 0 if args.drilldown else None)
     return ret
 
-ret = measure()
-
-out.print_footer()
-out.flushfiles()
-
-if args.xlsx and ret == 0:
-    ret = do_xlsx(env)
-
 def idle_range_list(l):
     if all([x.isdigit() for x in l]):
         # adapted from https://stackoverflow.com/questions/2154249/identify-groups-of-continuous-numbers-in-a-list
@@ -4468,14 +4384,62 @@ def idle_range_list(l):
         l = [get_range(g) for k, g in groupby(enumerate(sorted([int(x) for x in l])), lambda x: x[0] - x[1])]
     return ",".join(l)
 
-report_idle(runner_list)
-report_not_supported(runner_list)
-
 def finish_graph(graphp):
     if args.graph:
         args.output.close()
         graphp.wait()
 
+args, rest = init_args()
+idle_threshold = init_idle_threshold(args)
+event_nocheck = args.import_ or args.no_check
+feat = PerfFeatures(args)
+pversion = ocperf.PerfVersion()
+if args.tune:
+    for t in args.tune:
+        exec(t)
+env = tl_cpu.Env()
+update_args(args, env)
+handle_parallel(args, env)
+rest = handle_rest(args, rest)
+open_output_files(args)
+update_args2(args)
+graphp = handle_graph(args)
+ring_filter = init_ring_filter(args)
+# XXX move into ectx
+cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
+update_args_cpu(args)
+update_cpu(args, cpu)
+kernel_version = get_kernel()
+check_exclusive(args, kernel_version)
+runner_list = init_runner_list()
+handle_more_options(args)
+version = runner_emaps(setup_pe())
+handle_misc_options(args)
+handle_cmd(args, runner_list)
+rest = runner_extra_init(args, rest)
+rest = runner_filter(args, rest)
+rest = update_smt(args, rest)
+runner_node_filter()
+orig_smt_mode = smt_mode
+smt_mode = update_smt_mode()
+full_system, rest = check_full_system(args, rest)
+init_perf_output(args)
+rest = setup_cpus(args, rest, cpu)
+if args.pinned:
+    run_l1_parallel = True
+out = init_output(args)
+init_valcsv(args)
+runner_first_init(args)
+if args.repl:
+    import code
+    code.interact(banner='toplev repl', local=locals())
+    sys.exit(0)
+ret = measure()
+out.print_footer()
+out.flushfiles()
+if args.xlsx and ret == 0:
+    ret = do_xlsx(env)
+report_idle(runner_list)
+report_not_supported(runner_list)
 finish_graph(graphp)
-
 sys.exit(ret)
