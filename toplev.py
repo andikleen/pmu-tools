@@ -475,8 +475,9 @@ def del_arg_val(arg, flag):
     i = findprefix(arg, flag, "--")
     del arg[i:i+2 if arg[i] == flag else i+1]
 
-p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
-description='''
+def handle_args():
+    p = argparse.ArgumentParser(usage='toplev [options] perf-arguments',
+    description='''
 Estimate on which part of the CPU pipeline a workload bottlenecks using the TopDown model.
 The bottlenecks are expressed as a tree with different levels.
 Requires a modern Intel CPU.
@@ -525,200 +526,202 @@ This also requires a reproducible or steady-state workload.
 
 toplev needs a new enough perf tool and has specific requirements on
 the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support.''',
-formatter_class=argparse.RawDescriptionHelpFormatter)
-g = p.add_argument_group('General operation')
-g.add_argument('--interval', '-I', help='Measure every ms instead of only once',
-               type=int)
-g.add_argument('--no-multiplex',
-               help='Do not multiplex, but run the workload multiple times as needed. '
-               'Requires reproducible workloads.',
-               action='store_true')
-g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. '
-               'In SMT mode other thread must be idle.', action='store_true')
-g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumption', action='store_true')
-g.add_argument('--import', help='Import specified perf stat output file instead of running perf. '
-               'Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
-                dest='import_')
-g.add_argument('--subset', help="Process only a subset of the input file with --import. "
-        "Valid syntax: a-b. Process from seek offset a to b. b is optional. "
-        "x/n%% process x'th n percent slice. Starts counting at 0. Add - to process to end of input. "
-        "sample:n%% Sample each time stamp in input with n%% (0-100%%) probability. "
-        "toplev will automatically round to the next time stamp boundary.")
-g.add_argument('--parallel',
-        help="Run toplev --import in parallel in N processes, or the system's number of CPUs if 0 is specified",
-        action='store_true')
-g.add_argument('--pjobs', type=int, default=0,
-        help='Number of threads to run with parallel. Default is number of CPUs.')
-g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later',
-               action='store_true')
-g.add_argument('--script-record', help='Use perf stat record in script for faster recording or '
-               'import generated perf.data (requires new perf)', action='store_true')
-g.add_argument('--drilldown', help='Automatically rerun to get more details on bottleneck', action='store_true')
-g.add_argument('--show-cpu', help='Print current CPU type and exit',
+    formatter_class=argparse.RawDescriptionHelpFormatter)
+    g = p.add_argument_group('General operation')
+    g.add_argument('--interval', '-I', help='Measure every ms instead of only once',
+                   type=int)
+    g.add_argument('--no-multiplex',
+                   help='Do not multiplex, but run the workload multiple times as needed. '
+                   'Requires reproducible workloads.',
+                   action='store_true')
+    g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. '
+                   'In SMT mode other thread must be idle.', action='store_true')
+    g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumption', action='store_true')
+    g.add_argument('--import', help='Import specified perf stat output file instead of running perf. '
+                   'Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
+                    dest='import_')
+    g.add_argument('--subset', help="Process only a subset of the input file with --import. "
+            "Valid syntax: a-b. Process from seek offset a to b. b is optional. "
+            "x/n%% process x'th n percent slice. Starts counting at 0. Add - to process to end of input. "
+            "sample:n%% Sample each time stamp in input with n%% (0-100%%) probability. "
+            "toplev will automatically round to the next time stamp boundary.")
+    g.add_argument('--parallel',
+            help="Run toplev --import in parallel in N processes, or the system's number of CPUs if 0 is specified",
             action='store_true')
-
-g = p.add_argument_group('Measurement filtering')
-g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
-g.add_argument('--user', help='Only measure user code', action='store_true')
-g.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
-g.add_argument('--pid', '-p', help=argparse.SUPPRESS)
-g.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
-g.add_argument('--no-aggr', '-A', help='Measure every CPU', action='store_true')
-g.add_argument('--cputype', help='Limit to hybrid cpu type (atom or core)', choices=['atom', 'core'])
-
-g = p.add_argument_group('Select events')
-g.add_argument('--level', '-l', help='Measure upto level N (max 6)',
-               type=int, default=-1)
-g.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
-g.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
-g.add_argument('--no-util', help="Do not measure CPU utilization", action='store_true')
-g.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
-g.add_argument('--all', help="Measure everything available", action='store_true')
-g.add_argument('--frequency', help="Measure frequency", action='store_true')
-g.add_argument('--power', help='Display power metrics', action='store_true')
-g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, '
-               'comma separated list, wildcards allowed, add * to include all children/siblings, '
-               'add /level to specify highest level node to match, '
-               'add ^ to match related siblings and metrics, '
-               'start with ! to only include specified nodes)')
-g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
-               'comma separated list from --list-metric-groups.', default=None)
-g.add_argument('--areas', help='Add specific areas. Comma separate list, wildcards allowed')
-g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
-g.add_argument('--exclusive', help='Use exclusive groups. Requires new kernel and new perf', action='store_true')
-g.add_argument('--thread',
-        help="Enable per thread SMT measurements for pre-ICL, at the cost of more multiplexing.",
-        action='store_true')
-g.add_argument('--aux', help='Enable auxilliary hierarchy nodes on some models. '
-                             'Auxiliary nodes offer alternate views of the same bottleneck component, which can impact observed bottleneck percentage totals',
-            action='store_true')
-g.add_argument('--node-metrics', '-N', help='Add metrics related to selected nodes, but hide when node is not crossing threshold',
+    g.add_argument('--pjobs', type=int, default=0,
+            help='Number of threads to run with parallel. Default is number of CPUs.')
+    g.add_argument('--gen-script', help='Generate script to collect perfmon information for --import later',
+                   action='store_true')
+    g.add_argument('--script-record', help='Use perf stat record in script for faster recording or '
+                   'import generated perf.data (requires new perf)', action='store_true')
+    g.add_argument('--drilldown', help='Automatically rerun to get more details on bottleneck', action='store_true')
+    g.add_argument('--show-cpu', help='Print current CPU type and exit',
                 action='store_true')
-g.add_argument('--bottlenecks', '-B', help='Show bottlenecks view of Info.Bottleneck metrics', action='store_true')
 
-g = p.add_argument_group('Model tunables')
-g.add_argument('--fp16', help='Enable FP16 support in some models', action='store_true')
-g.add_argument('--hbm-only', help='Enable HBM only mode in some models', action='store_true')
+    g = p.add_argument_group('Measurement filtering')
+    g.add_argument('--kernel', help='Only measure kernel code', action='store_true')
+    g.add_argument('--user', help='Only measure user code', action='store_true')
+    g.add_argument('--cpu', '-C', help=argparse.SUPPRESS)
+    g.add_argument('--pid', '-p', help=argparse.SUPPRESS)
+    g.add_argument('--core', help='Limit output to cores. Comma list of Sx-Cx-Tx. All parts optional.')
+    g.add_argument('--no-aggr', '-A', help='Measure every CPU', action='store_true')
+    g.add_argument('--cputype', help='Limit to hybrid cpu type (atom or core)', choices=['atom', 'core'])
 
-g = p.add_argument_group('Query nodes')
-g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit, ^ for full match',
+    g = p.add_argument_group('Select events')
+    g.add_argument('--level', '-l', help='Measure upto level N (max 6)',
+                   type=int, default=-1)
+    g.add_argument('--metrics', '-m', help="Print extra metrics", action='store_true')
+    g.add_argument('--sw', help="Measure perf Linux metrics", action='store_true')
+    g.add_argument('--no-util', help="Do not measure CPU utilization", action='store_true')
+    g.add_argument('--tsx', help="Measure TSX metrics", action='store_true')
+    g.add_argument('--all', help="Measure everything available", action='store_true')
+    g.add_argument('--frequency', help="Measure frequency", action='store_true')
+    g.add_argument('--power', help='Display power metrics', action='store_true')
+    g.add_argument('--nodes', help='Include or exclude nodes (with + to add, -|^ to remove, '
+                   'comma separated list, wildcards allowed, add * to include all children/siblings, '
+                   'add /level to specify highest level node to match, '
+                   'add ^ to match related siblings and metrics, '
+                   'start with ! to only include specified nodes)')
+    g.add_argument('--metric-group', help='Add (+) or remove (-|^) metric groups of metrics, '
+                   'comma separated list from --list-metric-groups.', default=None)
+    g.add_argument('--areas', help='Add specific areas. Comma separate list, wildcards allowed')
+    g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
+    g.add_argument('--exclusive', help='Use exclusive groups. Requires new kernel and new perf', action='store_true')
+    g.add_argument('--thread',
+            help="Enable per thread SMT measurements for pre-ICL, at the cost of more multiplexing.",
             action='store_true')
-g.add_argument('--list-nodes', help='List all nodes. Can be followed by prefixes to limit, ^ for full match',
-            action='store_true')
-g.add_argument('--list-metric-groups', help='List metric groups.', action='store_true')
-g.add_argument('--list-all', help='List every supported node/metric/metricgroup. Can be followed by prefixes to limit, ^ for full match.',
-            action='store_true')
-g.add_argument('--describe', help='Print full descriptions for listed node prefixes. Add ^ to require full match.', action='store_true')
-
-g = p.add_argument_group('Workarounds')
-g.add_argument('--no-group', help='Dont use groups', action='store_true')
-g.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.',
-               action='store_true')
-g.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true', default=True)
-g.add_argument('--handle-errata', help='Disable events with errata', action='store_true')
-g.add_argument('--reserved-counters', default=0, help='Assume N generic counters are used elsewhere', type=int)
-
-g = p.add_argument_group('Filtering output')
-g.add_argument('--only-bottleneck', help='Only print topdown bottleneck and associated metrics (unless overriden with --nodes)', action='store_true')
-g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. '
-               'Note this can result in bogus values, as the TopDown methodology relies on thresholds '
-               'to correctly characterize workloads. Values not crossing threshold are marked with <.',
-               action='store_true')
-
-g = p.add_argument_group('Output format')
-g.add_argument('--per-core', help='Aggregate output per core', action='store_true')
-g.add_argument('--per-socket', help='Aggregate output per socket', action='store_true')
-g.add_argument('--per-thread', help='Aggregate output per CPU thread', action='store_true')
-g.add_argument('--global', help='Aggregate output for all CPUs', action='store_true', dest='global_')
-g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
-g.add_argument('--desc', help='Force event descriptions', action='store_true')
-g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
-g.add_argument('--output', '-o', help='Set output file')
-g.add_argument('--split-output', help='Generate multiple output files, one for each specified '
-               'aggregation option (with -o)',
-               action='store_true')
-g.add_argument('--graph', help='Automatically graph interval output with tl-barplot.py',
-               action='store_true')
-g.add_argument("--graph-cpu", help="CPU to graph using --graph")
-g.add_argument('--title', help='Set title of graph')
-g.add_argument('-q', '--quiet', help='Avoid unnecessary status output', action='store_true')
-g.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
+    g.add_argument('--aux', help='Enable auxilliary hierarchy nodes on some models. '
+                                 'Auxiliary nodes offer alternate views of the same bottleneck component, which can impact observed bottleneck percentage totals',
                 action='store_true')
-g.add_argument('--columns', help='Print CPU output in multiple columns for each node', action='store_true')
-g.add_argument('--json', help='Print output in JSON format for Chrome about://tracing', action='store_true')
-g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
-g.add_argument('--no-area', help='Hide area column', action='store_true')
-g.add_argument('--perf-output', help='Save perf stat output in specified file')
-g.add_argument('--perf-summary', help='Save summarized perf stat output in specified file')
-g.add_argument('--no-perf', help=argparse.SUPPRESS, action='store_true') # noop, for compatibility
-g.add_argument('--perf', help='Print perf command line', action='store_true')
-g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
-g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5%% of busiest if not CSV, specify percent)",
-               default=None, type=float)
-g.add_argument('--no-output', help="Don't print computed output. Does not affect --summary.", action='store_true')
-g.add_argument('--no-mux', help="Don't print mux statistics", action="store_true")
-g.add_argument('--abbrev', help="Abbreviate node names in output", action="store_true")
-g.add_argument('--no-sort', help="Don't sort output by Metric group", action="store_true")
+    g.add_argument('--node-metrics', '-N', help='Add metrics related to selected nodes, but hide when node is not crossing threshold',
+                    action='store_true')
+    g.add_argument('--bottlenecks', '-B', help='Show bottlenecks view of Info.Bottleneck metrics', action='store_true')
 
-g = p.add_argument_group('Environment')
-g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
-g.add_argument('--force-topology', metavar='findsysoutput', help='Use specified topology file (find /sys/devices)')
-g.add_argument('--force-cpuinfo', metavar='cpuinfo', help='Use specified cpuinfo file (/proc/cpuinfo)')
-g.add_argument('--force-hypervisor', help='Assume running under hypervisor (no uncore, no offcore, no PEBS)',
-               action='store_true')
-g.add_argument('--no-uncore', help='Disable uncore events', action='store_true')
-g.add_argument('--no-check', help='Do not check that PMU units exist', action='store_true')
+    g = p.add_argument_group('Model tunables')
+    g.add_argument('--fp16', help='Enable FP16 support in some models', action='store_true')
+    g.add_argument('--hbm-only', help='Enable HBM only mode in some models', action='store_true')
 
-g = p.add_argument_group('Additional information')
-g.add_argument('--print-group', '-g', help='Print event group assignments',
-               action='store_true')
-g.add_argument('--raw', help="Print raw values", action='store_true')
-g.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file')
-g.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
+    g = p.add_argument_group('Query nodes')
+    g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit, ^ for full match',
+                action='store_true')
+    g.add_argument('--list-nodes', help='List all nodes. Can be followed by prefixes to limit, ^ for full match',
+                action='store_true')
+    g.add_argument('--list-metric-groups', help='List metric groups.', action='store_true')
+    g.add_argument('--list-all', help='List every supported node/metric/metricgroup. Can be followed by prefixes to limit, ^ for full match.',
+                action='store_true')
+    g.add_argument('--describe', help='Print full descriptions for listed node prefixes. Add ^ to require full match.', action='store_true')
 
-g = p.add_argument_group('xlsx output')
-g.add_argument('--xlsx', help='Generate xlsx spreadsheet output with data for '
-               'socket/global/thread/core/summary/raw views with 1s interval. '
-               'Add --single-thread to only get program output.')
-g.add_argument('--set-xlsx', help=argparse.SUPPRESS, action='store_true') # set arguments for xlsx only
-g.add_argument('--xnormalize', help='Add extra sheets with normalized data in xlsx files', action='store_true')
-g.add_argument('--xchart', help='Chart data in xlsx files', action='store_true')
-g.add_argument('--keep', help='Keep temporary files', action='store_true')
-g.add_argument('--xkeep', dest='keep', action='store_true', help=argparse.SUPPRESS)
+    g = p.add_argument_group('Workarounds')
+    g.add_argument('--no-group', help='Dont use groups', action='store_true')
+    g.add_argument('--force-events', help='Assume kernel supports all events. May give wrong results.',
+                   action='store_true')
+    g.add_argument('--ignore-errata', help='Do not disable events with errata', action='store_true', default=True)
+    g.add_argument('--handle-errata', help='Disable events with errata', action='store_true')
+    g.add_argument('--reserved-counters', default=0, help='Assume N generic counters are used elsewhere', type=int)
 
-g = p.add_argument_group('Sampling')
-g.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
-g.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
-g.add_argument('--sample-args', help='Extra arguments to pass to perf record for sampling. Use + to specify -',
-               default='-g')
-g.add_argument('--sample-repeat',
-               help='Repeat measurement and sampling N times. This interleaves counting and sampling. '
-               'Useful for background collection with -a sleep X.', type=int)
-g.add_argument('--sample-basename', help='Base name of sample perf.data files', default="perf.data")
+    g = p.add_argument_group('Filtering output')
+    g.add_argument('--only-bottleneck', help='Only print topdown bottleneck and associated metrics (unless overriden with --nodes)', action='store_true')
+    g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. '
+                   'Note this can result in bogus values, as the TopDown methodology relies on thresholds '
+                   'to correctly characterize workloads. Values not crossing threshold are marked with <.',
+                   action='store_true')
 
-g.add_argument('-d', help=argparse.SUPPRESS, action='help') # prevent passing this to perf
+    g = p.add_argument_group('Output format')
+    g.add_argument('--per-core', help='Aggregate output per core', action='store_true')
+    g.add_argument('--per-socket', help='Aggregate output per socket', action='store_true')
+    g.add_argument('--per-thread', help='Aggregate output per CPU thread', action='store_true')
+    g.add_argument('--global', help='Aggregate output for all CPUs', action='store_true', dest='global_')
+    g.add_argument('--no-desc', help='Do not print event descriptions', action='store_true')
+    g.add_argument('--desc', help='Force event descriptions', action='store_true')
+    g.add_argument('--csv', '-x', help='Enable CSV mode with specified delimeter')
+    g.add_argument('--output', '-o', help='Set output file')
+    g.add_argument('--split-output', help='Generate multiple output files, one for each specified '
+                   'aggregation option (with -o)',
+                   action='store_true')
+    g.add_argument('--graph', help='Automatically graph interval output with tl-barplot.py',
+                   action='store_true')
+    g.add_argument("--graph-cpu", help="CPU to graph using --graph")
+    g.add_argument('--title', help='Set title of graph')
+    g.add_argument('-q', '--quiet', help='Avoid unnecessary status output', action='store_true')
+    g.add_argument('--long-desc', help='Print long descriptions instead of abbreviated ones.',
+                    action='store_true')
+    g.add_argument('--columns', help='Print CPU output in multiple columns for each node', action='store_true')
+    g.add_argument('--json', help='Print output in JSON format for Chrome about://tracing', action='store_true')
+    g.add_argument('--summary', help='Print summary at the end. Only useful with -I', action='store_true')
+    g.add_argument('--no-area', help='Hide area column', action='store_true')
+    g.add_argument('--perf-output', help='Save perf stat output in specified file')
+    g.add_argument('--perf-summary', help='Save summarized perf stat output in specified file')
+    g.add_argument('--no-perf', help=argparse.SUPPRESS, action='store_true') # noop, for compatibility
+    g.add_argument('--perf', help='Print perf command line', action='store_true')
+    g.add_argument('--print', help="Only print perf command line. Don't run", action='store_true')
+    g.add_argument('--idle-threshold', help="Hide idle CPUs (default <5%% of busiest if not CSV, specify percent)",
+                   default=None, type=float)
+    g.add_argument('--no-output', help="Don't print computed output. Does not affect --summary.", action='store_true')
+    g.add_argument('--no-mux', help="Don't print mux statistics", action="store_true")
+    g.add_argument('--abbrev', help="Abbreviate node names in output", action="store_true")
+    g.add_argument('--no-sort', help="Don't sort output by Metric group", action="store_true")
 
-p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
-p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true') # enable scheduler debugging
-p.add_argument('--dfilter', help=argparse.SUPPRESS, action='append')
-p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS) # start python repl after initialization
-p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true') # remove events not supported by perf
-p.add_argument('--setvar', help=argparse.SUPPRESS, action='append') # set env variable (for test suite iterating options)
-p.add_argument('--tune', nargs='+', help=argparse.SUPPRESS) # override global variables with python expression
-p.add_argument('--tune-model', nargs='+', help=argparse.SUPPRESS) # override global variables late with python expression
-p.add_argument('--force-bn', action='append', help=argparse.SUPPRESS) # force bottleneck for testing
-p.add_argument('--no-json-header', action='store_true', help=argparse.SUPPRESS) # no [ for json
-p.add_argument('--no-json-footer', action='store_true', help=argparse.SUPPRESS) # no ] for json
-p.add_argument('--no-csv-header', action='store_true', help=argparse.SUPPRESS) # no header/version for CSV
-p.add_argument('--no-csv-footer', action='store_true', help=argparse.SUPPRESS) # no version for CSV
-p.add_argument('--no-version', action='store_true', help="Don't print version")
-args, rest = p.parse_known_args()
-io_set_args(args)
+    g = p.add_argument_group('Environment')
+    g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
+    g.add_argument('--force-topology', metavar='findsysoutput', help='Use specified topology file (find /sys/devices)')
+    g.add_argument('--force-cpuinfo', metavar='cpuinfo', help='Use specified cpuinfo file (/proc/cpuinfo)')
+    g.add_argument('--force-hypervisor', help='Assume running under hypervisor (no uncore, no offcore, no PEBS)',
+                   action='store_true')
+    g.add_argument('--no-uncore', help='Disable uncore events', action='store_true')
+    g.add_argument('--no-check', help='Do not check that PMU units exist', action='store_true')
 
-if args.setvar:
-    for j in args.setvar:
-        l = j.split("=")
-        os.environ[l[0]] = l[1]
+    g = p.add_argument_group('Additional information')
+    g.add_argument('--print-group', '-g', help='Print event group assignments',
+                   action='store_true')
+    g.add_argument('--raw', help="Print raw values", action='store_true')
+    g.add_argument('--valcsv', '-V', help='Write raw counter values into CSV file')
+    g.add_argument('--stats', help='Show statistics on what events counted', action='store_true')
+
+    g = p.add_argument_group('xlsx output')
+    g.add_argument('--xlsx', help='Generate xlsx spreadsheet output with data for '
+                   'socket/global/thread/core/summary/raw views with 1s interval. '
+                   'Add --single-thread to only get program output.')
+    g.add_argument('--set-xlsx', help=argparse.SUPPRESS, action='store_true') # set arguments for xlsx only
+    g.add_argument('--xnormalize', help='Add extra sheets with normalized data in xlsx files', action='store_true')
+    g.add_argument('--xchart', help='Chart data in xlsx files', action='store_true')
+    g.add_argument('--keep', help='Keep temporary files', action='store_true')
+    g.add_argument('--xkeep', dest='keep', action='store_true', help=argparse.SUPPRESS)
+
+    g = p.add_argument_group('Sampling')
+    g.add_argument('--show-sample', help='Show command line to rerun workload with sampling', action='store_true')
+    g.add_argument('--run-sample', help='Automatically rerun workload with sampling', action='store_true')
+    g.add_argument('--sample-args', help='Extra arguments to pass to perf record for sampling. Use + to specify -',
+                   default='-g')
+    g.add_argument('--sample-repeat',
+                   help='Repeat measurement and sampling N times. This interleaves counting and sampling. '
+                   'Useful for background collection with -a sleep X.', type=int)
+    g.add_argument('--sample-basename', help='Base name of sample perf.data files', default="perf.data")
+
+    g.add_argument('-d', help=argparse.SUPPRESS, action='help') # prevent passing this to perf
+
+    p.add_argument('--version', help=argparse.SUPPRESS, action='store_true')
+    p.add_argument('--debug', help=argparse.SUPPRESS, action='store_true') # enable scheduler debugging
+    p.add_argument('--dfilter', help=argparse.SUPPRESS, action='append')
+    p.add_argument('--repl', action='store_true', help=argparse.SUPPRESS) # start python repl after initialization
+    p.add_argument('--filterquals', help=argparse.SUPPRESS, action='store_true') # remove events not supported by perf
+    p.add_argument('--setvar', help=argparse.SUPPRESS, action='append') # set env variable (for test suite iterating options)
+    p.add_argument('--tune', nargs='+', help=argparse.SUPPRESS) # override global variables with python expression
+    p.add_argument('--tune-model', nargs='+', help=argparse.SUPPRESS) # override global variables late with python expression
+    p.add_argument('--force-bn', action='append', help=argparse.SUPPRESS) # force bottleneck for testing
+    p.add_argument('--no-json-header', action='store_true', help=argparse.SUPPRESS) # no [ for json
+    p.add_argument('--no-json-footer', action='store_true', help=argparse.SUPPRESS) # no ] for json
+    p.add_argument('--no-csv-header', action='store_true', help=argparse.SUPPRESS) # no header/version for CSV
+    p.add_argument('--no-csv-footer', action='store_true', help=argparse.SUPPRESS) # no version for CSV
+    p.add_argument('--no-version', action='store_true', help="Don't print version")
+    args, rest = p.parse_known_args()
+    io_set_args(args)
+    if args.setvar:
+        for j in args.setvar:
+            l = j.split("=")
+            os.environ[l[0]] = l[1]
+    return args, rest
+
+args, rest = handle_args()
 
 def output_count():
     return args.per_core + args.global_ + args.per_thread + args.per_socket
@@ -956,15 +959,17 @@ def run_parallel(args, env):
     # XXX graph
     return ret
 
-if args.idle_threshold:
-    idle_threshold = args.idle_threshold / 100.
-elif args.csv or args.xlsx or args.set_xlsx: # not for args.graph
-    idle_threshold = 0  # avoid breaking programs that rely on the CSV output
-else:
-    idle_threshold = 0.05
 
-if args.exclusive and args.pinned:
-    sys.exit("--exclusive and --pinned cannot be combined")
+def init_idle_threshold():
+    if args.idle_threshold:
+        idle_threshold = args.idle_threshold / 100.
+    elif args.csv or args.xlsx or args.set_xlsx: # not for args.graph
+        idle_threshold = 0  # avoid breaking programs that rely on the CSV output
+    else:
+        idle_threshold = 0.05
+    return idle_threshold
+
+idle_threshold = init_idle_threshold()
 
 event_nocheck = args.import_ or args.no_check
 
@@ -996,110 +1001,131 @@ if args.tune:
 
 env = tl_cpu.Env()
 
-if args.force_cpu:
-    env.forcecpu = args.force_cpu
-    cpuname = gen_cpu_name(args.force_cpu)
-    if not os.getenv("EVENTMAP"):
-        os.environ["EVENTMAP"] = cpuname
-    if not os.getenv("UNCORE"):
-        os.environ["UNCORE"] = cpuname
-if args.force_topology:
-    if not os.getenv("TOPOLOGY"):
-        os.environ["TOPOLOGY"] = args.force_topology
-        ocperf.topology = None # force reread
-if args.force_cpuinfo:
-    env.cpuinfo = args.force_cpuinfo
-if args.force_hypervisor:
-    env.hypervisor = True
+def update_args():
+    if args.force_cpu:
+        env.forcecpu = args.force_cpu
+        cpuname = gen_cpu_name(args.force_cpu)
+        if not os.getenv("EVENTMAP"):
+            os.environ["EVENTMAP"] = cpuname
+        if not os.getenv("UNCORE"):
+            os.environ["UNCORE"] = cpuname
+    if args.force_topology:
+        if not os.getenv("TOPOLOGY"):
+            os.environ["TOPOLOGY"] = args.force_topology
+            ocperf.topology = None # force reread
+    if args.force_cpuinfo:
+        env.cpuinfo = args.force_cpuinfo
+    if args.force_hypervisor:
+        env.hypervisor = True
+    if args.sample_repeat:
+        args.run_sample = True
+    if args.handle_errata:
+        args.ignore_errata = False
+    if args.exclusive and args.pinned:
+        sys.exit("--exclusive and --pinned cannot be combined")
 
-if args.parallel:
-    if not args.import_:
-        sys.exit("--parallel requires --import")
-    if args.import_.endswith(".xz") or args.import_.endswith(".gz"):
-        sys.exit("Uncompress input file first") # XXX
-    if args.perf_summary:
-        sys.exit("--parallel does not support --perf-summary") # XXX
-    if args.subset:
-        # XXX support sample
-        sys.exit("--parallel does not support --subset")
-    if args.json and multi_output() and not args.split_output:
-        sys.exit("--parallel does not support multi-output --json without --split-output")
-    if args.graph:
-        sys.exit("--parallel does not support --graph") # XXX
-    if args.pjobs == 0:
-        import multiprocessing
-        args.pjobs = multiprocessing.cpu_count()
-    sys.exit(run_parallel(args, env))
+update_args()
 
-if rest[:1] == ["--"]:
-    rest = rest[1:]
+def handle_parallel():
+    if args.parallel:
+        if not args.import_:
+            sys.exit("--parallel requires --import")
+        if args.import_.endswith(".xz") or args.import_.endswith(".gz"):
+            sys.exit("Uncompress input file first") # XXX
+        if args.perf_summary:
+            sys.exit("--parallel does not support --perf-summary") # XXX
+        if args.subset:
+            # XXX support sample
+            sys.exit("--parallel does not support --subset")
+        if args.json and multi_output() and not args.split_output:
+            sys.exit("--parallel does not support multi-output --json without --split-output")
+        if args.graph:
+            sys.exit("--parallel does not support --graph") # XXX
+        if args.pjobs == 0:
+            import multiprocessing
+            args.pjobs = multiprocessing.cpu_count()
+        sys.exit(run_parallel(args, env))
 
-if args.cpu:
-    rest = ["--cpu", args.cpu] + rest
-if args.pid:
-    rest = ["--pid", args.pid] + rest
-if args.csv and len(args.csv) != 1:
-    sys.exit("--csv/-x argument can be only a single character")
+handle_parallel()
 
-if args.xlsx:
-    init_xlsx(args)
-if args.set_xlsx:
-    set_xlsx(args)
+def handle_rest(rest):
+    if rest[:1] == ["--"]:
+        rest = rest[1:]
+    if args.cpu:
+        rest = ["--cpu", args.cpu] + rest
+    if args.pid:
+        rest = ["--pid", args.pid] + rest
+    if args.csv and len(args.csv) != 1:
+        sys.exit("--csv/-x argument can be only a single character")
+
+    if args.xlsx:
+        init_xlsx(args)
+    if args.set_xlsx:
+        set_xlsx(args)
+    return rest
+
+rest = handle_rest(rest)
 
 open_output_files()
 
-if args.perf_summary:
-    try:
-        args.perf_summary = flex_open_w(args.perf_summary)
-    except IOError as e:
-        sys.exit("Cannot open perf summary file %s: %s" % (args.perf_summary, e))
-    # XXX force no_uncore because the resulting file cannot be imported otherwise?
+def update_args2():
+    if args.perf_summary:
+        try:
+            args.perf_summary = flex_open_w(args.perf_summary)
+        except IOError as e:
+            sys.exit("Cannot open perf summary file %s: %s" % (args.perf_summary, e))
+        # XXX force no_uncore because the resulting file cannot be imported otherwise?
 
-if args.all:
-    args.tsx = True
-    args.power = True
-    args.sw = True
-    args.metrics = True
-    args.frequency = True
-    args.level = 6
+    if args.all:
+        args.tsx = True
+        args.power = True
+        args.sw = True
+        args.metrics = True
+        args.frequency = True
+        args.level = 6
 
-if args.only_bottleneck:
-    args.quiet = True
-    args.no_version = True
+    if args.only_bottleneck:
+        args.quiet = True
+        args.no_version = True
 
-if args.graph:
-    if not args.interval:
-        args.interval = 100
-    extra = ""
-    if args.title:
-        title = args.title
-    else:
-        title = "cpu %s" % (args.graph_cpu if args.graph_cpu else 0)
-    extra += '--title "' + title + '" '
-    if args.split_output:
-        sys.exit("--split-output not allowed with --graph")
-    if args.output:
-        extra += '--output "' + args.output + '" '
-    if args.graph_cpu:
-        extra += "--cpu " + args.graph_cpu + " "
-    args.csv = ','
-    cmd = "%s %s/tl-barplot.py %s /dev/stdin" % (sys.executable, exe_dir(), extra)
-    if not args.quiet:
-        print(cmd)
-    graphp = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, **popentext)
-    args.output = graphp.stdin
+update_args2()
 
-if args.sample_repeat:
-    args.run_sample = True
+def handle_graph():
+    graphp = None
+    if args.graph:
+        if not args.interval:
+            args.interval = 100
+        extra = ""
+        if args.title:
+            title = args.title
+        else:
+            title = "cpu %s" % (args.graph_cpu if args.graph_cpu else 0)
+        extra += '--title "' + title + '" '
+        if args.split_output:
+            sys.exit("--split-output not allowed with --graph")
+        if args.output:
+            extra += '--output "' + args.output + '" '
+        if args.graph_cpu:
+            extra += "--cpu " + args.graph_cpu + " "
+        args.csv = ','
+        cmd = "%s %s/tl-barplot.py %s /dev/stdin" % (sys.executable, exe_dir(), extra)
+        if not args.quiet:
+            print(cmd)
+        graphp = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, **popentext)
+        args.output = graphp.stdin
+    return graphp
 
-if args.handle_errata:
-    args.ignore_errata = False
+graphp = handle_graph()
 
-ring_filter = ""
-if args.kernel and not args.user:
-    ring_filter = 'k'
-if args.user and not args.kernel:
-    ring_filter = 'u'
+def init_ring_filter():
+    ring_filter = ""
+    if args.kernel and not args.user:
+        ring_filter = 'k'
+    if args.user and not args.kernel:
+        ring_filter = 'u'
+    return ring_filter
+
+ring_filter = init_ring_filter()
 
 MAX_ERROR = 0.05
 
@@ -1111,45 +1137,46 @@ def check_ratio(l):
 # XXX move into ectx
 cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
 
-if args.level < 0:
-    if args.bottlenecks:
-        args.level = 4
-    else:
-        args.level = 2 if any([x >= 8 for x in cpu.counters.values()]) else 1
+def update_args_cpu():
+    if args.level < 0:
+        if args.bottlenecks:
+            args.level = 4
+        else:
+            args.level = 2 if any([x >= 8 for x in cpu.counters.values()]) else 1
+    if args.show_cpu:
+        print("%s %s %s" % (cpu.true_name, cpu.pmu_name, cpu.name))
+        sys.exit(0)
+    desired_cpu = args.force_cpu if args.force_cpu else cpu.model
+    if desired_cpu in eventlist_alias:
+        r = eventlist_alias[desired_cpu]
+        if not os.getenv("EVENTMAP"):
+            os.environ["EVENTMAP"] = r
+        if not os.getenv("UNCORE"):
+            os.environ["UNCORE"] = r
 
-if args.show_cpu:
-    print("%s %s %s" % (cpu.true_name, cpu.pmu_name, cpu.name))
-    sys.exit(0)
+    if cpu.pmu_name and cpu.pmu_name.startswith("generic") and not args.quiet:
+        print("warning: kernel is in architectural mode and might mismeasure events", file=sys.stderr)
+        print("Consider a kernel update. See https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support", file=sys.stderr)
+        if cpu.cpu in hybrid_cpus:
+            sys.exit("Hybrid %s not supported in architectural mode" % cpu.cpu)
 
-desired_cpu = args.force_cpu if args.force_cpu else cpu.model
-if desired_cpu in eventlist_alias:
-    r = eventlist_alias[desired_cpu]
-    if not os.getenv("EVENTMAP"):
-        os.environ["EVENTMAP"] = r
-    if not os.getenv("UNCORE"):
-        os.environ["UNCORE"] = r
+    if args.xlsx and not forced_per_socket and cpu.sockets == 1:
+        args.per_socket = False
+    if args.xlsx and not forced_per_core and cpu.threads == 1:
+        args.per_core = False
 
-if cpu.pmu_name and cpu.pmu_name.startswith("generic") and not args.quiet:
-    print("warning: kernel is in architectural mode and might mismeasure events", file=sys.stderr)
-    print("Consider a kernel update. See https://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support", file=sys.stderr)
-    if cpu.cpu in hybrid_cpus:
-        sys.exit("Hybrid %s not supported in architectural mode" % cpu.cpu)
+    if cpu.hypervisor:
+        feat.max_precise = 0
+        feat.has_max_precise = True
 
-if args.xlsx and not forced_per_socket and cpu.sockets == 1:
-    args.per_socket = False
-if args.xlsx and not forced_per_core and cpu.threads == 1:
-    args.per_core = False
+    if not pversion.has_uncore_expansion:
+        # XXX reenable power
+        args.no_uncore = True
 
-if cpu.hypervisor:
-    feat.max_precise = 0
-    feat.has_max_precise = True
+    if cpu.hypervisor or args.no_uncore:
+        feat.supports_power = False
 
-if not pversion.has_uncore_expansion:
-    # XXX reenable power
-    args.no_uncore = True
-
-if cpu.hypervisor or args.no_uncore:
-    feat.supports_power = False
+update_args_cpu()
 
 def print_perf(r):
     if not (args.perf or args.print):
@@ -3721,32 +3748,43 @@ def sysctl(name):
         return 0
     return val
 
-# check nmi watchdog
-# XXX need to get this state from CSV import
-if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
-    # XXX should probe if nmi watchdog runs on fixed or generic counter
+def update_cpu():
+    # check nmi watchdog
+    # XXX need to get this state from CSV import
+    if sysctl("kernel.nmi_watchdog") != 0 or os.getenv("FORCE_NMI_WATCHDOG"):
+        # XXX should probe if nmi watchdog runs on fixed or generic counter
+        for j in cpu.counters.keys():
+            cpu.counters[j] -= 1 # FIXME
+        if not args.quiet and not args.import_:
+            print("Consider disabling nmi watchdog to minimize multiplexing", file=sys.stderr)
+            print("(echo 0 | sudo tee /proc/sys/kernel/nmi_watchdog or\n echo kernel.nmi_watchdog=0 >> /etc/sysctl.conf ; sysctl -p as root)", file=sys.stderr)
+
     for j in cpu.counters.keys():
-        cpu.counters[j] -= 1 # FIXME
-    if not args.quiet and not args.import_:
-        print("Consider disabling nmi watchdog to minimize multiplexing", file=sys.stderr)
-        print("(echo 0 | sudo tee /proc/sys/kernel/nmi_watchdog or\n echo kernel.nmi_watchdog=0 >> /etc/sysctl.conf ; sysctl -p as root)", file=sys.stderr)
+        cpu.counters[j] -= args.reserved_counters
 
-for j in cpu.counters.keys():
-    cpu.counters[j] -= args.reserved_counters
+    if cpu.cpu is None:
+        sys.exit("Unsupported CPU model %s %d" % (cpu.vendor, cpu.model,))
 
-if cpu.cpu is None:
-    sys.exit("Unsupported CPU model %s %d" % (cpu.vendor, cpu.model,))
+update_cpu()
 
-kv = os.getenv("KERNEL_VERSION")
-if not kv:
-    kv = platform.release()
-kernel_version = kv_to_key(list(map(int, kv.split(".")[:2])))
+def get_kernel():
+    kv = os.getenv("KERNEL_VERSION")
+    if not kv:
+        kv = platform.release()
+    return kv_to_key(list(map(int, kv.split(".")[:2])))
 
-if args.exclusive:
-    if kernel_version < 510:
-        sys.exit("--exclusive needs kernel 5.10+")
-    metrics_own_group = False
-    run_l1_parallel = False
+kernel_version = get_kernel()
+
+def check_exclusive():
+    if args.exclusive:
+        if kernel_version < 510:
+            sys.exit("--exclusive needs kernel 5.10+")
+        global metrics_own_group
+        metrics_own_group = False
+        global run_l1_parallel
+        run_l1_parallel = False
+
+check_exclusive()
 
 def ht_warning():
     if cpu.ht and not args.quiet:
@@ -3839,29 +3877,23 @@ def init_runner_list():
 
 runner_list = init_runner_list()
 
-pe = lambda x: None
-if args.debug:
-    printed_error = set()
-    def print_err(x):
-        if x not in printed_error:
-            print(x)
-            printed_error.add(x)
-    pe = lambda e: print_err(e)
+def handle_more_options():
+    if args.single_thread:
+        cpu.ht = False
 
-if args.single_thread:
-    cpu.ht = False
+    if args.quiet:
+        if not args.desc:
+            args.no_desc = True
+        args.no_util = True
 
-if args.quiet:
-    if not args.desc:
-        args.no_desc = True
-    args.no_util = True
+handle_more_options()
 
 def tune_model(model):
     if args.tune_model:
         for t in args.tune_model:
             exec(t)
 
-def init_model(model, runner):
+def init_model(model, runner, pe):
     version = model.version
     model.print_error = pe
     model.check_event = lambda ev: ectx.emap.getevent(ev) is not None
@@ -3903,7 +3935,7 @@ def legacy_smt_setup(model):
     model.smt_enabled = cpu.ht
     smt_mode |= cpu.ht
 
-def model_setup(runner, cpuname):
+def model_setup(runner, cpuname, pe):
     global smt_mode
     if cpuname == "ivb":
         import ivb_client_ratios
@@ -4021,9 +4053,9 @@ def model_setup(runner, cpuname):
         import simple_ratios
         model = simple_ratios
 
-    return init_model(model, runner)
+    return init_model(model, runner, pe)
 
-def runner_emaps():
+def runner_emaps(pe):
     version = ""
     for runner in runner_list:
         runner.set_ectx()
@@ -4036,24 +4068,38 @@ def runner_emaps():
                      (os.environ["EVENTMAP"] if "EVENTMAP" in os.environ else "?", cpu.model))
         if version:
             version += ", "
-        version += model_setup(runner, cpu.cpu)
+        version += model_setup(runner, cpu.cpu, pe)
         runner.clear_ectx()
     return version
 
-version = runner_emaps()
+def setup_pe():
+    pe = lambda x: None
+    if args.debug:
+        printed_error = set()
+        def print_err(x):
+            if x not in printed_error:
+                print(x)
+                printed_error.add(x)
+        pe = lambda e: print_err(e)
+    return pe
 
-if args.version:
-    print("toplev, CPU: %s, TMA version: %s" % (cpu.cpu, version))
-    sys.exit(0)
+version = runner_emaps(setup_pe())
 
-if args.gen_script:
-    args.quiet = True
+def handle_misc_options():
+    if args.version:
+        print("toplev, CPU: %s, TMA version: %s" % (cpu.cpu, version))
+        sys.exit(0)
 
-if args.subset:
-    if not args.import_:
-        sys.exit("--subset requires --import mode")
-    if args.script_record:
-        sys.exit("--subset cannot be used with --script-record. Generate temp file with perf stat report -x\\;")
+    if args.gen_script:
+        args.quiet = True
+
+    if args.subset:
+        if not args.import_:
+            sys.exit("--subset requires --import mode")
+        if args.script_record:
+            sys.exit("--subset cannot be used with --script-record. Generate temp file with perf stat report -x\\;")
+
+handle_misc_options()
 
 def handle_cmd():
     if args.describe:
@@ -4153,64 +4199,81 @@ def runner_filter(rest):
 
 rest = runner_filter(rest)
 
-if not smt_mode and not args.single_thread and not args.no_aggr:
-    hybrid = cpu.cpu in hybrid_cpus
-    multi = output_count()
-    if multi > 0:
-        rest = add_args(rest, "-a")
-    if (multi > 1 or args.per_thread) and not hybrid:
-        args.no_aggr = True
-    if args.per_socket and multi == 1 and not hybrid:
-        rest = add_args(rest, "--per-socket")
-    if args.per_core and multi == 1 and not hybrid:
-        rest = add_args(rest, "--per-core")
+def update_smt(rest):
+    if not smt_mode and not args.single_thread and not args.no_aggr:
+        hybrid = cpu.cpu in hybrid_cpus
+        multi = output_count()
+        if multi > 0:
+            rest = add_args(rest, "-a")
+        if (multi > 1 or args.per_thread) and not hybrid:
+            args.no_aggr = True
+        if args.per_socket and multi == 1 and not hybrid:
+            rest = add_args(rest, "--per-socket")
+        if args.per_core and multi == 1 and not hybrid:
+            rest = add_args(rest, "--per-core")
+    return rest
+
+rest = update_smt(rest)
 
 def runner_node_filter():
     for r in runner_list:
         r.filter_nodes()
 
 runner_node_filter()
+
+def update_smt_mode():
+    if smt_mode and not os.getenv('FORCEHT'):
+        # do not need SMT mode if no objects have Core scope
+        if not any_core_node():
+            return False
+    return smt_mode
+
 orig_smt_mode = smt_mode
-if smt_mode and not os.getenv('FORCEHT'):
-    # do not need SMT mode if no objects have Core scope
-    if not any_core_node():
-        smt_mode = False
+smt_mode = update_smt_mode()
 
-full_system = False
-if not args.single_thread and smt_mode:
-    if not args.quiet and not args.import_:
-        print("Will measure complete system.")
-    if smt_mode:
-        if args.cpu:
-            print("Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!",
-                  file=sys.stderr)
-        if args.pid:
-            sys.exit("-p/--pid mode not compatible with SMT. Use sleep in global mode.")
-    check_root()
-    rest = add_args(rest, "-a")
-    args.no_aggr = True
-    full_system = True
-else:
-    full_system = args.no_aggr or "--per-core" in rest or "--per-socket" in rest
+def check_full_system(rest):
+    full_system = False
+    if not args.single_thread and smt_mode:
+        if not args.quiet and not args.import_:
+            print("Will measure complete system.")
+        if smt_mode:
+            if args.cpu:
+                print("Warning: --cpu/-C mode with HyperThread must specify all core thread pairs!",
+                      file=sys.stderr)
+            if args.pid:
+                sys.exit("-p/--pid mode not compatible with SMT. Use sleep in global mode.")
+        check_root()
+        rest = add_args(rest, "-a")
+        args.no_aggr = True
+        full_system = True
+    else:
+        full_system = args.no_aggr or "--per-core" in rest or "--per-socket" in rest
+    if args.no_aggr:
+        rest = add_args(rest, "-A")
+    return full_system, rest
 
-if args.no_aggr:
-    rest = add_args(rest, "-A")
+full_system, rest = check_full_system(rest)
 
 output_numcpus = False
-if (args.perf_output or args.perf_summary) and not args.no_csv_header:
-    ph = []
-    if args.interval:
-        ph.append("Timestamp")
-    if full_system:
-        ph.append("Location")
-        if ("--per-socket" in rest or "--per-core" in rest) and not args.no_aggr:
-            ph.append("Num-CPUs")
-            output_numcpus = True
-    ph += ["Value", "Unit", "Event", "Run-Time", "Enabled", "", ""]
-    if args.perf_output:
-        args.perf_output.write(";".join(ph) + "\n")
-    if args.perf_summary:
-        args.perf_summary.write(";".join(ph) + "\n")
+
+def init_perf_output():
+    if (args.perf_output or args.perf_summary) and not args.no_csv_header:
+        ph = []
+        if args.interval:
+            ph.append("Timestamp")
+        if full_system:
+            ph.append("Location")
+            if ("--per-socket" in rest or "--per-core" in rest) and not args.no_aggr:
+                ph.append("Num-CPUs")
+                global output_numcpus
+                output_numcpus = True
+        ph += ["Value", "Unit", "Event", "Run-Time", "Enabled", "", ""]
+        if args.perf_output:
+            args.perf_output.write(";".join(ph) + "\n")
+        if args.perf_summary:
+            args.perf_summary.write(";".join(ph) + "\n")
+
+init_perf_output()
 
 def setup_cpus(rest, cpu):
     if args.cpu:
@@ -4244,27 +4307,34 @@ rest = setup_cpus(rest, cpu)
 if args.pinned:
     run_l1_parallel = True
 
-if args.json:
-    if args.csv:
-        sys.exit("Cannot combine --csv with --json")
-    if args.columns:
-        sys.exit("Cannot combine --columns with --json")
-    out = tl_output.OutputJSON(args.output, args.csv, args, version, cpu)
-elif args.csv:
-    if args.columns:
-        out = tl_output.OutputColumnsCSV(args.output, args.csv, args, version, cpu)
+def init_output():
+    if args.json:
+        if args.csv:
+            sys.exit("Cannot combine --csv with --json")
+        if args.columns:
+            sys.exit("Cannot combine --columns with --json")
+        out = tl_output.OutputJSON(args.output, args.csv, args, version, cpu)
+    elif args.csv:
+        if args.columns:
+            out = tl_output.OutputColumnsCSV(args.output, args.csv, args, version, cpu)
+        else:
+            out = tl_output.OutputCSV(args.output, args.csv, args, version, cpu)
+    elif args.columns:
+        out = tl_output.OutputColumns(args.output, args, version, cpu)
     else:
-        out = tl_output.OutputCSV(args.output, args.csv, args, version, cpu)
-elif args.columns:
-    out = tl_output.OutputColumns(args.output, args, version, cpu)
-else:
-    out = tl_output.OutputHuman(args.output, args, version, cpu)
+        out = tl_output.OutputHuman(args.output, args, version, cpu)
+    return out
 
-if args.valcsv:
-    out.valcsv = csv.writer(args.valcsv, lineterminator='\n', delimiter=';')
-    if not args.no_csv_header:
-        out.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
-                             "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
+out = init_output()
+
+def init_valcsv():
+    if args.valcsv:
+        out.valcsv = csv.writer(args.valcsv, lineterminator='\n', delimiter=';')
+        if not args.no_csv_header:
+            out.valcsv.writerow(("Timestamp", "CPU", "Group", "Event", "Value",
+                                 "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
+
+init_valcsv()
 
 # XXX use runner_restart
 def runner_first_init():
@@ -4369,14 +4439,18 @@ if args.repl:
     code.interact(banner='toplev repl', local=locals())
     sys.exit(0)
 
-if args.sample_repeat:
-    cnt = 1
-    for j in range(args.sample_repeat):
-        ret, cnt = measure_and_sample(runner_list, cnt)
-        if ret:
-            break
-else:
-    ret, count = measure_and_sample(runner_list, 0 if args.drilldown else None)
+def measure():
+    if args.sample_repeat:
+        cnt = 1
+        for j in range(args.sample_repeat):
+            ret, cnt = measure_and_sample(runner_list, cnt)
+            if ret:
+                break
+    else:
+        ret, count = measure_and_sample(runner_list, 0 if args.drilldown else None)
+    return ret
+
+ret = measure()
 
 out.print_footer()
 out.flushfiles()
@@ -4398,7 +4472,11 @@ def idle_range_list(l):
 report_idle(runner_list)
 report_not_supported(runner_list)
 
-if args.graph:
-    args.output.close()
-    graphp.wait()
+def finish_graph(graphp):
+    if args.graph:
+        args.output.close()
+        graphp.wait()
+
+finish_graph(graphp)
+
 sys.exit(ret)
