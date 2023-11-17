@@ -34,6 +34,7 @@ jobs:
         flake8 --exclude '*_uc.py,*_ratios.py'  --ignore=E302,E128,E741,E251,E305,E221,E127,E126,E501,E401,E231,E201,E261,E731,E122,E131,E226,W504,E402,E301,W503,E265,E306,E227,E306,W391,E202,E241
     - name: Run toplev tests
       run: |
+        if ! grep -q GenuineIntel /proc/cpuinfo ; then export NATIVE_ARGS="--force-cpu skl" ; fi
         WRAP=python PERF=./fake-perf.py NORES=1 ./tl-tester
     - name: Run ocperf tests
       run: |
@@ -41,7 +42,6 @@ jobs:
         WRAP=python PERF=./fake-perf.py NORES=1 ./tester
     - name: Run other tests
       run: |
-        pip install matplotlib
         WRAP=python PERF=./fake-perf.py NORES=1 ./other-tester
     - name: Run ucevent tests
       run: |

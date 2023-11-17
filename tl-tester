@@ -16,6 +16,7 @@
 # MATCH=cpu in cpu loops only run for CPU cpu
 # ONLYCPU=cpu  Only test cpu type. cur for current CPU (makes test suite run much faster)
 # NOMULTIPLEX=" " Disable no multiplex 
+# NATIVE_ARGS="" Pass argument to toplevs without --force-cpu (to override on unsupported hosts)
 
 set -e
 set -o pipefail
@@ -45,7 +46,7 @@ else
 fi
 
 if [ "$ONLYCPU" = "cur" ] ; then
-	ONLYCPU=`./toplev --show-cpu | cut -d ' ' -f 1`
+	ONLYCPU=`./toplev $NATIVE_ARGS --show-cpu | cut -d ' ' -f 1`
 fi
 
 OPT="${OPT:-}"
@@ -173,7 +174,7 @@ $WRAP ./toplev.py --force-cpu skl $OPT --filterquals --nodes '!+Bad_Speculation.
 [ -z "$NORES" ] && grep Branch_Mispredicts log$$
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
 if [ -d /sys/devices/cpu_atom ] ; then
-$WRAP ./toplev --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $(./cputop 'type=="core"' taskset) $LOADLONG
+$WRAP ./toplev $NATIVE_ARGS --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $(./cputop 'type=="core"' taskset) $LOADLONG
 else
 $WRAP ./toplev --force-cpu skl --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $LOADLONG
 fi
@@ -183,7 +184,7 @@ fi
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
 rm log$$
 fi
-$WRAP ./toplev.py --show-cpu
+$WRAP ./toplev.py $NATIVE_ARGS --show-cpu
 
 case "$OPT" in
 	*--pinned*) ;;
@@ -201,7 +202,7 @@ grep :D log$$
 rm log$$
 esac
 
-$WRAP ./toplev -h > /dev/null
+$WRAP ./toplev $NATIVE_ARGS -h > /dev/null
 
 # test L1 uses a single group
 onegroup() {
@@ -352,7 +353,7 @@ $WRAP ./toplev.py -I 100 -g -l3 --force-cpu $DCPU $OPT --ignore-errata --force-e
 rm perfo$$.csv perfs$$.csv
 
 # always on native CPU
-$WRAP ./toplev.py --all --valcsv val$$.csv --perf-output perfo$$.csv -o log$$ $LOADLONG
+$WRAP ./toplev.py $NATIVE_ARGS --all --valcsv val$$.csv --perf-output perfo$$.csv -o log$$ $LOADLONG
 [ -z "$NORES" ] && grep -v "not supported" log$$
 [ -z "$NORES" ] && grep -v "not " val$$.csv
 rm val$$.csv perfo$$.csv log$$
@@ -477,14 +478,14 @@ $WRAP ./toplev.py --perf -l1 --force-cpu $DCPU $OPT --single-thread --user $LOAD
 onegroup log$$
 grep '[:/]u' log$$
 grep /u log$$
-$WRAP ./toplev -l1 --drilldown -N $OPT --single-thread $LOAD
+$WRAP ./toplev $NATIVE_ARGS -l1 --drilldown -N $OPT --single-thread $LOAD
 # XXX check something based on true bottleneck
-$WRAP ./toplev -l3 -N --single-thread $OPT $LOAD
-$WRAP ./toplev --areas 'Info.Bottleneck,Info.System' -v -o log$$ $OPT $LOAD
+$WRAP ./toplev $NATIVE_ARGS -l3 -N --single-thread $OPT $LOAD
+$WRAP ./toplev $NATIVE_ARGS --areas 'Info.Bottleneck,Info.System' -v -o log$$ $OPT $LOAD
 [ -z "$NORES" ] && grep Bottleneck log$$
-$WRAP ./toplev --bottlenecks -v -o log$$ $OPT $LOAD
+$WRAP ./toplev $NATIVE_ARGS --bottlenecks -v -o log$$ $OPT $LOAD
 [ -z "$NORES" ] && grep Bottleneck log$$
-$WRAP ./toplev --only-bottleneck $OPT $LOAD
+$WRAP ./toplev $NATIVE_ARGS --only-bottleneck $OPT $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --list-all
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --list-all -x,
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --list-metric-groups
@@ -499,11 +500,11 @@ echo >> log$$
 [ -z "$NORES" ] && grep IPC log$$
 checklog0
 rm log$$
-$WRAP ./toplev.py $OPT > log$$ true
+$WRAP ./toplev.py $NATIVE_ARGS $OPT > log$$ true
 # assumes that true is backend_bound. If not would need some parsing
 [ -z "$NORES" ] && egrep "Add --nodes.*(Back|Front)end" log$$
 rm log$$
-$WRAP ./toplev.py  -v $OPT --nodes Backend*/3 -o log$$ true
+$WRAP ./toplev.py  -v $OPT $NATIVE_ARGS --nodes Backend*/3 -o log$$ true
 echo >> log$$
 [ -z "$NORES" ] && grep Backend_Bound.Memory_Bound.L3_Bound log$$
 [ -z "$NORES" ] && grep -v Backend_Bound.Core_Bound.Ports_Utilization.Ports_Utilized_0 log$$
@@ -542,12 +543,12 @@ rm perf$$.data.{1,2,3}
 rm x$$.xlsx
 fi
 
-$WRAP ./toplev.py $OPT -v -o log$$ --single-thread -r3 $LOAD
+$WRAP ./toplev.py $NATIVE_ARGS $OPT -v -o log$$ --single-thread -r3 $LOAD
 [ -z "$NORES" ] && grep 'Backend_Bound.*[0-9][0-9]' log$$
 
 if [ -f /sys/devices/cpu_core ] ; then
-$WRAP ./toplev.py $OPT --cputype atom `$WRAP ./cputop 'type=="core"' taskset` true
-$WRAP ./toplev.py $OPT --cputype core `$WRAP ./cputop 'type=="atom"' taskset` true
+$WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype atom `$WRAP ./cputop 'type=="core"' taskset` true
+$WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype core `$WRAP ./cputop 'type=="atom"' taskset` true
 fi
 
 rm log$$
@@ -578,14 +579,14 @@ fi
 $WRAP ./toplev.py --no-version --force-cpu hsx --filterquals $OPT -l4 true
 
 # test gen-script / import
-$WRAP ./toplev.py --all --gen-script > script$$
+$WRAP ./toplev.py $NATIVE_ARGS --all --gen-script > script$$
 chmod +x script$$
 OUT=tltest$$ ./script$$ $LOAD
 $WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 
 #if $PERF stat record --quiet true >/dev/null 2>/dev/null ; then
-#$WRAP ./toplev.py --script-record --all --gen-script > script$$
+#$WRAP ./toplev.py $NATIVE_ARGS --script-record --all --gen-script > script$$
 #chmod +x script$$
 #OUT=tltest$$ ./script$$ $LOAD
 #$WRAP ./toplev.py --script-record --all --import tltest$$_perf.data --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
@@ -593,7 +594,7 @@ rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 #fi
 
 if $PYTHON -c 'import xlsxwriter' ; then
-$WRAP ./toplev.py --xlsx dummy.xlsx --all --gen-script > script$$
+$WRAP ./toplev.py $NATIVE_ARGS --xlsx dummy.xlsx --all --gen-script > script$$
 chmod +x script$$
 OUT=tltest$$ ./script$$ $LOAD
 $WRAP ./toplev.py --all --import tltest$$_perf.csv --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology --xlsx x$$.xlsx
@@ -604,26 +605,26 @@ fi
 # test --parallel
 # this test is fragile
 ARG="-a -A --all -I100 -v --summary --no-desc --no-uncore --nodes=-MUX --no-mux"
-$WRAP ./toplev.py $ARG -o log0.$$ --perf-output perfo0.$$.csv --valcsv perfv0.$$.csv $LOADLONG
-$WRAP ./toplev.py --import perfo0.$$.csv $ARG -o log1.$$ --perf-output perfo1.$$.csv --valcsv perfv1.$$.csv
+$WRAP ./toplev.py $NATIVE_ARGS $ARG -o log0.$$ --perf-output perfo0.$$.csv --valcsv perfv0.$$.csv $LOADLONG
+$WRAP ./toplev.py $NATIVE_ARGS --import perfo0.$$.csv $ARG -o log1.$$ --perf-output perfo1.$$.csv --valcsv perfv1.$$.csv
 diff -u perfo0.$$.csv perfo1.$$.csv | head
 diff -u perfv0.$$.csv perfv1.$$.csv | head
 diff -wu log0.$$ log1.$$
-$WRAP ./toplev.py --parallel --pjobs $PJOBS --import perfo0.$$.csv $ARG -o log2.$$ --perf-output perfo2.$$.csv --valcsv perfv2.$$.csv
+$WRAP ./toplev.py $NATIVE_ARGS --parallel --pjobs $PJOBS --import perfo0.$$.csv $ARG -o log2.$$ --perf-output perfo2.$$.csv --valcsv perfv2.$$.csv
 diff -u perfo1.$$.csv perfo2.$$.csv | head
 diff -u perfv1.$$.csv perfv2.$$.csv | head
 diff -wu log1.$$ log2.$$
-$WRAP ./toplev.py --parallel --pjobs $PJOBS --import perfo0.$$.csv $ARG --json -o j$$.json
+$WRAP ./toplev.py $NATIVE_ARGS --parallel --pjobs $PJOBS --import perfo0.$$.csv $ARG --json -o j$$.json
 cat j$$.json | $PYTHON -m json.tool
 if $PYTHON -c 'import xlsxwriter' ; then
-$WRAP ./toplev.py --parallel --pjobs $PJOBS --import perfo0.$$.csv $ARG --xlsx x$$.xlsx
+$WRAP ./toplev.py $NATIVE_ARGS --parallel --pjobs $PJOBS --import perfo0.$$.csv $ARG --xlsx x$$.xlsx
 rm x$$.xlsx
 fi
 rm log[012].$$ perf[ov][012].$$.csv j$$.json
 
 # check current platform
-$WRAP ./toplev.py -o /dev/null $OPT --no-desc -v --all --run-sample $LOAD
-HYPERVISOR=1 $WRAP ./toplev.py $OPT -o /dev/null --no-desc -v -l5 --run-sample $LOAD
+$WRAP ./toplev.py $NATIVE_ARGS -o /dev/null $OPT --no-desc -v --all --run-sample $LOAD
+HYPERVISOR=1 $WRAP ./toplev.py $NATIVE_ARGS $OPT -o /dev/null --no-desc -v -l5 --run-sample $LOAD
 for cpu in $SMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$cpu" ] && continue
 
