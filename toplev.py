@@ -200,6 +200,19 @@ Undef = UVal("undef", 0)
 
 event_nocheck = False
 
+# should clean those up, but they're all read-only after initialization anyways
+global ectx
+global args
+global feat
+global cpu
+global runner_list
+global smt_mode
+global kernel_version
+global full_system
+global output_numcpus
+global metrics_own_group
+global run_l1_parallel
+
 class EventContext(object):
     """Event related context for a given target CPU."""
     def __init__(self, pmu):
@@ -959,7 +972,6 @@ def run_parallel(args, env):
     # XXX graph
     return ret
 
-
 def init_idle_threshold(args):
     if args.idle_threshold:
         idle_threshold = args.idle_threshold / 100.
@@ -968,7 +980,6 @@ def init_idle_threshold(args):
     else:
         idle_threshold = 0.05
     return idle_threshold
-
 
 def gen_cpu_name(cpu):
     if cpu == "simple":
@@ -1108,7 +1119,7 @@ def check_ratio(l):
         return True
     return 0 - MAX_ERROR < l < 1 + MAX_ERROR
 
-def update_args_cpu(args):
+def update_args_cpu(args, pversion):
     if args.level < 0:
         if args.bottlenecks:
             args.level = 4
@@ -1328,12 +1339,12 @@ def add_filter_event(e):
         s = ""
     else:
         s = separator(e)
-    if not e.endswith(s + ring_filter):
-        return e + s + ring_filter
+    if not e.endswith(s + args.ring_filter):
+        return e + s + args.ring_filter
     return e
 
 def add_filter(s):
-    if ring_filter:
+    if args.ring_filter:
         s = list(map(add_filter_event, s))
     return s
 
@@ -2602,7 +2613,7 @@ def sample_event(e, emap):
     ev = emap.getevent(e, nocheck=event_nocheck)
     if not ev:
         raise BadEvent(e)
-    postfix = ring_filter
+    postfix = args.ring_filter
     if ev.pebs and int(ev.pebs):
         postfix = "pp"
     if postfix:
@@ -3804,6 +3815,7 @@ def get_cpu_list(fn):
     return [k for k in read_cpus(fn) if use_cpu(k)]
 
 def init_runner_list():
+    idle_threshold = init_idle_threshold(args)
     runner_list = []
     hybrid_pmus = []
     hybrid_pmus = glob.glob("/sys/devices/cpu_*")
@@ -4042,8 +4054,7 @@ def setup_pe():
         pe = lambda e: print_err(e)
     return pe
 
-
-def handle_misc_options(args):
+def handle_misc_options(args, version):
     if args.version:
         print("toplev, CPU: %s, TMA version: %s" % (cpu.cpu, version))
         sys.exit(0)
@@ -4241,7 +4252,7 @@ def setup_cpus(args, rest, cpu):
                 r.cpu_list = list(allowed_threads)
     return rest
 
-def init_output(args):
+def init_output(args, version):
     if args.json:
         if args.csv:
             sys.exit("Cannot combine --csv with --json")
@@ -4259,7 +4270,7 @@ def init_output(args):
         out = tl_output.OutputHuman(args.output, args, version, cpu)
     return out
 
-def init_valcsv(args):
+def init_valcsv(out, args):
     if args.valcsv:
         out.valcsv = csv.writer(args.valcsv, lineterminator='\n', delimiter=';')
         if not args.no_csv_header:
@@ -4294,7 +4305,7 @@ def suggest(runner):
         return suggest_bottlenecks(runner)
     return False
 
-def measure_and_sample(runner_list, count):
+def measure_and_sample(runner_list, count, out, orig_smt_mode):
     rrest = rest
     while True:
         summary = Summary()
@@ -4362,16 +4373,15 @@ def report_not_supported(runner_list):
     if notfound_caches and any(["not supported" not in x for x in notfound_caches.values()]) and not args.quiet:
         print("Some events not found. Consider running event_download to update event lists", file=sys.stderr)
 
-
-def measure():
+def measure(out, orig_smt_mode):
     if args.sample_repeat:
         cnt = 1
         for j in range(args.sample_repeat):
-            ret, cnt = measure_and_sample(runner_list, cnt)
+            ret, cnt = measure_and_sample(runner_list, cnt, out, orig_smt_mode)
             if ret:
                 break
     else:
-        ret, count = measure_and_sample(runner_list, 0 if args.drilldown else None)
+        ret, count = measure_and_sample(runner_list, 0 if args.drilldown else None, out, orig_smt_mode)
     return ret
 
 def idle_range_list(l):
@@ -4390,57 +4400,68 @@ def finish_graph(graphp):
         args.output.close()
         graphp.wait()
 
-args, rest = init_args()
-idle_threshold = init_idle_threshold(args)
-event_nocheck = args.import_ or args.no_check
-feat = PerfFeatures(args)
-pversion = ocperf.PerfVersion()
-if args.tune:
-    for t in args.tune:
-        exec(t)
-env = tl_cpu.Env()
-update_args(args, env)
-handle_parallel(args, env)
-rest = handle_rest(args, rest)
-open_output_files(args)
-update_args2(args)
-graphp = handle_graph(args)
-ring_filter = init_ring_filter(args)
-# XXX move into ectx
-cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
-update_args_cpu(args)
-update_cpu(args, cpu)
-kernel_version = get_kernel()
-check_exclusive(args, kernel_version)
-runner_list = init_runner_list()
-handle_more_options(args)
-version = runner_emaps(setup_pe())
-handle_misc_options(args)
-handle_cmd(args, runner_list)
-rest = runner_extra_init(args, rest)
-rest = runner_filter(args, rest)
-rest = update_smt(args, rest)
-runner_node_filter()
-orig_smt_mode = smt_mode
-smt_mode = update_smt_mode()
-full_system, rest = check_full_system(args, rest)
-init_perf_output(args)
-rest = setup_cpus(args, rest, cpu)
-if args.pinned:
-    run_l1_parallel = True
-out = init_output(args)
-init_valcsv(args)
-runner_first_init(args)
-if args.repl:
-    import code
-    code.interact(banner='toplev repl', local=locals())
-    sys.exit(0)
-ret = measure()
-out.print_footer()
-out.flushfiles()
-if args.xlsx and ret == 0:
-    ret = do_xlsx(env)
-report_idle(runner_list)
-report_not_supported(runner_list)
-finish_graph(graphp)
-sys.exit(ret)
+def main():
+    global args
+    global rest
+    global feat
+    global cpu
+    global runner_list
+    args, rest = init_args()
+    event_nocheck = args.import_ or args.no_check
+    feat = PerfFeatures(args)
+    pversion = ocperf.PerfVersion()
+    if args.tune:
+        for t in args.tune:
+            exec(t)
+    env = tl_cpu.Env()
+    update_args(args, env)
+    handle_parallel(args, env)
+    rest = handle_rest(args, rest)
+    open_output_files(args)
+    update_args2(args)
+    graphp = handle_graph(args)
+    args.ring_filter = init_ring_filter(args)
+    # XXX move into ectx
+    cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
+    update_args_cpu(args, pversion)
+    update_cpu(args, cpu)
+    global kernel_version
+    kernel_version = get_kernel()
+    check_exclusive(args, kernel_version)
+    runner_list = init_runner_list()
+    handle_more_options(args)
+    version = runner_emaps(setup_pe())
+    handle_misc_options(args, version)
+    handle_cmd(args, runner_list)
+    rest = runner_extra_init(args, rest)
+    rest = runner_filter(args, rest)
+    rest = update_smt(args, rest)
+    runner_node_filter()
+    global smt_mode
+    orig_smt_mode = smt_mode
+    smt_mode = update_smt_mode()
+    global full_system
+    full_system, rest = check_full_system(args, rest)
+    init_perf_output(args)
+    rest = setup_cpus(args, rest, cpu)
+    if args.pinned:
+        run_l1_parallel = True
+    out = init_output(args, version)
+    init_valcsv(out, args)
+    runner_first_init(args)
+    if args.repl:
+        import code
+        code.interact(banner='toplev repl', local=locals())
+        sys.exit(0)
+    ret = measure(out, orig_smt_mode)
+    out.print_footer()
+    out.flushfiles()
+    if args.xlsx and ret == 0:
+        ret = do_xlsx(env)
+    report_idle(runner_list)
+    report_not_supported(runner_list)
+    finish_graph(graphp)
+    sys.exit(ret)
+
+if __name__ == '__main__':
+    main()
