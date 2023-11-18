@@ -796,7 +796,7 @@ def do_xlsx(env):
         env.cpuinfo if env.cpuinfo else "/proc/cpuinfo")
     if args.single_thread:
         names = ["program"]
-        files = [out.logf.name]
+        files = [args.output if args.output else "program"]
     else:
         names = ((["socket"] if args.per_socket else []) +
                  (["core"] if args.per_core else []) +
