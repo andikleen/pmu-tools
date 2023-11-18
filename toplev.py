@@ -231,6 +231,7 @@ class EventContext(object):
         self.counters = cpu.counters[pmu]
         self.limit4_counters = cpu.limit4_counters[pmu]
         self.force_metrics = False
+        self.metrics_override = False
 
 ectx = None
 
@@ -432,17 +433,17 @@ def event_group(evlist):
         if is_og or args.no_group:
             l += g
         else:
-            g = list(g)
-            e = ",".join(g)
+            gl = list(g)
+            e = ",".join(gl)
             e = "{%s}" % e
             if args.exclusive:
                 e += ":e"
             elif args.pinned:
-                slots_or_metric = [ismetric(x) or is_slots(x) for x in g]
+                slots_or_metric = [ismetric(x) or is_slots(x) for x in gl]
                 if all(slots_or_metric):
                     e += ":D"
                     assert pgroup is False
-                    assert is_slots(g[0])
+                    assert is_slots(gl[0])
                     pgroup = True
                 else:
                     assert not any(slots_or_metric)
@@ -905,8 +906,8 @@ def run_parallel(args, env):
                 arg.insert(1, "--no-csv-footer")
         if not args.quiet:
             print(" ".join(arg))
-        p = subprocess.Popen(arg, stdout=subprocess.PIPE, **popentext)
-        procs.append((p, outfn))
+        pp = subprocess.Popen(arg, stdout=subprocess.PIPE, **popentext)
+        procs.append((pp, outfn))
     if args.xlsx:
         init_xlsx(args)
         set_xlsx(args)
@@ -1292,7 +1293,7 @@ class PerfRun(object):
 
         outp, inp = pty.openpty()
         if 'set_inheritable' in os.__dict__:
-            os.set_inheritable(inp, 1)
+            os.set_inheritable(inp, True)
         n = r.index("--log-fd")
         r[n + 1] = "%d" % (inp)
         print_perf(r)
