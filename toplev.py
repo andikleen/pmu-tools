@@ -735,7 +735,6 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
             os.environ[l[0]] = l[1]
     return args, rest
 
-
 def output_count():
     return args.per_core + args.global_ + args.per_thread + args.per_socket
 
@@ -4068,7 +4067,7 @@ def handle_misc_options(args, version):
         if args.script_record:
             sys.exit("--subset cannot be used with --script-record. Generate temp file with perf stat report -x\\;")
 
-def handle_cmd(args, runner_list):
+def handle_cmd(args, runner_list, rest):
     if args.describe:
         args.long_desc = True
         if not rest:
@@ -4208,7 +4207,7 @@ def check_full_system(args, rest):
 
 output_numcpus = False
 
-def init_perf_output(args):
+def init_perf_output(args, rest):
     if (args.perf_output or args.perf_summary) and not args.no_csv_header:
         ph = []
         if args.interval:
@@ -4305,7 +4304,7 @@ def suggest(runner):
         return suggest_bottlenecks(runner)
     return False
 
-def measure_and_sample(runner_list, count, out, orig_smt_mode):
+def measure_and_sample(runner_list, count, out, orig_smt_mode, rest):
     rrest = rest
     while True:
         summary = Summary()
@@ -4373,15 +4372,15 @@ def report_not_supported(runner_list):
     if notfound_caches and any(["not supported" not in x for x in notfound_caches.values()]) and not args.quiet:
         print("Some events not found. Consider running event_download to update event lists", file=sys.stderr)
 
-def measure(out, orig_smt_mode):
+def measure(out, orig_smt_mode, rest):
     if args.sample_repeat:
         cnt = 1
         for j in range(args.sample_repeat):
-            ret, cnt = measure_and_sample(runner_list, cnt, out, orig_smt_mode)
+            ret, cnt = measure_and_sample(runner_list, cnt, out, orig_smt_mode, rest)
             if ret:
                 break
     else:
-        ret, count = measure_and_sample(runner_list, 0 if args.drilldown else None, out, orig_smt_mode)
+        ret, count = measure_and_sample(runner_list, 0 if args.drilldown else None, out, orig_smt_mode, rest)
     return ret
 
 def idle_range_list(l):
@@ -4432,7 +4431,7 @@ def main():
     handle_more_options(args)
     version = runner_emaps(setup_pe())
     handle_misc_options(args, version)
-    handle_cmd(args, runner_list)
+    handle_cmd(args, runner_list, rest)
     rest = runner_extra_init(args, rest)
     rest = runner_filter(args, rest)
     rest = update_smt(args, rest)
@@ -4442,7 +4441,7 @@ def main():
     smt_mode = update_smt_mode()
     global full_system
     full_system, rest = check_full_system(args, rest)
-    init_perf_output(args)
+    init_perf_output(args, rest)
     rest = setup_cpus(args, rest, cpu)
     if args.pinned:
         run_l1_parallel = True
@@ -4453,7 +4452,7 @@ def main():
         import code
         code.interact(banner='toplev repl', local=locals())
         sys.exit(0)
-    ret = measure(out, orig_smt_mode)
+    ret = measure(out, orig_smt_mode, rest)
     out.print_footer()
     out.flushfiles()
     if args.xlsx and ret == 0:
