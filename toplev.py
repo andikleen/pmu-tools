@@ -207,7 +207,6 @@ global ectx
 global args
 global feat
 global cpu
-global runner_list
 global smt_mode
 global kernel_version
 global full_system
@@ -1641,14 +1640,14 @@ def invalid_res(res, key, nothing):
 
 def runner_name(r):
     if r.pmu is None:
-        return "%d" % (runner_list.index(r))
+        return "cpu"
     return r.pmu.replace("cpu_", "")
 
 default_compute_iter = 3
 # override how often to recompute to converge all the thresholds
 COMPUTE_ITER = None
 
-def print_keys(runner, res, rev, valstats, out, interval, env, mode):
+def print_keys(runner, res, rev, valstats, out, interval, env, mode, runner_list):
     nothing = set() # type: Set[str]
     allowed_threads = runner.cpu_list
     def filtered(j):
@@ -1663,7 +1662,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
     stat = runner.stat
     keys = sorted(res.keys(), key=num_key)
     post = ""
-    if len(runner_list) > 1:
+    if runner.pmu != "cpu":
         if len(res.keys()) > 1:
             post += "-"
         post += runner_name(runner)
@@ -1721,10 +1720,10 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             iterations = COMPUTE_ITER if COMPUTE_ITER else default_compute_iter
             for _ in range(iterations):
                 env['num_merged'] = 1
-                changed = runner.compute(merged_res, rev[j], merged_st, env, thread_node, used_stat)
+                changed = runner.compute(merged_res, rev[j], merged_st, env, thread_node, used_stat, runner_list)
                 verify_rev(rev, cpus)
                 env['num_merged'] = len(cpus)
-                changed += runner.compute(combined_res, rev[cpus[0]], combined_st, env, core_node, used_stat)
+                changed += runner.compute(combined_res, rev[cpus[0]], combined_st, env, core_node, used_stat, runner_list)
                 if changed == 0 and COMPUTE_ITER is None:
                     # do always one more so that any thresholds depending on a later node are caught
                     if not onemore:
@@ -1745,7 +1744,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
                 printed_sockets.add(sid)
                 continue
             if mode == OUTPUT_THREAD:
-                runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
+                runner.compute(res[j], rev[j], valstats[j], env, package_node, stat, runner_list)
                 printer.print_res(runner.olist, out, interval, thread_fmt(int(j))+post, any_node,
                                   bn, j in idle_mark_keys)
                 continue
@@ -1777,7 +1776,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             if invalid_res(res[j], j, nothing):
                 continue
             runner.reset_thresh()
-            runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat)
+            runner.compute(res[j], rev[j], valstats[j], env, not_package_node, stat, runner_list)
             bn = find_bn(runner.olist, not_package_node)
             printer.print_res(runner.olist, out, interval, j+post, not_package_node, bn, j in idle_mark_keys)
     if mode == OUTPUT_GLOBAL:
@@ -1795,7 +1794,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             if not invalid_res(combined_res, cpus, nothing):
                 runner.reset_thresh()
                 runner.compute(combined_res, rev[cpus[0]] if len(cpus) > 0 else [],
-                               combined_st, env, nodeselect, stat)
+                               combined_st, env, nodeselect, stat, runner_list)
                 bn = find_bn(runner.olist, lambda x: True)
                 printer.print_res(runner.olist, out, interval, "", nodeselect, bn, False)
     elif mode != OUTPUT_THREAD:
@@ -1819,7 +1818,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
             runner.reset_thresh()
             if invalid_res(res[j], j, nothing):
                 continue
-            runner.compute(res[j], rev[j], valstats[j], env, package_node, stat)
+            runner.compute(res[j], rev[j], valstats[j], env, package_node, stat, runner_list)
             printer.print_res(runner.olist, out, interval, jname, package_node, None, j in idle_mark_keys)
     # no bottlenecks from package nodes for now
     out.flush()
@@ -1830,26 +1829,26 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode):
         print("%s: Nothing measured%s" % (runner.pmu, " for " if len(nothing) > 0 and "" not in nothing else ""), " ".join(sorted(nothing)), file=sys.stderr)
     if runner.printer.numprint == 0 and not args.quiet and runner.olist:
         print("No node %scrossed threshold" % (
-                "for %s " % runner_name(runner) if len(runner_list) > 1 else ""),file=sys.stderr)
+                "for %s " % runner_name(runner) if runner.pmu != "cpu" else ""), file=sys.stderr)
 
-def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
+def print_and_split_keys(runner, res, rev, valstats, out, interval, env, rlist):
     if multi_output():
         if args.per_thread:
             out.remark("Per thread")
             out.reset("thread")
-            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_THREAD)
+            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_THREAD, rlist)
         if args.per_core:
             out.remark("Per core")
             out.reset("core")
-            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_CORE)
+            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_CORE, rlist)
         if args.per_socket:
             out.remark("Per socket")
             out.reset("socket")
-            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_SOCKET)
+            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_SOCKET, rlist)
         if args.global_:
             out.remark("Global")
             out.reset("global")
-            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_GLOBAL)
+            print_keys(runner, res, rev, valstats, out, interval, env, OUTPUT_GLOBAL, rlist)
     else:
         if args.split_output:
             sys.exit("--split-output needs --per-thread / --global / --per-socket / --per-core")
@@ -1862,13 +1861,13 @@ def print_and_split_keys(runner, res, rev, valstats, out, interval, env):
             mode = OUTPUT_SOCKET
         elif args.global_:
             mode = OUTPUT_GLOBAL
-        print_keys(runner, res, rev, valstats, out, interval, env, mode)
+        print_keys(runner, res, rev, valstats, out, interval, env, mode, rlist)
 
-def print_check_keys(runner, res, rev, valstats, out, interval, env):
+def print_check_keys(runner, res, rev, valstats, out, interval, env, rlist):
     if res and all([sum(res[k]) == 0.0 and len(res[k]) > 0 for k in res.keys()]) and cpu.cpu == cpu.realcpu:
         if args.subset:
             return
-        if len(runner_list) == 1:
+        if runner.pmu == "cpu":
             sys.exit("All measured values 0. perf broken?")
         else:
             if not args.quiet:
@@ -1877,9 +1876,9 @@ def print_check_keys(runner, res, rev, valstats, out, interval, env):
     if args.interval and interval is None:
         interval = float('nan')
     if not args.no_output:
-        print_and_split_keys(runner, res, rev, valstats, out, interval, env)
+        print_and_split_keys(runner, res, rev, valstats, out, interval, env, rlist)
 
-def print_summary(summary, out):
+def print_summary(summary, out, runner_list):
     if args.perf_summary:
         p = summary.summary_perf
         for sv in zip_longest(*p.values()):
@@ -1910,7 +1909,7 @@ def print_summary(summary, out):
     for runner, res, rev in runner_split(runner_list, summary.res, summary.rev):
         print_and_split_keys(runner, res, rev,
                          summary.valstats, out,
-                         float('nan'), summary.env)
+                             float('nan'), summary.env, runner_list)
 
 def is_outgroup(x):
     return set(x) - ectx.outgroup_events == set()
@@ -1961,7 +1960,7 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             runner.set_ectx()
             evstr = group_join(events)
             flat_events = flatten(events)
-            flat_rmap = [event_rmap(e) for e in flat_events]
+            flat_rmap = [event_rmap(e, runner_list) for e in flat_events]
             runner.clear_ectx()
             for ret, res, rev, interval, valstats, env in do_execute(
                     [runner],
@@ -2005,7 +2004,7 @@ def execute_no_multiplex(runner_list, out, rest, summary):
         if summary:
             summary.add(res, rev, valstats, env)
         for runner, res, rev in runner_split(runner_list, res, rev):
-            print_check_keys(runner, res, rev, valstats, out, interval, env)
+            print_check_keys(runner, res, rev, valstats, out, interval, env, runner_list)
     return ret
 
 def runner_split(runner_list, res, rev):
@@ -2033,7 +2032,7 @@ def execute(runner_list, out, rest, summary):
         evstr += group_join(new_events)
         new_flat_events = flatten(new_events)
         flat_events += new_flat_events
-        flat_rmap += [event_rmap(e) for e in new_flat_events]
+        flat_rmap += [event_rmap(e, runner_list) for e in new_flat_events]
         runner.clear_ectx()
     ctx = SaveContext()
     for ret, res, rev, interval, valstats, env in do_execute(
@@ -2042,11 +2041,11 @@ def execute(runner_list, out, rest, summary):
         if summary:
             summary.add(res, rev, valstats, env)
         for runner, res, rev in runner_split(runner_list, res, rev):
-            print_check_keys(runner, res, rev, valstats, out, interval, env)
+            print_check_keys(runner, res, rev, valstats, out, interval, env, runner_list)
     ctx.restore()
     return ret
 
-def find_group(num):
+def find_group(num, runner_list):
     offset = 0
     for runner in runner_list:
         if num - offset < len(runner.sched.evnum):
@@ -2060,10 +2059,10 @@ def find_group(num):
     warn("group for event %d not found" % num)
     return None
 
-def dump_raw(valcsv, interval, title, event, ename, val, index, stddev, multiplex):
+def dump_raw(valcsv, interval, title, event, ename, val, index, stddev, multiplex, runner_list):
     if index < 0:
         return
-    g = find_group(index)
+    g = find_group(index, runner_list)
     if g is None:
         return
     nodes = " ".join(sorted([o.name.replace(" ", "_") for o in g.objl if event in o.evnum]))
@@ -2380,10 +2379,10 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
                      interval if args.interval else "",
                      title,
                      event,
-                     flat_rmap[len(res[title])-1] if len(runner_list) == 1 else event_rmap(event), # XXX
+                     flat_rmap[len(res[title])-1] if len(rlist) == 1 else event_rmap(event, rlist), # XXX
                      val if val or not re.match(r"\s*<", count) else count,
                      len(res[title]) - 1,
-                     stddev, multiplex)
+                     stddev, multiplex, rlist)
 
     inf.close()
     if not args.import_ and not args.interval:
@@ -2481,7 +2480,7 @@ def canon_event(e):
         e = m.group(1)
     return e.lower()
 
-def find_runner_by_pmu(pmu):
+def find_runner_by_pmu(pmu, runner_list):
     for r in runner_list:
         if r.pmu == pmu:
             return r
@@ -2493,10 +2492,10 @@ def event_pmu(ev):
         return m.group(1)
     return None
 
-def event_ectx(ev):
+def event_ectx(ev, runner_list):
     pmu = event_pmu(ev)
     if pmu:
-        r = find_runner_by_pmu(pmu)
+        r = find_runner_by_pmu(pmu, runner_list)
         if r:
             return r.ectx
     return ectx if ectx else runner_list[0].ectx
@@ -2510,8 +2509,8 @@ def do_event_rmap(e, ectx_):
     warn("rmap: cannot find %s, using dummy" % e)
     return "dummy"
 
-def event_rmap(e):
-    ectx_ = event_ectx(e)
+def event_rmap(e, runner_list):
+    ectx_ = event_ectx(e, runner_list)
     if e in ectx_.rmap_cache:
         return ectx_.rmap_cache[e]
     n = do_event_rmap(e, ectx_)
@@ -2538,7 +2537,7 @@ def compare_event(aname, bname):
 def is_hybrid():
     return ocperf.file_exists("/sys/devices/cpu/format/any")
 
-def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
+def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, runner_list):
     """get measurement result, possibly wrapping in UVal"""
 
     ev = adjust_ev(ev, level)
@@ -2547,7 +2546,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
         scale = { "interval-s":  1e9,
                   "interval-ns": 1,
                   "interval-ms": 1e6 }[ev]
-        return lookup_res(res, rev, "duration_time", obj, env, level, referenced, cpuoff, st)/scale
+        return lookup_res(res, rev, "duration_time", obj, env, level, referenced, cpuoff, st, runner_list)/scale
 
     if ev in env:
         return env[ev]
@@ -2563,7 +2562,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
     #
     if isinstance(ev, types.LambdaType):
         return sum([ev(lambda ev, level:
-                  lookup_res(res, rev, ev, obj, env, level, referenced, off, st), level)
+                  lookup_res(res, rev, ev, obj, env, level, referenced, off, st, runner_list), level)
                   for off in range(env['num_merged'])])
 
     index = obj.res_map[(ev, level, obj.name)]
@@ -2576,7 +2575,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st):
             warn_once("Not enough lines in perf output for rev (%d vs %d for %s) at %s" %
                     (index, len(rev), obj.name, env['interval']))
             return 0
-        rmap_ev = event_rmap(r).lower()
+        rmap_ev = event_rmap(r, runner_list).lower()
         ev = ev.lower()
         assert (rmap_ev == canon_event(ev).replace("/k", "/") or
                 compare_event(rmap_ev, ev) or
@@ -2996,8 +2995,8 @@ class Scheduler(object):
             if len(ref) < len(g.evnum):
                 for i in range(len(g.evnum)):
                     if i not in ref:
-                        test_debug_print("unreferenced %s %s [%d] %s" % (g.evnum[i],
-                                         event_rmap(g.evnum[i]), i,
+                        test_debug_print("unreferenced %s [%d] %s" % (g.evnum[i],
+                                         i,
                                          " ".join([o.name for o in g.objl])))
                         g.evnum[i] = "dummy"
 
@@ -3050,9 +3049,8 @@ class Scheduler(object):
             # possible. Still keep it as a --tune option to play around.
             if ((any_merge or not evset.isdisjoint(g.evnum)) and
                   needed_counters(cat_unique(g.evnum, evnum)) <= ectx.counters):
-                obj_debug_print(obj, "add_duplicate %s %s in %s obj %s to group %d" % (
+                obj_debug_print(obj, "add_duplicate %s in %s obj %s to group %d" % (
                     " ".join(evnum),
-                    " ".join(list(map(event_rmap, evnum))),
                     " ".join(g.evnum),
                     obj.name,
                     g.num))
@@ -3081,7 +3079,7 @@ class Scheduler(object):
         evnum = dedup(evnum)
         if not self.add_duplicate(evnum, obj):
             g = Group(evnum, [obj], self.nextgnum)
-            obj_debug_print(obj, "add %s %s to group %d" % (evnum, list(map(event_rmap, evnum)), g.num))
+            obj_debug_print(obj, "add %s to group %d" % (evnum, g.num))
             for k in evnum:
                 if k not in self.event_to_group:
                     self.event_to_group[k] = g
@@ -3301,6 +3299,7 @@ class Runner(object):
         self.ectx = EventContext(pmu)
         self.pmu = pmu
         self.full_olist = []
+        self.cpu_list = [] # type: List[int]
 
     def set_ectx(self):
         global ectx
@@ -3482,7 +3481,7 @@ class Runner(object):
                     propagate(obj.sibling, changed, obj)
         return changed[0]
 
-    def compute(self, res, rev, valstats, env, match, stat):
+    def compute(self, res, rev, valstats, env, match, stat, runner_list):
         self.set_ectx()
         changed = 0
 
@@ -3497,7 +3496,7 @@ class Runner(object):
             if 'parent' in obj.__dict__ and obj.parent and obj.parent not in self.olist:
                 obj.parent.thresh = True
             obj.compute(lambda e, level:
-                            lookup_res(res, rev, e, obj, env, level, ref, -1, valstats))
+                            lookup_res(res, rev, e, obj, env, level, ref, -1, valstats, runner_list))
             # compatibility for models that don't set thresh for metrics
             if isinstance(obj.thresh, UVal) and obj.name == "Undef":
                 obj.thresh = True
@@ -3696,7 +3695,7 @@ def suggest_bottlenecks(runner):
                     ",".join(children + parents),
                     mux))
         if args.drilldown:
-            if len(runner_list) > 1 and not args.quiet:
+            if runner.pmu != "cpu" and not args.quiet:
                 print("Please make sure workload does not move between core types for drilldown", file=sys.stderr)
             if args.nodes:
                 args.nodes += ","
@@ -4026,7 +4025,7 @@ def model_setup(runner, cpuname, pe):
 
     return init_model(model, runner, pe)
 
-def runner_emaps(pe):
+def runner_emaps(pe, runner_list):
     version = ""
     for runner in runner_list:
         runner.set_ectx()
@@ -4099,7 +4098,7 @@ def has_core_node(runner):
     runner.clear_ectx()
     return res
 
-def any_core_node():
+def any_core_node(runner_list):
     for r in runner_list:
         if has_core_node(r):
             return True
@@ -4142,7 +4141,7 @@ def extra_setup(runner):
         import frequency
         frequency.SetupCPU(runner, cpu)
 
-def runner_extra_init(args, rest):
+def runner_extra_init(args, rest, runner_list):
     rest = extra_setup_once(runner_list[0], rest)
     for r in runner_list:
         extra_setup(r)
@@ -4155,7 +4154,7 @@ def runner_extra_init(args, rest):
 
     return rest
 
-def runner_filter(args, rest):
+def runner_filter(args, rest, runner_list):
     for r in runner_list:
         rest = r.filter_per_core(args.single_thread, rest)
     return rest
@@ -4174,14 +4173,14 @@ def update_smt(args, rest):
             rest = add_args(rest, "--per-core")
     return rest
 
-def runner_node_filter():
+def runner_node_filter(runner_list):
     for r in runner_list:
         r.filter_nodes()
 
-def update_smt_mode():
+def update_smt_mode(runner_list):
     if smt_mode and not os.getenv('FORCEHT'):
         # do not need SMT mode if no objects have Core scope
-        if not any_core_node():
+        if not any_core_node(runner_list):
             return False
     return smt_mode
 
@@ -4225,7 +4224,7 @@ def init_perf_output(args, rest):
         if args.perf_summary:
             args.perf_summary.write(";".join(ph) + "\n")
 
-def setup_cpus(args, rest, cpu):
+def setup_cpus(args, rest, cpu, runner_list):
     if args.cpu:
         allcpus = parse_cpu_list(args.cpu)
     else:
@@ -4278,7 +4277,7 @@ def init_valcsv(out, args):
                                  "Perf-event", "Index", "STDDEV", "MULTI", "Nodes"))
 
 # XXX use runner_restart
-def runner_first_init(args):
+def runner_first_init(args, runner_list):
     nnodes = 0
     for r in runner_list:
         runner_init(r)
@@ -4316,7 +4315,7 @@ def measure_and_sample(runner_list, count, out, orig_smt_mode, rest):
                 ret = execute(runner_list, out, rrest, summary)
         except KeyboardInterrupt:
             ret = 1
-        print_summary(summary, out)
+        print_summary(summary, out, runner_list)
         repeat = False
         for runner in runner_list:
             runner.stat.compute_errors()
@@ -4343,7 +4342,7 @@ def measure_and_sample(runner_list, count, out, orig_smt_mode, rest):
             global smt_mode
             smt_mode = orig_smt_mode
             if smt_mode and not os.getenv('FORCEHT'):
-                if not any_core_node():
+                if not any_core_node(runner_list):
                     smt_mode = False
             # XXX do all checks for incompatible arguments like top level
             if smt_mode and not args.single_thread:
@@ -4373,7 +4372,7 @@ def report_not_supported(runner_list):
     if notfound_caches and any(["not supported" not in x for x in notfound_caches.values()]) and not args.quiet:
         print("Some events not found. Consider running event_download to update event lists", file=sys.stderr)
 
-def measure(out, orig_smt_mode, rest):
+def measure(out, orig_smt_mode, rest, runner_list):
     if args.sample_repeat:
         cnt = 1
         for j in range(args.sample_repeat):
@@ -4402,10 +4401,8 @@ def finish_graph(graphp):
 
 def main():
     global args
-    global rest
     global feat
     global cpu
-    global runner_list
     args, rest = init_args()
     event_nocheck = args.import_ or args.no_check
     feat = PerfFeatures(args)
@@ -4430,30 +4427,30 @@ def main():
     check_exclusive(args, kernel_version)
     runner_list = init_runner_list()
     handle_more_options(args)
-    version = runner_emaps(setup_pe())
+    version = runner_emaps(setup_pe(), runner_list)
     handle_misc_options(args, version)
     handle_cmd(args, runner_list, rest)
-    rest = runner_extra_init(args, rest)
-    rest = runner_filter(args, rest)
+    rest = runner_extra_init(args, rest, runner_list)
+    rest = runner_filter(args, rest, runner_list)
     rest = update_smt(args, rest)
-    runner_node_filter()
+    runner_node_filter(runner_list)
     global smt_mode
     orig_smt_mode = smt_mode
-    smt_mode = update_smt_mode()
+    smt_mode = update_smt_mode(runner_list)
     global full_system
     full_system, rest = check_full_system(args, rest)
     init_perf_output(args, rest)
-    rest = setup_cpus(args, rest, cpu)
+    rest = setup_cpus(args, rest, cpu, runner_list)
     if args.pinned:
         run_l1_parallel = True
     out = init_output(args, version)
     init_valcsv(out, args)
-    runner_first_init(args)
+    runner_first_init(args, runner_list)
     if args.repl:
         import code
         code.interact(banner='toplev repl', local=locals())
         sys.exit(0)
-    ret = measure(out, orig_smt_mode, rest)
+    ret = measure(out, orig_smt_mode, rest, runner_list)
     out.print_footer()
     out.flushfiles()
     if args.xlsx and ret == 0:
