@@ -26,6 +26,9 @@ from collections import defaultdict, Counter
 import os
 import re
 import glob
+import sys
+if sys.version_info.major == 3:
+    from typing import Set, List, Dict # noqa
 
 modelid_map = {
     (0x8e, ): "KBLR",
@@ -83,7 +86,10 @@ class CPU(object):
         if cnt:
             cntn = int(cnt)
             if self.realcpu == "adl":
-                self.counters = { "cpu_core": cntn, "cpu_atom": cntn, "cpu": cntn }
+                self.counters = {
+                    "cpu_core": cntn,
+                    "cpu_atom": cntn,
+                    "cpu": cntn } # type: None | Dict[str,int]
             else:
                 self.counters = { "cpu": cntn }
 
@@ -182,7 +188,7 @@ class CPU(object):
                     break
         self.force_counters()
         self.limit4_counters = { "cpu": "none" }
-        self.standard_counters = { "cpu": ("0,1,2,3",) }
+        self.standard_counters = { "cpu": tuple(("0,1,2,3",)) }
         if self.cpu == "adl":
             newcounters = {
                 "cpu_core": 8,

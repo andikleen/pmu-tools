@@ -62,7 +62,7 @@ from tl_io import flex_open_r, flex_open_w, popentext, warn, warn_once, \
         obj_debug_print, debug_print, warn_no_assert,                   \
         set_args as io_set_args
 if sys.version_info.major == 3:
-    from typing import Set, List # noqa
+    from typing import Set, List, Dict # noqa
 
 known_cpus = (
     ("snb", (42, )),
@@ -254,7 +254,7 @@ smt_mode = False
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
-exists_cache = {} # type: Dict[bool]
+exists_cache = {} # type: Dict[str,bool]
 
 def cached_exists(fn):
     if fn in exists_cache:
