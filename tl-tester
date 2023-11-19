@@ -414,6 +414,9 @@ $WRAP ./toplev.py --xlsx x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOADLO
 rm x$$.xlsx
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --all $LOADLONG
 rm x$$.xlsx # must exist
+$WRAP ./toplev.py --force-cpu $DCPU $OPT --all \
+	--tune 'DEDUP_AREA="*"' --tune 'IDLE_MARKER_THRESHOLD=2' --tune 'SIB_THRESH=2' --tune 'KEEP_UNREF=True' \
+	--tune 'run_l1_parallel=True' $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -l6 --metrics --single-thread $LOAD
 rm x$$.xlsx # must exist
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --xnormalize --all $LOADLONG
