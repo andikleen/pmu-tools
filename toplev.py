@@ -62,7 +62,7 @@ from tl_io import flex_open_r, flex_open_w, popentext, warn, warn_once, \
         obj_debug_print, debug_print, warn_no_assert,                   \
         set_args as io_set_args
 if sys.version_info.major == 3:
-    from typing import Set, List, Dict # noqa
+    from typing import Set, List, Dict, Any # noqa
 
 known_cpus = (
     ("snb", (42, )),
@@ -200,35 +200,24 @@ promotable_limited = set((
 
 Undef = UVal("undef", 0)
 
-event_nocheck = False
-
 # should clean those up, but they're all read-only after initialization anyways
-global ectx
-global args
-global feat
-global cpu
 global smt_mode
-global kernel_version
-global full_system
 global output_numcpus
 global metrics_own_group
 global run_l1_parallel
 
-class EventContext(object):
-    """Event related context for a given target CPU."""
-    def __init__(self, pmu):
+class EventContextBase(object):
+    def __init__(self):
         self.constraint_fixes = {}
         self.constraint_patterns = []
         self.errata_whitelist = []
-        self.outgroup_events = set(["dummy", "duration_time", "msr/tsc/"])
-        self.sched_ignore_events = set([])
-        self.require_pebs_events = set([])
-        self.core_domains = set(["Slots", "CoreClocks", "CoreMetric",
-            "Core_Execution", "Core_Clocks", "Core_Metric"])
-        self.limited_counters = dict(limited_counters_base)
-        self.limited_set = set(self.limited_counters.keys())
-        self.fixed_events = set([x for x in self.limited_counters
-                                 if FIXED_BASE <= self.limited_counters[x] <= SPECIAL_END])
+        self.outgroup_events = set()
+        self.sched_ignore_events = set()
+        self.require_pebs_events = set()
+        self.core_domains = set()
+        self.limited_counters = {}
+        self.limited_set = set()
+        self.fixed_events = set()
         self.errata_events = {}
         self.errata_warn_events = {}
         self.limit4_events = set()
@@ -236,6 +225,23 @@ class EventContext(object):
         self.rmap_cache = {}
         self.slots_available = False
         self.emap = None
+        self.standard_counters = tuple()
+        self.counters = 0
+        self.limit4_counters = ""
+        self.force_metrics = False
+        self.metrics_override = False
+
+class EventContext(EventContextBase):
+    """Event related context for a given target CPU."""
+    def __init__(self, pmu):
+        EventContextBase.__init__(self)
+        self.outgroup_events = set(["dummy", "duration_time", "msr/tsc/"])
+        self.core_domains = set(["Slots", "CoreClocks", "CoreMetric",
+            "Core_Execution", "Core_Clocks", "Core_Metric"])
+        self.limited_counters = dict(limited_counters_base)
+        self.limited_set = set(self.limited_counters.keys())
+        self.fixed_events = set([x for x in self.limited_counters
+                                 if FIXED_BASE <= self.limited_counters[x] <= SPECIAL_END])
         if (pmu is None
                 or pmu not in cpu.counters
                 or pmu not in cpu.standard_counters
@@ -244,10 +250,6 @@ class EventContext(object):
         self.standard_counters = cpu.standard_counters[pmu]
         self.counters = cpu.counters[pmu]
         self.limit4_counters = cpu.limit4_counters[pmu]
-        self.force_metrics = False
-        self.metrics_override = False
-
-ectx = None
 
 smt_mode = False
 
@@ -268,6 +270,9 @@ def safe_int(x):
         return int(x)
     except ValueError:
         return 0
+
+def event_nocheck():
+    return args.import_ or args.no_check
 
 class PerfFeatures(object):
     """Adapt to the quirks of various perf versions."""
@@ -309,7 +314,7 @@ class PerfFeatures(object):
             self.supports_duration_time = (perf_version >= (5,2) or
                     works(self.perf + " stat -e duration_time true"))
         # guests don't support offcore response
-        if event_nocheck:
+        if event_nocheck():
             self.has_max_precise = True
             self.max_precise = 3
         else:
@@ -322,7 +327,7 @@ class PerfFeatures(object):
 def kv_to_key(v):
     return v[0] * 100 + v[1]
 
-def unsup_event(e, table, min_kernel=None):
+def unsup_event(e, table, kernel_version, min_kernel=None):
     if ":" in e:
         e = e[:e.find(":")]
     for j in table:
@@ -799,7 +804,7 @@ def set_xlsx(args):
         args.no_aggr = True
         args.global_ = True
 
-def do_xlsx(env):
+def do_xlsx(env, args):
     cmd = "%s %s/tl-xlsx.py --valcsv '%s' --perf '%s' --cpuinfo '%s' " % (
         sys.executable,
         exe_dir(),
@@ -855,7 +860,7 @@ def gentmp(o, cpu):
         return o.replace(".csv", "-cpu%d.csv" % cpu)
     return o + "-cpu%d" % cpu
 
-def output_to_tmp(arg, outfn):
+def output_to_tmp(arg, outfn, args):
     if not args.output or args.xlsx:
         arg.insert(1, "-o" + outfn)
     elif update_arg(arg, "--output", "=", outfn):
@@ -886,7 +891,7 @@ def run_parallel(args, env):
             del_arg_val(arg, "--xlsx")
             arg = [arg[0], "--set-xlsx", "--perf-output=X", "--valcsv=X"] + arg[1:]
         outfn = gentmp(args.output if args.output else "toplevo%d" % os.getpid(), cpu)
-        output_to_tmp(arg, outfn)
+        output_to_tmp(arg, outfn, args)
         if args.perf_output or args.xlsx:
             pofn = gentmp(args.perf_output if args.perf_output else "toplevp", cpu)
             update_arg(arg, "--perf-output", "=", pofn)
@@ -936,7 +941,7 @@ def run_parallel(args, env):
             print(" ".join(cmd))
         inp = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         outfn = "toplevm%d" % os.getpid()
-        output_to_tmp(targ, outfn)
+        output_to_tmp(targ, outfn, args)
         if args.xlsx:
             del_arg_val(targ, "--xlsx")
             targ.insert(1, "--set-xlsx")
@@ -967,7 +972,7 @@ def run_parallel(args, env):
     merge_files(valfns, args.valcsv, args)
     merge_files(pofns, args.perf_output, args)
     if args.xlsx:
-        ret = do_xlsx(env)
+        ret = do_xlsx(env, args)
     # XXX graph
     return ret
 
@@ -1401,8 +1406,8 @@ def raw_event(i, name="", period=False, initialize=False):
     if "." in i or "_" in i and i not in non_json_events:
         if not cpu.ht:
             i = i.replace(":percore", "")
-        extramsg = []
-        e = ectx.emap.getevent(i, nocheck=event_nocheck, extramsg=extramsg)
+        extramsg = [] # type: List[str]
+        e = ectx.emap.getevent(i, nocheck=event_nocheck(), extramsg=extramsg)
         if e is None:
             if i not in ectx.notfound_cache:
                 ectx.notfound_cache[i] = extramsg[0]
@@ -1878,7 +1883,7 @@ def print_check_keys(runner, res, rev, valstats, out, interval, env, rlist):
     if not args.no_output:
         print_and_split_keys(runner, res, rev, valstats, out, interval, env, rlist)
 
-def print_summary(summary, out, runner_list):
+def print_summary(summary, out, runner_list, full_system):
     if args.perf_summary:
         p = summary.summary_perf
         for sv in zip_longest(*p.values()):
@@ -2164,9 +2169,9 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
     return r, False, event
 
 def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
-    res = defaultdict(list)
+    res = defaultdict(list) # type: defaultdict[str,List[float]]
     rev = defaultdict(list)
-    valstats = defaultdict(list)
+    valstats = defaultdict(list) # type: defaultdict[str,List[ValStat]]
     env = {}
     account = defaultdict(Stat)
     inf, prun = setup_perf(evstr, rest)
@@ -2502,7 +2507,7 @@ def event_ectx(ev, runner_list):
 
 def do_event_rmap(e, ectx_):
     n = ectx_.emap.getperf(e)
-    if ectx_.emap.getevent(n, nocheck=event_nocheck):
+    if ectx_.emap.getevent(n, nocheck=event_nocheck()):
         return n
     if e in non_json_events:
         return e
@@ -2525,10 +2530,10 @@ def compare_event(aname, bname):
     # XXX this should be handled in ocperf
     if iscycles(aname) and iscycles(bname):
         return True
-    a = ectx.emap.getevent(aname, nocheck=event_nocheck)
+    a = ectx.emap.getevent(aname, nocheck=event_nocheck())
     if a is None:
         return False
-    b = ectx.emap.getevent(bname, nocheck=event_nocheck)
+    b = ectx.emap.getevent(bname, nocheck=event_nocheck())
     if b is None:
         return False
     fields = ('val','event','cmask','edge','inv')
@@ -2609,7 +2614,7 @@ class BadEvent(Exception):
 
 # XXX check for errata
 def sample_event(e, emap):
-    ev = emap.getevent(e, nocheck=event_nocheck)
+    ev = emap.getevent(e, nocheck=event_nocheck())
     if not ev:
         raise BadEvent(e)
     postfix = args.ring_filter
@@ -2794,7 +2799,7 @@ pmu_does_not_exist = set()
 
 # XXX check if PMU can be accessed from current user
 def missing_pmu(e):
-    if event_nocheck:
+    if event_nocheck():
         return False
     m = re.match(r"([a-z0-9_]+)/", e)
     if m:
@@ -3288,7 +3293,7 @@ class Runner(object):
         self.sched = Scheduler()
         self.printer = Printer(self.metricgroups)
 
-    def __init__(self, max_level, idle_threshold, pmu=None):
+    def __init__(self, max_level, idle_threshold, kernel_version, pmu=None):
         # always needs to be filtered by olist:
         self.metricgroups = defaultdict(list)
         self.reset()
@@ -3299,15 +3304,18 @@ class Runner(object):
         self.ectx = EventContext(pmu)
         self.pmu = pmu
         self.full_olist = []
-        self.cpu_list = [] # type: List[int]
+        self.cpu_list = [] # type: List[int] | None
+        self.kernel_version = kernel_version
 
     def set_ectx(self):
         global ectx
         ectx = self.ectx
 
     def clear_ectx(self):
-        global ectx
-        ectx = None
+        # confuses the type checker
+        #global ectx
+        #ectx = None
+        pass
 
     def do_run(self, obj):
         obj.res = None
@@ -3336,7 +3344,7 @@ class Runner(object):
                     parents.append(s)
                     parents += get_parents(s)
 
-        self.sibmatch = set()
+        self.sibmatch = set() # type: Set[Any]
         mgroups = set()
 
         def want_node(obj, mgroups, tma_mgroups):
@@ -3422,7 +3430,7 @@ class Runner(object):
             obj.nc = needed_counters(dedup(obj.evnum))
 
             # work arounds for lots of different problems
-            unsup = [x for x in obj.evlist if unsup_event(x, unsup_events, min_kernel)]
+            unsup = [x for x in obj.evlist if unsup_event(x, unsup_events, self.kernel_version, min_kernel)]
             if any(unsup):
                 bad_nodes.add(obj)
                 bad_events |= set(unsup)
@@ -3603,7 +3611,7 @@ def remove_pp(s):
 def clean_event(e):
     return remove_pp(e).replace(".", "_").replace(":", "_").replace('=','')
 
-def do_sample(sample_obj, rest, count, ret):
+def do_sample(sample_obj, rest, count, ret, kernel_version):
     samples = [("cycles:pp", "Precise cycles", )]
 
     for obj in sample_obj:
@@ -3620,9 +3628,9 @@ def do_sample(sample_obj, rest, count, ret):
     samples = [(k, "_".join([x[1] for x in g])) for k, g in groupby(samples, key=sample_event)]
 
     # find unsupported events
-    nsamp = [x for x in samples if not unsup_event(x[0], unsup_events)]
+    nsamp = [x for x in samples if not unsup_event(x[0], unsup_events, kernel_version)]
     nsamp = [(remove_pp(x[0]), x[1])
-             if unsup_event(x[0], unsup_pebs) else x
+             if unsup_event(x[0], unsup_pebs, kernel_version) else x
              for x in nsamp]
     if nsamp != samples:
         missing = [x[0] for x in set(samples) - set(nsamp)]
@@ -3770,7 +3778,7 @@ def setup_metrics(model, pmu):
     ectx.force_metrics = fmenv is not None
     if ectx.force_metrics:
         try:
-            ectx.metrics_override = True if int(fmenv) else False
+            ectx.metrics_override = True if int(fmenv if fmenv else "0") else False
         except ValueError:
             ectx.metrics_override = False
     if ectx.force_metrics:
@@ -3813,7 +3821,7 @@ def use_cpu(cpu):
 def get_cpu_list(fn):
     return [k for k in read_cpus(fn) if use_cpu(k)]
 
-def init_runner_list():
+def init_runner_list(kernel_version):
     idle_threshold = init_idle_threshold(args)
     runner_list = []
     hybrid_pmus = []
@@ -3829,18 +3837,18 @@ def init_runner_list():
             cpu_list = get_cpu_list(j)
             if len(cpu_list) == 0:
                 continue
-            r = Runner(args.level, idle_threshold, os.path.basename(j))
+            r = Runner(args.level, idle_threshold, os.path.basename(j), kernel_version)
             runner_list.append(r)
             r.cpu_list = cpu_list
     # hybrid, but faking non hybrid cpu
     elif hybrid_pmus:
-        runner_list = [Runner(args.level, idle_threshold, pmu="cpu_core")]
+        runner_list = [Runner(args.level, idle_threshold, kernel_version, pmu="cpu_core")]
         runner_list[0].cpu_list = get_cpu_list("/sys/devices/cpu_core")
         if len(runner_list[0].cpu_list) == 0:
             sys.exit("cpu_core fallback has no cpus")
     # no hybrid
     else:
-        r = Runner(args.level, idle_threshold, pmu="cpu")
+        r = Runner(args.level, idle_threshold, kernel_version, pmu="cpu")
         r.cpu_list = None
         runner_list = [r]
 
@@ -3905,7 +3913,7 @@ def legacy_smt_setup(model):
     model.smt_enabled = cpu.ht
     smt_mode |= cpu.ht
 
-def model_setup(runner, cpuname, pe):
+def model_setup(runner, cpuname, pe, kernel_version):
     global smt_mode
     if cpuname == "ivb":
         import ivb_client_ratios
@@ -4029,16 +4037,17 @@ def runner_emaps(pe, runner_list):
     version = ""
     for runner in runner_list:
         runner.set_ectx()
-        runner.ectx.emap = ocperf.find_emap(pmu=runner.pmu if runner.pmu else "cpu")
-        runner.printer.emap = ectx.emap
-        if not runner.ectx.emap:
+        emap = ocperf.find_emap(pmu=runner.pmu if runner.pmu else "cpu")
+        if not emap:
             ocperf.ocverbose = True
             ocperf.find_emap()
             sys.exit("Unknown CPU or CPU event map not found (EVENTMAP:%s, model:%d)" %
                      (os.environ["EVENTMAP"] if "EVENTMAP" in os.environ else "?", cpu.model))
+        runner.ectx.emap = emap
+        runner.printer.emap = ectx.emap
         if version:
             version += ", "
-        version += model_setup(runner, cpu.cpu, pe)
+        version += model_setup(runner, cpu.cpu, pe, runner.kernel_version)
         runner.clear_ectx()
     return version
 
@@ -4207,7 +4216,7 @@ def check_full_system(args, rest):
 
 output_numcpus = False
 
-def init_perf_output(args, rest):
+def init_perf_output(args, rest, full_system):
     if (args.perf_output or args.perf_summary) and not args.no_csv_header:
         ph = []
         if args.interval:
@@ -4304,7 +4313,7 @@ def suggest(runner):
         return suggest_bottlenecks(runner)
     return False
 
-def measure_and_sample(runner_list, count, out, orig_smt_mode, rest):
+def measure_and_sample(runner_list, count, out, orig_smt_mode, rest, full_system):
     rrest = rest
     while True:
         summary = Summary()
@@ -4315,7 +4324,7 @@ def measure_and_sample(runner_list, count, out, orig_smt_mode, rest):
                 ret = execute(runner_list, out, rrest, summary)
         except KeyboardInterrupt:
             ret = 1
-        print_summary(summary, out, runner_list)
+        print_summary(summary, out, runner_list, full_system)
         repeat = False
         for runner in runner_list:
             runner.stat.compute_errors()
@@ -4323,7 +4332,7 @@ def measure_and_sample(runner_list, count, out, orig_smt_mode, rest):
         if (args.show_sample or args.run_sample) and ret == 0:
             for runner in runner_list:
                 runner.set_ectx()
-                do_sample(runner.printer.sample_obj, rest, count, ret)
+                do_sample(runner.printer.sample_obj, rest, count, ret, runner.kernel_version)
                 runner.clear_ectx()
         if 100 <= ret <= 200 and repeat:
             print("Perf or workload appears to have failed with error %d. Not drilling down" % ret,
@@ -4349,13 +4358,12 @@ def measure_and_sample(runner_list, count, out, orig_smt_mode, rest):
                 check_root()
                 rrest = add_args(rrest, "-a")
                 rrest = add_args(rrest, "-A")
-                global full_system
                 full_system = True
             if nnodes == 0:
                 sys.exit("No nodes enabled")
         else:
             break
-    return ret, count
+    return ret, count, full_system
 
 def report_idle(runner_list):
     ik = set()
@@ -4372,15 +4380,17 @@ def report_not_supported(runner_list):
     if notfound_caches and any(["not supported" not in x for x in notfound_caches.values()]) and not args.quiet:
         print("Some events not found. Consider running event_download to update event lists", file=sys.stderr)
 
-def measure(out, orig_smt_mode, rest, runner_list):
+def measure(out, orig_smt_mode, rest, runner_list, full_system):
     if args.sample_repeat:
         cnt = 1
         for j in range(args.sample_repeat):
-            ret, cnt = measure_and_sample(runner_list, cnt, out, orig_smt_mode, rest)
+            ret, cnt, full_system = measure_and_sample(runner_list, cnt, out, orig_smt_mode,
+                                                       rest, full_system)
             if ret:
                 break
     else:
-        ret, count = measure_and_sample(runner_list, 0 if args.drilldown else None, out, orig_smt_mode, rest)
+        ret, count, full_system = measure_and_sample(runner_list, 0 if args.drilldown else None, out,
+                                                     orig_smt_mode, rest, full_system)
     return ret
 
 def idle_range_list(l):
@@ -4399,33 +4409,19 @@ def finish_graph(graphp):
         args.output.close()
         graphp.wait()
 
-def main():
-    global args
-    global feat
-    global cpu
-    args, rest = init_args()
-    event_nocheck = args.import_ or args.no_check
-    feat = PerfFeatures(args)
+def main(args, rest, feat, env, cpu):
     pversion = ocperf.PerfVersion()
-    if args.tune:
-        for t in args.tune:
-            exec(t)
-    env = tl_cpu.Env()
-    update_args(args, env)
     handle_parallel(args, env)
     rest = handle_rest(args, rest)
     open_output_files(args)
     update_args2(args)
     graphp = handle_graph(args)
     args.ring_filter = init_ring_filter(args)
-    # XXX move into ectx
-    cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck, env=env)
     update_args_cpu(args, pversion)
     update_cpu(args, cpu)
-    global kernel_version
     kernel_version = get_kernel()
     check_exclusive(args, kernel_version)
-    runner_list = init_runner_list()
+    runner_list = init_runner_list(kernel_version)
     handle_more_options(args)
     version = runner_emaps(setup_pe(), runner_list)
     handle_misc_options(args, version)
@@ -4437,9 +4433,8 @@ def main():
     global smt_mode
     orig_smt_mode = smt_mode
     smt_mode = update_smt_mode(runner_list)
-    global full_system
     full_system, rest = check_full_system(args, rest)
-    init_perf_output(args, rest)
+    init_perf_output(args, rest, full_system)
     rest = setup_cpus(args, rest, cpu, runner_list)
     if args.pinned:
         run_l1_parallel = True
@@ -4450,15 +4445,28 @@ def main():
         import code
         code.interact(banner='toplev repl', local=locals())
         sys.exit(0)
-    ret = measure(out, orig_smt_mode, rest, runner_list)
+    ret = measure(out, orig_smt_mode, rest, runner_list, full_system)
     out.print_footer()
     out.flushfiles()
     if args.xlsx and ret == 0:
-        ret = do_xlsx(env)
+        ret = do_xlsx(env, args)
     report_idle(runner_list)
     report_not_supported(runner_list)
     finish_graph(graphp)
     sys.exit(ret)
 
 if __name__ == '__main__':
-    main()
+    # these are top level to avoid globals, which break the type checker
+    # alternative would be to pass them everywhere, but that would be tedious
+    args, rest_ = init_args()
+    feat = PerfFeatures(args)
+    ectx = EventContextBase() # only for type checker
+    # allow tune to override toplevel without global
+    if args.tune:
+        for t in args.tune:
+            exec(t)
+    env_ = tl_cpu.Env()
+    update_args(args, env_)
+    # XXX move into ectx
+    cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck(), env=env_)
+    main(args, rest_, feat, env_, cpu)

@@ -13,7 +13,6 @@ from __future__ import print_function
 import sys
 import subprocess
 import os
-import argparse
 
 if sys.version_info.major == 3:
     popentext = dict(universal_newlines=True)
