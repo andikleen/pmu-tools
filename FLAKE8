@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+export PATH=$PATH:~/.local/bin
+# stop the build if there are Python syntax errors or undefined names
+flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+flake8 --exclude '*_uc.py,*_ratios.py'  --ignore=E302,E128,E741,E251,E305,E221,E127,E126,E501,E401,E231,E201,E261,E731,E122,E131,E226,W504,E402,E301,W503,E265,E306,E227,E306,W391,E202,E241
