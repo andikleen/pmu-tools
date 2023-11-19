@@ -50,7 +50,7 @@ def flex_open_w(fn):
 
 test_mode = os.getenv("TL_TESTER")
 
-args = None # type: argparse.Namespace
+args = None
 
 def set_args(a):
     global args
