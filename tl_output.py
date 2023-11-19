@@ -97,6 +97,7 @@ class Output(object):
         self.abbrev = args.abbrev
         self.valcsv = None
         self.last_prefix = ""
+        self.args = args
 
     def flushfiles(self):
         if self.logfiles:
@@ -150,6 +151,9 @@ class Output(object):
             self.logf = self.logfiles[name]
             self.curname = name
         self.curname_nologf = name
+
+    def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below, idle):
+        pass
 
     def print_version(self):
         if self.no_header or self.args.no_version:

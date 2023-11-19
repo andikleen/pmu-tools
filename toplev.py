@@ -61,6 +61,8 @@ from tl_io import flex_open_r, flex_open_w, popentext, warn, warn_once, \
         warn_once_no_assert, print_once, test_debug_print,              \
         obj_debug_print, debug_print, warn_no_assert,                   \
         set_args as io_set_args
+if sys.version_info.major == 3:
+    from typing import Set, List
 
 known_cpus = (
     ("snb", (42, )),
@@ -253,7 +255,7 @@ smt_mode = False
 def works(x):
     return os.system(x + " >/dev/null 2>/dev/null") == 0
 
-exists_cache = {}
+exists_cache = {} # type: Dict[bool]
 
 def cached_exists(fn):
     if fn in exists_cache:
@@ -917,7 +919,7 @@ def run_parallel(args, env):
                 arg.insert(1, "--no-csv-footer")
         if not args.quiet:
             print(" ".join(arg))
-        pp = subprocess.Popen(arg, stdout=subprocess.PIPE, **popentext)
+        pp = subprocess.Popen(arg, stdout=subprocess.PIPE, **popentext) # type: ignore
         procs.append((pp, outfn))
     if args.xlsx:
         init_xlsx(args)
@@ -1098,7 +1100,7 @@ def handle_graph(args):
         cmd = "%s %s/tl-barplot.py %s /dev/stdin" % (sys.executable, exe_dir(), extra)
         if not args.quiet:
             print(cmd)
-        graphp = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, **popentext)
+        graphp = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, **popentext) # type: ignore
         args.output = graphp.stdin
     return graphp
 
@@ -1279,7 +1281,7 @@ class PerfRun(object):
             print_perf(r)
             if args.script_record:
                 self.perf = subprocess.Popen([feat.perf, "stat", "report", "-x;", "-i", args.import_],
-                                             stderr=subprocess.PIPE, **popentext)
+                                             stderr=subprocess.PIPE, **popentext) # type: ignore
                 return self.perf.stderr
             self.perf = None
             try:
@@ -1308,7 +1310,7 @@ class PerfRun(object):
         print_perf(r)
         if args.print:
             sys.exit(0)
-        self.perf = subprocess.Popen(r, close_fds=False)
+        self.perf = subprocess.Popen(r, close_fds=False) # type: ignore
         os.close(inp)
         return os.fdopen(outp, 'r')
 
@@ -1647,7 +1649,7 @@ default_compute_iter = 3
 COMPUTE_ITER = None
 
 def print_keys(runner, res, rev, valstats, out, interval, env, mode):
-    nothing = set()
+    nothing = set() # type: Set[str]
     allowed_threads = runner.cpu_list
     def filtered(j):
         return j != "" and is_number(j) and int(j) not in allowed_threads
@@ -1918,7 +1920,7 @@ class SaveContext(object):
        when we reexecute the workload multiple times."""
     def __init__(self):
         try:
-            self.startoffset = sys.stdin.tell()
+            self.startoffset = sys.stdin.tell() # type: int | None
         except OSError:
             self.startoffset = None
         except IOError:
@@ -3213,7 +3215,7 @@ class Printer(object):
         out.logf.flush()
 
         # determine all objects to print
-        thresh_mg = set()
+        thresh_mg = set() # type: Set[str]
         olist = [o for o in olist if should_print_obj(o, match, thresh_mg, bn)]
 
         # sort by metric group
@@ -3490,7 +3492,7 @@ class Runner(object):
 
             if not match(obj):
                 continue
-            ref = set()
+            ref = set() # type: Set[int]
             oldthresh = obj.thresh
             if 'parent' in obj.__dict__ and obj.parent and obj.parent not in self.olist:
                 obj.parent.thresh = True
@@ -4256,7 +4258,7 @@ def init_output(args, version):
             sys.exit("Cannot combine --csv with --json")
         if args.columns:
             sys.exit("Cannot combine --columns with --json")
-        out = tl_output.OutputJSON(args.output, args.csv, args, version, cpu)
+        out = tl_output.OutputJSON(args.output, args.csv, args, version, cpu) # type: tl_output.Output
     elif args.csv:
         if args.columns:
             out = tl_output.OutputColumnsCSV(args.output, args.csv, args, version, cpu)

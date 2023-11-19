@@ -185,7 +185,7 @@ class UVal:
     @ensure_uval
     def __rdiv__(self, other):
         """other / self"""
-        return UVal._calc(operator.div, other, self)
+        return UVal._calc(operator.div, other, self) # type: ignore
 
     @ensure_uval
     def __rtruediv__(self, other):

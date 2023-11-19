@@ -90,7 +90,7 @@ class CPU(object):
     def force_ht(self):
         ht = self.env.forceht
         if ht:
-            self.ht = int(ht)
+            self.ht = True if int(ht) else False
             return True
         return False
 
@@ -228,7 +228,7 @@ class CPU(object):
         try:
             self.pmu_name = open("/sys/devices/cpu/caps/pmu_name").read().strip()
         except IOError:
-            self.pmu_name = None
+            self.pmu_name = ""
 
         self.sockets = len(sockets.keys())
         self.modelid = None

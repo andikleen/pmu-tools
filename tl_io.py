@@ -13,6 +13,7 @@ from __future__ import print_function
 import sys
 import subprocess
 import os
+import argparse
 
 if sys.version_info.major == 3:
     popentext = dict(universal_newlines=True)
@@ -20,10 +21,10 @@ else:
     popentext = {}
 
 def popen_stdout(cmd):
-    return subprocess.Popen(cmd, stdout=subprocess.PIPE, **popentext)
+    return subprocess.Popen(cmd, stdout=subprocess.PIPE, **popentext) # type: ignore
 
 def popen_stdinout(cmd, f):
-    return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=f, **popentext)
+    return subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=f, **popentext) # type: ignore
 
 def flex_open_r(fn):
     if fn.endswith(".xz"):
@@ -50,7 +51,7 @@ def flex_open_w(fn):
 
 test_mode = os.getenv("TL_TESTER")
 
-args = None
+args = None # type: argparse.Namespace
 
 def set_args(a):
     global args
