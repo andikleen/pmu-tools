@@ -62,7 +62,7 @@ from tl_io import flex_open_r, flex_open_w, popentext, warn, warn_once, \
         obj_debug_print, debug_print, warn_no_assert,                   \
         set_args as io_set_args
 if sys.version_info.major == 3:
-    from typing import Set, List
+    from typing import Set, List # noqa
 
 known_cpus = (
     ("snb", (42, )),
