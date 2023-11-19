@@ -274,9 +274,8 @@ class PerfFeatures(object):
         pmu = "cpu"
         if os.path.exists("/sys/devices/cpu_core"):
             pmu = "cpu_core"
-        self.perf = os.getenv("PERF")
-        if not self.perf:
-            self.perf = "perf"
+        p = os.getenv("PERF")
+        self.perf = p if p else "perf"
         ret = os.system(self.perf + " stat --log-fd 3 3>/dev/null true")
         if ret:
             # work around the insane perf setup on Debian derivates
@@ -2331,7 +2330,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
                 return
 
             if skip:
-                res[t].append(0)
+                res[t].append(0.0)
             else:
                 res[t].append(val)
             rev[t].append(event)
@@ -3638,8 +3637,8 @@ def do_sample(sample_obj, rest, count, ret):
             raw_event(j[0], initialize=True)
         nnopebs = {x[0] for x in nsamp if force_pebs(x[0])}
         if nnopebs and not args.quiet:
-            for j in nnopebs:
-                warn_no_assert("sample event %s not (currently) supported in virtualization" % j)
+            for o in nnopebs:
+                warn_no_assert("sample event %s not (currently) supported in virtualization" % o[0])
         nsamp = [x for x in nsamp if x[0] not in nnopebs]
 
     sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True) for s in nsamp]
@@ -3770,9 +3769,9 @@ def setup_metrics(model, pmu):
     ectx.force_metrics = fmenv is not None
     if ectx.force_metrics:
         try:
-            ectx.metrics_override = int(fmenv)
+            ectx.metrics_override = True if int(fmenv) else False
         except ValueError:
-            ectx.metrics_override = 0
+            ectx.metrics_override = False
     if ectx.force_metrics:
         model.topdown_use_fixed = ectx.metrics_override
     else:
