@@ -4,5 +4,5 @@ EXTRA="--follow-imports skip" # for now
 
 export PATH=$PATH:~/.local/bin
 # XXX ocperf, models, interval*, tl-*
-exec mypy --check-untyped-defs $EXTRA toplev.py tl_output.py tl_io.py tl_cpu.py tl_stat.py tl_uval.py
+exec mypy --check-untyped-defs $EXTRA toplev.py tl_output.py tl_io.py tl_cpu.py tl_stat.py tl_uval.py "$@"
 
