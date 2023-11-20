@@ -206,7 +206,7 @@ class CPU(object):
             newcounters = { "cpu": 4 }
         else:
             newcounters = { "cpu": 8 }
-        if self.counters is None:
+        if not self.counters:
             self.counters = newcounters
         if not nocheck and not self.env.forcecounters:
             for j in ("cpu", "cpu_core", "cpu_atom"):
