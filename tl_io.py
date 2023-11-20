@@ -14,6 +14,8 @@ import sys
 import subprocess
 import os
 import argparse
+if sys.version_info.major == 3:
+    from typing import Set # noqa
 
 if sys.version_info.major == 3:
     popentext = dict(universal_newlines=True)
@@ -70,7 +72,7 @@ def warn(msg):
     if test_mode:
         assert 0
 
-warned = argparse.Namespace()
+warned = set() # type: Set[str]
 
 def warn_once_no_assert(msg):
     if msg not in warned and not args.quiet:
