@@ -1264,7 +1264,7 @@ class PerfRun(object):
     # must be stored before reading the line
     def store_offset(self):
         if self.end_seek_offset:
-            self.offset = self.inputf.tell()
+            self.offset = self.inputf.tell() # type: ignore
 
     def skip_first_line(self):
         if self.skip_line:
@@ -1550,7 +1550,7 @@ def display_core(cpunum, ignore_thread=False):
             sys.exit("Bad core match %s" % match)
 
         def matching(name, mapping):
-            return mapping[cpunum] == int(m.group(name)[1:])
+            return mapping[cpunum] == int(m.group(name)[1:]) # type: ignore
         if m.group('socket') and not matching('socket', cpu.cputosocket):
             continue
         if m.group('core') and cpu.cputocore[cpunum][1] != int(m.group('core')[1:]):

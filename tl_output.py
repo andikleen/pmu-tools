@@ -23,6 +23,8 @@ from math import isnan
 from collections import defaultdict, Counter, OrderedDict
 from tl_uval import UVal, combine_uval
 from tl_io import flex_open_w
+if sys.version_info.major == 3:
+    from typing import DefaultDict, Dict, Any # noqa
 
 def output_name(name, typ):
     if typ:
@@ -458,7 +460,7 @@ class OutputJSON(Output):
     """Output data in chrome / trace-viewer JSON format."""
     def __init__(self, logfile, sep, args, version, cpu):
         Output.__init__(self, logfile, version, cpu, args)
-        self.nodes = defaultdict(dict)
+        self.nodes = defaultdict(dict) # type: DefaultDict[str, Dict[str, Any]]
         self.headers = OrderedDict()
         self.count = Counter() # type: Counter[str]
         self.no_header = args.no_json_header
@@ -493,7 +495,7 @@ class OutputJSON(Output):
         self.num += 1
 
     def flush(self):
-        nodes = OrderedDict()
+        nodes = OrderedDict() # type: OrderedDict[str,Any]
         for hdr in self.headers:
             for title in sorted(self.nodes.keys()):
                 if hdr not in self.nodes[title]:

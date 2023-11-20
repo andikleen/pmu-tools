@@ -112,82 +112,82 @@ class UVal:
     # operators
     ######################
 
-    def ensure_uval(binop):
+    def ensure_uval(binop): # type: ignore
         """decorator to ensure binary operators are both UVals"""
-        def wrapper(self, v):
+        def wrapper(self, v): # type: ignore
             if isinstance(v, UVal):
-                return binop(self, v)
+                return binop(self, v) # type: ignore
             elif isinstance(v, (float, int)):
-                return binop(self, UVal(TEMPVAL, value=v, stddev=0))
+                return binop(self, UVal(TEMPVAL, value=v, stddev=0)) # type: ignore
             else:
                 return NotImplemented
         return wrapper
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __sub__(self, other):
         return UVal._calc(operator.sub, self, other)
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __add__(self, other):
         return UVal._calc(operator.add, self, other)
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __mul__(self, other):
         return UVal._calc(operator.mul, self, other)
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __div__(self, other):
-        return UVal._calc(operator.div, self, other)
+        return UVal._calc(operator.div, self, other) # type: ignore
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __truediv__(self, other):
         return UVal._calc(operator.truediv, self, other)
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __lt__(self, other):
         return self.value < other.value
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __le__(self, other):
         return self.value <= other.value
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __eq__(self, other):
         return self.value == other.value
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __ge__(self, other):
         return self.value >= other.value
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __gt__(self, other):
         return self.value > other.value
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __rsub__(self, other):
         """other - self"""
         return UVal._calc(operator.sub, other, self)
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __radd__(self, other):
         """other + self"""
         return UVal._calc(operator.add, other, self)
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __rmul__(self, other):
         """other * self"""
         return UVal._calc(operator.mul, other, self)
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __rdiv__(self, other):
         """other / self"""
         return UVal._calc(operator.div, other, self) # type: ignore
 
-    @ensure_uval
+    @ensure_uval # type: ignore
     def __rtruediv__(self, other):
         """other / self"""
         return UVal._calc(operator.truediv, other, self)
