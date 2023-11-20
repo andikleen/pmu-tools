@@ -81,18 +81,6 @@ class CPU(object):
             print("Unknown FORCECPU ",force)
         return True
 
-    def force_counters(self):
-        cnt = self.env.forcecounters
-        if cnt:
-            cntn = int(cnt)
-            if self.realcpu == "adl":
-                self.counters = {
-                    "cpu_core": cntn,
-                    "cpu_atom": cntn,
-                    "cpu": cntn } # type: None | Dict[str,int]
-            else:
-                self.counters = { "cpu": cntn }
-
     def force_ht(self):
         ht = self.env.forceht
         if ht:
@@ -118,8 +106,8 @@ class CPU(object):
         self.threads = 0
         forced_cpu = self.force_cpu(known_cpus)
         forced_ht = self.force_ht()
-        cores = Counter()
-        sockets = Counter()
+        cores = Counter() # type: Counter[tuple[int,int]]
+        sockets = Counter() # type: Counter[int]
         self.coreids = defaultdict(list)
         self.cputocore = {}
         self.cputothread = {}
@@ -244,3 +232,15 @@ class CPU(object):
             self.modelid = modelid_map[mid]
             self.true_name = self.modelid.lower()
         # XXX match steppings here too
+
+    def force_counters(self):
+        cnt = self.env.forcecounters
+        if cnt:
+            cntn = int(cnt)
+            if self.realcpu == "adl":
+                self.counters = {
+                    "cpu_core": cntn,
+                    "cpu_atom": cntn,
+                    "cpu": cntn } # type: None | Dict[str,int]
+            else:
+                self.counters = { "cpu": cntn }

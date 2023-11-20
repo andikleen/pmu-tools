@@ -93,7 +93,7 @@ known_cpus = (
 )
 
 eventlist_alias = {
-}
+} # type: Dict[str,str]
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "icx",
             "spr", "sprmax")
@@ -102,7 +102,7 @@ hybrid_cpus = ("adl", )
 
 non_json_events = set(("dummy", "duration_time"))
 
-tma_mgroups = set()
+tma_mgroups = set() # type: Set[str]
 
 # tunables (tunable with --tune)
 
@@ -1466,7 +1466,7 @@ def setup_perf(evstr, rest):
 class Stat(object):
     def __init__(self):
         self.total = 0
-        self.errors = Counter()
+        self.errors = Counter() # type: Counter[str]
 
 def print_not(a, count, msg, j):
     print(("%s %s %s %.2f%% in %d measurements"
@@ -1959,6 +1959,7 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             print("RUN #%d of %d%s: %s" % (n + 1, num_runs,
                 " for %s" % runner_name(runner) if len(runner_list) > 1 else "",
                 " ".join([quote(o.name) for o in gg.objl])))
+            # becomes results for first iteration
             lresults = results if n == 0 else []
             res = None
             events = outg + [g]
@@ -2173,7 +2174,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
     rev = defaultdict(list)
     valstats = defaultdict(list) # type: defaultdict[str,List[ValStat]]
     env = {}
-    account = defaultdict(Stat)
+    account = defaultdict(Stat) # type: defaultdict[str,Stat]
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
     interval = None
@@ -2363,6 +2364,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
             dup_val(cpu.sockettocpus[socket])
         elif re.match(r'(S\d+-)?(D\d+-)?C\d+', title) and (smt_mode or args.no_aggr):
             m = re.match(r'(?:S(\d+)-)?(?:D(\d+)-)?C(\d+)', title)
+            assert m is not None
             if m.group(2): # XXX
                 warn_once("die topology not supported currently")
             socket, core = int(m.group(1)), int(m.group(3))
@@ -2851,7 +2853,7 @@ class Summary(object):
     def __init__(self):
         self.res = defaultdict(list)
         self.rev = defaultdict(list)
-        self.env = Counter()
+        self.env = Counter() # type: Counter[str]
         self.valstats = defaultdict(list)
         self.summary_perf = OrderedDict()
 
@@ -3345,7 +3347,7 @@ class Runner(object):
                     parents += get_parents(s)
 
         self.sibmatch = set() # type: Set[Any]
-        mgroups = set()
+        mgroups = set() # type: Set[str]
 
         def want_node(obj, mgroups, tma_mgroups):
             area = safe_ref(obj, 'area')
@@ -3416,10 +3418,10 @@ class Runner(object):
         bad_nodes = set()
         bad_events = set()
         unsup_nodes = set()
-        errata_nodes = set()
-        errata_warn_nodes = set()
-        errata_names = set()
-        errata_warn_names = set()
+        errata_nodes = set() # type: Set[Any]
+        errata_warn_nodes = set() # type: Set[Any]
+        errata_names = set() # type: Set[str]
+        errata_warn_names = set() # type: Set[str]
         min_kernel = []
         for obj in self.olist:
             obj.evlevels = []
