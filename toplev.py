@@ -62,7 +62,7 @@ from tl_io import flex_open_r, flex_open_w, popentext, warn, warn_once, \
         obj_debug_print, debug_print, warn_no_assert,                   \
         set_args as io_set_args
 if sys.version_info.major == 3:
-    from typing import Set, List, Dict, Any # noqa
+    from typing import Set, List, Dict, Any, Tuple # noqa
 
 known_cpus = (
     ("snb", (42, )),
@@ -224,12 +224,14 @@ class EventContextBase(object):
         self.notfound_cache = {}
         self.rmap_cache = {}
         self.slots_available = False
-        self.emap = None
-        self.standard_counters = tuple()
+        self.standard_counters = tuple("") # type: Tuple[str, ...]
         self.counters = 0
         self.limit4_counters = ""
         self.force_metrics = False
         self.metrics_override = False
+
+    def init_emap(self, emap):
+        self.emap = emap
 
 class EventContext(EventContextBase):
     """Event related context for a given target CPU."""
@@ -445,7 +447,7 @@ def needed_counters(evlist):
 
 def event_group(evlist):
     evlist = add_filter(evlist)
-    l = []
+    l = [] # type: List[str]
     pgroup = False
     for is_og, g in groupby(evlist, lambda x: x in ectx.outgroup_events):
         if is_og or args.no_group:
@@ -999,8 +1001,8 @@ def gen_cpu_name(cpu):
                 return "GenuineIntel-6-%02X-%d" % j[1][0]
             else:
                 if j[1][0] in eventlist_alias:
-                    return eventlist_alias[j[1][0]]
-                return "GenuineIntel-6-%02X" % j[1][0]
+                    return eventlist_alias[j[1][0]] # type: ignore
+                return "GenuineIntel-6-%02X" % j[1][0]  # type: ignore
     sys.exit("Unknown cpu %s" % cpu)
     return None
 
@@ -1477,7 +1479,7 @@ def print_not(a, count, msg, j):
 
 # XXX need to get real ratios from perf
 def print_account(ad):
-    total = Counter()
+    total = Counter() # type: Counter[str]
     for j in ad:
         a = ad[j]
         for e in a.errors:
@@ -1935,7 +1937,7 @@ class SaveContext(object):
             sys.stdin.seek(self.startoffset)
 
 def execute_no_multiplex(runner_list, out, rest, summary):
-    results = []
+    results = [] # type: List[Any]
     groups = []
     num_outg = 0
     for runner in runner_list:
@@ -1945,7 +1947,7 @@ def execute_no_multiplex(runner_list, out, rest, summary):
     outg = []
     n = 0
     ctx = SaveContext()
-    resoff = Counter()
+    resoff = Counter() # type: Counter[str]
     RES, REV, INTERVAL, VALSTATS, ENV = range(5)
     ret = 0
     # runs could be further reduced by tweaking
@@ -2020,7 +2022,7 @@ def runner_split(runner_list, res, rev):
             end = off + len(r.sched.evnum)
             yield r, { "": res[""][off:end]}, { "": rev[""][off:end] }
         elif r.cpu_list:
-            d = defaultdict(list)
+            d = defaultdict(list) # type: defaultdict[str,list]
             d.update({ "%d" % k: res["%d" % k] for k in r.cpu_list })
             yield r, d, rev
         else:
@@ -2171,9 +2173,9 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
 
 def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
     res = defaultdict(list) # type: defaultdict[str,List[float]]
-    rev = defaultdict(list)
+    rev = defaultdict(list) # type: defaultdict[str, List[str]]
     valstats = defaultdict(list) # type: defaultdict[str,List[ValStat]]
-    env = {}
+    env = {} # type: Dict[str,str]
     account = defaultdict(Stat) # type: defaultdict[str,Stat]
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
@@ -3211,7 +3213,6 @@ class Printer(object):
         self.bottlenecks = set()
         self.numprint = 0
         self.metricgroups = metricgroups
-        self.emap = None
 
     def print_res(self, olist, out, timestamp, title, match, bn, idlemark=False):
         if bn:
@@ -3254,6 +3255,9 @@ class Printer(object):
                 if obj.thresh or args.verbose:
                     self.sample_obj.add(obj)
             self.numprint += 1
+
+    def init_emap(self, emap):
+        self.emap = emap
 
 # check nodes argument for typos
 def check_nodes(runner_list, nodesarg):
@@ -3306,7 +3310,7 @@ class Runner(object):
         self.ectx = EventContext(pmu)
         self.pmu = pmu
         self.full_olist = []
-        self.cpu_list = [] # type: List[int] | None
+        self.cpu_list = [] # type: List[int]
         self.kernel_version = kernel_version
 
     def set_ectx(self):
@@ -3422,7 +3426,7 @@ class Runner(object):
         errata_warn_nodes = set() # type: Set[Any]
         errata_names = set() # type: Set[str]
         errata_warn_names = set() # type: Set[str]
-        min_kernel = []
+        min_kernel = [] # type: List[int]
         for obj in self.olist:
             obj.evlevels = []
             obj.compute(lambda ev, level: ev_collect(ev, level, obj))
@@ -3452,7 +3456,7 @@ class Runner(object):
                        " due to unsupported events in kernel: " +
                        " ".join(sorted(bad_events)), 80, "")
                     if min_kernel:
-                        print("Fixed in kernel %d.%d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0]),
+                        print("Fixed in kernel %d" % (sorted(min_kernel, key=kv_to_key, reverse=True)[0]),
                                 file=sys.stderr)
                     print("Use --force-events to override (may result in wrong measurements)",
                             file=sys.stderr)
@@ -3851,7 +3855,7 @@ def init_runner_list(kernel_version):
     # no hybrid
     else:
         r = Runner(args.level, idle_threshold, kernel_version, pmu="cpu")
-        r.cpu_list = None
+        r.cpu_list = []
         runner_list = [r]
 
     if args.all:
@@ -4045,8 +4049,8 @@ def runner_emaps(pe, runner_list):
             ocperf.find_emap()
             sys.exit("Unknown CPU or CPU event map not found (EVENTMAP:%s, model:%d)" %
                      (os.environ["EVENTMAP"] if "EVENTMAP" in os.environ else "?", cpu.model))
-        runner.ectx.emap = emap
-        runner.printer.emap = ectx.emap
+        runner.ectx.init_emap(emap)
+        runner.printer.init_emap(emap)
         if version:
             version += ", "
         version += model_setup(runner, cpu.cpu, pe, runner.kernel_version)
@@ -4247,7 +4251,7 @@ def setup_cpus(args, rest, cpu, runner_list):
     else:
         allowed_threads = allcpus
 
-    if len(runner_list) > 1 and args.no_aggr and runner_list[0].cpu_list is None: # XXX
+    if len(runner_list) > 1 and args.no_aggr and not runner_list[0].cpu_list: # XXX
         cores = list(sorted(cpu.coreids.keys()))
         part = len(cores)//len(runner_list)
         start = 0

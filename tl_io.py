@@ -13,6 +13,7 @@ from __future__ import print_function
 import sys
 import subprocess
 import os
+import argparse
 
 if sys.version_info.major == 3:
     popentext = dict(universal_newlines=True)
@@ -50,7 +51,7 @@ def flex_open_w(fn):
 
 test_mode = os.getenv("TL_TESTER")
 
-args = None
+args = argparse.Namespace()
 
 def set_args(a):
     global args
@@ -69,10 +70,10 @@ def warn(msg):
     if test_mode:
         assert 0
 
-warned = set()
+warned = argparse.Namespace()
 
 def warn_once_no_assert(msg):
-    if msg not in warned:
+    if msg not in warned and not args.quiet:
         print("warning: " + msg, file=sys.stderr)
         warned.add(msg)
 
@@ -82,7 +83,7 @@ def warn_once(msg):
         assert 0
 
 def print_once(msg):
-    if msg not in warned:
+    if msg not in warned and not args.quiet:
         print(msg)
         warned.add(msg)
 

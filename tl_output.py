@@ -460,7 +460,7 @@ class OutputJSON(Output):
         Output.__init__(self, logfile, version, cpu, args)
         self.nodes = defaultdict(dict)
         self.headers = OrderedDict()
-        self.count = Counter()
+        self.count = Counter() # type: Counter[str]
         self.no_header = args.no_json_header
         self.no_footer = args.no_json_footer
         self.num = 0

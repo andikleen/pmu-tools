@@ -18,7 +18,7 @@ from tl_io import warn
 log = logging.getLogger(__name__)
 TEMPVAL = 'anon'
 
-div_op = operator.div if 'div' in operator.__dict__ else None
+div_op = operator.div if 'div' in operator.__dict__ else None # type: ignore
 
 def combine_uval(ulist):
     """

@@ -72,7 +72,7 @@ class CPU(object):
         force = self.env.forcecpu
         if not force:
             return False
-        self.cpu = None
+        self.cpu = ""
         for i in known_cpus:
             if force == i[0]:
                 self.cpu = i[0]
@@ -92,10 +92,10 @@ class CPU(object):
         self.vendor = ""
         self.env = env
         self.model = 0
-        self.cpu = None
+        self.cpu = ""
         self.realcpu = "simple"
         self.ht = False
-        self.counters = None
+        self.counters = {} # type: Dict[str,int]
         self.has_tsx = False
         self.hypervisor = False
         self.force_hypervisor = False
@@ -241,6 +241,6 @@ class CPU(object):
                 self.counters = {
                     "cpu_core": cntn,
                     "cpu_atom": cntn,
-                    "cpu": cntn } # type: None | Dict[str,int]
+                    "cpu": cntn }
             else:
                 self.counters = { "cpu": cntn }
