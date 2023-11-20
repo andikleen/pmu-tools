@@ -24,6 +24,7 @@ from collections import defaultdict, Counter, OrderedDict
 from tl_uval import UVal, combine_uval
 from tl_io import flex_open_w
 if sys.version_info.major == 3:
+    import typing # noqa
     from typing import DefaultDict, Dict, Any # noqa
 
 def output_name(name, typ):
@@ -462,7 +463,7 @@ class OutputJSON(Output):
         Output.__init__(self, logfile, version, cpu, args)
         self.nodes = defaultdict(dict) # type: DefaultDict[str, Dict[str, Any]]
         self.headers = OrderedDict()
-        self.count = Counter() # type: Counter[str]
+        self.count = Counter() # type: typing.Counter[str]
         self.no_header = args.no_json_header
         self.no_footer = args.no_json_footer
         self.num = 0

@@ -62,7 +62,8 @@ from tl_io import flex_open_r, flex_open_w, popentext, warn, warn_once, \
         obj_debug_print, debug_print, warn_no_assert,                   \
         set_args as io_set_args
 if sys.version_info.major == 3:
-    from typing import Set, List, Dict, Any, Tuple # noqa
+    import typing # noqa
+    from typing import Set, List, Dict, Any, Tuple, DefaultDict # noqa
 
 known_cpus = (
     ("snb", (42, )),
@@ -1468,7 +1469,7 @@ def setup_perf(evstr, rest):
 class Stat(object):
     def __init__(self):
         self.total = 0
-        self.errors = Counter() # type: Counter[str]
+        self.errors = Counter() # type: typing.Counter[str]
 
 def print_not(a, count, msg, j):
     print(("%s %s %s %.2f%% in %d measurements"
@@ -1479,7 +1480,7 @@ def print_not(a, count, msg, j):
 
 # XXX need to get real ratios from perf
 def print_account(ad):
-    total = Counter() # type: Counter[str]
+    total = Counter() # type: typing.Counter[str]
     for j in ad:
         a = ad[j]
         for e in a.errors:
@@ -1947,7 +1948,7 @@ def execute_no_multiplex(runner_list, out, rest, summary):
     outg = []
     n = 0
     ctx = SaveContext()
-    resoff = Counter() # type: Counter[str]
+    resoff = Counter() # type: typing.Counter[str]
     RES, REV, INTERVAL, VALSTATS, ENV = range(5)
     ret = 0
     # runs could be further reduced by tweaking
@@ -2022,7 +2023,7 @@ def runner_split(runner_list, res, rev):
             end = off + len(r.sched.evnum)
             yield r, { "": res[""][off:end]}, { "": rev[""][off:end] }
         elif r.cpu_list:
-            d = defaultdict(list) # type: defaultdict[str,list]
+            d = defaultdict(list) # type: DefaultDict[str,list]
             d.update({ "%d" % k: res["%d" % k] for k in r.cpu_list })
             yield r, d, rev
         else:
@@ -2172,11 +2173,11 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
     return r, False, event
 
 def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
-    res = defaultdict(list) # type: defaultdict[str,List[float]]
-    rev = defaultdict(list) # type: defaultdict[str, List[str]]
-    valstats = defaultdict(list) # type: defaultdict[str,List[ValStat]]
+    res = defaultdict(list) # type: DefaultDict[str,List[float]]
+    rev = defaultdict(list) # type: DefaultDict[str, List[str]]
+    valstats = defaultdict(list) # type: DefaultDict[str,List[ValStat]]
     env = {} # type: Dict[str,str]
-    account = defaultdict(Stat) # type: defaultdict[str,Stat]
+    account = defaultdict(Stat) # type: DefaultDict[str,Stat]
     inf, prun = setup_perf(evstr, rest)
     prev_interval = 0.0
     interval = None
@@ -2855,7 +2856,7 @@ class Summary(object):
     def __init__(self):
         self.res = defaultdict(list)
         self.rev = defaultdict(list)
-        self.env = Counter() # type: Counter[str]
+        self.env = Counter() # type: typing.Counter[str]
         self.valstats = defaultdict(list)
         self.summary_perf = OrderedDict()
 

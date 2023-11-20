@@ -28,7 +28,8 @@ import re
 import glob
 import sys
 if sys.version_info.major == 3:
-    from typing import Set, List, Dict # noqa
+    import typing # noqa
+    from typing import Set, List, Dict, Tuple # noqa
 
 modelid_map = {
     (0x8e, ): "KBLR",
@@ -106,8 +107,8 @@ class CPU(object):
         self.threads = 0
         forced_cpu = self.force_cpu(known_cpus)
         forced_ht = self.force_ht()
-        cores = Counter() # type: Counter[tuple[int,int]]
-        sockets = Counter() # type: Counter[int]
+        cores = Counter() # type: typing.Counter[Tuple[int,int]]
+        sockets = Counter() # type: typing.Counter[int]
         self.coreids = defaultdict(list)
         self.cputocore = {}
         self.cputothread = {}
