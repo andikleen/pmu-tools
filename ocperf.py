@@ -64,6 +64,9 @@ import pipes
 import itertools
 import glob
 from pmudef import EVENTSEL_ANY, EVENTSEL_INV, EVMASK, extra_flags
+if sys.version_info.major == 3:
+    import typing # noqa
+    from typing import Set, List, Dict, Any, Tuple, DefaultDict # noqa
 
 import msr as msrmod
 import latego
@@ -74,11 +77,11 @@ pebs_enable = "p"
 experimental = False
 ocverbose = os.getenv("OCVERBOSE") is not None
 
-exists_cache = dict()
+exists_cache = dict() # type: Dict[str,bool]
 
-emap_list = []
+emap_list = [] # type: List[EmapNativeJSON]
 
-topology = None
+topology = None # type: None | Set[str]
 
 def file_exists(s):
     if s in exists_cache:
@@ -1147,7 +1150,7 @@ def get_pager():
     f = sys.stdout
     if f.isatty():
         try:
-            sp = subprocess.Popen(["less", "-F"], stdin=subprocess.PIPE, **popentext)
+            sp = subprocess.Popen(["less", "-F"], stdin=subprocess.PIPE, **popentext) # type: ignore
             return sp.stdin, sp
         except OSError:
             f = sys.stdout
