@@ -178,16 +178,17 @@ class CPU(object):
         self.force_counters()
         self.limit4_counters = { "cpu": "none" }
         self.standard_counters = { "cpu": tuple(("0,1,2,3",)) }
-        if self.cpu == "adl":
+        if self.cpu.startswith("adl") or self.cpu.startswith("mtl"):
+            atom_counters = 6 if self.cpu.startswith("adl") else 8
             newcounters = {
                 "cpu_core": 8,
                 "cpu": 4,
-                "cpu_atom": 6,
+                "cpu_atom": atom_counters,
             }
             self.standard_counters = {
                 "cpu_core": ("0,1,2,3,4,5,6,7", "0,1,2,3", ),
                 "cpu": ("0,1,2,3,4,5,6,7", "0,1,2,3", ),
-                "cpu_atom": ("0,1,2,3,4,5", ),
+                "cpu_atom": ("0,1,2,3,4,5", ) if atom_counters == 6 else ("0,1,2,3,4,5,6,7,", )
             }
             self.limit4_counters = { "cpu_core": "0,1,2,3", "cpu_atom": "none",
                                      "cpu": "0,1,2,3" }
@@ -238,7 +239,7 @@ class CPU(object):
         cnt = self.env.forcecounters
         if cnt:
             cntn = int(cnt)
-            if self.realcpu == "adl":
+            if self.realcpu == "adl" or self.realcpu == "mtl":
                 self.counters = {
                     "cpu_core": cntn,
                     "cpu_atom": cntn,

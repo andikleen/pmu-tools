@@ -41,6 +41,7 @@ import types
 import csv
 import bisect
 import random
+import json
 import io
 import glob
 from copy import copy
@@ -91,6 +92,9 @@ known_cpus = (
     ("spr", (143, )),
     ("ehl", (150, )),
     ("sprmax", ()),
+    ("mtl", (186, )),
+    ("mtl-cmt", (186, )),
+    ("mtl-rwc", (186, )),
 )
 
 eventlist_alias = {
@@ -99,7 +103,7 @@ eventlist_alias = {
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "icx",
             "spr", "sprmax")
 
-hybrid_cpus = ("adl", )
+hybrid_cpus = ("adl", "mtl",)
 
 non_json_events = set(("dummy", "duration_time"))
 
@@ -639,6 +643,7 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
     g = p.add_argument_group('Model tunables')
     g.add_argument('--fp16', help='Enable FP16 support in some models', action='store_true')
     g.add_argument('--hbm-only', help='Enable HBM only mode in some models', action='store_true')
+    g.add_argument('--ret-latency', help='Read JSON file with Retire latencies. Can specify path inside JSON file with :, for example foo.json:6-cores:MEAN')
 
     g = p.add_argument_group('Query nodes')
     g.add_argument('--list-metrics', help='List all metrics. Can be followed by prefixes to limit, ^ for full match',
@@ -1004,6 +1009,43 @@ def init_idle_threshold(args):
     else:
         idle_threshold = 0.05
     return idle_threshold
+
+def setup_retlatency(args):
+    ret_latency = None
+    if args.ret_latency:
+        try:
+            l = args.ret_latency.split(":")
+            ret_latency = json.load(open(l[0]))["Data"]
+        except FileNotFoundError:
+            sys.exit("Cannot open %s" % l[0])
+        except KeyError:
+            sys.exit("retlat file has unparseable format")
+    return ret_latency
+
+def lookup_retlat(event):
+    if ret_latency is None:
+        warn_once("No --ret-latency for", event)
+        return 1.0
+    try:
+        l = args.ret_latency.split(":") if args.ret_latency else ()
+        o = ret_latency[event]
+        print("retlat", event, o["MEAN"])
+        return o["MEAN"]
+
+        for k in l[1:]:
+            if k in o[0] or k.upper() in o[0]:
+                o = o[0][k]
+                # XXX check for remaining arguments
+                break
+            if k not in o[1] and k.upper() in o[1]:
+                k = k.upper()
+                o = o[1][k]
+        if type(o) is list:
+            o = o[0]["MEAN"]
+        return o
+    except KeyError as e:
+        warn_once("bad ret latency key %s" % e)
+        return 1.0 # XXX
 
 def gen_cpu_name(cpu):
     if cpu == "simple":
@@ -2488,6 +2530,9 @@ def ev_collect(ev, level, obj):
 
     ev = adjust_ev(ev, level)
 
+    if level == 999:
+        return DummyArith()
+
     key = (ev, level, obj.name)
     if key not in obj.evlevels:
         if ev.startswith("TOPDOWN.SLOTS") or ev.startswith("PERF_METRICS."):
@@ -2565,6 +2610,9 @@ def is_hybrid():
 
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, runner_list):
     """get measurement result, possibly wrapping in UVal"""
+
+    if level == 999:
+        return lookup_retlat(ev)
 
     ev = adjust_ev(ev, level)
 
@@ -4039,6 +4087,19 @@ def model_setup(runner, cpuname, pe, kernel_version):
         import adl_grt_ratios
         model = adl_grt_ratios
         model.use_aux = args.aux
+    elif (cpuname == "mtl" and runner.pmu in ("cpu_core", "cpu")) or cpuname == "mtl-rwc":
+        import mtl_rwc_ratios
+        setup_metrics(mtl_rwc_ratios, runner.pmu)
+        mtl_rwc_ratios.smt_enabled = cpu.ht
+        model = mtl_rwc_ratios
+        ectx.constraint_patterns.append(("OCR.", "0,1,2,3", ))
+        global ret_latency
+        if ret_latency is None:
+            ret_latency = json.load(open(os.path.dirname(os.path.realpath(__file__)) + "/mtl-retlat.json"))["Data"]
+    elif (cpuname == "mtl" and runner.pmu == "cpu_atom") or cpuname == "mtl-cmt":
+        import mtl_cmt_ratios
+        model = mtl_cmt_ratios
+        model.use_aux = args.aux
     elif cpuname == "slm":
         import slm_ratios
         model = slm_ratios
@@ -4488,6 +4549,7 @@ if __name__ == '__main__':
     if args.tune:
         for t in args.tune:
             exec(t)
+    ret_latency = setup_retlatency(args)
     env_ = tl_cpu.Env()
     update_args(args, env_)
     # XXX move into ectx
