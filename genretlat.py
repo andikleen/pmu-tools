@@ -18,6 +18,7 @@ import ocperf
 import json
 import argparse
 import random
+from dummyarith import DummyArith
 from collections import Counter, defaultdict
 from copy import copy
 import csv
@@ -150,28 +151,6 @@ def human_output(data):
 def find_model():
     import mtl_rwc_ratios
     return mtl_rwc_ratios
-
-class DummyArith:
-    def __add__(self, o):
-        return self
-    __sub__ = __add__
-    __mul__ = __add__
-    __div__ = __add__
-    __truediv__ = __add__
-    __rsub__ =  __add__
-    __radd__ = __add__
-    __rmul__ = __add__
-    __rdiv__ = __add__
-    __rtruediv__ = __add__
-    def __lt__(self, o):
-        return True
-    __eq__ = __lt__
-    __ne__ = __lt__
-    __gt__ = __lt__
-    __or__ = __add__
-    __and__ = __add__
-    __min__ = __add__
-    __max__ = __add__
 
 def gen_events():
     model = find_model()

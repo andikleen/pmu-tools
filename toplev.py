@@ -44,6 +44,7 @@ import random
 import json
 import io
 import glob
+from dummyarith import DummyArith
 from copy import copy
 from fnmatch import fnmatch
 from collections import defaultdict, Counter, OrderedDict
@@ -2464,49 +2465,6 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
     ret = prun.wait()
     print_account(account)
     yield ret, res, rev, interval, valstats, env
-
-# dummy arithmetic type without any errors, for collecting
-# the events from the model. Otherwise divisions by zero cause
-# early exits
-class DummyArith(object):
-    def __sub__(self, o):
-        return self
-    def __add__(self, o):
-        return self
-    def __mul__(self, o):
-        return self
-    def __div__(self, o):
-        return self
-    def __truediv__(self, o):
-        return self
-    def __rsub__(self, o):
-        return self
-    def __radd__(self, o):
-        return self
-    def __rmul__(self, o):
-        return self
-    def __rdiv__(self, o):
-        return self
-    def __rtruediv__(self, o):
-        return self
-    def __lt__(self, o):
-        return True
-    def __eq__(self, o):
-        return True
-    def __ne__(self, o):
-        return True
-    def __ge__(self, o):
-        return True
-    def __gt__(self, o):
-        return True
-    def __or__(self, o):
-        return self
-    def __and__(self, o):
-        return self
-    def __min__(self, o):
-        return self
-    def __max__(self, o):
-        return self
 
 run_l1_parallel = False # disabled for now until we can fix the perf scheduler
 
