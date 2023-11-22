@@ -3860,7 +3860,7 @@ def init_runner_list(kernel_version):
             cpu_list = get_cpu_list(j)
             if len(cpu_list) == 0:
                 continue
-            r = Runner(args.level, idle_threshold, os.path.basename(j), kernel_version)
+            r = Runner(args.level, idle_threshold, kernel_version, pmu=os.path.basename(j))
             runner_list.append(r)
             r.cpu_list = cpu_list
     # hybrid, but faking non hybrid cpu
