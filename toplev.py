@@ -505,17 +505,34 @@ The bottlenecks are expressed as a tree with different levels.
 Requires a modern Intel CPU.
 
 Examples:
-toplev.py -l2 program
-measure whole system in level 2 while program is running
 
-toplev.py -l1 --single-thread program
-measure single threaded program. system must be idle.
 
-toplev.py -l3 --no-desc -I 100 -x, sleep X
+toplev -l1 --single-thread program
+measure single threaded program. On hyper threaded systems with
+Skylake or older the system should be idle.
+
+toplev -NB program
+Measure program showing consolidated bottleneck view and extra
+information associated with bottlenecks. Note this will multiplex
+performance counters, so there may be measuring errors.
+
+toplev -NB --run-sample program
+Measure programing showing bottlenecks and extra nodes, and
+automatically sample for the location of bottlenecks in a second
+pass.
+
+toplev --drilldown --only-bottleneck program
+Rerun workload with minimal multiplexing until critical bottleneck
+is found. Only print critical bottleneck
+
+toplev -l3 --no-desc -I 100 -x, sleep X
 measure whole system for X seconds every 100ms, outputting in CSV format.
 
-toplev.py --all --core C0 taskset -c 0,1 program
+toplev --all --core C0 taskset -c 0,1 program
 Measure program running on core 0 with all nodes and metrics enables
+
+toplev --all --xlsx x.xlsx -a sleep 10
+Generate spreadsheet with full system measurement for 10 seconds
 ''', epilog='''
 Other perf arguments allowed (see the perf documentation)
 After -- perf arguments conflicting with toplev can be used.

@@ -47,7 +47,22 @@ jevents is a C library. It has no dependencies other than gcc/make and can be bu
 measure whole system in level 2 while program is running
 
 	toplev -l1 --single-thread program
-measure single threaded program. system must be idle.
+measure single threaded program. On hyper threaded systems with
+Skylake or older the system should be idle.
+
+    toplev -NB program
+Measure program showing consolidated bottleneck view and extra
+information associated with bottlenecks. Note this will multiplex
+performance counters, so there may be measuring errors.
+
+    toplev -NB --run-sample program
+Measure programing showing bottlenecks and extra nodes, and
+automatically sample for the location of bottlenecks in a second
+pass.
+
+    toplev --drilldown --only-bottleneck program
+Rerun workload with minimal multiplexing until critical bottleneck
+is found. Only print critical bottleneck
 
 	toplev -l3 --no-desc -I 100 -x, sleep X
 measure whole system for X seconds every 100ms, outputting in CSV format.
