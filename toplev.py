@@ -93,9 +93,9 @@ known_cpus = (
     ("spr", (143, )),
     ("ehl", (150, )),
     ("sprmax", ()),
-    ("mtl", (186, )),
-    ("mtl-cmt", (186, )),
-    ("mtl-rwc", (186, )),
+    ("mtl", (170, 186, )),
+    ("mtl-cmt", (170, 186, )),
+    ("mtl-rwc", (170, 186, )),
 )
 
 eventlist_alias = {
@@ -105,6 +105,7 @@ tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "icx",
             "spr", "sprmax")
 
 hybrid_cpus = ("adl", "mtl",)
+atom_hybrid_cpus = ("adl-grt", "mtl-cmt",)
 
 non_json_events = set(("dummy", "duration_time"))
 
@@ -3871,7 +3872,8 @@ def init_runner_list(kernel_version):
             r.cpu_list = cpu_list
     # hybrid, but faking non hybrid cpu
     elif hybrid_pmus:
-        runner_list = [Runner(args.level, idle_threshold, kernel_version, pmu="cpu_core")]
+        runner_list = [Runner(args.level, idle_threshold, kernel_version,
+            pmu= "cpu_atom" if cpu.cpu in atom_hybrid_cpus else "cpu_core")]
         runner_list[0].cpu_list = get_cpu_list("/sys/devices/cpu_core")
         if len(runner_list[0].cpu_list) == 0:
             sys.exit("cpu_core fallback has no cpus")
