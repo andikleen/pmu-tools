@@ -51,7 +51,8 @@ def flex_open_w(fn):
         return popen_stdinout(["zstd", "--stdout"], f).stdin
     return f
 
-test_mode = os.getenv("TL_TESTER")
+tl_tester = os.getenv("TL_TESTER")
+test_mode = tl_tester and tl_tester != "0"
 
 args = argparse.Namespace()
 
