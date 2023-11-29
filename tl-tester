@@ -553,6 +553,8 @@ $WRAP ./toplev.py $NATIVE_ARGS $OPT -v -o log$$ --single-thread -r3 $LOAD
 if [ -f /sys/devices/cpu_core ] ; then
 $WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype atom `$WRAP ./cputop 'type=="core"' taskset` true
 $WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype core `$WRAP ./cputop 'type=="atom"' taskset` true
+$WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype atom --all $LOAD
+$WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype core --all $LOAD
 fi
 
 rm log$$
