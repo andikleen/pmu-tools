@@ -739,7 +739,7 @@ class EmapNativeJSON(object):
         elif e in self.pevents:
             return self.pevents[e]
 
-        extramsg.append("event not found")
+        extramsg.append("event not found for %s" % self.pmu)
         return None
 
     # XXX need to handle exploded events
@@ -1204,6 +1204,12 @@ def perf_cmd(cmd):
     else:
         sys.exit(subprocess.call(cmd))
 
+def find_pmus():
+    g = glob.glob("/sys/devices/cpu*")
+    if len(g) == 0:
+        g = ["/sys/devices/cpu"]
+    return [i.replace("/sys/devices/", "") for i in g]
+
 if __name__ == '__main__':
     for j in sys.argv:
         if j == "--force-download":
@@ -1213,11 +1219,9 @@ if __name__ == '__main__':
         if j == "--noexplode":
             noexplode = True
     msr = MSR()
-    g = glob.glob("/sys/devices/cpu*")
-    if len(g) == 0:
-        g = ["/sys/devices/cpu"]
-    for pmu in g:
-        emap = find_emap(pmu=pmu.replace("/sys/devices/", ""))
+    pmus = find_pmus()
+    for pmu in pmus:
+        emap = find_emap(pmu=pmu)
         if not emap:
             print("Do not recognize CPU or cannot find CPU map file.", file=sys.stderr)
         else:
