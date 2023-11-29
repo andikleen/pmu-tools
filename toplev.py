@@ -2030,11 +2030,11 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             flat_events = flatten(events)
             flat_rmap = [event_rmap(e, runner_list) for e in flat_events]
             runner.clear_ectx()
-            for ret, res, rev, interval, valstats, env in do_execute(
+            for nret, res, rev, interval, valstats, env in do_execute(
                     [runner],
                     summary, evstr, flat_rmap,
                     out, rest, resoff, flat_events):
-                ret = max(ret, ret)
+                ret = max(ret, nret)
                 lresults.append([res, rev, interval, valstats, env])
             if res:
                 for t in res.keys():
