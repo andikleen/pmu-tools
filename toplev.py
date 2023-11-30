@@ -3949,6 +3949,17 @@ def legacy_smt_setup(model):
     model.smt_enabled = cpu.ht
     smt_mode |= cpu.ht
 
+def load_default_retlat():
+    global ret_latency
+    if ret_latency is None:
+        name = cpu.cpu.split("-")[0]
+        fn = os.path.dirname(os.path.realpath(__file__)) + ("/%s-retlat.json" % name)
+        try:
+            ret_latency = json.load(open(fn))["Data"]
+        except FileNotFoundError:
+            sys.exit("Cannot find default ret latency file %s\n" % fn +
+                     "Please generate with representative workload using genretlat -o %s workload" % fn)
+
 def model_setup(runner, cpuname, pe, kernel_version):
     global smt_mode
     if cpuname == "ivb":
@@ -4058,9 +4069,9 @@ def model_setup(runner, cpuname, pe, kernel_version):
         mtl_rwc_ratios.smt_enabled = cpu.ht
         model = mtl_rwc_ratios
         ectx.constraint_patterns.append(("OCR.", "0,1,2,3", ))
-        global ret_latency
-        if ret_latency is None:
-            ret_latency = json.load(open(os.path.dirname(os.path.realpath(__file__)) + "/mtl-retlat.json"))["Data"]
+        if args.level > 2 or args.nodes:
+            # XXX actually determine if 999 node is needed
+            load_default_retlat()
     elif (cpuname == "mtl" and runner.pmu == "cpu_atom") or cpuname == "mtl-cmt":
         import mtl_cmt_ratios
         model = mtl_cmt_ratios
