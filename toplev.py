@@ -456,16 +456,18 @@ def event_group(evlist):
     l = [] # type: List[str]
     pgroup = False
     for is_og, g in groupby(evlist, lambda x: x in ectx.outgroup_events):
-        if is_og or args.no_group:
-            l += g
+        gl = list(g)
+        slots_or_metric = [ismetric(x) or is_slots(x) for x in gl]
+        # keep the groups for slots or metric because of some kernel
+        # requirements and also some perf versions reorder slots with no group.
+        if is_og or (args.no_group and not any(slots_or_metric)):
+            l += gl
         else:
-            gl = list(g)
             e = ",".join(gl)
             e = "{%s}" % e
             if args.exclusive:
                 e += ":e"
             elif args.pinned:
-                slots_or_metric = [ismetric(x) or is_slots(x) for x in gl]
                 if all(slots_or_metric):
                     e += ":D"
                     assert pgroup is False
