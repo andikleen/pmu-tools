@@ -413,8 +413,7 @@ FORCE_SPLIT = 100
 metrics_own_group = True
 
 def is_slots(x):
-    return remove_qual(x) in ("slots", "cpu_core/slots/", "cpu/slots/",
-                "cpu/slots,percore=1/", "cpu_core/slots,percore=1/")
+    re.match(r'(cpu/|cpu_core/)?slots[,/]', x) is not None
 
 def needed_counters(evlist):
     evset = set(evlist)
