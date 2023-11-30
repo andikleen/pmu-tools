@@ -2170,7 +2170,7 @@ def update_perf_summary(summary, off, title, val, event, unit, multiplex):
         r[3] = min(r[3], multiplex)
 
 def find_runner(rlist, off, title, event):
-    if len(rlist) == 1:
+    if len(rlist) == 1 and rlist[0].pmu == "cpu":
         return rlist[0], off
     for r in rlist:
         if title == "":
@@ -2188,7 +2188,7 @@ def find_runner(rlist, off, title, event):
                 return r, off
         else:
             return r, off
-    assert 0
+    return None, 0
 
 def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, last_linenum):
     r, off = find_runner(rlist, off, title, event)
