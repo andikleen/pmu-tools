@@ -2496,7 +2496,7 @@ def ev_collect(ev, level, obj):
 
     key = (ev, level, obj.name)
     if key not in obj.evlevels:
-        if ev.startswith("TOPDOWN.SLOTS") or ev.startswith("PERF_METRICS."):
+        if ev.startswith(("TOPDOWN.SLOTS", "PERF_METRICS.")):
             ind = [x[1] == level for x in obj.evlevels]
             ins = ind.index(True) if any(ind) else 0
             obj.evlevels.insert(ins + (0 if ev.startswith("TOPDOWN.SLOTS") else 1), key)
@@ -3059,13 +3059,16 @@ class Scheduler(object):
 
             duped = []
             for ind, e in enumerate(evnum):
-                if e in self.event_to_group and not ismetric(e) and not is_slots(e):
+                if ismetric(e) or is_slots(e):
+                    continue
+                if e in self.event_to_group:
                     g = self.event_to_group[e]
                     debug_print("dedup %s %s to %s" % (obj.name, e, " ".join([x.name for x in g.objl])))
                     g.objl.add(obj)
                     update_group_map(g.evnum, obj, g)
                     duped.append(ind)
             # need to remove in place so that caller sees it
+            # remove backwards so that indexes stay valid
             for ind in reversed(duped):
                 del evnum[ind]
             if len(evnum) == 0:
