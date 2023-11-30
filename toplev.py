@@ -2449,7 +2449,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
                      interval if args.interval else "",
                      title,
                      event,
-                     flat_rmap[len(res[title])-1] if len(rlist) == 1 else event_rmap(event, rlist), # XXX
+                     event_rmap(event, rlist),
                      val if val or not re.match(r"\s*<", count) else count,
                      len(res[title]) - 1,
                      stddev, multiplex, rlist)
