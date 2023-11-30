@@ -1654,11 +1654,8 @@ def verify_rev(rev, cpus):
             assert o == rev[cpus[0]][ind]
         assert len(rev[k]) == len(rev[cpus[0]])
 
-idle_events = frozenset(("cycles", "cpu/event=0x3c,umask=0x0,any=1/", "cpu/event=0x3c,umask=0x0/", "r20003c", "cpu/event=0xa4,umask=0x1/", "cpu/slots/"))
-
 def is_cycles(ev):
-    ev = ev.replace("cpu_atom", "cpu").replace("cpu_core", "cpu").replace("/k", "/").replace("/u", "/").replace(":u","").replace(":k", "")
-    return ev in idle_events
+    return re.match(r'cycles|slots|r20003c|cpu(_atom|_core)?/slots|cpu(_atom|_core)?/event=0x(3c|a4),umask=0x(0|1)', ev) is not None
 
 def find_cycles(rev):
     for l in rev.values():
