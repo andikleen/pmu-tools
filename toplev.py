@@ -2474,6 +2474,7 @@ def adjust_ev(ev, level):
     # use the programmable slots for non L1 so that level 1
     # can (mostly) run in parallel with other groups.
     # this also helps for old or non ICL kernels
+    # XXX this creates groups without slots leader
     if isinstance(ev, str) and ev.startswith("TOPDOWN.SLOTS") and ((run_l1_parallel and level != 1) or not ectx.slots_available):
         ev = ev.replace("TOPDOWN.SLOTS", "TOPDOWN.SLOTS_P")
     return ev
