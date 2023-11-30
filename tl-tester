@@ -240,21 +240,26 @@ for j in $SMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$j" ] && continue
 if ! grep -q hypervisor /proc/cpuinfo ; then
 if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
-if [ $j = adl ] ; then
+case "$j" in
+adl*|mtl*)
 FORCECOUNTERS=8 FORCEHT=1 $WRAP ./toplev.py --perf --force-cpu $j --force-topology topology --force-events -l1 --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
-else
+	;;
+*)
 FORCEHT=1 $WRAP ./toplev.py --perf --force-cpu $j --force-topology topology --force-events -l1 --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
-fi
+esac
 [ $j != "knl" ] && onegroup log$$.$j
 checklog log$$.$j
 notfound $j
 fi
 fi
-if [ $j = "adl" ] ; then
+case "$j" in
+adl*|mtl*)
 FORCECOUNTERS=8 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events -l1 --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
-else
+;;
+*)
 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events -l1 --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
-fi
+;;
+esac
 [ $j != "knl" ] && onegroup log$$.$j
 checklog log$$.$j
 notfound $j
