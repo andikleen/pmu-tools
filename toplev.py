@@ -2216,7 +2216,9 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
         for j in near:
             if event == remove_qual(j):
                 if args.debug:
-                    print("missing value for", expected_ev, event, off, revnum[off:off+PERF_SKIP_WINDOW])
+                    print("skipping, expected", expected_ev, "got", event,
+                          "off", off, "title", title,
+                          "context", revnum[off:off+PERF_SKIP_WINDOW])
                 if linenum == last_linenum[0]: # avoid endless loop
                     return r, False, expected_ev
                 last_linenum[0] = linenum
