@@ -2527,10 +2527,12 @@ def event_pmu(ev):
 
 def event_ectx(ev, runner_list):
     pmu = event_pmu(ev)
-    if pmu:
+    if pmu and pmu.startswith("cpu"):
         r = find_runner_by_pmu(pmu, runner_list)
         if r:
             return r.ectx
+    # this works for now because the atom model doesn't use any uncore events
+    # may need to fix later once it does
     return ectx if ectx else runner_list[0].ectx
 
 def do_event_rmap(e, ectx_):
