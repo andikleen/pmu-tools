@@ -2552,13 +2552,14 @@ def event_rmap(e, runner_list):
     ectx_.rmap_cache[e] = n
     return n
 
-def iscycles(ev):
-    return ev == "cycles" or ev == "cpu_clk_unhalted.thread" or ev == "cpu_clk_unhalted.core"
+cycles_aliases = frozenset(("cycles", "cpu_clk_unhalted.thread", "cpu_clk_unhalted.core",
+                            "cpu_core/event=0x3c,umask=0x0/", "cpu_atom/event=0x3c,umask=0x0/",
+                            "cpu/event=0x3c,umask=0x0/"))
 
 # compare events to handle name aliases
 def compare_event(aname, bname):
     # XXX this should be handled in ocperf
-    if iscycles(aname) and iscycles(bname):
+    if aname in cycles_aliases and bname in cycles_aliases:
         return True
     a = ectx.emap.getevent(aname, nocheck=event_nocheck())
     if a is None:
