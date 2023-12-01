@@ -2611,15 +2611,15 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, runner_lis
         try:
             r = rev[index]
         except IndexError:
-            warn_once("Not enough lines in perf output for rev (%d vs %d for %s) at %s" %
-                    (index, len(rev), obj.name, env['interval']))
+            warn_once("Not enough lines in perf output for rev (%d vs %d for %s) at %s, event %s" %
+                    (index, len(rev), obj.name, env['interval'], ev))
             return 0
         rmap_ev = event_rmap(r, runner_list).lower()
         ev = ev.lower()
         assert (rmap_ev == canon_event(ev).replace("/k", "/") or
                 compare_event(rmap_ev, ev) or
                 rmap_ev == "dummy" or
-                (rmap_ev.endswith("_any") and not is_hybrid()))
+                (rmap_ev.endswith("_any") and not is_hybrid())), "event rmap mismatch %s vs %s" % (rmap_ev, ev)
 
     try:
         vv = res[index]
