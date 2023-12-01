@@ -71,7 +71,7 @@ def warn_test(msg):
 def warn(msg):
     warn_no_assert(msg)
     if test_mode:
-        assert 0
+        assert 0, msg
 
 warned = set() # type: Set[str]
 
@@ -83,7 +83,7 @@ def warn_once_no_assert(msg):
 def warn_once(msg):
     warn_once_no_assert(msg)
     if test_mode:
-        assert 0
+        assert 0, msg
 
 def print_once(msg):
     if msg not in warned and not args.quiet:
