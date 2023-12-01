@@ -1027,7 +1027,7 @@ def setup_retlatency(args):
 
 def lookup_retlat(event):
     if ret_latency is None:
-        warn_once("No --ret-latency for", event)
+        warn_once("No --ret-latency for %s" % event)
         return 1.0
     try:
         l = args.ret_latency.split(":") if args.ret_latency else ()
