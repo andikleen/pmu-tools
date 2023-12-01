@@ -1491,6 +1491,8 @@ def raw_event(i, name="", period=False, initialize=False):
         if not ectx.force_metrics:
             m = re.search(r'(topdown-[a-z-]+)', i)
             if m and not cached_exists("/sys/devices/%s/events/%s" % (ectx.emap.pmu, m.group(1))):
+                if not args.quiet:
+                    print("%s event not supported in sysfs" % m.group(1))
                 i = "dummy"
     if initialize:
         initialize_event(orig_i, i, e)
