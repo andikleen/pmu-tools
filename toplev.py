@@ -2541,7 +2541,10 @@ def do_event_rmap(e, ectx_):
         return n
     if e in non_json_events:
         return e
-    warn("rmap: cannot find %s, using dummy" % e)
+    if e.startswith("uncore"):
+        warn_no_assert("rmap: cannot find %s, using dummy" % e)
+    else:
+        warn("rmap: cannot find %s, using dummy" % e)
     return "dummy"
 
 def event_rmap(e, runner_list):
