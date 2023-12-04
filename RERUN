@@ -2,7 +2,7 @@
 # rerun last toplev line from tl-tester log, optionally with a prefix (like python -mpdb)
 # tl-tester >& log
 # RERUN log python -mpdb
-if [ "$1" == "--notltester" ] ; then
+if [ "x$1" = "x--notltester" ] ; then
 	shift
 else
 	export TL_TESTER=1
