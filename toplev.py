@@ -1032,7 +1032,6 @@ def lookup_retlat(event):
     try:
         l = args.ret_latency.split(":") if args.ret_latency else ()
         o = ret_latency[event]
-        print("retlat", event, o["MEAN"])
         return o["MEAN"]
 
         for k in l[1:]:
@@ -2195,6 +2194,8 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
         return r, False, event
     # likely event expanded over all CPUs
     if event.startswith("cpu") and not event.startswith(r.pmu):
+        if args.debug:
+            print("event wrong pmu", event, title, r.pmu)
         return None, False, event
     # cannot check because it's an event that needs to be expanded first
     if not event.startswith("cpu") and is_number(title) and int(title) not in r.cpu_list:
