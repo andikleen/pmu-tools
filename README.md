@@ -120,6 +120,10 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev not supports Meteor Lake systems. This adds a new genretlat.py tool to tune
+  the model for a workload. The basic file needs to be generated before first toplev use
+  using genretlat -o mtl-retlat.json ./workloads/BC1s (or suitable workload). toplev
+  has a new --ret-latency option to override the tuning file.
 ## TMA 4.7 release
 * toplev updated to TMA 4.7:
   * New --hbm-only for sprmax in HBM Only mode. toplev currently cannot auto detect this condition.
