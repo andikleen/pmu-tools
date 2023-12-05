@@ -98,19 +98,19 @@ def gen_spark(buckets, min_, f):
     return "".join([lookup("▁▂▃▄▅▆▇█", int((int((x - min_)) << SPARK_SHIFT) / f), " ") for x in buckets])
 
 def gen_stat(samples):
-        # {
-        #     "COUNT": 5358917,
-        #     "MIN": 0,
-        #     "MAX": 65535,
-        #     "MEAN": 3.23,
-        #     "MEDIAN": 0,
-        #     "NZ_MEDIAN": 1,
-        #     "MODE": 0,
-        #     "MODE_COUNT": 3631698,
-        #     "NZ_MODE": 1,
-        #     "NZ_MODE_COUNT": 1213029,
-        #     "BUCKETS": 2344
-        #   },
+    # {
+    #     "COUNT": 5358917,
+    #     "MIN": 0,
+    #     "MAX": 65535,
+    #     "MEAN": 3.23,
+    #     "MEDIAN": 0,
+    #     "NZ_MEDIAN": 1,
+    #     "MODE": 0,
+    #     "MODE_COUNT": 3631698,
+    #     "NZ_MODE": 1,
+    #     "NZ_MODE_COUNT": 1213029,
+    #     "BUCKETS": 2344
+    #   },
     nz = [x for x in samples if x != 0.0]
     buckets = Counter(samples)
     nz_buckets = copy(buckets)

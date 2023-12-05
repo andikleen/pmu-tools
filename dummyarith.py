@@ -10,7 +10,7 @@ class DummyArith(object):
     __mul__ = __add__
     __div__ = __add__
     __truediv__ = __add__
-    __rsub__ =  __add__
+    __rsub__ = __add__
     __radd__ = __add__
     __rmul__ = __add__
     __rdiv__ = __add__
