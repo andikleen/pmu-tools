@@ -1013,8 +1013,10 @@ def init_idle_threshold(args):
         idle_threshold = 0.05
     return idle_threshold
 
+ret_latency = None
+
 def setup_retlatency(args):
-    ret_latency = None
+    global ret_latency
     if args.ret_latency:
         try:
             l = args.ret_latency.split(":")
@@ -1023,7 +1025,8 @@ def setup_retlatency(args):
             sys.exit("Cannot open %s" % l[0])
         except KeyError:
             sys.exit("retlat file has unparseable format")
-    return ret_latency
+    else:
+        load_default_retlat()
 
 def lookup_retlat(event):
     if ret_latency is None:
@@ -2494,6 +2497,8 @@ def ev_collect(ev, level, obj):
     ev = adjust_ev(ev, level)
 
     if level == 999:
+        if ret_latency is None:
+            setup_retlatency(args)
         return DummyArith()
 
     key = (ev, level, obj.name)
@@ -4077,9 +4082,6 @@ def model_setup(runner, cpuname, pe, kernel_version):
         mtl_rwc_ratios.smt_enabled = cpu.ht
         model = mtl_rwc_ratios
         ectx.constraint_patterns.append(("OCR.", "0,1,2,3", ))
-        if args.level > 2 or args.nodes:
-            # XXX actually determine if 999 node is needed
-            load_default_retlat()
     elif (cpuname == "mtl" and runner.pmu == "cpu_atom") or cpuname == "mtl-cmt":
         import mtl_cmt_ratios
         model = mtl_cmt_ratios
@@ -4536,7 +4538,6 @@ if __name__ == '__main__':
     if args.tune:
         for t in args.tune:
             exec(t)
-    ret_latency = setup_retlatency(args)
     env_ = tl_cpu.Env()
     update_args(args, env_)
     # XXX move into ectx
