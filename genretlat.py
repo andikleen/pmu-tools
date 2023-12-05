@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8
 # generate return latencies to tune toplev model
 # Copyright (c) 2023, Intel Corporation
 # Author: Andi Kleen
@@ -11,6 +12,7 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
 # more details.
+from __future__ import print_function
 import subprocess as subp
 import os
 import sys
@@ -138,14 +140,14 @@ def gen_stat(samples):
 def human_output(data):
     d = data["Data"]
     for ev in sorted(d.keys()):
-        print(f"{ev}: ", end="")
+        print("%s: " % ev, end="")
         for m in sorted(d[ev].keys()):
             if m.startswith("SPARK"):
                 l = [int(x) for x in d[ev][m].split(",")]
                 s = gen_spark(l, d[ev]["MIN"], d[ev]["F_NZ" if m.endswith("_NZ") else "F"])
-                print(f"{m.lower()} {s} ", end="")
+                print("%s %s " % (m.lower(), s), end="")
             else:
-                print(f"{m.lower()} {d[ev][m]} ", end="")
+                print("%s %s " % (m.lower(), d[ev][m]), end="")
         print()
 
 def find_model():

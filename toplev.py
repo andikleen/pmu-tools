@@ -1021,7 +1021,7 @@ def setup_retlatency(args):
         try:
             l = args.ret_latency.split(":")
             ret_latency = json.load(open(l[0]))["Data"]
-        except FileNotFoundError:
+        except IOError:
             sys.exit("Cannot open %s" % l[0])
         except KeyError:
             sys.exit("retlat file has unparseable format")
@@ -3969,7 +3969,7 @@ def load_default_retlat():
         fn = os.path.dirname(os.path.realpath(__file__)) + ("/%s-retlat.json" % name)
         try:
             ret_latency = json.load(open(fn))["Data"]
-        except FileNotFoundError:
+        except IOError:
             sys.exit("Cannot find default ret latency file %s\n" % fn +
                      "Please generate with representative workload using genretlat -o %s workload" % fn)
 
