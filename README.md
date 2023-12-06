@@ -164,44 +164,44 @@ level 1 only, no metrics to make the plots more readable.
 * toplev updated to Ahmad Yasin's TMA 4.6
   * Support for Intel Xeon Max processors (SPRHBM)
   * New Features:
-  ** Support for optimized power-performance states via C01/C02_Wait nodes under Core Bound category as well as C0_Wait info metric [ADL onwards]
-  ** HBM_Bound: stalls due to High Bandwidth Memory (HBM) accesses by loads.
-  ** C01/C02_Wait: cycles spent in C0.1/C0.2 power-performance optimized states
-  ** Other_Mispredicts: slots wasted due to other cases of misprediction (non-retired x86 branches or other types)
-  ** Other_Nukes: slots wasted due to Nukes (Machine Clears) not related to memory ordering.
-  ** Info.Bottlenecks: Memory_Synchronization, Irregular_Overhead (fixes Instruction_Fetch_BW), Other_Bottlenecks [SKL onwards]
-  ** CPUs_Utilized - Average number of utilized CPUs [all]
-  ** New metrics UC_Load_PKI, L3/DRAM_Bound_L, Spec_Clears_Ratio, EPC [SKL onwards]
-  ** Unknown_Branch_Cost and Uncore_Rejects & Bus_Lock_PKI (support for Resizable Bar) [ADL]
-  ** Enabled FP_Vector_128b/256b nodes in SNB/JKT/IVB/IVT
-  ** Enabled FP_Assists, IpAssist into, as well as Fixed Mixing_Vectors [SKL through TGL]
-  ** TIOPs plus 8 new metrics Offcore_*_PKI and R2C_*_BW [SPR, SPR-HBM]
-  ** Grouped all Uncore-based Mem Info metric under MemOffcore distinct group (to ease skipping their overhead) [all]
+    * Support for optimized power-performance states via C01/C02_Wait nodes under Core Bound category as well as C0_Wait info metric [ADL onwards]
+    * HBM_Bound: stalls due to High Bandwidth Memory (HBM) accesses by loads.
+    * C01/C02_Wait: cycles spent in C0.1/C0.2 power-performance optimized states
+    * Other_Mispredicts: slots wasted due to other cases of misprediction (non-retired x86 branches or other types)
+    * Other_Nukes: slots wasted due to Nukes (Machine Clears) not related to memory ordering.
+    * Info.Bottlenecks: Memory_Synchronization, Irregular_Overhead (fixes Instruction_Fetch_BW), Other_Bottlenecks [SKL onwards]
+    * CPUs_Utilized - Average number of utilized CPUs [all]
+    * New metrics UC_Load_PKI, L3/DRAM_Bound_L, Spec_Clears_Ratio, EPC [SKL onwards]
+    * Unknown_Branch_Cost and Uncore_Rejects & Bus_Lock_PKI (support for Resizable Bar) [ADL]
+    * Enabled FP_Vector_128b/256b nodes in SNB/JKT/IVB/IVT
+    * Enabled FP_Assists, IpAssist into, as well as Fixed Mixing_Vectors [SKL through TGL]
+    * TIOPs plus 8 new metrics Offcore_*_PKI and R2C_*_BW [SPR, SPR-HBM]
+    * Grouped all Uncore-based Mem Info metric under MemOffcore distinct group (to ease skipping their overhead) [all]
   * Key Enhancements & fixes
-  ** Reduced # events (multiplexing) for GFLOPs, FLOPc, IpFLOP, FP_Scalar and FP_Vector [BDW onwards]
-  ** Reduced # events (multiplexing) & Fixed Serializing_Operations, Ports_Utilized_0 [ADL onwards]
-  ** Fixed Branch_Misprediction_Cost overestimate, Mispredictions [SKL onwards]
-  ** Fixed undercount in FP_Vector/IpArith (induced by 4.5 update) + Enabled/fixed IO_Read/Write_BW [SPR]
-  ** Tuned #Avg_Assist_Cost [SKL onwards]
-  ** Remove X87_Use [HSW/HSX]
-  ** Renamed Shuffles node & some metrics/groups in Info.Bottlenecks and Info.Memory*. CountDomain fixes
+    * Reduced # events (multiplexing) for GFLOPs, FLOPc, IpFLOP, FP_Scalar and FP_Vector [BDW onwards]
+    * Reduced # events (multiplexing) & Fixed Serializing_Operations, Ports_Utilized_0 [ADL onwards]
+    * Fixed Branch_Misprediction_Cost overestimate, Mispredictions [SKL onwards]
+    * Fixed undercount in FP_Vector/IpArith (induced by 4.5 update) + Enabled/fixed IO_Read/Write_BW [SPR]
+    * Tuned #Avg_Assist_Cost [SKL onwards]
+    * Remove X87_Use [HSW/HSX]
+    * Renamed Shuffles node & some metrics/groups in Info.Bottlenecks and Info.Memory*. CountDomain fixes
 
 ## TMA 4.4 release
 * toplev updated to Ahmad Yasin's TMA 4.4
   * Add support for Sapphire Rapids servers
-  ** New breakdown of Heavy_Operations, add new nodes for Assists, Page Faults
-  ** A new Int_Operations level 3 node, including Integer Vector and Shuffle
-  ** Support for RDT MBA stalls.
-  ** AMX and FP16 support
-  ** Better FP_Vector breakdown
-  ** Support 4wide MITE breakdown.
-  ** Add new Info.Pipeline Metrics group.
-  ** Support for Retired/Executed uops and String instruction cycles
-  ** Frequency of microcode assits.
-  ** Add Core_Bound_Likely for SMT and IpSWF for software prefetches.
-  ** Cache bandwidth is split per processor and per core.
-  ** Snoop Metric group for cross processor snoops.
-  ** Various bug fixes and improvements.
+    * New breakdown of Heavy_Operations, add new nodes for Assists, Page Faults
+    * A new Int_Operations level 3 node, including Integer Vector and Shuffle
+    * Support for RDT MBA stalls.
+    * AMX and FP16 support
+    * Better FP_Vector breakdown
+    * Support 4wide MITE breakdown.
+    * Add new Info.Pipeline Metrics group.
+    * Support for Retired/Executed uops and String instruction cycles
+    * Frequency of microcode assits.
+    * Add Core_Bound_Likely for SMT and IpSWF for software prefetches.
+    * Cache bandwidth is split per processor and per core.
+    * Snoop Metric group for cross processor snoops.
+    * Various bug fixes and improvements.
 
 * Support for running on Alderlake with a hybrid Goldencove / Gracemont model
   Add a new --aux option to control the auxillary nodes on Atom.
