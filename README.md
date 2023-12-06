@@ -120,9 +120,9 @@ on newer Linux kernels.
 
 # Recent new features:
 
-* toplev not supports Meteor Lake systems. This adds a new genretlat.py tool to tune
-  the model for a workload. The basic file needs to be generated before first toplev use
-  using genretlat -o mtl-retlat.json ./workloads/BC1s (or suitable workload). toplev
+* toplev now supports Meteor Lake systems.
+* Add a new genretlat.py tool to tune the toplev model for a workload. The basic tuning needs to be
+  generated before first toplev use using genretlat -o mtl-retlat.json ./workloads/BC1s (or suitable workload). toplev
   has a new --ret-latency option to override the tuning file.
 ## TMA 4.7 release
 * toplev updated to TMA 4.7:
@@ -202,7 +202,7 @@ level 1 only, no metrics to make the plots more readable.
   ** Cache bandwidth is split per processor and per core.
   ** Snoop Metric group for cross processor snoops.
   ** Various bug fixes and improvements.
-  
+
 * Support for running on Alderlake with a hybrid Goldencove / Gracemont model
   Add a new --aux option to control the auxillary nodes on Atom.
   --cputype atom/core is supported to filter on core types.
@@ -213,10 +213,10 @@ level 1 only, no metrics to make the plots more readable.
   CPUs.
 ## TMA 4.3 release
 * toplev updated to Ahmad Yasin's TMA 4.3: New Retiring.Light_Operations breakdown
-  
+
   *Notes: ADL is missing so far. TGL/RKL still use the ICL model.
   if you see missing events please remove ~/.cache/pmu-events/\* to force a redownload*
-  
+
   * New Tree Metrics (nodes)
     * A brand new breakdown of the Light_Operations sub-category (under Retiring category) per operation type:
       * Memory_Operations for (fraction of retired) slots utilized by load or store memory accesses
