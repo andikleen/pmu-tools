@@ -58,6 +58,18 @@ TRACE_EVENT(pebs_v2,
 		      __entry->ax)
 	);
 
+TRACE_EVENT(pebs_v3,
+	    TP_PROTO(u64 tsc),
+	    TP_ARGS(tsc),
+	    TP_STRUCT__entry(
+		    __field(u64, tsc)
+		    ),
+	    TP_fast_assign(
+		    __entry->tsc = tsc;
+		    ),
+	    TP_printk("tsc=%llx\n", __entry->tsc)
+	);
+
 TRACE_EVENT(pebs_regs, 
 	    TP_PROTO(u64 flags, u64 *regs),
 	    TP_ARGS(flags, regs),
