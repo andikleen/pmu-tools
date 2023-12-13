@@ -15,7 +15,7 @@
    make [KDIR=/my/kernel/build/dir]
    insmod pebs-grabber.ko 
    # needs to record as root
-   perf record -e cycles:p,pebs_v1,pebs_v2 [command, -a for all etc.]
+   perf record -e cycles:p,pebs:pebs_v1,pebs:pebs_v2 [command, -a for all etc.]
    perf report
    perf script to display pebs data
    # alternatively trace-cmd and kernelshark can be also used to dump
