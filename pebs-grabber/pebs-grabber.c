@@ -15,7 +15,7 @@
    make [KDIR=/my/kernel/build/dir]
    insmod pebs-grabber.ko 
    # needs to record as root
-   perf record -e cycles:p,pebs:pebs_v1,pebs:pebs_v2 [command, -a for all etc.]
+   perf record -e cycles:p,pebs:pebs_v1,pebs:pebs_v2,pebs:pebs_v3 [command, -a for all etc.]
    perf report
    perf script to display pebs data
    # alternatively trace-cmd and kernelshark can be also used to dump
@@ -59,6 +59,11 @@ struct pebs_v2 {
 	u64 tsx_tuning;
 };
 
+struct pebs_v3 {
+	struct pebs_v2 v2;
+	u64 tsc;
+};
+
 struct debug_store {
         u64 buffer_base;
         u64 index;
@@ -81,11 +86,13 @@ static char *handler_names[] = {
 #else
 	[2] = "intel_pmu_drain_pebs_nhm",
 #endif
+	[3] = "intel_pmu_drain_pebs_nhm",
 };
 
 static unsigned pebs_record_size[] = {
 	[1] = sizeof(struct pebs_v1),
 	[2] = sizeof(struct pebs_v2),
+	[3] = sizeof(struct pebs_v3),
 };	     
 
 static int pebs_grabber(struct kprobe *kp, struct pt_regs *regs)
@@ -110,11 +117,15 @@ static int pebs_grabber(struct kprobe *kp, struct pt_regs *regs)
 			      v1->dla,
 			      v1->dse,
 			      v1->lat);
-		if (pebs_version == 2) {
+		if (pebs_version >= 2) {
 			struct pebs_v2 *v2 = pebs;
 			trace_pebs_v2(v2->eventingip,
 				      v2->tsx_tuning,
 				      v1->regs[0]);
+		}
+		if (pebs_version == 3) {
+			struct pebs_v3 *v3 = pebs;
+			trace_pebs_v3(v3->tsc);
 		}
 		trace_pebs_regs(v1->flags, v1->regs);
 	}
@@ -147,7 +158,7 @@ static int init_pebs_grabber(void)
 	pebs_version = (cap >> 8) & 0xf;
 	pr_info("PEBS version %u\n", pebs_version);
 
-	if (pebs_version < 1 || pebs_version > 2) {
+	if (pebs_version < 1 || pebs_version > 3) {
 		pr_err("Unsupported PEBS version  %u\n", pebs_version);
 		return -EIO;
 	}
