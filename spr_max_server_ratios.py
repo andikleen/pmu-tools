@@ -375,7 +375,7 @@ def IpBranch(self, EV, level):
 
 # Instructions per (near) call (lower number means higher occurrence rate)
 def IpCall(self, EV, level):
-    val = EV("INST_RETIRED.ANY", level) / EV("CPU_CLK_UNHALTED.PAUSE_INST", level)
+    val = EV("INST_RETIRED.ANY", level) / EV("CPU_CLK_UNHALTED.NEAR_CALL", level)
     self.thresh = (val < 200)
     return val
 
