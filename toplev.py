@@ -4097,6 +4097,8 @@ def model_setup(runner, cpuname, pe, kernel_version):
         import ehl_ratios
         model = ehl_ratios
     else:
+        if not args.quiet:
+            print("Warning: Unknown CPU model number, falling back to simple model")
         ht_warning()
         import simple_ratios
         model = simple_ratios
