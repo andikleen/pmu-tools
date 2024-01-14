@@ -761,6 +761,16 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
     p.add_argument('--no-csv-footer', action='store_true', help=argparse.SUPPRESS) # no version for CSV
     p.add_argument('--no-version', action='store_true', help="Don't print version")
     args, rest = p.parse_known_args()
+    if rest:
+        all_args: list = sys.argv[1:]
+        toplev_args: list = []
+        main_program: str = rest[0]
+        for i, a in enumerate(all_args):
+            if a == main_program:
+                toplev_args = all_args[:i]
+                rest = all_args[i:]
+                break
+        args, _ = p.parse_known_args(toplev_args)
     io_set_args(args)
     if args.setvar:
         for j in args.setvar:
