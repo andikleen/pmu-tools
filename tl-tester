@@ -67,7 +67,7 @@ dumplogs() {
 	[ -f nflog$$ ] && (
 		sort nflog$$ | uniq > logsum$$
 		echo -n "unreferenced: " ; grep -c "unreferenced" logsum$$
-		egrep -v "missing (PMU|umask)|event_download|unreferenced" logsum$$
+		grep -E -v "missing (PMU|umask)|event_download|unreferenced" logsum$$
 	) && rm nflog$$ logsum$$
 }
 
@@ -247,8 +247,8 @@ checklog() {
 }
 
 notfound() {
-	egrep "not found|missing|unreferenced" log$$.$1 || true
-	egrep "not found|missing|unreferenced" log$$.$1 | sed "s/^/$1:/" >> nflog$$ || true
+	grep -E "not found|missing|unreferenced" log$$.$1 || true
+	grep -E "not found|missing|unreferenced" log$$.$1 | sed "s/^/$1:/" >> nflog$$ || true
 }
 if [ -z "$NOCPUS" ] ; then
 for j in $SMTCPUS ; do
@@ -527,7 +527,7 @@ checklog0
 rm log$$
 $WRAP ./toplev.py $NATIVE_ARGS $OPT > log$$ true
 # assumes that true is backend_bound. If not would need some parsing
-[ -z "$NORES" ] && egrep "Add --nodes.*(Back|Front)end" log$$
+[ -z "$NORES" ] && grep -E "Add --nodes.*(Back|Front)end" log$$
 rm log$$
 $WRAP ./toplev.py  -v $OPT $NATIVE_ARGS --nodes Backend*/3 -o log$$ true
 echo >> log$$

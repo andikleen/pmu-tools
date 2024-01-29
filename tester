@@ -81,7 +81,7 @@ checkmsr hsw offcore_response.demand_data_rd.l3_hit.hit_other_core_no_fwd
 
 checkev()
 {
-	DIRECT_MSR=1 EVENTMAP=${cpus[$1]} $WRAP ./ocperf.py stat -e $2 /bin/true | egrep -- "-e $3"
+	DIRECT_MSR=1 EVENTMAP=${cpus[$1]} $WRAP ./ocperf.py stat -e $2 /bin/true | grep -E -- "-e $3"
 }
 checkev nhm-ep L1D.M_EVICT '(r451|cpu/event=0x51,umask=0x4/)'
 checkev nhm-ep L1D.M_EVICT:c4 r4000451
@@ -106,7 +106,7 @@ EOL
 checkuc()
 {
 	TOPOLOGY=topology \
-	EVENTMAP=${cpus[$1]} UNCORE=$2 $WRAP ./ocperf.py stat --print -e $3 /bin/true | egrep -- "$4"
+	EVENTMAP=${cpus[$1]} UNCORE=$2 $WRAP ./ocperf.py stat --print -e $3 /bin/true | grep -E -- "$4"
 }
 
 checkuc hsw test-uncore.json unc_h_directory_lookup.no_snp 'uncore_ha(_[0-9]+)?/event=0xc,umask=0x2,name=unc_h_directory_lookup_no_snp(_[0-9]+)?/'
@@ -128,18 +128,18 @@ checkmsr2 slm offcore_response.any_request.any_response "msr 1a6 = 18008"
 checkp() 
 {
 	$WRAP ./ocperf.py --print stat $3 -e "$1" > tlog$$
-	egrep "$2" tlog$$
+	grep -E "$2" tlog$$
 }
 
 checknotp()
 {
 	$WRAP ./ocperf.py --print stat $3 -e "$1" > tlog$$
-	egrep -v "$2" tlog$$
+	grep -E -v "$2" tlog$$
 }
 
 checkp_record() {
 	$WRAP ./ocperf.py --print record -e "$1" > tlog$$
-	egrep "$2" tlog$$
+	grep -E "$2" tlog$$
 }
 export EVENTMAP=${cpus[hsw]}
 DIRECT_MSR=1 checkp BR_INST_RETIRED.CONDITIONAL 'r1c4$'

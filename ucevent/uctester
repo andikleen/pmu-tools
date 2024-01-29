@@ -26,7 +26,7 @@ $WRAP ./sanity-run.py $EXTRA '{' PCU.CLOCKTICKS iMC.MEM_BW_READS '}' iMC.CAS_COU
 
 set +e # XXX
 $WRAP ./ucevent.py $EXTRA --parse-all | grep -i error
-$WRAP ./ucevent.py --mock --parse-all | egrep -i '#EVAL|#DIVZ|error'
+$WRAP ./ucevent.py --mock --parse-all | grep -E -i '#EVAL|#DIVZ|error'
 
 #./ucevent.py --check-events
 
