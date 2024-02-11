@@ -17,6 +17,7 @@
 # ONLYCPU=cpu  Only test cpu type. cur for current CPU (makes test suite run much faster)
 # NOMULTIPLEX=" " Disable no multiplex
 # NATIVE_ARGS="" Pass argument to toplevs without --force-cpu (to override on unsupported hosts)
+# SKIPBASIC=1  Skip some tests at the beginning
 
 set -e
 set -o pipefail
@@ -144,6 +145,8 @@ if [ ! -r mtl-retlat.json ] ; then
 		) > mtl-retlat.json
 	fi
 fi
+
+if [ -n "$SKIPBASIC" ] ; then
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 
@@ -630,6 +633,34 @@ $WRAP ./toplev.py $NATIVE_ARGS --all --import tltest$$_perf.csv --force-cpuinfo 
 rm x$$.xlsx
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 fi
+
+fi
+
+# test INAME, FUZZYINPUT
+ARG="--all --no-uncore"
+$WRAP ./toplev $NATIVE_ARGS $ARG --tune INAME=True -- $LOAD
+$WRAP ./toplev $NATIVE_ARGS $ARG --tune FUZZYINPUT=True -- $LOAD
+$WRAP ./toplev $NATIVE_ARGS --perf-output perfo$$.csv $ARG --tune INAME=True FUZZYINPUT=True -- $LOAD
+echo 9999999999999999999999999999999999999999999999 > seed$$
+sort -t\; -k 4,4 perfo$$.csv > perfo$$.2.csv
+sort --random-sort --random-source seed$$ -t\; -k 4,4 perfo$$.csv > perfo$$.3.csv
+$WRAP ./toplev $NATIVE_ARGS --import perfo$$.csv $ARG --tune INAME=True FUZZYINPUT=True
+$WRAP ./toplev $NATIVE_ARGS --import perfo$$.2.csv $ARG --tune INAME=True FUZZYINPUT=True
+$WRAP ./toplev $NATIVE_ARGS --import perfo$$.3.csv $ARG --tune INAME=True FUZZYINPUT=True
+$WRAP ./toplev $NATIVE_ARGS --import perfo$$.2.csv -l1 --tune INAME=True FUZZYINPUT=True
+rm perfo$$.csv
+rm perfo$$.2.csv
+rm perfo$$.3.csv
+rm seed$$
+$WRAP ./toplev $NATIVE_ARGS --perf-output perfo$$.csv $ARG -- $LOAD
+sort -t\; -k 4,4 perfo$$.csv > perfo$$.2.csv
+$WRAP ./toplev $NATIVE_ARGS --import perfo$$.csv $ARG --tune FUZZYINPUT=True
+$WRAP ./toplev $NATIVE_ARGS --import perfo$$.2.csv $ARG --tune FUZZYINPUT=True
+$WRAP ./toplev $NATIVE_ARGS --import perfo$$.2.csv -l1 --tune FUZZYINPUT=True
+rm perfo$$.csv
+rm perfo$$.2.csv
+
+exit 0
 
 # test --parallel
 # this test is fragile

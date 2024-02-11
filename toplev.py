@@ -47,6 +47,7 @@ import glob
 from dummyarith import DummyArith
 from copy import copy
 from fnmatch import fnmatch
+from math import isnan
 from collections import defaultdict, Counter, OrderedDict
 from itertools import compress, groupby, chain
 from listutils import cat_unique, dedup, filternot, not_list, append_dict, \
@@ -120,6 +121,8 @@ IDLE_MARKER_THRESHOLD = 0.05
 SIB_THRESH = 0.05
 PERF_SKIP_WINDOW = 15
 KEEP_UNREF = False
+INAME = False
+FUZZYINPUT = False
 
 # handle kernels that don't support all events
 unsup_pebs = (
@@ -1430,7 +1433,7 @@ def is_cpu_event(s):
 
 def initialize_event(name, i, e):
     if "." in name or "_" in name and name not in non_json_events:
-        eo = e.output(noname=True, noexplode=True)
+        eo = e.output(noname=not INAME, noexplode=True)
         ectx.emap.update_event(eo, e)
         ectx.emap.update_event(remove_qual(eo), e) # XXX
         if (e.counter not in ectx.standard_counters and not name.startswith("UNC_")):
@@ -1463,6 +1466,9 @@ def initialize_event(name, i, e):
             ectx.require_pebs_events.add(name)
     else:
         non_json_events.add(i)
+    valid_events.add_event(i)
+    if INAME:
+        valid_events.add_event(ocperf.gen_name(re.sub(r':.*','', name), False))  # XXX sup, handle :... uniquely
     if not is_cpu_event(i) and i not in ectx.fixed_events:
         if not i.startswith("uncore"):
             valid_events.add_event(i)
@@ -1496,7 +1502,7 @@ def raw_event(i, name="", period=False, initialize=False):
             name = "T" + name
         if args.filterquals:
             e.filter_qual()
-        i = e.output(noname=True, name=name, period=period, noexplode=True)
+        i = e.output(noname=not INAME, name=name, period=period, noexplode=True)
         if not ectx.force_metrics:
             m = re.search(r'(topdown-[a-z-]+)', i)
             if m and not cached_exists("/sys/devices/%s/events/%s" % (ectx.emap.pmu, m.group(1))):
@@ -1587,7 +1593,7 @@ def is_event(l, n):
     if len(l) <= n:
         return False
     # use static string to make regexpr caching work
-    return re.match(valid_events.string, l[n])
+    return re.match(valid_events.string, l[n], re.I)
 
 def is_number(n):
     return re.match(r'\d+$', n) is not None
@@ -2198,18 +2204,28 @@ def find_runner(rlist, off, title, event):
             return r, off
     return None, 0
 
+def perf_name(e):
+    m = re.search(r'name=([^,/]+)', e)
+    if m:
+        return m.group(1)
+    return None
+
+FINE = 0
+SKIP = 1
+FUZZY = 2
+
 def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, last_linenum):
     r, off = find_runner(rlist, off, title, event)
     if r is None:
-        return r, False, event
+        return r, FINE, event
     # likely event expanded over all CPUs
     if event.startswith("cpu") and not event.startswith(r.pmu):
         if args.debug:
             print("event wrong pmu", event, title, r.pmu)
-        return None, False, event
+        return None, FINE, event
     # cannot check because it's an event that needs to be expanded first
     if not event.startswith("cpu") and is_number(title) and int(title) not in r.cpu_list:
-        return r, False, event
+        return r, FINE, event
     if revnum is None:
         revnum = r.sched.evnum
     if event.startswith("uncore"):
@@ -2217,11 +2233,17 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
     try:
         expected_ev = remove_qual(revnum[off])
     except IndexError:
-        sys.exit("Out of range event %s offset %d. %s" % (event, off, "Mismatch in toplev arguments from recording?" if args.import_ else ""))
+        sys.exit("Out of range event %s offset %d (len %d). %s" % (event, off, len(revnum), 
+                 "Mismatch in toplev arguments from recording?" if args.import_ else ""))
     if event != expected_ev:
+        en = perf_name(expected_ev)
+        if en == event:
+            return r, FINE, expected_ev
         # work around perf bug that incorrectly expands uncore events in some versions
         if off > 0 and event == remove_qual(revnum[off - 1]):
-            return None, False, expected_ev
+            return None, FINE, expected_ev
+        if FUZZYINPUT:
+            return r, FUZZY, expected_ev
         # some perf version don't output <not counted/supported due to dd15480a3d67
         # if the event is expected within a small window assume it's not counted
         # and reuse the value for the next
@@ -2233,9 +2255,9 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
                           "off", off, "title", title,
                           "context", revnum[off:off+PERF_SKIP_WINDOW])
                 if linenum == last_linenum[0]: # avoid endless loop
-                    return r, False, expected_ev
+                    return r, FINE, expected_ev
                 last_linenum[0] = linenum
-                return r, True, expected_ev
+                return r, SKIP, expected_ev
         print("Event in input does not match schedule (%s vs expected %s [pmu:%s/ind:%d/tit:%s/int:%f+%d])." % (
                 event, expected_ev, r.pmu, off, title, prev_interval, linenum),
                 file=sys.stderr)
@@ -2243,7 +2265,32 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
         if args.import_:
             sys.exit("Different arguments than original toplev?")
         sys.exit("Input corruption")
-    return r, False, event
+    return r, FINE, event
+
+def update_missing(res, rev, valstats, fallback):
+    for k in rev.keys():
+        for ind, event in enumerate(rev[k]):
+            if not isnan(res[k][ind]):
+                continue
+            key = (k, event)
+            if key in fallback:
+                if args.debug:
+                    print("updating fuzzy event", k, event, fallback[key][0])
+                res[k][ind] = fallback[key][0]
+                valstats[k][ind] = fallback[key][1]
+                continue
+            pn = perf_name(event)
+            if pn:
+                key = (k, pn)
+                if key in fallback:
+                    res[k][ind] = fallback[key][0]
+                    valstats[k][ind] = fallback[key][1]
+                    print("updating", k, rev[k][ind])
+                    continue
+            if not args.quiet:
+                print("Cannot find value for", k, rev[k][ind], pn, "in input")
+            res[k][ind] = float("nan")
+        assert not any([x is None for x in res[k]])
 
 def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
     res = defaultdict(list) # type: DefaultDict[str,List[float]]
@@ -2258,6 +2305,8 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
     linenum = 1
     skip = False
     last_linenum = [0]
+    fallback = {}
+    need_fallback = False
     if not args.import_ and not args.interval:
         start = time.time()
     while True:
@@ -2311,6 +2360,10 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
                     if res:
                         interval_dur = interval - prev_interval
                         set_interval(env, interval_dur, prev_interval)
+                        if need_fallback:
+                            update_missing(res, rev, valstats, fallback)
+                        fallback = {}
+                        need_fallback = False
                         yield 0, res, rev, prev_interval, valstats, env
                         res = defaultdict(list)
                         rev = defaultdict(list)
@@ -2367,13 +2420,18 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
             skip = False
             continue
 
-        runner, skip, event = check_event(rlist, event, len(res[title]),
+        skip = False
+        origevent = event
+        runner, action, event = check_event(rlist, event, len(res[title]),
                                    title, prev_interval, origl, revnum, linenum, last_linenum)
         if runner is None:
             linenum += 1
             continue
-        if skip:
+        if action == SKIP:
             l = origl
+            skip = True
+        if action == FUZZY:
+            need_fallback = True
 
         multiplex = float('nan')
         event = event.rstrip()
@@ -2414,8 +2472,11 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
 
             if skip:
                 res[t].append(0.0)
+            elif action == FUZZY:
+                res[t].append(float("nan"))
             else:
                 res[t].append(val)
+            fallback[(t, origevent)] = (val, st)
             rev[t].append(event)
             valstats[t].append(st)
             if args.perf_summary:
@@ -2432,7 +2493,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
             return re.match(r'power|uncore', event)
 
         # power/uncore events are only output once for every socket
-        if (uncore_event(event) and
+        if ((uncore_event(event) or uncore_event(origevent)) and
                 is_number(title) and
                 (not ((args.core or args.cpu) and not args.single_thread))):
             cpunum = int(title)
@@ -2447,7 +2508,8 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
             dup_val(cpu.coreids[(socket, core)])
         # duration time is only output once, except with --cpu/-C (???)
         # except perf 6.2+ outputs it with -A on all cpus, but not counting except the first
-        elif event.startswith("duration_time") and is_number(title) and not args.cpu and not args.core:
+        elif ((event.startswith("duration_time") or origevent.startswith("duration_time")) 
+                and is_number(title) and not args.cpu and not args.core):
             dup_val(runner.cpu_list)
         else:
             add(title)
@@ -2478,6 +2540,8 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         set_interval(env, 0, 0)
     ret = prun.wait()
     print_account(account)
+    if need_fallback:
+        update_missing(res, rev, valstats, fallback)
     yield ret, res, rev, interval, valstats, env
 
 run_l1_parallel = False # disabled for now until we can fix the perf scheduler
@@ -4507,6 +4571,10 @@ def main(args, rest, feat, env, cpu):
     global KEEP_UNREF
     if len(runner_list) > 1 and isinstance(KEEP_UNREF, bool):
         KEEP_UNREF = True # for now -- dummy can get assigned to wrong runner
+    global INAME
+    global FUZZYINPUT
+    if len(runner_list) > 1 and (INAME or FUZZYINPUT):
+        sys.exit("INAME and FUZZYINPUT do not support hybrid")
     handle_more_options(args)
     version = runner_emaps(setup_pe(), runner_list)
     handle_misc_options(args, version)

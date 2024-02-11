@@ -463,7 +463,7 @@ class UncoreEvent(object):
         # xxx subctr, occ_sel, filters
         if version.has_name and not noname:
             if name == "":
-                name = e.name.replace(".", "_")
+                name = gen_name(e.name, False)
             o += ",name=" + name + "_NUM"
         if newextra:
             o += "," + ",".join(newextra)
