@@ -2281,7 +2281,7 @@ def update_missing(res, rev, valstats, fallback):
                     print("updating", k, rev[k][ind])
                     continue
             if not args.quiet:
-                print("Cannot find value for", k, rev[k][ind], "in input")
+                print("Cannot find value for", k, rev[k][ind], pn, "in input")
             res[k][ind] = float("nan")
         assert not any([x is None for x in res[k]])
 
@@ -2469,7 +2469,6 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
                 res[t].append(float("nan"))
             else:
                 res[t].append(val)
-            # XXX multiplex
             fallback[(t, origevent)] = (val, st)
             rev[t].append(event)
             valstats[t].append(st)
