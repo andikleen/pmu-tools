@@ -1605,11 +1605,17 @@ def set_interval(env, d, interval):
     env['interval'] = interval
 
 def key_to_coreid(k):
-    x = cpu.cputocore[int(k)]
-    return x[0] * 1000 + x[1]
+    try:
+        x = cpu.cputocore[int(k)]
+        return x[0] * 1000 + x[1]
+    except ValueError:
+        return 0
 
 def key_to_socketid(k):
-    return cpu.cputocore[int(k)][0]
+    try:
+        return cpu.cputocore[int(k)][0]
+    except ValueError:
+        return 0
 
 def core_fmt(core):
     if cpu.sockets > 1:
