@@ -17,7 +17,7 @@
 # ONLYCPU=cpu  Only test cpu type. cur for current CPU (makes test suite run much faster)
 # NOMULTIPLEX=" " Disable no multiplex
 # NATIVE_ARGS="" Pass argument to toplevs without --force-cpu (to override on unsupported hosts)
-# SKIPBASIC=1  Skip some tests at the beginning
+# RUN=pattern limit tests to match pattern
 
 set -e
 set -o pipefail
@@ -40,6 +40,7 @@ NOMULTIPLEX="${NOMULTIPLEX:---no-multiplex --perf}"
 ONLYCPU="${ONLYCPU:-}"
 PJOBS=${PJOBS:-0}
 NATIVE_ARGS="${NATIVE_ARGS:-}"
+RUN="${RUN:-}"
 
 if [ -n "$WRAP" ] ; then
 	PYTHON=$WRAP
@@ -72,9 +73,9 @@ dumplogs() {
 	) && rm nflog$$ logsum$$
 }
 
+CUR=""
 failed() {
-	echo FAILED
-	dumplogs
+	echo FAILED in $CUR
 }
 trap failed ERR 0
 
@@ -101,6 +102,15 @@ int main() {
        return 0;
 }
 EOL
+
+run() {
+	if [ -n "$RUN" ] ; then
+		case "$1" in $RUN) ;; *) return 1 ; esac
+	fi
+	echo -e "\n=== RUN $1 ===\n"
+	CUR=$1
+	return 0
+}
 
 PS4='Line ${LINENO} '
 set -x
@@ -146,7 +156,7 @@ if [ ! -r mtl-retlat.json ] ; then
 	fi
 fi
 
-if [ -n "$SKIPBASIC" ] ; then
+if run basic ; then
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 
@@ -183,6 +193,11 @@ $WRAP ./toplev.py --force-cpu $DCPU --perf $OPT --no-desc --stats $ALL --kernel 
 checklog0
 grep :k log$$
 grep /k log$$
+
+fi
+
+if run nodes ; then
+
 if [ -z "$ONLYCPU" ] ; then
 $WRAP ./toplev.py --force-cpu simple $OPT --no-desc -l1 $LOAD
 # check errata handling
@@ -222,6 +237,8 @@ esac
 
 $WRAP ./toplev $NATIVE_ARGS -h > /dev/null
 
+fi
+
 # test L1 uses a single group
 onegroup() {
 	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
@@ -252,6 +269,9 @@ notfound() {
 	grep -E "not found|missing|unreferenced" log$$.$1 || true
 	grep -E "not found|missing|unreferenced" log$$.$1 | sed "s/^/$1:/" >> nflog$$ || true
 }
+
+if run cpus ; then
+
 if [ -z "$NOCPUS" ] ; then
 for j in $SMTCPUS ; do
 	[ "$MATCH" != "" -a "$MATCH" != "$j" ] && continue
@@ -366,6 +386,9 @@ notfound $j
 done
 fi
 
+fi # cpus
+
+if run misc ; then
 # misc features
 $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --ignore-errata --stats --metrics --force-events $NOMULTIPLEX -l4 $LOADQUICK
 [ -z "$NORES" ] && grep Turbo_Utilization log$$
@@ -391,6 +414,10 @@ $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-o
 [ -z "$NORES" ] && grep -q -v "not supported" perfo$$.csv
 rm log$$ val$$.csv perfo$$.csv
 fi
+
+fi #misc
+
+if run parallel ; then
 
 test_subset() {
 # XXX remove --no-mux by fixing multiplexing for summaries
@@ -424,6 +451,10 @@ $WRAP ./toplev.py $SHOPT --import x$$.csv.gz -o y$$.out.gz
 [ -z "$NORES" ] && zgrep IPC y$$.out.gz
 rm x$$.csv.gz y$$.out.gz
 
+fi # parallel
+
+if run misc2 ; then
+
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics $NOMULTIPLEX --columns -l4 $LOADQUICK
 if [ -d /sys/devices/cpu_atom ] ; then
 [ -z "$ONLYCPU" ] && $WRAP ./toplev.py --force-cpu adl $OPT --cpu 0,1,2,3 --stats --metrics --per-core --columns -l4 $LOAD
@@ -434,6 +465,11 @@ DURATION_TIME=0 $WRAP ./toplev.py -I100 --force-cpu $DCPU $OPT --all $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-socket --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --drilldown $LOAD
+
+fi # misc2
+
+if run xlsx ; then
+
 if $PYTHON -c 'import xlsxwriter' ; then
 $WRAP ./toplev.py --xlsx x$$.xlsx --force-cpu $DCPU $OPT --all --columns $LOADLONG
 rm x$$.xlsx
@@ -449,12 +485,20 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx --xnormalize --all $LOA
 rm x$$.xlsx # must exist
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --xlsx x$$.xlsx -I100 --xchart --all $LOADLONG
 rm x$$.xlsx # must exist
-
 fi
+
+fi # xlsx
+
+if run misc3 ; then
+
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --per-thread -x, --columns -l4 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --per-thread --json --all -o j$$.json $LOAD
 cat j$$.json | $PYTHON -m json.tool
 rm j$$.json
+
+fi
+
+if run import ; then
 
 for MODE in -l3 "-a -A --all" ; do
 # exclude MUX for now because it has small variances, as well as /sec nodes, --no-mux needs to be fixed
@@ -468,6 +512,10 @@ diff -uw log$$ log3.$$
 rm log{,2.,3.}$$ perf{s,o}$$.csv perfo.{1,2}.$$.csv val.{1,2,3}.$$.csv
 done
 
+fi # import
+
+if run json ; then
+
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -I100 --summary --per-thread --global --per-core --per-socket --json --all -o j$$.json $LOAD
 cat j$$.json | $PYTHON -m json.tool
 rm j$$.json
@@ -478,6 +526,10 @@ cat j$$-global.json | $PYTHON -m json.tool
 cat j$$-socket.json | $PYTHON -m json.tool
 cat j$$-thread.json | $PYTHON -m json.tool
 rm j$$-core.json j$$-thread.json j$$-socket.json j$$-global.json
+
+fi # json
+
+if run misc4 ; then
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -l1 --drilldown --json --all -o j$$.json $LOAD
 cat j$$.json | $PYTHON -m json.tool
@@ -585,6 +637,10 @@ fi
 
 rm log$$
 
+fi # misc4
+
+if run output ; then
+
 # test other perf output formats
 if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -v -I 1000 -a --per-core $LOAD
@@ -610,6 +666,10 @@ fi
 
 $WRAP ./toplev.py --no-version --force-cpu hsx --filterquals $OPT -l4 true
 
+fi  # output
+
+if run script ; then
+
 # test gen-script / import
 $WRAP ./toplev.py $NATIVE_ARGS --all --gen-script > script$$
 chmod +x script$$
@@ -624,6 +684,10 @@ rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 #$WRAP ./toplev.py $NATIVE_ARGS --script-record --all --import tltest$$_perf.data --force-cpuinfo tltest$$_cpuinfo --force-topology tltest$$_topology
 #rm tltest$$_perf.data tltest$$_topology tltest$$_cpuinfo script$$
 #fi
+#
+fi # script
+
+if run xlsx ; then
 
 if $PYTHON -c 'import xlsxwriter' ; then
 $WRAP ./toplev.py $NATIVE_ARGS --xlsx dummy.xlsx --all --gen-script > script$$
@@ -634,7 +698,9 @@ rm x$$.xlsx
 rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 fi
 
-fi
+fi #xlsx
+
+if run fuzzy ; then
 
 # test INAME, FUZZYINPUT
 ARG="--all --no-uncore"
@@ -660,7 +726,9 @@ $WRAP ./toplev $NATIVE_ARGS --import perfo$$.2.csv -l1 --tune FUZZYINPUT=True
 rm perfo$$.csv
 rm perfo$$.2.csv
 
-exit 0
+fi # fuzzy
+
+if run parallel ; then
 
 # test --parallel
 # this test is fragile
@@ -681,6 +749,10 @@ $WRAP ./toplev.py $NATIVE_ARGS --parallel --pjobs $PJOBS --import perfo0.$$.csv 
 rm x$$.xlsx
 fi
 rm log[012].$$ perf[ov][012].$$.csv j$$.json
+
+fi #parallel
+
+if run cpu2 ; then
 
 # check current platform
 $WRAP ./toplev.py $NATIVE_ARGS -o /dev/null $OPT --no-desc -v --all --run-sample $LOAD
@@ -707,6 +779,8 @@ $WRAP ./toplev.py --force-cpu $cpu $OPT -o /dev/null --force-events --no-desc -v
 cat log$$
 notfound $cpu
 done
+
+fi # cpu2
 
 trap "" ERR 0
 
