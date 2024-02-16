@@ -104,11 +104,13 @@ int main() {
 EOL
 
 run() {
+	set +x
 	if [ -n "$RUN" ] ; then
-		case "$1" in $RUN) ;; *) return 1 ; esac
+		case "$1" in $RUN) ;; *) set -x ; return 1 ; esac
 	fi
 	echo -e "\n=== RUN $1 ===\n"
 	CUR=$1
+	set -x
 	return 0
 }
 
