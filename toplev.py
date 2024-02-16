@@ -2042,13 +2042,11 @@ def execute_no_multiplex(runner_list, out, rest, summary):
             events = outg + [g]
             runner.set_ectx()
             evstr = group_join(events)
-            flat_events = flatten(events)
-            flat_rmap = [event_rmap(e, runner_list) for e in flat_events]
             runner.clear_ectx()
             for nret, res, rev, interval, valstats, env in do_execute(
                     [runner],
-                    summary, evstr, flat_rmap,
-                    out, rest, resoff, flat_events):
+                    summary, evstr,
+                    out, rest, resoff):
                 ret = max(ret, nret)
                 lresults.append([res, rev, interval, valstats, env])
             if res:
@@ -2104,7 +2102,7 @@ def runner_split(runner_list, res, rev):
             yield r, res, rev
 
 def execute(runner_list, out, rest, summary):
-    evstr, flat_events, flat_rmap = "", [], []
+    evstr, flat_events = "", []
     for runner in runner_list:
         new_events = [x.evnum for x in runner.sched.evgroups if len(x.evnum) > 0]
         if len(new_events) == 0:
@@ -2115,12 +2113,11 @@ def execute(runner_list, out, rest, summary):
         evstr += group_join(new_events)
         new_flat_events = flatten(new_events)
         flat_events += new_flat_events
-        flat_rmap += [event_rmap(e, runner_list) for e in new_flat_events]
         runner.clear_ectx()
     ctx = SaveContext()
     for ret, res, rev, interval, valstats, env in do_execute(
             runner_list, summary,
-            evstr, flat_rmap, out, rest, Counter(), None):
+            evstr, out, rest, Counter()):
         if summary:
             summary.add(res, rev, valstats, env)
         for runner, res, rev in runner_split(runner_list, res, rev):
@@ -2213,7 +2210,7 @@ FINE = 0
 SKIP = 1
 FUZZY = 2
 
-def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, last_linenum):
+def check_event(rlist, event, off, title, prev_interval, l, linenum, last_linenum):
     r, off = find_runner(rlist, off, title, event)
     if r is None:
         return r, FINE, event
@@ -2225,8 +2222,7 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
     # cannot check because it's an event that needs to be expanded first
     if not event.startswith("cpu") and is_number(title) and int(title) not in r.cpu_list:
         return r, FINE, event
-    if revnum is None:
-        revnum = r.sched.evnum
+    revnum = r.sched.evnum
     if event.startswith("uncore"):
         event = re.sub(r'_[0-9]+', '', event)
     try:
@@ -2291,7 +2287,7 @@ def update_missing(res, rev, valstats, fallback):
             res[k][ind] = float("nan")
         assert not any([x is None for x in res[k]])
 
-def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
+def do_execute(rlist, summary, evstr, out, rest, resoff):
     res = defaultdict(list) # type: DefaultDict[str,List[float]]
     rev = defaultdict(list) # type: DefaultDict[str, List[str]]
     valstats = defaultdict(list) # type: DefaultDict[str,List[ValStat]]
@@ -2422,7 +2418,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         skip = False
         origevent = event
         runner, action, event = check_event(rlist, event, len(res[title]),
-                                   title, prev_interval, origl, revnum, linenum, last_linenum)
+                                   title, prev_interval, origl, linenum, last_linenum)
         if runner is None:
             linenum += 1
             continue
