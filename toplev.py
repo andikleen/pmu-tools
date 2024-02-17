@@ -2291,7 +2291,8 @@ def update_missing(res, rev, valstats, fallback):
                 if key in fallback:
                     res[k][ind] = fallback[key][0]
                     valstats[k][ind] = fallback[key][1]
-                    print("updating", k, rev[k][ind])
+                    if args.debug:
+                        print("updating", k, rev[k][ind])
                     continue
             if not args.quiet:
                 print("Cannot find value for", k, rev[k][ind], pn, "in input")
