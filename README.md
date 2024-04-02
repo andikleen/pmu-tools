@@ -120,6 +120,23 @@ on newer Linux kernels.
 
 # Recent new features:
 
+## TMA 4.8 release
+* toplev updated to TMA 4.8:
+  * Bottlenecks View:
+    * Renamed Base_Non_Br to Useful_Work and simplified descriptions for all BV metrics.
+    * Cache_Memory_Latency now accounts for L1 cache latency as well.
+    * Improved Branching_Overhead accuracy for function calling and alignments
+    * Cross-reference Bottlenecks w/ TMA tree for tool visualization (VTune request)
+  * New Tree Nodes
+    * L1_Hit_Latency: estimates fraction of cycles with demand load accesses that hit the L1 cache (relies on Dependent_Loads_Weight SystemParameter today)
+  * New Informative Metrics
+    * Fetch_LSD (client), Fetch_DSB, Fetch_MITE under Info.Pipeline group [SKL onwards]
+    * DSB_Bandwidth under Info.Botlnk.L2
+    * L2MPKI_RFO under Info.Memory
+  * Key Enhancements & fixes
+    * Fixed Ports_Utilization/Ports_Utilized_0
+    * Slightly tuned memory (fixed cost) latencies [SPR, EMR]
+  * Corrected CPU_Utilization, CPUs_Utilized for Linux perf based tools
 * toplev now supports Meteor Lake systems.
 * Add a new genretlat.py tool to tune the toplev model for a workload. The basic tuning needs to be
   generated before first toplev use using genretlat -o mtl-retlat.json ./workloads/BC1s (or suitable workload). toplev

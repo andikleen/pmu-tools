@@ -15,7 +15,7 @@
 # NOCPUS=1  skip individual CPU tests
 # MATCH=cpu in cpu loops only run for CPU cpu
 # ONLYCPU=cpu  Only test cpu type. cur for current CPU (makes test suite run much faster)
-# NOMULTIPLEX=" " Disable no multiplex 
+# NOMULTIPLEX=" " Disable no multiplex
 # NATIVE_ARGS="" Pass argument to toplevs without --force-cpu (to override on unsupported hosts)
 
 set -e
@@ -121,6 +121,7 @@ SMTCPUS="${SMTCPUS:-snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl icx 
 NOSMTCPUS="${NOSMTCPUS:-slm simple ehl adl-grt}"
 ALLCPUS="${ALLCPUS:-$SMTCPUS $NOSMTCPUS}"
 fi
+METRICCPUS='icl|tgl|mtl-rwc|spr|sprmax|adl-glc|icx'
 
 ALL=--all
 
@@ -334,7 +335,8 @@ notfound $j
 fi
 fi
 
-if [ $j == "icl" -o $j == "tgl" ] ; then
+case "$j" in
+$METRICCPUS)
 
 FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $j --filterquals --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
 grep topdown- log$$
@@ -345,7 +347,9 @@ grep topdown- log$$
 grep :D log$$
 rm log$$
 
-fi # icl
+;;
+esac
+
 
 done
 

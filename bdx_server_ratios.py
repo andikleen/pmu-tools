@@ -1,6 +1,6 @@
 # -*- coding: latin-1 -*-
 #
-# auto generated TopDown/TMA 4.7-full description for Intel Xeon E5 v4 (code named Broadwell EP)
+# auto generated TopDown/TMA 4.8-full-perf description for Intel Xeon E5 v4 (code named Broadwell EP)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -16,10 +16,13 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.7-full"
+version = "4.8-full-perf"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
+num_cores = 1
+num_threads = 1
+num_sockets = 1
 
 
 def handle_error(obj, msg):
@@ -49,6 +52,8 @@ OneMillion = 1000000
 OneBillion = 1000000000
 Energy_Unit = 61
 Errata_Whitelist = "BDE69;BDE70"
+EBS_Mode = 0
+DS = 1
 
 # Aux. formulas
 
@@ -88,11 +93,11 @@ def FLOP_Count(self, EV, level):
 
 # Floating Point computational (arithmetic) Operations Count
 def FP_Arith_Scalar(self, EV, level):
-    return EV("FP_ARITH_INST_RETIRED.SCALAR_SINGLE:u0x03", level)
+    return EV("FP_ARITH_INST_RETIRED.SCALAR", level)
 
 # Floating Point computational (arithmetic) Operations Count
 def FP_Arith_Vector(self, EV, level):
-    return EV("FP_ARITH_INST_RETIRED.128B_PACKED_DOUBLE:u0x3c", level)
+    return EV("FP_ARITH_INST_RETIRED.VECTOR", level)
 
 def Frontend_RS_Empty_Cycles(self, EV, level):
     EV("RS_EVENTS.EMPTY_CYCLES", level)
@@ -207,7 +212,7 @@ def UopPI(self, EV, level):
     self.thresh = (val > 1.05)
     return val
 
-# Instruction per taken branch
+# Uops per taken branch
 def UpTB(self, EV, level):
     val = Retired_Slots(self, EV, level) / EV("BR_INST_RETIRED.NEAR_TAKEN", level)
     self.thresh = val < Pipeline_Width * 1.5
@@ -241,13 +246,13 @@ def FLOPc(self, EV, level):
 def FP_Arith_Utilization(self, EV, level):
     return (FP_Arith_Scalar(self, EV, level) + FP_Arith_Vector(self, EV, level)) / (2 * CORE_CLKS(self, EV, level))
 
-# Instruction-Level-Parallelism (average number of uops executed when there is execution) per logical-processor
+# Instruction-Level-Parallelism (average number of uops executed when there is execution) per thread (logical-processor)
 def ILP(self, EV, level):
     return EV("UOPS_EXECUTED.THREAD", level) / EV("UOPS_EXECUTED.THREAD:c1", level)
 
 # Core actual clocks when any Logical Processor is active on the Physical Core
 def CORE_CLKS(self, EV, level):
-    return (EV("CPU_CLK_UNHALTED.THREAD_ANY", level) / 2) if smt_enabled else CLKS(self, EV, level)
+    return ((EV("CPU_CLK_UNHALTED.THREAD", level) / 2) * (1 + EV("CPU_CLK_UNHALTED.ONE_THREAD_ACTIVE", level) / EV("CPU_CLK_UNHALTED.REF_XCLK", level))) if ebs_mode else(EV("CPU_CLK_UNHALTED.THREAD_ANY", level) / 2) if smt_enabled else CLKS(self, EV, level)
 
 # Instructions per Load (lower number means higher occurrence rate). Tip: reduce memory accesses. #Link Opt Guide section: Minimize Register Spills
 def IpLoad(self, EV, level):
@@ -273,7 +278,7 @@ def IpCall(self, EV, level):
     self.thresh = (val < 200)
     return val
 
-# Instruction per taken branch
+# Instructions per taken branch
 def IpTB(self, EV, level):
     val = EV("INST_RETIRED.ANY", level) / EV("BR_INST_RETIRED.NEAR_TAKEN", level)
     self.thresh = val < Pipeline_Width * 2 + 1
@@ -289,31 +294,31 @@ def IpFLOP(self, EV, level):
     self.thresh = (val < 10)
     return val
 
-# Instructions per FP Arithmetic instruction (lower number means higher occurrence rate). May undercount due to FMA double counting. Approximated prior to BDW.
+# Instructions per FP Arithmetic instruction (lower number means higher occurrence rate). Values < 1 are possible due to intentional FMA double counting. Approximated prior to BDW.
 def IpArith(self, EV, level):
     val = EV("INST_RETIRED.ANY", level) / (FP_Arith_Scalar(self, EV, level) + FP_Arith_Vector(self, EV, level))
     self.thresh = (val < 10)
     return val
 
-# Instructions per FP Arithmetic Scalar Single-Precision instruction (lower number means higher occurrence rate). May undercount due to FMA double counting.
+# Instructions per FP Arithmetic Scalar Single-Precision instruction (lower number means higher occurrence rate). Values < 1 are possible due to intentional FMA double counting.
 def IpArith_Scalar_SP(self, EV, level):
     val = EV("INST_RETIRED.ANY", level) / EV("FP_ARITH_INST_RETIRED.SCALAR_SINGLE", level)
     self.thresh = (val < 10)
     return val
 
-# Instructions per FP Arithmetic Scalar Double-Precision instruction (lower number means higher occurrence rate). May undercount due to FMA double counting.
+# Instructions per FP Arithmetic Scalar Double-Precision instruction (lower number means higher occurrence rate). Values < 1 are possible due to intentional FMA double counting.
 def IpArith_Scalar_DP(self, EV, level):
     val = EV("INST_RETIRED.ANY", level) / EV("FP_ARITH_INST_RETIRED.SCALAR_DOUBLE", level)
     self.thresh = (val < 10)
     return val
 
-# Instructions per FP Arithmetic AVX/SSE 128-bit instruction (lower number means higher occurrence rate). May undercount due to FMA double counting.
+# Instructions per FP Arithmetic AVX/SSE 128-bit instruction (lower number means higher occurrence rate). Values < 1 are possible due to intentional FMA double counting.
 def IpArith_AVX128(self, EV, level):
     val = EV("INST_RETIRED.ANY", level) / (EV("FP_ARITH_INST_RETIRED.128B_PACKED_DOUBLE", level) + EV("FP_ARITH_INST_RETIRED.128B_PACKED_SINGLE", level))
     self.thresh = (val < 10)
     return val
 
-# Instructions per FP Arithmetic AVX* 256-bit instruction (lower number means higher occurrence rate). May undercount due to FMA double counting.
+# Instructions per FP Arithmetic AVX* 256-bit instruction (lower number means higher occurrence rate). Values < 1 are possible due to intentional FMA double counting.
 def IpArith_AVX256(self, EV, level):
     val = EV("INST_RETIRED.ANY", level) / (EV("FP_ARITH_INST_RETIRED.256B_PACKED_DOUBLE", level) + EV("FP_ARITH_INST_RETIRED.256B_PACKED_SINGLE", level))
     self.thresh = (val < 10)
@@ -327,7 +332,6 @@ def Instructions(self, EV, level):
 def Retire(self, EV, level):
     return Retired_Slots(self, EV, level) / EV("UOPS_RETIRED.RETIRE_SLOTS:c1", level)
 
-# Instruction-Level-Parallelism (average number of uops executed when there is execution) per physical core
 def Execute(self, EV, level):
     return EV("UOPS_EXECUTED.THREAD", level) / Execute_Cycles(self, EV, level)
 
@@ -347,7 +351,7 @@ def IpMispredict(self, EV, level):
     self.thresh = (val < 200)
     return val
 
-# Instructions per retired mispredicts for indirect CALL or JMP branches (lower number means higher occurrence rate).
+# Instructions per retired Mispredicts for indirect CALL or JMP branches (lower number means higher occurrence rate).
 def IpMisp_Indirect(self, EV, level):
     val = Instructions(self, EV, level) / (Retire_Fraction(self, EV, level) * EV("BR_MISP_EXEC.INDIRECT", level))
     self.thresh = (val < 1000)
@@ -377,6 +381,10 @@ def L2MPKI_All(self, EV, level):
 def L2MPKI_Load(self, EV, level):
     return 1000 * EV("L2_RQSTS.DEMAND_DATA_RD_MISS", level) / EV("INST_RETIRED.ANY", level)
 
+# Offcore requests (L2 cache miss) per kilo instruction for demand RFOs
+def L2MPKI_RFO(self, EV, level):
+    return 1000 * EV("OFFCORE_REQUESTS.DEMAND_RFO", level) / EV("INST_RETIRED.ANY", level)
+
 # L2 cache hits per kilo instruction for all request types (including speculative)
 def L2HPKI_All(self, EV, level):
     return 1000 *(EV("L2_RQSTS.REFERENCES", level) - EV("L2_RQSTS.MISS", level)) / EV("INST_RETIRED.ANY", level)
@@ -389,15 +397,12 @@ def L2HPKI_Load(self, EV, level):
 def L3MPKI(self, EV, level):
     return 1000 * EV("MEM_LOAD_UOPS_RETIRED.L3_MISS", level) / EV("INST_RETIRED.ANY", level)
 
-# Average per-thread data fill bandwidth to the L1 data cache [GB / sec]
 def L1D_Cache_Fill_BW(self, EV, level):
     return 64 * EV("L1D.REPLACEMENT", level) / OneBillion / Time(self, EV, level)
 
-# Average per-thread data fill bandwidth to the L2 cache [GB / sec]
 def L2_Cache_Fill_BW(self, EV, level):
     return 64 * EV("L2_LINES_IN.ALL", level) / OneBillion / Time(self, EV, level)
 
-# Average per-thread data fill bandwidth to the L3 cache [GB / sec]
 def L3_Cache_Fill_BW(self, EV, level):
     return 64 * EV("LONGEST_LAT_CACHE.MISS", level) / OneBillion / Time(self, EV, level)
 
@@ -433,11 +438,11 @@ def Data_L2_MLP(self, EV, level):
 
 # Average CPU Utilization (percentage)
 def CPU_Utilization(self, EV, level):
-    return EV("CPU_CLK_UNHALTED.REF_TSC", level) / EV("msr/tsc/", 0)
+    return CPUs_Utilized(self, EV, level) / Num_CPUs(self, EV, level)
 
 # Average number of utilized CPUs
 def CPUs_Utilized(self, EV, level):
-    return Num_CPUs(self, EV, level) * CPU_Utilization(self, EV, level)
+    return EV("CPU_CLK_UNHALTED.REF_TSC", level) / EV("msr/tsc/", 0)
 
 # Measured Average Core Frequency for unhalted processors [GHz]
 def Core_Frequency(self, EV, level):
@@ -447,7 +452,7 @@ def Core_Frequency(self, EV, level):
 def Uncore_Frequency(self, EV, level):
     return Socket_CLKS(self, EV, level) / 1e9 / Time(self, EV, level)
 
-# Giga Floating Point Operations Per Second. Aggregate across all supported options of: FP precisions, scalar and vector instructions, vector-width  .
+# Giga Floating Point Operations Per Second. Aggregate across all supported options of: FP precisions, scalar and vector instructions, vector-width
 def GFLOPs(self, EV, level):
     return (FLOP_Count(self, EV, level) / OneBillion) / Time(self, EV, level)
 
@@ -509,7 +514,7 @@ class Frontend_Bound:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['TmaL1', 'PGO'])
+    metricgroup = frozenset(['BvFB', 'BvIO', 'TmaL1', 'PGO'])
     maxval = None
     def compute(self, EV):
         try:
@@ -571,7 +576,7 @@ class ICache_Misses:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BigFootprint', 'FetchLat', 'IcMiss'])
+    metricgroup = frozenset(['BigFootprint', 'BvBC', 'FetchLat', 'IcMiss'])
     maxval = None
     def compute(self, EV):
         try:
@@ -596,7 +601,7 @@ class ITLB_Misses:
     sample = ['ITLB_MISSES.WALK_COMPLETED']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BigFootprint', 'FetchLat', 'MemoryTLB'])
+    metricgroup = frozenset(['BigFootprint', 'BvBC', 'FetchLat', 'MemoryTLB'])
     maxval = None
     def compute(self, EV):
         try:
@@ -653,7 +658,7 @@ class Mispredicts_Resteers:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BadSpec', 'BrMispredicts'])
+    metricgroup = frozenset(['BadSpec', 'BrMispredicts', 'BvMP'])
     maxval = None
     def compute(self, EV):
         try:
@@ -701,7 +706,7 @@ class Unknown_Branches:
     sample = ['BACLEARS.ANY']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BigFootprint', 'FetchLat'])
+    metricgroup = frozenset(['BigFootprint', 'BvBC', 'FetchLat'])
     maxval = None
     def compute(self, EV):
         try:
@@ -932,7 +937,7 @@ class Branch_Mispredicts:
     sample = ['BR_MISP_RETIRED.ALL_BRANCHES:pp']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BadSpec', 'BrMispredicts', 'TmaL2'])
+    metricgroup = frozenset(['BadSpec', 'BrMispredicts', 'BvMP', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
@@ -963,7 +968,7 @@ class Machine_Clears:
     sample = ['MACHINE_CLEARS.COUNT']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BadSpec', 'MachineClears', 'TmaL2'])
+    metricgroup = frozenset(['BadSpec', 'BvMS', 'MachineClears', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
@@ -993,7 +998,7 @@ class Backend_Bound:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['TmaL1'])
+    metricgroup = frozenset(['BvOB', 'TmaL1'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1085,8 +1090,8 @@ class DTLB_Load:
     sample = ['MEM_UOPS_RETIRED.STLB_MISS_LOADS:pp']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryTLB'])
-    maxval = None
+    metricgroup = frozenset(['BvMT', 'MemoryTLB'])
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (Mem_STLB_Hit_Cost * EV("DTLB_LOAD_MISSES.STLB_HIT", 4) + EV("DTLB_LOAD_MISSES.WALK_DURATION:c1", 4) + 7 * EV("DTLB_LOAD_MISSES.WALK_COMPLETED", 4)) / CLKS(self, EV, 4)
@@ -1228,7 +1233,7 @@ class FB_Full:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryBW'])
+    metricgroup = frozenset(['BvMS', 'MemoryBW'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1257,7 +1262,7 @@ class L2_Bound:
     sample = ['MEM_LOAD_UOPS_RETIRED.L2_HIT:pp']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['CacheHits', 'MemoryBound', 'TmaL3mem'])
+    metricgroup = frozenset(['BvML', 'CacheHits', 'MemoryBound', 'TmaL3mem'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1307,7 +1312,7 @@ class Contested_Accesses:
     sample = ['MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM:pp', 'MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_MISS:pp']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['DataSharing', 'Offcore', 'Snoop'])
+    metricgroup = frozenset(['BvMS', 'DataSharing', 'Offcore', 'Snoop'])
     maxval = 1.0
     def compute(self, EV):
         try:
@@ -1335,7 +1340,7 @@ class Data_Sharing:
     sample = ['MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HIT:pp']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['Offcore', 'Snoop'])
+    metricgroup = frozenset(['BvMS', 'Offcore', 'Snoop'])
     maxval = 1.0
     def compute(self, EV):
         try:
@@ -1362,7 +1367,7 @@ class L3_Hit_Latency:
     sample = ['MEM_LOAD_UOPS_RETIRED.L3_HIT:pp']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryLat'])
+    metricgroup = frozenset(['BvML', 'MemoryLat'])
     maxval = 1.0
     def compute(self, EV):
         try:
@@ -1390,7 +1395,7 @@ class SQ_Full:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryBW', 'Offcore'])
+    metricgroup = frozenset(['BvMS', 'MemoryBW', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1438,7 +1443,7 @@ class MEM_Bandwidth:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryBW', 'Offcore'])
+    metricgroup = frozenset(['BvMS', 'MemoryBW', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1476,7 +1481,7 @@ class MEM_Latency:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryLat', 'Offcore'])
+    metricgroup = frozenset(['BvML', 'MemoryLat', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1605,7 +1610,7 @@ class Store_Latency:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryLat', 'Offcore'])
+    metricgroup = frozenset(['BvML', 'MemoryLat', 'Offcore'])
     maxval = 1.0
     def compute(self, EV):
         try:
@@ -1633,7 +1638,7 @@ class False_Sharing:
     sample = ['MEM_LOAD_UOPS_L3_HIT_RETIRED.XSNP_HITM:pp', 'MEM_LOAD_UOPS_L3_MISS_RETIRED.REMOTE_HITM:pp', 'OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.HITM_OTHER_CORE', 'OFFCORE_RESPONSE.DEMAND_RFO.LLC_MISS.REMOTE_HITM']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['DataSharing', 'Offcore', 'Snoop'])
+    metricgroup = frozenset(['BvMS', 'DataSharing', 'Offcore', 'Snoop'])
     maxval = 1.0
     def compute(self, EV):
         try:
@@ -1684,7 +1689,7 @@ class DTLB_Store:
     sample = ['MEM_UOPS_RETIRED.STLB_MISS_STORES:pp']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryTLB'])
+    metricgroup = frozenset(['BvMT', 'MemoryTLB'])
     maxval = 1.0
     def compute(self, EV):
         try:
@@ -1744,8 +1749,8 @@ class Divider:
     sample = ['ARITH.FPU_DIV_ACTIVE']
     errcount = 0
     sibling = None
-    metricgroup = frozenset([])
-    maxval = None
+    metricgroup = frozenset(['BvCB'])
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = EV("ARITH.FPU_DIV_ACTIVE", 3) / CORE_CLKS(self, EV, 3)
@@ -1892,7 +1897,7 @@ class Ports_Utilized_3m:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['PortsUtil'])
+    metricgroup = frozenset(['BvCB', 'PortsUtil'])
     maxval = None
     def compute(self, EV):
         try:
@@ -2173,7 +2178,7 @@ class Retiring:
     sample = ['UOPS_RETIRED.RETIRE_SLOTS']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['TmaL1'])
+    metricgroup = frozenset(['BvUW', 'TmaL1'])
     maxval = None
     def compute(self, EV):
         try:
@@ -2450,7 +2455,7 @@ class Assists:
     sample = ['OTHER_ASSISTS.ANY_WB_ASSIST']
     errcount = 0
     sibling = None
-    metricgroup = frozenset([])
+    metricgroup = frozenset(['BvIO'])
     maxval = 1.0
     def compute(self, EV):
         try:
@@ -2556,7 +2561,7 @@ class Metric_UpTB:
         except ZeroDivisionError:
             handle_error_metric(self, "UpTB zero division")
     desc = """
-Instruction per taken branch"""
+Uops per taken branch"""
 
 
 class Metric_CPI:
@@ -2717,7 +2722,8 @@ class Metric_ILP:
             handle_error_metric(self, "ILP zero division")
     desc = """
 Instruction-Level-Parallelism (average number of uops
-executed when there is execution) per logical-processor"""
+executed when there is execution) per thread (logical-
+processor)"""
 
 
 class Metric_CORE_CLKS:
@@ -2836,7 +2842,7 @@ class Metric_IpTB:
         except ZeroDivisionError:
             handle_error_metric(self, "IpTB zero division")
     desc = """
-Instruction per taken branch"""
+Instructions per taken branch"""
 
 
 class Metric_BpTkBranch:
@@ -2898,8 +2904,9 @@ class Metric_IpArith:
             handle_error_metric(self, "IpArith zero division")
     desc = """
 Instructions per FP Arithmetic instruction (lower number
-means higher occurrence rate). May undercount due to FMA
-double counting. Approximated prior to BDW."""
+means higher occurrence rate). Values < 1 are possible due
+to intentional FMA double counting. Approximated prior to
+BDW."""
 
 
 class Metric_IpArith_Scalar_SP:
@@ -2919,8 +2926,9 @@ class Metric_IpArith_Scalar_SP:
             handle_error_metric(self, "IpArith_Scalar_SP zero division")
     desc = """
 Instructions per FP Arithmetic Scalar Single-Precision
-instruction (lower number means higher occurrence rate). May
-undercount due to FMA double counting."""
+instruction (lower number means higher occurrence rate).
+Values < 1 are possible due to intentional FMA double
+counting."""
 
 
 class Metric_IpArith_Scalar_DP:
@@ -2940,8 +2948,9 @@ class Metric_IpArith_Scalar_DP:
             handle_error_metric(self, "IpArith_Scalar_DP zero division")
     desc = """
 Instructions per FP Arithmetic Scalar Double-Precision
-instruction (lower number means higher occurrence rate). May
-undercount due to FMA double counting."""
+instruction (lower number means higher occurrence rate).
+Values < 1 are possible due to intentional FMA double
+counting."""
 
 
 class Metric_IpArith_AVX128:
@@ -2961,8 +2970,8 @@ class Metric_IpArith_AVX128:
             handle_error_metric(self, "IpArith_AVX128 zero division")
     desc = """
 Instructions per FP Arithmetic AVX/SSE 128-bit instruction
-(lower number means higher occurrence rate). May undercount
-due to FMA double counting."""
+(lower number means higher occurrence rate). Values < 1 are
+possible due to intentional FMA double counting."""
 
 
 class Metric_IpArith_AVX256:
@@ -2982,8 +2991,8 @@ class Metric_IpArith_AVX256:
             handle_error_metric(self, "IpArith_AVX256 zero division")
     desc = """
 Instructions per FP Arithmetic AVX* 256-bit instruction
-(lower number means higher occurrence rate). May undercount
-due to FMA double counting."""
+(lower number means higher occurrence rate). Values < 1 are
+possible due to intentional FMA double counting."""
 
 
 class Metric_Instructions:
@@ -3027,7 +3036,7 @@ uop has retired."""
 
 class Metric_Execute:
     name = "Execute"
-    domain = "Core_Metric"
+    domain = "Metric"
     maxval = Exe_Ports
     errcount = 0
     area = "Info.Pipeline"
@@ -3041,8 +3050,7 @@ class Metric_Execute:
         except ZeroDivisionError:
             handle_error_metric(self, "Execute zero division")
     desc = """
-Instruction-Level-Parallelism (average number of uops
-executed when there is execution) per physical core"""
+"""
 
 
 class Metric_DSB_Coverage:
@@ -3125,7 +3133,7 @@ class Metric_IpMisp_Indirect:
         except ZeroDivisionError:
             handle_error_metric(self, "IpMisp_Indirect zero division")
     desc = """
-Instructions per retired mispredicts for indirect CALL or
+Instructions per retired Mispredicts for indirect CALL or
 JMP branches (lower number means higher occurrence rate)."""
 
 
@@ -3250,6 +3258,26 @@ L2 cache  misses per kilo instruction for all demand loads
 (including speculative)"""
 
 
+class Metric_L2MPKI_RFO:
+    name = "L2MPKI_RFO"
+    domain = "Metric"
+    maxval = 0
+    errcount = 0
+    area = "Info.Memory"
+    metricgroup = frozenset(['CacheMisses', 'Offcore'])
+    sibling = None
+
+    def compute(self, EV):
+        try:
+            self.val = L2MPKI_RFO(self, EV, 0)
+            self.thresh = True
+        except ZeroDivisionError:
+            handle_error_metric(self, "L2MPKI_RFO zero division")
+    desc = """
+Offcore requests (L2 cache miss) per kilo instruction for
+demand RFOs"""
+
+
 class Metric_L2HPKI_All:
     name = "L2HPKI_All"
     domain = "Metric"
@@ -3326,8 +3354,7 @@ class Metric_L1D_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L1D_Cache_Fill_BW zero division")
     desc = """
-Average per-thread data fill bandwidth to the L1 data cache
-[GB / sec]"""
+"""
 
 
 class Metric_L2_Cache_Fill_BW:
@@ -3346,8 +3373,7 @@ class Metric_L2_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L2_Cache_Fill_BW zero division")
     desc = """
-Average per-thread data fill bandwidth to the L2 cache [GB /
-sec]"""
+"""
 
 
 class Metric_L3_Cache_Fill_BW:
@@ -3366,8 +3392,7 @@ class Metric_L3_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L3_Cache_Fill_BW zero division")
     desc = """
-Average per-thread data fill bandwidth to the L3 cache [GB /
-sec]"""
+"""
 
 
 class Metric_Page_Walks_Utilization:
@@ -3510,7 +3535,7 @@ Average Parallel L2 cache miss data reads"""
 class Metric_CPU_Utilization:
     name = "CPU_Utilization"
     domain = "Metric"
-    maxval = 200
+    maxval = 1
     errcount = 0
     area = "Info.System"
     metricgroup = frozenset(['HPC', 'Summary'])
@@ -3529,7 +3554,7 @@ Average CPU Utilization (percentage)"""
 class Metric_CPUs_Utilized:
     name = "CPUs_Utilized"
     domain = "Metric"
-    maxval = 0
+    maxval = 300
     errcount = 0
     area = "Info.System"
     metricgroup = frozenset(['Summary'])
@@ -3602,7 +3627,7 @@ class Metric_GFLOPs:
     desc = """
 Giga Floating Point Operations Per Second. Aggregate across
 all supported options of: FP precisions, scalar and vector
-instructions, vector-width  ."""
+instructions, vector-width"""
 
 
 class Metric_Turbo_Utilization:
@@ -3997,6 +4022,7 @@ class Setup:
         n = Metric_L2MPKI() ; r.metric(n) ; o["L2MPKI"] = n
         n = Metric_L2MPKI_All() ; r.metric(n) ; o["L2MPKI_All"] = n
         n = Metric_L2MPKI_Load() ; r.metric(n) ; o["L2MPKI_Load"] = n
+        n = Metric_L2MPKI_RFO() ; r.metric(n) ; o["L2MPKI_RFO"] = n
         n = Metric_L2HPKI_All() ; r.metric(n) ; o["L2HPKI_All"] = n
         n = Metric_L2HPKI_Load() ; r.metric(n) ; o["L2HPKI_Load"] = n
         n = Metric_L3MPKI() ; r.metric(n) ; o["L3MPKI"] = n

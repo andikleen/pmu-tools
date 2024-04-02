@@ -1,6 +1,6 @@
 # -*- coding: latin-1 -*-
 #
-# auto generated TopDown/TMA 4.7-full description for Intel Xeon E5 (code named SandyBridge EP)
+# auto generated TopDown/TMA 4.8-full-perf description for Intel Xeon E5 (code named SandyBridge EP)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -16,10 +16,13 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.7-full"
+version = "4.8-full-perf"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
+num_cores = 1
+num_threads = 1
+num_sockets = 1
 
 
 def handle_error(obj, msg):
@@ -45,6 +48,8 @@ MS_Switches_Cost = 3
 Pipeline_Width = 4
 OneMillion = 1000000
 OneBillion = 1000000000
+EBS_Mode = 0
+DS = 1
 
 # Aux. formulas
 
@@ -161,13 +166,13 @@ def CoreIPC(self, EV, level):
 def FLOPc(self, EV, level):
     return FLOP_Count(self, EV, level) / CORE_CLKS(self, EV, level)
 
-# Instruction-Level-Parallelism (average number of uops executed when there is execution) per logical-processor
+# Instruction-Level-Parallelism (average number of uops executed when there is execution) per thread (logical-processor)
 def ILP(self, EV, level):
     return EV("UOPS_DISPATCHED.THREAD", level) / Execute_Cycles(self, EV, level)
 
 # Core actual clocks when any Logical Processor is active on the Physical Core
 def CORE_CLKS(self, EV, level):
-    return (EV("CPU_CLK_UNHALTED.THREAD_ANY", level) / 2) if smt_enabled else CLKS(self, EV, level)
+    return ((EV("CPU_CLK_UNHALTED.THREAD", level) / 2) * (1 + EV("CPU_CLK_UNHALTED.ONE_THREAD_ACTIVE", level) / EV("CPU_CLK_UNHALTED.REF_XCLK", level))) if ebs_mode else(EV("CPU_CLK_UNHALTED.THREAD_ANY", level) / 2) if smt_enabled else CLKS(self, EV, level)
 
 # Total number of retired Instructions
 def Instructions(self, EV, level):
@@ -185,11 +190,11 @@ def DSB_Coverage(self, EV, level):
 
 # Average CPU Utilization (percentage)
 def CPU_Utilization(self, EV, level):
-    return EV("CPU_CLK_UNHALTED.REF_TSC", level) / EV("msr/tsc/", 0)
+    return CPUs_Utilized(self, EV, level) / Num_CPUs(self, EV, level)
 
 # Average number of utilized CPUs
 def CPUs_Utilized(self, EV, level):
-    return Num_CPUs(self, EV, level) * CPU_Utilization(self, EV, level)
+    return EV("CPU_CLK_UNHALTED.REF_TSC", level) / EV("msr/tsc/", 0)
 
 # Measured Average Core Frequency for unhalted processors [GHz]
 def Core_Frequency(self, EV, level):
@@ -199,7 +204,7 @@ def Core_Frequency(self, EV, level):
 def Uncore_Frequency(self, EV, level):
     return Socket_CLKS(self, EV, level) / 1e9 / Time(self, EV, level)
 
-# Giga Floating Point Operations Per Second. Aggregate across all supported options of: FP precisions, scalar and vector instructions, vector-width  .
+# Giga Floating Point Operations Per Second. Aggregate across all supported options of: FP precisions, scalar and vector instructions, vector-width
 def GFLOPs(self, EV, level):
     return (FLOP_Count(self, EV, level) / OneBillion) / Time(self, EV, level)
 
@@ -261,7 +266,7 @@ class Frontend_Bound:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['TmaL1', 'PGO'])
+    metricgroup = frozenset(['BvFB', 'BvIO', 'TmaL1', 'PGO'])
     maxval = None
     def compute(self, EV):
         try:
@@ -323,7 +328,7 @@ class ITLB_Misses:
     sample = ['ITLB_MISSES.WALK_COMPLETED']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BigFootprint', 'FetchLat', 'MemoryTLB'])
+    metricgroup = frozenset(['BigFootprint', 'BvBC', 'FetchLat', 'MemoryTLB'])
     maxval = None
     def compute(self, EV):
         try:
@@ -527,7 +532,7 @@ class Branch_Mispredicts:
     sample = ['BR_MISP_RETIRED.ALL_BRANCHES:pp']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BadSpec', 'BrMispredicts', 'TmaL2'])
+    metricgroup = frozenset(['BadSpec', 'BrMispredicts', 'BvMP', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
@@ -558,7 +563,7 @@ class Machine_Clears:
     sample = ['MACHINE_CLEARS.COUNT']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BadSpec', 'MachineClears', 'TmaL2'])
+    metricgroup = frozenset(['BadSpec', 'BvMS', 'MachineClears', 'TmaL2'])
     maxval = None
     def compute(self, EV):
         try:
@@ -588,7 +593,7 @@ class Backend_Bound:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['TmaL1'])
+    metricgroup = frozenset(['BvOB', 'TmaL1'])
     maxval = None
     def compute(self, EV):
         try:
@@ -650,8 +655,8 @@ class DTLB_Load:
     sample = ['MEM_UOPS_RETIRED.STLB_MISS_LOADS:pp']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryTLB'])
-    maxval = None
+    metricgroup = frozenset(['BvMT', 'MemoryTLB'])
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (Mem_STLB_Hit_Cost * EV("DTLB_LOAD_MISSES.STLB_HIT", 4) + EV("DTLB_LOAD_MISSES.WALK_DURATION", 4)) / CLKS(self, EV, 4)
@@ -730,7 +735,7 @@ class MEM_Bandwidth:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryBW', 'Offcore'])
+    metricgroup = frozenset(['BvMS', 'MemoryBW', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:
@@ -768,7 +773,7 @@ class MEM_Latency:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['MemoryLat', 'Offcore'])
+    metricgroup = frozenset(['BvML', 'MemoryLat', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:
@@ -855,8 +860,8 @@ class Divider:
     sample = ['ARITH.FPU_DIV_ACTIVE']
     errcount = 0
     sibling = None
-    metricgroup = frozenset([])
-    maxval = None
+    metricgroup = frozenset(['BvCB'])
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = EV("ARITH.FPU_DIV_ACTIVE", 3) / CORE_CLKS(self, EV, 3)
@@ -914,7 +919,7 @@ class Retiring:
     sample = ['UOPS_RETIRED.RETIRE_SLOTS']
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['TmaL1'])
+    metricgroup = frozenset(['BvUW', 'TmaL1'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1356,7 +1361,8 @@ class Metric_ILP:
             handle_error_metric(self, "ILP zero division")
     desc = """
 Instruction-Level-Parallelism (average number of uops
-executed when there is execution) per logical-processor"""
+executed when there is execution) per thread (logical-
+processor)"""
 
 
 class Metric_CORE_CLKS:
@@ -1444,7 +1450,7 @@ manual.html"""
 class Metric_CPU_Utilization:
     name = "CPU_Utilization"
     domain = "Metric"
-    maxval = 200
+    maxval = 1
     errcount = 0
     area = "Info.System"
     metricgroup = frozenset(['HPC', 'Summary'])
@@ -1463,7 +1469,7 @@ Average CPU Utilization (percentage)"""
 class Metric_CPUs_Utilized:
     name = "CPUs_Utilized"
     domain = "Metric"
-    maxval = 0
+    maxval = 300
     errcount = 0
     area = "Info.System"
     metricgroup = frozenset(['Summary'])
@@ -1536,7 +1542,7 @@ class Metric_GFLOPs:
     desc = """
 Giga Floating Point Operations Per Second. Aggregate across
 all supported options of: FP precisions, scalar and vector
-instructions, vector-width  ."""
+instructions, vector-width"""
 
 
 class Metric_Turbo_Utilization:

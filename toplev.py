@@ -3925,6 +3925,9 @@ def init_model(model, runner, pe):
     model.print_error = pe
     model.check_event = lambda ev: ectx.emap.getevent(ev) is not None
     model.Setup(runner)
+    model.num_cores = len(cpu.coreids) # includes sockets
+    if cpu.ht:
+        model.num_threads = 2
 
     if "Errata_Whitelist" in model.__dict__:
         ectx.errata_whitelist += model.Errata_Whitelist.split(";")
