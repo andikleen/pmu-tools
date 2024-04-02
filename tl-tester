@@ -188,7 +188,6 @@ grep BDE70 log$$
 $WRAP ./toplev.py --force-cpu skl $OPT --filterquals --nodes '!+Bad_Speculation.Branch_Mispredicts^' -o log$$ -v $LOAD
 [ -z "$NORES" ] && grep Branch_Misprediction_Cost log$$
 [ -z "$NORES" ] && grep IpMispredict log$$
-[ -z "$NORES" ] && grep Branch_Mispredicts log$$
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
 if [ -d /sys/devices/cpu_atom ] ; then
 $WRAP ./toplev $NATIVE_ARGS --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $(./cputop 'type=="core"' taskset) $LOADLONG
@@ -197,7 +196,6 @@ $WRAP ./toplev --force-cpu skl --filterquals $OPT --force-bn=Mispredicts_Resteer
 fi
 [ -z "$NORES" ] && grep Branch_Misprediction_Cost log$$
 #[ -z "$NORES" ] && grep IpMispredict log$$
-[ -z "$NORES" ] && grep Branch_Mispredicts log$$
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
 rm log$$
 fi
