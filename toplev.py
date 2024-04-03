@@ -1236,7 +1236,10 @@ def print_perf(r):
     l = [x.replace(";", "\\;") for x in l]
     i = l.index('--log-fd')
     del l[i:i+2]
-    print(" ".join(l))
+    s = " ".join(l)
+    if len(l) > 2:
+         s = s.replace("},", "},\n")
+    print(s)
     sys.stdout.flush()
 
 def gen_script(r):
