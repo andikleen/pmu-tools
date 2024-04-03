@@ -354,7 +354,7 @@ def unsup_event(e, table, kernel_version, min_kernel=None):
     return False
 
 def remove_qual(ev):
-    return re.sub(r':[ku]+', '', re.sub(r'/[ku]+', '/', ev))
+    return re.sub(r':(p?)[ku]+', lambda m: m.group(1), re.sub(r'/(p?)[ku]+', lambda m: '/' + m.group(1), ev))
 
 def limited_overflow(evlist, num):
     class GenericCounters:
@@ -1396,6 +1396,8 @@ class PerfRun(object):
             self.perf.kill()
 
 def separator(x):
+    if ":" in x:
+        return ""
     if x.startswith("cpu"):
         return ""
     return ":"
@@ -1405,10 +1407,7 @@ def add_filter_event(e):
         return e
     if e == "dummy" or e == "emulation-faults" or e == "duration_time":
         return e
-    if ":" in e:
-        s = ""
-    else:
-        s = separator(e)
+    s = separator(e)
     if not e.endswith(s + args.ring_filter):
         return e + s + args.ring_filter
     return e
