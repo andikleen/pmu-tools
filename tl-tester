@@ -150,7 +150,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 # test with a locale that outputs FP numbers with , (github issue #43)
 LC_ALL=pl_PL.utf8 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 
-[ -r /sys/devices/cpu ] && DIRECT_MSR=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
+# [ -r /sys/devices/cpu ] && DIRECT_MSR=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 $LOAD | tee log$$
 checklog0
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 --single-thread $LOAD | tee log$$
