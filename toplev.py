@@ -1447,7 +1447,7 @@ def initialize_event(name, i, e):
         for k, v in ectx.constraint_patterns:
             if nameu.startswith(k):
                 e.counter = v
-        if e.counter == ectx.limit4_counters:
+        if e.counter == ectx.limit4_counters or eo.endswith("/p"):
             ectx.limit4_events.add(i)
         if e.errata and e.errata != "0" and e.errata != "null":
             if e.errata not in ectx.errata_whitelist:
