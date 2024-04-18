@@ -1675,7 +1675,7 @@ class FB_Full:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BvMS', 'MemoryBW'])
+    metricgroup = frozenset(['BvMB', 'MemoryBW'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1837,7 +1837,7 @@ class SQ_Full:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BvMS', 'MemoryBW', 'Offcore'])
+    metricgroup = frozenset(['BvMB', 'MemoryBW', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1885,7 +1885,7 @@ class MEM_Bandwidth:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BvMS', 'MemoryBW', 'Offcore'])
+    metricgroup = frozenset(['BvMB', 'MemoryBW', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:

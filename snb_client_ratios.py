@@ -723,7 +723,7 @@ class MEM_Bandwidth:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BvMS', 'MemoryBW', 'Offcore'])
+    metricgroup = frozenset(['BvMB', 'MemoryBW', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:

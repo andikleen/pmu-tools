@@ -1645,7 +1645,7 @@ class FB_Full:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BvMS', 'MemoryBW'])
+    metricgroup = frozenset(['BvMB', 'MemoryBW'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1807,7 +1807,7 @@ class SQ_Full:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BvMS', 'MemoryBW', 'Offcore'])
+    metricgroup = frozenset(['BvMB', 'MemoryBW', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:
@@ -1855,7 +1855,7 @@ class MEM_Bandwidth:
     sample = []
     errcount = 0
     sibling = None
-    metricgroup = frozenset(['BvMS', 'MemoryBW', 'Offcore'])
+    metricgroup = frozenset(['BvMB', 'MemoryBW', 'Offcore'])
     maxval = None
     def compute(self, EV):
         try:
@@ -5206,7 +5206,7 @@ Measured Average Core Frequency for unhalted processors
 
 class Metric_Uncore_Frequency:
     name = "Uncore_Frequency"
-    domain = ""
+    domain = "SystemMetric"
     maxval = 0
     errcount = 0
     area = "Info.System"
