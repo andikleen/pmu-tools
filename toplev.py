@@ -1238,7 +1238,7 @@ def print_perf(r):
     del l[i:i+2]
     s = " ".join(l)
     if len(l) > 2:
-         s = s.replace("},", "},\n")
+        s = s.replace("},", "},\n")
     print(s)
     sys.stdout.flush()
 
