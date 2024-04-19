@@ -354,7 +354,12 @@ def unsup_event(e, table, kernel_version, min_kernel=None):
     return False
 
 def remove_qual(ev):
-    return re.sub(r':(p?)[ku]+', lambda m: m.group(1), re.sub(r'/(p?)[ku]+', lambda m: '/' + m.group(1), ev))
+    def get_group(prefix, m):
+        if m.group(1):
+            return prefix + m.group(1)
+        return prefix
+
+    return re.sub(r':(p?)[ku]+', lambda m: get_group("", m), re.sub(r'/(p?)[ku]+', lambda m: get_group("/", m), ev))
 
 def limited_overflow(evlist, num):
     class GenericCounters:
