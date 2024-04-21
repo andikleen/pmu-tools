@@ -2239,7 +2239,7 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
     try:
         expected_ev = remove_qual(revnum[off])
     except IndexError:
-        sys.exit("Out of range event %s offset %d (len %d). %s" % (event, off, len(revnum), 
+        sys.exit("Out of range event %s offset %d (len %d). %s" % (event, off, len(revnum),
                  "Mismatch in toplev arguments from recording?" if args.import_ else ""))
     if event != expected_ev:
         en = perf_name(expected_ev)
@@ -2515,7 +2515,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
             dup_val(cpu.coreids[(socket, core)])
         # duration time is only output once, except with --cpu/-C (???)
         # except perf 6.2+ outputs it with -A on all cpus, but not counting except the first
-        elif ((event.startswith("duration_time") or origevent.startswith("duration_time")) 
+        elif ((event.startswith("duration_time") or origevent.startswith("duration_time"))
                 and is_number(title) and not args.cpu and not args.core):
             dup_val(runner.cpu_list)
         else:
