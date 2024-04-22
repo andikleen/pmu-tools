@@ -2425,6 +2425,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
 
         # code later relies on stripping ku flags
         event = remove_qual(event)
+        event = re.sub(r'\s+\[.*\]', '', event)
 
         # duplicated duration_time in perf ~6.5. was already added from the first.
         if event == "duration_time" and count == "<not counted>":
