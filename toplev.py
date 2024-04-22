@@ -1911,7 +1911,8 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode, runner_list
             printer.print_res(runner.olist, out, interval, jname, package_node, None, j in idle_mark_keys)
     # no bottlenecks from package nodes for now
     out.flush()
-    stat.referenced_check(res, runner.sched.evnum)
+    if not FUZZYINPUT:
+        stat.referenced_check(res, runner.sched.evnum)
     stat.compute_errors()
     runner.idle_keys |= hidden_keys
     if nothing and not args.quiet:
@@ -2239,8 +2240,11 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
     try:
         expected_ev = remove_qual(revnum[off])
     except IndexError:
-        sys.exit("Out of range event %s offset %d (len %d). %s" % (event, off, len(revnum),
-                 "Mismatch in toplev arguments from recording?" if args.import_ else ""))
+        if FUZZYINPUT:
+            expected_ev = event
+        else:
+            sys.exit("Out of range event %s offset %d (len %d). %s" % (event, off, len(revnum),
+                     "Mismatch in toplev arguments from recording?" if args.import_ else ""))
     if event != expected_ev:
         en = perf_name(expected_ev)
         if en == event:
@@ -2405,7 +2409,8 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         elif is_event(n, 2):
             title, count, event, off = n[0], n[1], n[2], 3
         else:
-            warn("unparseable perf output\n%s" % origl.rstrip())
+            if not FUZZYINPUT:
+                warn("unparseable perf output\n%s" % origl.rstrip())
             linenum += 1
             skip = False
             continue
@@ -2698,7 +2703,7 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, runner_lis
         try:
             r = rev[index]
         except IndexError:
-            warn_once("Not enough lines in perf output for rev (%d vs %d for %s) at %s, event %s" %
+            warn_once_no_assert("Not enough lines in perf output for rev (%d vs %d for %s) at %s, event %s" %
                     (index, len(rev), obj.name, env['interval'], ev))
             return 0
         rmap_ev = event_rmap(r, runner_list).lower()

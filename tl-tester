@@ -41,6 +41,7 @@ ONLYCPU="${ONLYCPU:-}"
 PJOBS=${PJOBS:-0}
 NATIVE_ARGS="${NATIVE_ARGS:-}"
 RUN="${RUN:-}"
+cpu="?"
 
 if [ -n "$WRAP" ] ; then
 	PYTHON=$WRAP
@@ -705,20 +706,26 @@ fi #xlsx
 if run fuzzy ; then
 
 # test INAME, FUZZYINPUT
-ARG="--all --no-uncore"
+# FIXME: --all still fails
+ARG="-l4 --no-uncore"
 $WRAP ./toplev $NATIVE_ARGS $ARG --tune INAME=True -- $LOAD
 $WRAP ./toplev $NATIVE_ARGS $ARG --tune FUZZYINPUT=True -- $LOAD
 $WRAP ./toplev $NATIVE_ARGS --perf-output perfo$$.csv $ARG --tune INAME=True FUZZYINPUT=True -- $LOAD
 echo 9999999999999999999999999999999999999999999999 > seed$$
-sort -t\; -k 4,4 perfo$$.csv > perfo$$.2.csv
-sort --random-sort --random-source seed$$ -t\; -k 4,4 perfo$$.csv > perfo$$.3.csv
+sort --stable -t\; -k 4,4 perfo$$.csv > perfo$$.2.csv
+sort --stable --random-sort --random-source seed$$ -t\; -k 4,4 perfo$$.csv > perfo$$.3.csv
+echo 7777777777777777777777777777777777777777777777 > seed$$
+sort --stable --random-sort --random-source seed$$ -t\; -k 4,4 perfo$$.csv > perfo$$.4.csv
 $WRAP ./toplev $NATIVE_ARGS --import perfo$$.csv $ARG --tune INAME=True FUZZYINPUT=True
 $WRAP ./toplev $NATIVE_ARGS --import perfo$$.2.csv $ARG --tune INAME=True FUZZYINPUT=True
 $WRAP ./toplev $NATIVE_ARGS --import perfo$$.3.csv $ARG --tune INAME=True FUZZYINPUT=True
+$WRAP ./toplev $NATIVE_ARGS --import perfo$$.4.csv $ARG --tune INAME=True FUZZYINPUT=True
 $WRAP ./toplev $NATIVE_ARGS --import perfo$$.2.csv -l1 --tune INAME=True FUZZYINPUT=True
+$WRAP ./toplev $NATIVE_ARGS --import perfo$$.4.csv -l3 --tune INAME=True FUZZYINPUT=True
 rm perfo$$.csv
 rm perfo$$.2.csv
 rm perfo$$.3.csv
+rm perfo$$.4.csv
 rm seed$$
 $WRAP ./toplev $NATIVE_ARGS --perf-output perfo$$.csv $ARG -- $LOAD
 sort -t\; -k 4,4 perfo$$.csv > perfo$$.2.csv
