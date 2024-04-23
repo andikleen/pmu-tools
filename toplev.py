@@ -2316,7 +2316,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
     linenum = 1
     skip = False
     last_linenum = [0]
-    fallback = {}
+    fallback = {} # type: Dict[Tuple[str,str], Tuple[float, ValStat]]
     need_fallback = False
     if not args.import_ and not args.interval:
         start = time.time()
