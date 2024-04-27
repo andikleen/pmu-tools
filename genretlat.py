@@ -150,12 +150,32 @@ def human_output(data):
                 print("%s %s " % (m.lower(), d[ev][m]), end="")
         print()
 
-def find_model():
-    import mtl_rwc_ratios
-    return mtl_rwc_ratios
+def find_model(args):
+    if not args.cpu:
+        cpu = open("/sys/devices/cpu/caps/pmu_name").read()
+        if cpu == "meteorlake_hybrid":
+            args.cpu = "mtl"
+        elif cpu == "sapphire_rapids":
+            m = [n for n in open("/proc/cpuinfo") if n.startswith("model ")]
+            model = int(m[0].split()[2])
+            if model == 0xad or model == 0xae:
+                args.cpu = "gnr"
+            else:
+                sys.exit("Unsupported CPU %d" % model)
+        elif cpu == "granite_rapids":
+            args.cpu = "gnr"
+        else:
+            sys.exit("Unsupported CPU %s" % cpu)
+    if args.cpu == "mtl":
+        import mtl_rwc_ratios
+        return mtl_rwc_ratios
+    elif args.cpu == "gnr":
+        import gnr_server_ratios
+        return gnr_server_ratios
+    sys.exit("Unknown cpu %s" % args.cpu)
 
-def gen_events():
-    model = find_model()
+def gen_events(args):
+    model = find_model(args)
 
     nodes = []
     class Runner(object):
@@ -196,6 +216,7 @@ def init_args():
     ap.add_argument('--pmu', '-p', nargs='*', default=["cpu", "cpu_core"], help="for which PMUs to collect")
     ap.add_argument('--quiet', '-q', action='store_true')
     ap.add_argument('--csv', '-c', type=argparse.FileType('w'), help="Generate CSV file with pushout latencies", default=None)
+    ap.add_argument('--cpu', help="Set CPU type (gnr, mtl)")
     args, rest = ap.parse_known_args()
     if args.csv:
         args.csvplot = csv.writer(args.csv)
@@ -205,7 +226,7 @@ def init_args():
 
 def main():
     args, rest = init_args()
-    events = gen_events()
+    events = gen_events(args)
     pmus = ocperf.find_pmus()
     emap = ocperf.find_emap(pmu=[x for x in pmus if x != "cpu_atom"][0])
     pevents = [getevent(emap, e) for e in events]
