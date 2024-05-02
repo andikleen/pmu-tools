@@ -150,14 +150,21 @@ def human_output(data):
                 print("%s %s " % (m.lower(), d[ev][m]), end="")
         print()
 
+def get_model_number():
+    with open("/proc/cpuinfo") as f:
+        for l in f:
+            n = l.split()
+            if len(n) >= 3 and n[0] == "model" and n[1] == ":":
+                return int(n[2])
+    return 0
+
 def find_model(args):
     if not args.cpu:
-        cpu = open("/sys/devices/cpu/caps/pmu_name").read()
+        cpu = open("/sys/devices/cpu/caps/pmu_name").read().strip()
         if cpu == "meteorlake_hybrid":
             args.cpu = "mtl"
         elif cpu == "sapphire_rapids":
-            m = [n for n in open("/proc/cpuinfo") if n.startswith("model ")]
-            model = int(m[0].split()[2])
+            model = get_model_number()
             if model == 0xad or model == 0xae:
                 args.cpu = "gnr"
             else:
