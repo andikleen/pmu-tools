@@ -249,7 +249,7 @@ def main():
         samples[ev].append(weight)
     data = { "Data": { ev.upper().replace("CPU_CORE","").replace("/","").replace(":","").replace("RETIRED_", "RETIRED."): gen_stat(s)
                        for ev, s in samples.items()
-                       if any([x in ev for x in args.pmu]) } }
+                       if "/" not in ev or any([x in ev for x in args.pmu]) } }
     json.dump(data, args.output, indent=2, sort_keys=True)
     if not args.quiet:
         human_output(data)
