@@ -2745,8 +2745,6 @@ def sample_event(e, emap):
     if not ev:
         raise BadEvent(e)
     postfix = args.ring_filter
-    if ev.pebs and int(ev.pebs):
-        postfix = "pp"
     if postfix:
         postfix = ":" + postfix
     return ev.name + postfix

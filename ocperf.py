@@ -76,7 +76,6 @@ import latego
 import event_download
 
 force_download = False
-pebs_enable = "p"
 experimental = False
 ocverbose = os.getenv("OCVERBOSE") is not None
 
@@ -266,7 +265,8 @@ class Event(object):
         self.msr = 0
         self.msrval = 0
         self.desc = desc
-        self.pebs = 0
+        self.precise = 0
+        self.collectpebs = 0
         self.newextra = ""
         self.overflow = None
         self.errata = None
@@ -671,13 +671,10 @@ class EmapNativeJSON(object):
                     e.msr = msrnum
             if u'SampleAfterValue' in row:
                 e.overflow = get(u'SampleAfterValue')
-            e.pebs = get(u'PEBS')
-            if e.pebs and int(e.pebs):
-                if name.endswith("_ps") or int(e.pebs) == 2:
-                    e.extra += pebs_enable
-                    d += " (Uses PEBS)"
-                else:
-                    d = d.replace("(Precise Event)","") + " (Supports PEBS)"
+            e.precise = getdec(u'Precise') if u'Precise' in row else 0
+            e.collectpebs = getdec(u'CollectPEBS') if u'CollectPEBS' in row else 0
+            if e.collectpebs > 1:
+                e.extra += "pp"
             try:
                 if get(u'Errata') != "null":
                     try:
