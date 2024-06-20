@@ -60,7 +60,10 @@ import json
 import re
 import copy
 import textwrap
-import pipes
+if sys.version_info.major == 2:
+    from pipes import quote
+else:
+    from shlex import quote
 import itertools
 import glob
 from pmudef import EVENTSEL_ANY, EVENTSEL_INV, EVMASK, extra_flags
@@ -1136,7 +1139,7 @@ Specify the -e events before -c default or event has no overflow field.""", file
         else:
             cmd.append(sys.argv[i])
         i += 1
-    print(" ".join(map(pipes.quote, cmd)))
+    print(" ".join(map(quote, cmd)))
     if print_only:
         sys.exit(0)
     return cmd
