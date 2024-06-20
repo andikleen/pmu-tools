@@ -610,19 +610,19 @@ class EmapNativeJSON(object):
         self.desc[e.name] = e.desc
         e.pmu = self.pmu
 
-    def read_table(self, r, m):
+    def read_table(self, r):
         for row in r:
             def get(x):
-                return row[m[x]]
+                return row[x]
             def gethex(x):
                 return int(get(x).split(",")[0], 16)
             def getdec(x):
                 return int(get(x), 10)
 
-            name = get('name').lower().rstrip()
+            name = get(u'EventName').lower().rstrip()
             try:
-                code = gethex('code')
-                umask = gethex('umask')
+                code = gethex(u'EventCode')
+                umask = gethex(u'UMask')
             except ValueError:
                 if ocverbose:
                     print("cannot parse event", name)
@@ -630,18 +630,18 @@ class EmapNativeJSON(object):
             anyf = 0
             if name in fixed_counters:
                 code, umask, anyf = fixed_counters[name]
-            if m['other'] in row:
-                other = gethex('other') << 16
+            if u'Other' in row:
+                other = gethex(u'Other') << 16
             else:
                 other = 0
-            other |= gethex('edge') << 18
-            if m['any'] in row:
-                other |= (gethex('any') | anyf) << 21
-            other |= getdec('cmask') << 24
-            other |= gethex('invert') << 23
+            other |= gethex(u'EdgeDetect') << 18
+            if u'AnyThread' in row:
+                other |= (gethex(u'AnyThread') | anyf) << 21
+            other |= getdec(u'CounterMask') << 24
+            other |= gethex(u'Invert') << 23
             val = code | (umask << 8) | other
             val &= EVMASK
-            d = get('desc')
+            d = get(u'PublicDescription')
             if d is None:
                 d = ''
             d = d.strip()
@@ -653,9 +653,9 @@ class EmapNativeJSON(object):
                 if other & (1 << 17):
                     e.extra += "k"
             e.perfqual = None
-            if (m['msr_index'] in row and get('msr_index') and get('msr_value')):
-                msrnum = gethex('msr_index')
-                msrval = gethex('msr_value')
+            if u'MSRIndex' in row and get(u'MSRIndex') and get(u'MSRValue'):
+                msrnum = gethex(u'MSRIndex')
+                msrval = gethex(u'MSRValue')
                 if version.offcore and msrnum in (0x1a6, 0x1a7):
                     e.newextra = ",offcore_rsp=0x%x" % (msrval, )
                     e.perfqual = "offcore_rsp"
@@ -669,9 +669,9 @@ class EmapNativeJSON(object):
                 else:
                     e.msrval = msrval
                     e.msr = msrnum
-            if m['overflow'] in row:
-                e.overflow = get('overflow')
-            e.pebs = get('pebs')
+            if u'SampleAfterValue' in row:
+                e.overflow = get(u'SampleAfterValue')
+            e.pebs = get(u'PEBS')
             if e.pebs and int(e.pebs):
                 if name.endswith("_ps") or int(e.pebs) == 2:
                     e.extra += pebs_enable
@@ -679,21 +679,21 @@ class EmapNativeJSON(object):
                 else:
                     d = d.replace("(Precise Event)","") + " (Supports PEBS)"
             try:
-                if get('errata') != "null":
+                if get(u'Errata') != "null":
                     try:
                         d += " Errata: "
-                        d += get('errata')
-                        e.errata = get('errata')
+                        d += get(u'Errata')
+                        e.errata = get(u'Errata')
                     except UnicodeDecodeError:
                         pass
             except KeyError:
                 pass
             e.desc = d
-            e.counter = get('counter')
+            e.counter = get(u'Counter')
             for (flag, name) in extra_flags:
                 if val & flag:
                     e.newextra += ",%s=%d" % (name, (val & flag) >> ffs(flag), )
-            e.period = int(get('sav')) if m['sav'] in row else 0
+            e.period = int(get(u'SampleAfterValue')) if u'SampleAfterValue' in row else 0
             self.add_event(e)
 
     def getevent(self, e, nocheck=False, extramsg=[]):
@@ -784,24 +784,6 @@ class EmapNativeJSON(object):
 
     def read_events(self, name):
         """Read JSON normal events table."""
-        mapping = {
-            'name': u'EventName',
-            'code': u'EventCode',
-            'umask': u'UMask',
-            'msr_index': u'MSRIndex',
-            'msr_value': u'MSRValue',
-            'cmask': u'CounterMask',
-            'invert': u'Invert',
-            'any': u'AnyThread',
-            'edge': u'EdgeDetect',
-            'desc': u'PublicDescription',
-            'pebs': u'PEBS',
-            'counter': u'Counter',
-            'overflow': u'SampleAfterValue',
-            'errata': u'Errata',
-            'sav': u'SampleAfterValue',
-            'other': u'Other',
-        }
         if name.find("JKT") >= 0 or name.find("Jaketown") >= 0:
             self.latego = True
         try:
@@ -812,7 +794,7 @@ class EmapNativeJSON(object):
             return
         if u'PublicDescription' not in data[0]:
             mapping['desc'] = u'BriefDescription'
-        self.read_table(data, mapping)
+        self.read_table(data)
         if "topdown.slots" in self.events:
             self.add_topdown()
 
