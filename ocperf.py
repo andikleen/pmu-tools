@@ -671,10 +671,14 @@ class EmapNativeJSON(object):
                     e.msr = msrnum
             if u'SampleAfterValue' in row:
                 e.overflow = get(u'SampleAfterValue')
+            e.counter = get(u'Counter')
             e.precise = getdec(u'Precise') if u'Precise' in row else 0
             e.collectpebs = getdec(u'CollectPEBS') if u'CollectPEBS' in row else 0
-            if e.collectpebs > 1:
+            e.pebs = getdec(u'PEBS') if u'PEBS' in row else 0
+            if e.collectpebs > 1 or e.pebs >= 2:
                 e.extra += "pp"
+                if len(e.counter.split(",")) == 1:
+                    e.extra += "p"
             try:
                 if get(u'Errata') != "null":
                     try:
@@ -686,7 +690,6 @@ class EmapNativeJSON(object):
             except KeyError:
                 pass
             e.desc = d
-            e.counter = get(u'Counter')
             for (flag, name) in extra_flags:
                 if val & flag:
                     e.newextra += ",%s=%d" % (name, (val & flag) >> ffs(flag), )
