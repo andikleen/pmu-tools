@@ -789,8 +789,6 @@ class EmapNativeJSON(object):
             print("Cannot parse", name + ":", e.message, file=sys.stderr)
             self.error = True
             return
-        if u'PublicDescription' not in data[0]:
-            mapping['desc'] = u'BriefDescription'
         self.read_table(data)
         if "topdown.slots" in self.events:
             self.add_topdown()
