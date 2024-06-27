@@ -1,10 +1,10 @@
-name: jevents build
+name: jevents build and test
 
 on:
   push:
-    branches: [ master, test ]
+    branches: [ master, test* ]
   pull_request:
-    branches: [ master, test ]
+    branches: [ master, test* ]
 
 jobs:
   build:
@@ -12,11 +12,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: make
       run: |
         cd jevents ; make
     - name: tester
       run: |
-        #cd jevents ; ./tester disabled for now, need more mocking for the github env
-  
+        ./event_download.py GenuineIntel-6-55-4
+        cd jevents ; EVENTMAP=GenuineIntel-6-55-4 ./tester
