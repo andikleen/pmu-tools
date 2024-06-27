@@ -60,13 +60,19 @@ int main(int ac, char **av)
 		verbose = 1;
 	}
 
-	read_events(NULL);
+	if (read_events(NULL) < 0) {
+		fprintf(stderr, "Error reading JSON data\n");
+		exit(1);
+	}
 	struct walk_data wd = { .match = av[1] };
 	walk_events(count_event, &wd);
 	walk_perf_events(count_event, &wd);
 	wd.events = calloc(sizeof(struct event), wd.count);
 	walk_events(store_event, &wd);
-	walk_perf_events(store_event, &wd);
+	if (walk_perf_events(store_event, &wd) < 0) {
+		fprintf(stderr, "Error reading perf events\n");
+		exit(1);
+	}
 	qsort(wd.events, wd.count, sizeof(struct event), cmp_events);
 	int i;
 	for (i = 0; i < wd.count; i++) {
