@@ -24,6 +24,7 @@ else
 	E=instructions
 fi
 
+if [ -r /sys/devices/cpu*/events/instructions ] ; then
 $V jestat true
 $V jestat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
 $V jestat -e "{cpu-cycles,cpu_clk_unhalted.ref_tsc},{$E,cache-references}" -a sleep 1
@@ -51,11 +52,15 @@ done
 
 $V showevent $E
 
+fi
+
 $V event-rmap $E
 
+if [ -r /sys/devices/cpu*/events/instructions ] ; then
 $V examples/addr
 examples/rtest
 examples/rtest2
+fi
 
 trap "" ERR 0
 
