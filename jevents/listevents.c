@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fnmatch.h>
+#include <errno.h>
 #include <assert.h>
 #include "jevents.h"
 
@@ -55,13 +56,16 @@ static int cmp_events(const void *ap, const void *bp)
 
 int main(int ac, char **av)
 {
+	int err;
+
 	if (av[1] && !strcmp(av[1], "-v")) {
 		av++;
 		verbose = 1;
 	}
 
-	if (read_events(NULL) < 0) {
-		fprintf(stderr, "Error reading JSON data\n");
+	err = read_events(NULL);
+	if (err < 0) {
+		fprintf(stderr, "Error reading JSON data: %s\n", strerror(errno));
 		exit(1);
 	}
 	struct walk_data wd = { .match = av[1] };
@@ -69,8 +73,9 @@ int main(int ac, char **av)
 	walk_perf_events(count_event, &wd);
 	wd.events = calloc(sizeof(struct event), wd.count);
 	walk_events(store_event, &wd);
-	if (walk_perf_events(store_event, &wd) < 0) {
-		fprintf(stderr, "Error reading perf events\n");
+	err = walk_perf_events(store_event, &wd);
+	if (err < 0) {
+		fprintf(stderr, "Error reading perf events: %s\n", strerror(err));
 		exit(1);
 	}
 	qsort(wd.events, wd.count, sizeof(struct event), cmp_events);
