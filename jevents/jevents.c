@@ -36,6 +36,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <assert.h>
 #include <pwd.h>
 #include "jsmn.h"
 #include "json.h"
@@ -260,41 +261,19 @@ static struct msrmap *lookup_msr(char *map, jsmntok_t *val)
 	return NULL;
 }
 
-/**
- * json_events - Read JSON event file from disk and call event callback.
- * @fn: File name to read or NULL for default.
- * @func: Callback to call for each event
- * @data: Abstract pointer to pass to func.
- *
- * The callback gets the data pointer, the event name, the event
- * in perf format and a description passed.
- *
- * Call func with each event in the json file
- * Return: negative on failure, otherwise 0.
- */
-int json_events(const char *fn,
-	  int (*func)(void *data, char *name, char *event, char *desc, char *pmu),
-	  void *data)
+/* Parse an array of events */
+static int parse_json_array(const char *fn, jsmntok_t *tokens,
+			    int (*func)(void *data, char *name, char *event, char *desc, char *pmu),
+			    void *data,
+			    char *map,
+			    jsmntok_t **tokp)
 {
 	int err = -EIO;
-	size_t size;
-	jsmntok_t *tokens, *tok;
-	int i, j, len;
-	char *map;
+	jsmntok_t *tok;
+	int i, j;
 	char buf[128];
-	const char *orig_fn = fn;
 
-	if (!fn)
-		fn = json_default_name("-core");
-	if (!fn)
-		return -ENOMEM;
-	tokens = parse_json(fn, &map, &size, &len);
-	if (!tokens) {
-		if(!orig_fn)
-			free((char *) fn);
-		return -EIO;
-	}
-	EXPECT(tokens->type == JSMN_ARRAY, tokens, "expected top level array");
+	EXPECT(tokens->type == JSMN_ARRAY, tokens, "expected array");
 	tok = tokens + 1;
 	for (i = 0; i < tokens->size; i++) {
 		char *event = NULL, *desc = NULL, *name = NULL;
@@ -399,6 +378,67 @@ int json_events(const char *fn,
 		if (err)
 			break;
 		tok += j;
+	}
+	*tokp = tok;
+	return 0;
+out_free:
+	return -EIO;
+}
+
+/**
+ * json_events - Read JSON event file from disk and call event callback.
+ * @fn: File name to read or NULL for default.
+ * @func: Callback to call for each event
+ * @data: Abstract pointer to pass to func.
+ *
+ * The callback gets the data pointer, the event name, the event
+ * in perf format and a description passed.
+ *
+ * Call func with each event in the json file
+ * Return: negative on failure, otherwise 0.
+ */
+int json_events(const char *fn,
+	  int (*func)(void *data, char *name, char *event, char *desc, char *pmu),
+	  void *data)
+{
+	int err = -EIO;
+	size_t size;
+	jsmntok_t *tokens, *tok, *obj;
+	int len, i, j;
+	char *map;
+	const char *orig_fn = fn;
+
+	if (!fn)
+		fn = json_default_name("-core");
+	if (!fn)
+		return -ENOMEM;
+	tokens = parse_json(fn, &map, &size, &len);
+	if (!tokens) {
+		if(!orig_fn)
+			free((char *) fn);
+		return -EIO;
+	}
+	tok = tokens;
+	if (tok->type == JSMN_OBJECT) {
+		obj = tok++;
+		for (i = 0; i < obj->size; i += 2) {
+			jsmntok_t *field = tok;
+			EXPECT(tok->type == JSMN_STRING, tok, "expect top level header string");
+			tok++;
+			if (json_streq(map, field, "Events")) {
+				err = parse_json_array(fn, tok, func, data, map, &tok);
+				if (err)
+					goto out_free;
+			} else {
+				jsmntok_t *nobj = tok;
+				EXPECT(nobj->type == JSMN_OBJECT, nobj, "expected object for unknown fields");
+				tok++;
+				for (j = 0; j < nobj->size; j++) {
+					EXPECT(tok[j].type == JSMN_STRING, tok + j, "expect header or val string");
+				}
+				tok += nobj->size;
+			}
+		}
 	}
 	EXPECT(tok - tokens == len, tok, "unexpected objects at end");
 	err = 0;
