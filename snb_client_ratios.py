@@ -1,6 +1,6 @@
 # -*- coding: latin-1 -*-
 #
-# auto generated TopDown/TMA 4.8-full-perf description for Intel 2nd gen Core (code named SandyBridge)
+# auto generated TopDown/TMA 5.0-full-perf description for Intel 2nd gen Core (code named SandyBridge)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -16,7 +16,7 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.8-full-perf"
+version = "5.0-full-perf"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
@@ -67,19 +67,17 @@ def Fetched_Uops(self, EV, level):
     return (EV("IDQ.DSB_UOPS", level) + EV("LSD.UOPS", level) + EV("IDQ.MITE_UOPS", level) + EV("IDQ.MS_UOPS", level))
 
 def Few_Uops_Executed_Threshold(self, EV, level):
-    EV("UOPS_DISPATCHED.THREAD:c3", level)
     EV("UOPS_DISPATCHED.THREAD:c2", level)
+    EV("UOPS_DISPATCHED.THREAD:c3", level)
     return EV("UOPS_DISPATCHED.THREAD:c3", level) if (IPC(self, EV, level)> 1.8) else EV("UOPS_DISPATCHED.THREAD:c2", level)
 
 # Floating Point computational (arithmetic) Operations Count
 def FLOP_Count(self, EV, level):
     return (1 *(EV("FP_COMP_OPS_EXE.SSE_SCALAR_SINGLE", level) + EV("FP_COMP_OPS_EXE.SSE_SCALAR_DOUBLE", level)) + 2 * EV("FP_COMP_OPS_EXE.SSE_PACKED_DOUBLE", level) + 4 *(EV("FP_COMP_OPS_EXE.SSE_PACKED_SINGLE", level) + EV("SIMD_FP_256.PACKED_DOUBLE", level)) + 8 * EV("SIMD_FP_256.PACKED_SINGLE", level))
 
-# Floating Point computational (arithmetic) Operations Count
 def FP_Arith_Scalar(self, EV, level):
     return EV("FP_COMP_OPS_EXE.SSE_SCALAR_SINGLE", level) + EV("FP_COMP_OPS_EXE.SSE_SCALAR_DOUBLE", level)
 
-# Floating Point computational (arithmetic) Operations Count
 def FP_Arith_Vector(self, EV, level):
     return EV("FP_COMP_OPS_EXE.SSE_PACKED_DOUBLE", level) + EV("FP_COMP_OPS_EXE.SSE_PACKED_SINGLE", level) + EV("SIMD_FP_256.PACKED_SINGLE", level) + EV("SIMD_FP_256.PACKED_DOUBLE", level)
 
@@ -124,7 +122,6 @@ def Recovery_Cycles(self, EV, level):
 def Retire_Fraction(self, EV, level):
     return Retired_Slots(self, EV, level) / EV("UOPS_ISSUED.ANY", level)
 
-# Retired slots per Logical Processor
 def Retired_Slots(self, EV, level):
     return EV("UOPS_RETIRED.RETIRE_SLOTS", level)
 
@@ -187,6 +184,10 @@ def DSB_Coverage(self, EV, level):
     val = EV("IDQ.DSB_UOPS", level) / Fetched_Uops(self, EV, level)
     self.thresh = (val < 0.7) and HighIPC(self, EV, 1)
     return val
+
+# Taken Branches retired Per Cycle
+def TBpC(self, EV, level):
+    return EV("BR_INST_RETIRED.NEAR_TAKEN", level) / CLKS(self, EV, level)
 
 # Average CPU Utilization (percentage)
 def CPU_Utilization(self, EV, level):
@@ -450,9 +451,9 @@ higher bandwidth than the MITE (legacy instruction decode
 pipeline). Switching between the two pipelines can cause
 penalties hence this metric measures the exposed penalty..
 See section 'Optimization for Decoded Icache' in
-Optimization Manual:. http://www.intel.com/content/www/us/en
-/architecture-and-technology/64-ia-32-architectures-
-optimization-manual.html"""
+Optimization Manual:.
+http://www.intel.com/content/www/us/en/architecture-and-
+technology/64-ia-32-architectures-optimization-manual.html"""
 
 
 class Fetch_Bandwidth:
@@ -1092,8 +1093,8 @@ class FP_Vector_128b:
     desc = """
 This metric approximates arithmetic FP vector uops fraction
 the CPU has retired for 128-bit wide vectors. May overcount
-due to FMA double counting.. Try to exploit wider vector
-length"""
+due to FMA double counting prior to LNL.. Try to exploit
+wider vector length"""
 
 
 class FP_Vector_256b:
@@ -1117,8 +1118,8 @@ class FP_Vector_256b:
     desc = """
 This metric approximates arithmetic FP vector uops fraction
 the CPU has retired for 256-bit wide vectors. May overcount
-due to FMA double counting.. Try to exploit wider vector
-length"""
+due to FMA double counting prior to LNL.. Try to exploit
+wider vector length"""
 
 
 class Heavy_Operations:
@@ -1433,6 +1434,25 @@ or Uop Cache). See section 'Decoded ICache' in Optimization
 Manual. http://www.intel.com/content/www/us/en/architecture-
 and-technology/64-ia-32-architectures-optimization-
 manual.html"""
+
+
+class Metric_TBpC:
+    name = "TBpC"
+    domain = "Metric"
+    maxval = 0
+    errcount = 0
+    area = "Info.Frontend"
+    metricgroup = frozenset(['Branches', 'FetchBW'])
+    sibling = None
+
+    def compute(self, EV):
+        try:
+            self.val = TBpC(self, EV, 0)
+            self.thresh = True
+        except ZeroDivisionError:
+            handle_error_metric(self, "TBpC zero division")
+    desc = """
+Taken Branches retired Per Cycle"""
 
 
 class Metric_CPU_Utilization:
@@ -1759,6 +1779,7 @@ class Setup:
         n = Metric_Instructions() ; r.metric(n) ; o["Instructions"] = n
         n = Metric_Retire() ; r.metric(n) ; o["Retire"] = n
         n = Metric_DSB_Coverage() ; r.metric(n) ; o["DSB_Coverage"] = n
+        n = Metric_TBpC() ; r.metric(n) ; o["TBpC"] = n
         n = Metric_CPU_Utilization() ; r.metric(n) ; o["CPU_Utilization"] = n
         n = Metric_CPUs_Utilized() ; r.metric(n) ; o["CPUs_Utilized"] = n
         n = Metric_Core_Frequency() ; r.metric(n) ; o["Core_Frequency"] = n
@@ -1779,29 +1800,29 @@ class Setup:
         o["Branch_Mispredicts"].Bad_Speculation = o["Bad_Speculation"]
         o["Machine_Clears"].Bad_Speculation = o["Bad_Speculation"]
         o["Machine_Clears"].Branch_Mispredicts = o["Branch_Mispredicts"]
-        o["Backend_Bound"].Retiring = o["Retiring"]
         o["Backend_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Backend_Bound"].Frontend_Bound = o["Frontend_Bound"]
-        o["Memory_Bound"].Retiring = o["Retiring"]
+        o["Backend_Bound"].Retiring = o["Retiring"]
         o["Memory_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Memory_Bound"].Frontend_Bound = o["Frontend_Bound"]
         o["Memory_Bound"].Backend_Bound = o["Backend_Bound"]
         o["Memory_Bound"].Fetch_Latency = o["Fetch_Latency"]
+        o["Memory_Bound"].Retiring = o["Retiring"]
         o["MEM_Latency"].MEM_Bandwidth = o["MEM_Bandwidth"]
-        o["Core_Bound"].Retiring = o["Retiring"]
-        o["Core_Bound"].Frontend_Bound = o["Frontend_Bound"]
-        o["Core_Bound"].Memory_Bound = o["Memory_Bound"]
         o["Core_Bound"].Backend_Bound = o["Backend_Bound"]
-        o["Core_Bound"].Bad_Speculation = o["Bad_Speculation"]
+        o["Core_Bound"].Frontend_Bound = o["Frontend_Bound"]
         o["Core_Bound"].Fetch_Latency = o["Fetch_Latency"]
+        o["Core_Bound"].Bad_Speculation = o["Bad_Speculation"]
+        o["Core_Bound"].Memory_Bound = o["Memory_Bound"]
+        o["Core_Bound"].Retiring = o["Retiring"]
         o["Ports_Utilization"].Fetch_Latency = o["Fetch_Latency"]
         o["Retiring"].Heavy_Operations = o["Heavy_Operations"]
-        o["Light_Operations"].Retiring = o["Retiring"]
         o["Light_Operations"].Heavy_Operations = o["Heavy_Operations"]
         o["Light_Operations"].Microcode_Sequencer = o["Microcode_Sequencer"]
+        o["Light_Operations"].Retiring = o["Retiring"]
         o["FP_Arith"].FP_Scalar = o["FP_Scalar"]
-        o["FP_Arith"].X87_Use = o["X87_Use"]
         o["FP_Arith"].FP_Vector = o["FP_Vector"]
+        o["FP_Arith"].X87_Use = o["X87_Use"]
         o["Heavy_Operations"].Microcode_Sequencer = o["Microcode_Sequencer"]
 
         # siblings cross-tree

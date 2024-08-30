@@ -95,6 +95,8 @@ known_cpus = (
     ("ehl", (150, )),
     ("srf", (175, 206 )),
     ("sprmax", ()),
+    ("gnr", (173, 174)),
+    ("lnl", (189, )),
     ("mtl", (170, 186, )),
     ("mtl-cmt", (170, 186, )),
     ("mtl-rwc", (170, 186, )),
@@ -104,10 +106,10 @@ eventlist_alias = {
 } # type: Dict[str,str]
 
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "icx",
-            "spr", "sprmax")
+            "spr", "sprmax", "gnr")
 
-hybrid_cpus = ("adl", "mtl",)
-atom_hybrid_cpus = ("adl-grt", "mtl-cmt",)
+hybrid_cpus = ("adl", "mtl")
+atom_hybrid_cpus = ("adl-grt", "mtl-cmt", )
 
 non_json_events = set(("dummy", "duration_time"))
 
@@ -115,7 +117,7 @@ tma_mgroups = set() # type: Set[str]
 
 # tunables (tunable with --tune)
 
-DEDUP_AREA = "Info.Bot*"
+DEDUP_AREA = "Bottleneck"
 DEDUP_NODE = ""
 BOTTLENECK_LEVEL_INC = 1
 IDLE_MARKER_THRESHOLD = 0.05
@@ -3505,7 +3507,7 @@ class Runner(object):
                 return False
             if args.areas and area and any([fnmatch(area, p) for p in args.areas.split(",")]):
                 return True
-            if args.bottlenecks and area == "Info.Bottleneck":
+            if args.bottlenecks and area == "Bottleneck":
                 return True
 
             want = ((obj.metric and args.metrics) or
@@ -4158,6 +4160,10 @@ def model_setup(runner, cpuname, pe, kernel_version):
         if kernel_version < 670: # expect to be fixed in 6.7
             # kernel incorrectly schedules ocr on 0-3 only
             ectx.constraint_patterns.append(("OCR.", "0,1,2,3", ))
+    elif cpu.cpu == "gnr":
+        import gnr_server_ratios
+        model = gnr_server_ratios
+        setup_metrics(model, runner.pmu)
     elif cpuname == "icl":
         import icl_client_ratios
         icl_client_ratios.smt_enabled = cpu.ht
@@ -4201,6 +4207,11 @@ def model_setup(runner, cpuname, pe, kernel_version):
     elif cpuname == "srf":
         import srf_ratios
         model = srf_ratios
+    # XXX Update for hybrid
+    elif cpuname == "lnl":
+        import lnl_lnc_ratios
+        model = lnl_lnc_ratios
+        setup_metrics(model, runner.pmu)
     elif cpuname == "slm":
         import slm_ratios
         model = slm_ratios

@@ -135,11 +135,11 @@ ALLCPUS="$ONLYCPU"
 NOSMTCPUS=" "
 DCPU=$ONLYCPU
 else
-SMTCPUS="${SMTCPUS:-snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl icx adl adl-glc spr sprmax mtl mtl-rwc}"
-NOSMTCPUS="${NOSMTCPUS:-slm simple ehl adl-grt srf}"
+SMTCPUS="${SMTCPUS:-snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl icx adl adl-glc spr sprmax mtl mtl-rwc gnr}"
+NOSMTCPUS="${NOSMTCPUS:-slm simple ehl adl-grt srf lnl}"
 ALLCPUS="${ALLCPUS:-$SMTCPUS $NOSMTCPUS}"
 fi
-METRICCPUS='icl|tgl|mtl-rwc|spr|sprmax|adl-glc|icx'
+METRICCPUS='icl|tgl|mtl-rwc|spr|sprmax|adl-glc|icx|gnr|lnl'
 
 ALL=--all
 
@@ -592,7 +592,7 @@ grep /u log$$
 $WRAP ./toplev $NATIVE_ARGS -l1 --drilldown -N $OPT --single-thread $LOAD
 # XXX check something based on true bottleneck
 $WRAP ./toplev $NATIVE_ARGS -l3 -N --single-thread $OPT $LOAD
-$WRAP ./toplev $NATIVE_ARGS --areas 'Info.Bottleneck,Info.System' -v -o log$$ $OPT $LOAD
+$WRAP ./toplev $NATIVE_ARGS --areas 'Bottleneck,Info.System' -v -o log$$ $OPT $LOAD
 [ -z "$NORES" ] && grep Bottleneck log$$
 $WRAP ./toplev $NATIVE_ARGS --bottlenecks -v -o log$$ $OPT $LOAD
 [ -z "$NORES" ] && grep Bottleneck log$$

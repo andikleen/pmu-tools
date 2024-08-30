@@ -1,6 +1,6 @@
 # -*- coding: latin-1 -*-
 #
-# auto generated TopDown/TMA 4.8-full-perf description for Intel 4rd gen Core (code named Haswell)
+# auto generated TopDown/TMA 5.0-full-perf description for Intel 4rd gen Core (code named Haswell)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
@@ -16,7 +16,7 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "4.8-full-perf"
+version = "5.0-full-perf"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
@@ -82,8 +82,8 @@ def Fetched_Uops(self, EV, level):
     return (EV("IDQ.DSB_UOPS", level) + EV("LSD.UOPS", level) + EV("IDQ.MITE_UOPS", level) + EV("IDQ.MS_UOPS", level))
 
 def Few_Uops_Executed_Threshold(self, EV, level):
-    EV("UOPS_EXECUTED.CORE:c2", level)
     EV("UOPS_EXECUTED.CORE:c3", level)
+    EV("UOPS_EXECUTED.CORE:c2", level)
     return EV("UOPS_EXECUTED.CORE:c3", level) if (IPC(self, EV, level)> 1.8) else EV("UOPS_EXECUTED.CORE:c2", level)
 
 def Frontend_RS_Empty_Cycles(self, EV, level):
@@ -166,7 +166,6 @@ def Recovery_Cycles(self, EV, level):
 def Retire_Fraction(self, EV, level):
     return Retired_Slots(self, EV, level) / EV("UOPS_ISSUED.ANY", level)
 
-# Retired slots per Logical Processor
 def Retired_Slots(self, EV, level):
     return EV("UOPS_RETIRED.RETIRE_SLOTS", level)
 
@@ -262,6 +261,10 @@ def DSB_Coverage(self, EV, level):
     self.thresh = (val < 0.7) and HighIPC(self, EV, 1)
     return val
 
+# Taken Branches retired Per Cycle
+def TBpC(self, EV, level):
+    return EV("BR_INST_RETIRED.NEAR_TAKEN", level) / CLKS(self, EV, level)
+
 # Instructions per speculative Unknown Branch Misprediction (BAClear) (lower number means higher occurrence rate)
 def IpUnknown_Branch(self, EV, level):
     return Instructions(self, EV, level) / EV("BACLEARS.ANY", level)
@@ -302,12 +305,15 @@ def L2MPKI_RFO(self, EV, level):
 def L3MPKI(self, EV, level):
     return 1000 * EV("MEM_LOAD_UOPS_RETIRED.L3_MISS", level) / EV("INST_RETIRED.ANY", level)
 
+# Average per-thread data fill bandwidth to the L1 data cache [GB / sec]
 def L1D_Cache_Fill_BW(self, EV, level):
     return 64 * EV("L1D.REPLACEMENT", level) / OneBillion / Time(self, EV, level)
 
+# Average per-thread data fill bandwidth to the L2 cache [GB / sec]
 def L2_Cache_Fill_BW(self, EV, level):
     return 64 * EV("L2_LINES_IN.ALL", level) / OneBillion / Time(self, EV, level)
 
+# Average per-thread data fill bandwidth to the L3 cache [GB / sec]
 def L3_Cache_Fill_BW(self, EV, level):
     return 64 * EV("LONGEST_LAT_CACHE.MISS", level) / OneBillion / Time(self, EV, level)
 
@@ -628,9 +634,9 @@ higher bandwidth than the MITE (legacy instruction decode
 pipeline). Switching between the two pipelines can cause
 penalties hence this metric measures the exposed penalty..
 See section 'Optimization for Decoded Icache' in
-Optimization Manual:. http://www.intel.com/content/www/us/en
-/architecture-and-technology/64-ia-32-architectures-
-optimization-manual.html"""
+Optimization Manual:.
+http://www.intel.com/content/www/us/en/architecture-and-
+technology/64-ia-32-architectures-optimization-manual.html"""
 
 
 class Fetch_Bandwidth:
@@ -687,9 +693,9 @@ inefficiencies due to asymmetric decoders; use of long
 immediate or LCP can manifest as MITE fetch bandwidth
 bottleneck.. Consider tuning codegen of 'small hotspots'
 that can fit in DSB. Read about 'Decoded ICache' in
-Optimization Manual:. http://www.intel.com/content/www/us/en
-/architecture-and-technology/64-ia-32-architectures-
-optimization-manual.html"""
+Optimization Manual:.
+http://www.intel.com/content/www/us/en/architecture-and-
+technology/64-ia-32-architectures-optimization-manual.html"""
 
 
 class DSB:
@@ -876,7 +882,7 @@ class L1_Bound:
     area = "BE/Mem"
     level = 3
     htoff = False
-    sample = ['MEM_LOAD_UOPS_RETIRED.L1_HIT:pp', 'MEM_LOAD_UOPS_RETIRED.HIT_LFB:pp']
+    sample = ['MEM_LOAD_UOPS_RETIRED.L1_HIT:pp']
     errcount = 0
     sibling = None
     metricgroup = frozenset(['CacheHits', 'MemoryBound', 'TmaL3mem'])
@@ -890,11 +896,11 @@ class L1_Bound:
         return self.val
     desc = """
 This metric estimates how often the CPU was stalled without
-loads missing the L1 data cache.  The L1 data cache
+loads missing the L1 Data (L1D) cache.  The L1D cache
 typically has the shortest latency.  However; in certain
 cases like loads blocked on older stores; a load might
 suffer due to high latency even though it is being satisfied
-by the L1. Another example is loads who miss in the TLB.
+by the L1D. Another example is loads who miss in the TLB.
 These cases are characterized by execution unit stalls;
 while some non-completed demand load lives in the machine
 without having that demand load missing the L1 cache."""
@@ -1001,7 +1007,7 @@ class Split_Loads:
     def compute(self, EV):
         try:
             self.val = Load_Miss_Real_Latency(self, EV, 4) * EV("LD_BLOCKS.NO_SR", 4) / CLKS(self, EV, 4)
-            self.thresh = (self.val > 0.2) and self.parent.thresh
+            self.thresh = (self.val > 0.3)
         except ZeroDivisionError:
             handle_error(self, "Split_Loads zero division")
         return self.val
@@ -1759,7 +1765,7 @@ class Port_6:
     area = "BE/Core"
     level = 6
     htoff = False
-    sample = ['UOPS_DISPATCHED_PORT.PORT_6']
+    sample = ['UOPS_DISPATCHED_PORT.PORT_1']
     errcount = 0
     sibling = None
     metricgroup = frozenset([])
@@ -2458,6 +2464,25 @@ and-technology/64-ia-32-architectures-optimization-
 manual.html"""
 
 
+class Metric_TBpC:
+    name = "TBpC"
+    domain = "Metric"
+    maxval = 0
+    errcount = 0
+    area = "Info.Frontend"
+    metricgroup = frozenset(['Branches', 'FetchBW'])
+    sibling = None
+
+    def compute(self, EV):
+        try:
+            self.val = TBpC(self, EV, 0)
+            self.thresh = True
+        except ZeroDivisionError:
+            handle_error_metric(self, "TBpC zero division")
+    desc = """
+Taken Branches retired Per Cycle"""
+
+
 class Metric_IpUnknown_Branch:
     name = "IpUnknown_Branch"
     domain = "Metric"
@@ -2656,7 +2681,8 @@ class Metric_L1D_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L1D_Cache_Fill_BW zero division")
     desc = """
-"""
+Average per-thread data fill bandwidth to the L1 data cache
+[GB / sec]"""
 
 
 class Metric_L2_Cache_Fill_BW:
@@ -2675,7 +2701,8 @@ class Metric_L2_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L2_Cache_Fill_BW zero division")
     desc = """
-"""
+Average per-thread data fill bandwidth to the L2 cache [GB /
+sec]"""
 
 
 class Metric_L3_Cache_Fill_BW:
@@ -2694,7 +2721,8 @@ class Metric_L3_Cache_Fill_BW:
         except ZeroDivisionError:
             handle_error_metric(self, "L3_Cache_Fill_BW zero division")
     desc = """
-"""
+Average per-thread data fill bandwidth to the L3 cache [GB /
+sec]"""
 
 
 class Metric_Page_Walks_Utilization:
@@ -3219,6 +3247,7 @@ class Setup:
         n = Metric_Instructions() ; r.metric(n) ; o["Instructions"] = n
         n = Metric_Retire() ; r.metric(n) ; o["Retire"] = n
         n = Metric_DSB_Coverage() ; r.metric(n) ; o["DSB_Coverage"] = n
+        n = Metric_TBpC() ; r.metric(n) ; o["TBpC"] = n
         n = Metric_IpUnknown_Branch() ; r.metric(n) ; o["IpUnknown_Branch"] = n
         n = Metric_IpMispredict() ; r.metric(n) ; o["IpMispredict"] = n
         n = Metric_IpMisp_Indirect() ; r.metric(n) ; o["IpMisp_Indirect"] = n
@@ -3256,10 +3285,10 @@ class Setup:
         o["Fetch_Bandwidth"].Frontend_Bound = o["Frontend_Bound"]
         o["Fetch_Bandwidth"].Fetch_Latency = o["Fetch_Latency"]
         o["Branch_Mispredicts"].Bad_Speculation = o["Bad_Speculation"]
-        o["Machine_Clears"].Bad_Speculation = o["Bad_Speculation"]
         o["Machine_Clears"].Branch_Mispredicts = o["Branch_Mispredicts"]
-        o["Backend_Bound"].Retiring = o["Retiring"]
+        o["Machine_Clears"].Bad_Speculation = o["Bad_Speculation"]
         o["Backend_Bound"].Bad_Speculation = o["Bad_Speculation"]
+        o["Backend_Bound"].Retiring = o["Retiring"]
         o["Backend_Bound"].Frontend_Bound = o["Frontend_Bound"]
         o["Memory_Bound"].Retiring = o["Retiring"]
         o["Memory_Bound"].Bad_Speculation = o["Bad_Speculation"]
@@ -3268,20 +3297,20 @@ class Setup:
         o["Memory_Bound"].Fetch_Latency = o["Fetch_Latency"]
         o["MEM_Latency"].MEM_Bandwidth = o["MEM_Bandwidth"]
         o["Core_Bound"].Retiring = o["Retiring"]
-        o["Core_Bound"].Frontend_Bound = o["Frontend_Bound"]
+        o["Core_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Core_Bound"].Memory_Bound = o["Memory_Bound"]
         o["Core_Bound"].Backend_Bound = o["Backend_Bound"]
-        o["Core_Bound"].Bad_Speculation = o["Bad_Speculation"]
+        o["Core_Bound"].Frontend_Bound = o["Frontend_Bound"]
         o["Core_Bound"].Fetch_Latency = o["Fetch_Latency"]
         o["Ports_Utilization"].Fetch_Latency = o["Fetch_Latency"]
         o["Ports_Utilized_0"].Fetch_Latency = o["Fetch_Latency"]
         o["Retiring"].Heavy_Operations = o["Heavy_Operations"]
-        o["Light_Operations"].Retiring = o["Retiring"]
         o["Light_Operations"].Heavy_Operations = o["Heavy_Operations"]
+        o["Light_Operations"].Retiring = o["Retiring"]
         o["Light_Operations"].Microcode_Sequencer = o["Microcode_Sequencer"]
         o["Heavy_Operations"].Microcode_Sequencer = o["Microcode_Sequencer"]
-        o["CISC"].Microcode_Sequencer = o["Microcode_Sequencer"]
         o["CISC"].Assists = o["Assists"]
+        o["CISC"].Microcode_Sequencer = o["Microcode_Sequencer"]
 
         # siblings cross-tree
 
