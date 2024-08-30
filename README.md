@@ -1,6 +1,7 @@
 ![pmu-tools](http://halobates.de/pmu-tools.png)
 
 ![Python linting and testing](https://github.com/andikleen/pmu-tools/workflows/Python%20linting%20and%20testing/badge.svg)
+![Old Python linting and testing](https://github.com/andikleen/pmu-tools/workflows/Old%20Python%20linting%20and%20testing/badge.svg)
 ![jevents test](https://github.com/andikleen/pmu-tools/workflows/jevents%20build/badge.svg)
 
 pmu tools is a collection of tools and libraries for profile collection and performance
