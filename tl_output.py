@@ -425,7 +425,7 @@ class OutputCSV(Output):
         self.args = args
         self.printed_headers = set()
 
-    def print_header(self, timestamp, title):
+    def print_header_csv(self, timestamp, title):
         if self.no_header:
             return
         if self.curname_nologf not in self.printed_headers:
@@ -440,7 +440,7 @@ class OutputCSV(Output):
             self.printed_headers.add(self.curname_nologf)
 
     def show(self, timestamp, title, area, hdr, val, unit, desc, sample, bn, below, idle):
-        self.print_header(timestamp, title)
+        self.print_header_csv(timestamp, title)
         if self.args.no_desc:
             desc = ""
         desc = re.sub(r"\s+", " ", desc)

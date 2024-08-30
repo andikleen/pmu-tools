@@ -1070,9 +1070,11 @@ def gen_cpu_name(cpu):
         cpu = "spr"
     for j in known_cpus:
         if cpu == j[0]:
-            if isinstance(j[1][0], tuple):
+            if len(j[1]) > 0 and isinstance(j[1][0], tuple):
                 return "GenuineIntel-6-%02X-%d" % j[1][0]
             else:
+                if len(j[1]) == 0:
+                    sys.exit("Cannot generate cpu name for %s" % cpu)
                 if j[1][0] in eventlist_alias:
                     return eventlist_alias[j[1][0]] # type: ignore
                 return "GenuineIntel-6-%02X" % j[1][0]  # type: ignore
