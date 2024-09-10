@@ -473,11 +473,19 @@ def event_group(evlist):
         else:
             e = ",".join(gl)
             e = "{%s}" % e
+            if args.exclusive or args.pinned or args.weak or args.host or args.guest:
+                e += ":"
+            if args.weak:
+                e += "W"
             if args.exclusive:
-                e += ":e"
+                e += "e"
+            if args.guest:
+                e += "G"
+            if args.host:
+                e += "H"
             elif args.pinned:
                 if all(slots_or_metric):
-                    e += ":D"
+                    e += "D"
                     assert pgroup is False
                     assert is_slots(gl[0])
                     pgroup = True
@@ -641,6 +649,9 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
     g.add_argument('--areas', help='Add specific areas. Comma separate list, wildcards allowed')
     g.add_argument('--pinned', help='Run topdown metrics (on ICL+) pinned', action='store_true')
     g.add_argument('--exclusive', help='Use exclusive groups. Requires new kernel and new perf', action='store_true')
+    g.add_argument('--host', action='store_true', help="Count host only")
+    g.add_argument('--guest', action='store_true', help="Count guest only")
+    g.add_argument('--weak', action='store_true', help="Use weak groups to work around scheduling problems")
     g.add_argument('--thread',
             help="Enable per thread SMT measurements for pre-ICL, at the cost of more multiplexing.",
             action='store_true')

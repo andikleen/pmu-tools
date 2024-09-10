@@ -121,6 +121,9 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev supports --host, --guest filters.
+* toplev supports generating weak groups, mostly to work around issues during
+testing.
 ## TMA 4.8 release
 * toplev updated to TMA 4.8:
   * Bottlenecks View:

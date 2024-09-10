@@ -238,6 +238,13 @@ grep :D log$$
 rm log$$
 esac
 
+$WRAP ./toplev --host --perf --print -l3 true > log$$
+grep :H log$$
+$WRAP ./toplev --guest --perf --print -l3 true > log$$
+grep :G log$$
+$WRAP ./toplev --weak --perf --print -l3 true > log$$
+grep :W log$$
+
 $WRAP ./toplev $NATIVE_ARGS -h > /dev/null
 
 fi
