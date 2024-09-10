@@ -90,6 +90,10 @@ def print_once(msg):
         print(msg)
         warned.add(msg)
 
+def inform(msg):
+    if not args.quiet:
+        print(msg)
+
 def debug_print(x):
     if args.debug:
         print(x, file=sys.stderr)

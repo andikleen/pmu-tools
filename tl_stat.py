@@ -14,7 +14,7 @@
 from __future__ import print_function
 import math
 from collections import namedtuple
-from tl_io import warn, warn_no_assert, warn_test
+from tl_io import warn, warn_test, inform
 
 ValStat = namedtuple('ValStat', ['stddev', 'multiplex'])
 
@@ -62,12 +62,12 @@ class ComputeStat:
 
     def compute_errors(self):
         if self.errcount > 0 and self.errors != self.prev_errors:
-            warn_no_assert(("%d nodes had zero counts: " % (self.errcount)) +
+            inform(("%d nodes had zero counts: " % (self.errcount)) +
                            " ".join(sorted(self.errors)))
             self.errcount = 0
             self.prev_errors = self.errors
             self.errors = set()
         if self.mismeasured and self.mismeasured > self.prev_mismeasured:
-            warn_no_assert("Mismeasured (out of bound values):" +
+            inform("Mismeasured (out of bound values):" +
                     " ".join(sorted(self.mismeasured)))
             self.prev_mismeasured = self.mismeasured
