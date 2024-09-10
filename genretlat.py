@@ -143,7 +143,9 @@ def human_output(data):
         print("%s: " % ev, end="")
         for m in sorted(d[ev].keys()):
             if m.startswith("SPARK"):
-                l = [int(x) for x in d[ev][m].split(",")]
+                if d[ev][m] == "":
+                    continue
+                l = [(int(x) if x.isdecimal() else 0) for x in d[ev][m].split(",")]
                 s = gen_spark(l, d[ev]["MIN"], d[ev]["F_NZ" if m.endswith("_NZ") else "F"])
                 print("%s %s " % (m.lower(), s), end="")
             else:
@@ -236,6 +238,8 @@ def main():
     events = gen_events(args)
     pmus = ocperf.find_pmus()
     emap = ocperf.find_emap(pmu=[x for x in pmus if x != "cpu_atom"][0])
+    if emap is None:
+        sys.exit("Cannot find json event list")
     pevents = [getevent(emap, e) for e in events]
     if args.verbose:
         print(events)
