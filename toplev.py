@@ -3831,10 +3831,11 @@ def suggest_bottlenecks(runner):
         return None
     printer = runner.printer
     children = [gen_bn(o) for o in printer.bottlenecks]
-    children = list(filter(None, children))
+    measured = set([x.name for x in runner.olist])
+    children = [x for x in children if x and x not in measured]
     parents = []
     for b in printer.bottlenecks:
-        parents += ["+" + full_name(o) for o in get_parents(b)]
+        parents += ["+" + full_name(o) for o in get_parents(b) if o.name not in measured]
     if args.nodes:
         children = [x for x in children if x[1:-1] not in args.nodes]
         parents = [x for x in parents if x[1:] not in args.nodes]
