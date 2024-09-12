@@ -20,6 +20,7 @@ import ocperf
 import json
 import argparse
 import random
+import glob
 from dummyarith import DummyArith
 from collections import Counter, defaultdict
 from copy import copy
@@ -162,25 +163,33 @@ def get_model_number():
 
 def find_model(args):
     if not args.cpu:
-        cpu = open("/sys/devices/cpu/caps/pmu_name").read().strip()
-        if cpu == "meteorlake_hybrid":
-            args.cpu = "mtl"
-        elif cpu == "sapphire_rapids":
-            model = get_model_number()
-            if model == 0xad or model == 0xae:
+        cpu = "?"
+        cl = glob.glob("/sys/devices/cpu*/caps/pmu_name")
+        for fn in cl:
+            cpu = open(fn).read().strip()
+            if cpu == "meteorlake_hybrid":
+                args.cpu = "mtl"
+            elif cpu == "sapphire_rapids":
+                model = get_model_number()
+                if model == 0xad or model == 0xae:
+                    args.cpu = "gnr"
+                else:
+                    sys.exit("Unsupported CPU %d" % model)
+            elif cpu == "granite_rapids":
                 args.cpu = "gnr"
-            else:
-                sys.exit("Unsupported CPU %d" % model)
-        elif cpu == "granite_rapids":
-            args.cpu = "gnr"
-        else:
-            sys.exit("Unsupported CPU %s" % cpu)
+            elif cpu == "lunarlake_hybrid":
+                args.cpu = "lnl"
+    if not args.cpu:
+        sys.exit("Unsupported CPU %s" % cpu)
     if args.cpu == "mtl":
         import mtl_rwc_ratios
         return mtl_rwc_ratios
     elif args.cpu == "gnr":
         import gnr_server_ratios
         return gnr_server_ratios
+    elif args.cpu == "lnl":
+        import lnl_lnc_ratios
+        return lnl_lnc_ratios
     sys.exit("Unknown cpu %s" % args.cpu)
 
 def gen_events(args):
