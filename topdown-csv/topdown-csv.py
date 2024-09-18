@@ -1171,7 +1171,7 @@ print("        # siblings cross-tree")
 print()
 for r in groups + info:
     if r.issue:
-        match = ['o["%s"]' % o.name for o in groups if r.issue and o.issue and r.issue & o.issue and o.name != r.name]
+        match = ['o["%s"]' % ox.name for ox in groups if r.issue and ox.issue and r.issue & ox.issue and ox.name != r.name]
         if len(match) > 0:
             gen_aux_guard(r)
             print(T("""        o["$rname"].sibling = $match""").substitute(rname=r.name, match="(" + ", ".join(match) + ",)"))
