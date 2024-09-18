@@ -74,8 +74,8 @@ def thread_map():
                                        UNInt64("pid"),
                                        String("comm", 16))))
 
-def ignore():
-    return Bytes("data", lambda ctx: ctx.size - 8)
+def as_is():
+    return Embedded(Struct("data", Bytes("data", lambda ctx: ctx.size - 8)))
 
 def throttle(name):
     return Struct(name,
@@ -214,6 +214,8 @@ def perf_event_header():
                                 KSYMBOL         = 17,
                                 BPF_EVENT       = 18,
                                 CGROUP          = 19,
+                                TEXT_POKE       = 20,
+                                AUX_OUTPUT_HW_ID= 21,
                                 HEADER_ATTR     = 64,
                                 HEADER_EVENT_TYPE = 65,
                                 TRACING_DATA    = 66,
@@ -231,7 +233,8 @@ def perf_event_header():
                                 EVENT_UPDATE    = 78,
                                 TIME_CONV       = 79,
                                 HEADER_FEATURE  = 80,
-                                COMPRESSED      = 81),
+                                COMPRESSED      = 81,
+                                FINISHED_INIT   = 82),
                            Embedded(BitStruct(None,
                                               Padding(1),
                                               Enum(BitField("cpumode", 7),
@@ -341,7 +344,7 @@ def perf_event():
                               "EXIT": fork_exit("exit"),
                               "THROTTLE": throttle("throttle"),
                               "UNTHROTTLE": throttle("unthrottle"),
-                              "FINISHED_ROUND": Pass,
+                              "FINISHED_ROUND": as_is(),
                               "FORK": fork_exit("fork"),
                               "READ": Embedded(Struct("read_event",
                                                       SNInt32("pid"),
@@ -354,30 +357,33 @@ def perf_event():
 
                               # below are the so far not handled ones. Dump their
                               # raw data only
-                              "RECORD_AUX": ignore(),
-                              "AUX": ignore(),
-                              "ITRACE_START": ignore(),
-                              "LOST_SAMPLES": ignore(),
-                              "SWITCH": ignore(),
-                              "SWITCH_CPU_WIDE": ignore(),
-                              "NAMESPACES": ignore(),
-                              "KSYMBOL": ignore(),
-                              "BPF_EVENT": ignore(),
-                              "CGROUP": ignore(),
-                              "HEADER_ATTR": ignore(),
-                              "HEADER_EVENT_TYPE": ignore(),
-                              "TRACING_DATA": ignore(),
-                              "HEADER_BUILD_ID": ignore(),
-                              "ID_INDEX": ignore(),
-                              "AUXTRACE_INFO": ignore(),
-                              "AUXTRACE": ignore(),
-                              "AUXTRACE_ERROR": ignore(),
-                              "CPU_MAP": ignore(),
-                              "STAT": ignore(),
-                              "STAT_ROUND": ignore(),
-                              "EVENT_UPDATE": ignore(),
-                              "HEADER_FEATURE": ignore(),
-                              "COMPRESSED": ignore(),
+                              "RECORD_AUX": as_is(),
+                              "AUX": as_is(),
+                              "ITRACE_START": as_is(),
+                              "LOST_SAMPLES": as_is(),
+                              "SWITCH": as_is(),
+                              "SWITCH_CPU_WIDE": as_is(),
+                              "NAMESPACES": as_is(),
+                              "KSYMBOL": as_is(),
+                              "BPF_EVENT": as_is(),
+                              "CGROUP": as_is(),
+                              "TEXT_POKE" : as_is(),
+                              "AUX_OUTPUT_HW_ID" : as_is(),
+                              "HEADER_ATTR": as_is(),
+                              "HEADER_EVENT_TYPE": as_is(),
+                              "TRACING_DATA": as_is(),
+                              "HEADER_BUILD_ID": as_is(),
+                              "ID_INDEX":as_is(),
+                              "AUXTRACE_INFO": as_is(),
+                              "AUXTRACE": as_is(),
+                              "AUXTRACE_ERROR": as_is(),
+                              "CPU_MAP": as_is(),
+                              "STAT": as_is(),
+                              "STAT_ROUND": as_is(),
+                              "EVENT_UPDATE": as_is(),
+                              "HEADER_FEATURE": as_is(),
+                              "COMPRESSED": as_is(),
+                              "FINISHED_INIT": as_is(),
                            }),
                         Anchor("end"),
                         Padding(lambda ctx:
@@ -386,7 +392,7 @@ def perf_event():
 def perf_event_seq(attr):
     return GreedyRange(perf_event(attr))
 
-perf_event_attr_sizes = (64, 72, 80, 96, 104)
+perf_event_attr_sizes = (64, 72, 80, 96, 104, 112, 120, 128, 136)
 
 perf_event_attr = Struct("perf_event_attr",
                          Anchor("start"),
@@ -472,6 +478,14 @@ perf_event_attr = Struct("perf_event_attr",
                                             UNInt32("__reserved_2")))),
                          If(lambda ctx: ctx.size >= perf_event_attr_sizes[4],
                             UNInt64("sample_regs_intr")),
+                         If(lambda ctx: ctx.size >= perf_event_attr_sizes[5],
+                            UNInt32("aux_watermark")),
+                         If(lambda ctx: ctx.size >= perf_event_attr_sizes[6],
+                            UNInt32("aux_sample_size")),
+                         If(lambda ctx: ctx.size >= perf_event_attr_sizes[7],
+                            UNInt64("sig_data")),
+                         If(lambda ctx: ctx.size >= perf_event_attr_sizes[8],
+                            UNInt64("config3")),
                          Anchor("end"),
                          Value("perf_event_attr_size",
                                lambda ctx: ctx.end - ctx.start),
