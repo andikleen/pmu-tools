@@ -23,6 +23,7 @@
 # uncore handle arb events directly
 #
 
+from __future__ import print_function
 import sys
 import csv
 import re
