@@ -2,7 +2,7 @@
 
 ![Python linting and testing](https://github.com/andikleen/pmu-tools/actions/workflows/python.yml/badge.svg?branch=master)
 ![Old Python linting and testing](https://github.com/andikleen/pmu-tools/actions/workflows/python-old.yml/badge.svg?branch=master)
-![jevents test](https://github.com/andikleen/pmu-tools/workflows/actions/jevents.yml/badge.svg?branch=master)
+![jevents test](https://github.com/andikleen/pmu-tools/actions/workflows/actions/jevents.yml/badge.svg?branch=master)
 
 pmu tools is a collection of tools and libraries for profile collection and performance
 analysis on Intel CPUs on top of [Linux perf](https://perf.wiki.kernel.org/index.php/Main_Page).
