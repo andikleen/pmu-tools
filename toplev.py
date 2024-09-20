@@ -1453,7 +1453,7 @@ def initialize_event(name, i, e):
             if e.counter.startswith("Fixed"):
                 ectx.limited_counters[i] = int(e.counter.split()[2]) + FIXED_BASE
                 ectx.fixed_events.add(i)
-            elif is_number(e.counter) and int(e.counter) >= 32:
+            elif e.counter.isdecimal() and int(e.counter) >= 32:
                 ectx.limited_counters[i] = int(e.counter) - 32 + FIXED_BASE
                 ectx.fixed_events.add(i)
             else:
@@ -1608,9 +1608,6 @@ def is_event(l, n):
     # use static string to make regexpr caching work
     return re.match(valid_events.string, l[n], re.I)
 
-def is_number(n):
-    return re.match(r'\d+$', n) is not None
-
 def set_interval(env, d, interval):
     env['interval-ns'] = d * 1e9
     env['interval-ms'] = d * 1e3
@@ -1753,7 +1750,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode, runner_list
     nothing = set() # type: Set[str]
     allowed_threads = runner.cpu_list
     def filtered(j):
-        return j != "" and is_number(j) and int(j) not in allowed_threads
+        return j != "" and j.isdecimal() and int(j) not in allowed_threads
     core_node = lambda obj: safe_ref(obj, 'domain') in runner.ectx.core_domains
     thread_node = lambda obj: not (core_node(obj) or package_node(obj))
 
@@ -1904,7 +1901,7 @@ def print_keys(runner, res, rev, valstats, out, interval, env, mode, runner_list
         for j in keys:
             if j == "":
                 continue
-            if is_number(j):
+            if j.isdecimal():
                 if filtered(j):
                     continue
                 p_id = cpu.cputosocket[int(j)]
@@ -1996,7 +1993,7 @@ def print_summary(summary, out, runner_list, full_system):
                     l.append("0") # XXX
                 if r is None:
                     continue
-                if is_number(title):
+                if title.isdecimal():
                     cpunum = int(title)
                     if (r[2].startswith("uncore") or r[2].startswith("power")) and (
                             cpunum != cpu.sockettocpus[cpu.cputosocket[cpunum]][0]):
@@ -2244,7 +2241,7 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
             print("event wrong pmu", event, title, r.pmu)
         return None, FINE, event
     # cannot check because it's an event that needs to be expanded first
-    if not event.startswith("cpu") and is_number(title) and int(title) not in r.cpu_list:
+    if not event.startswith("cpu") and title.isdecimal() and int(title) not in r.cpu_list:
         return r, FINE, event
     if revnum is None:
         revnum = r.sched.evnum
@@ -2493,7 +2490,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
                     [k in runner.cpu_list for k in cpu.coreids[cpu.cputocore[num]]]))
 
         def add(t):
-            if runner.cpu_list and is_number(t) and ignored_cpu(int(t)):
+            if runner.cpu_list and t.isdecimal() and ignored_cpu(int(t)):
                 return
 
             if skip:
@@ -2520,7 +2517,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
 
         # power/uncore events are only output once for every socket
         if ((uncore_event(event) or uncore_event(origevent)) and
-                is_number(title) and
+                title.isdecimal() and
                 (not ((args.core or args.cpu) and not args.single_thread))):
             cpunum = int(title)
             socket = cpu.cputosocket[cpunum]
@@ -2535,7 +2532,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         # duration time is only output once, except with --cpu/-C (???)
         # except perf 6.2+ outputs it with -A on all cpus, but not counting except the first
         elif ((event.startswith("duration_time") or origevent.startswith("duration_time"))
-                and is_number(title) and not args.cpu and not args.core):
+                and title.isdecimal() and not args.cpu and not args.core):
             dup_val(runner.cpu_list)
         else:
             add(title)
