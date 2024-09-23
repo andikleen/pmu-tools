@@ -660,7 +660,7 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
                 action='store_true')
     g.add_argument('--node-metrics', '-N', help='Add metrics related to selected nodes, but hide when node is not crossing threshold',
                     action='store_true')
-    g.add_argument('--bottlenecks', '-B', help='Show bottlenecks view of Info.Bottleneck metrics', action='store_true')
+    g.add_argument('--bottlenecks', '-B', help='Show bottlenecks view of Bottleneck metrics. Use -l0 to disable standard topdown view.', action='store_true')
 
     g = p.add_argument_group('Model tunables')
     g.add_argument('--fp16', help='Enable FP16 support in some models', action='store_true')
@@ -686,7 +686,7 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
     g.add_argument('--reserved-counters', default=0, help='Assume N generic counters are used elsewhere', type=int)
 
     g = p.add_argument_group('Filtering output')
-    g.add_argument('--only-bottleneck', help='Only print topdown bottleneck and associated metrics (unless overriden with --nodes)', action='store_true')
+    g.add_argument('--only-bottleneck', help='Only print topdown tree bottleneck and associated metrics (unless overriden with other options like --nodes or --bottleneck)', action='store_true')
     g.add_argument('--verbose', '-v', help='Print all results even when below threshold or exceeding boundaries. '
                    'Note this can result in bogus values, as the TopDown methodology relies on thresholds '
                    'to correctly characterize workloads. Values not crossing threshold are marked with <.',
@@ -2896,6 +2896,7 @@ def node_filter(obj, default, sibmatch, mgroups):
                     sibmatch |= set(obj.sibling)
                 if has_mg(j, obj):
                     mgroups |= obj.metricgroup
+                obj.forced = True
                 return True
             if has_siblings(j, obj):
                 for sib in obj.sibling:
@@ -3313,8 +3314,11 @@ def should_print_obj(obj, match, thresh_mg, bn):
         elif args.only_bottleneck and obj != bn:
             if args.node_metrics and 'group_select' in obj.__dict__ and get_mg(obj) & get_mg(bn):
                 return True
-        elif args.only_bottleneck and obj != bn:
-            return args.node_metrics and 'group_select' in obj.__dict__ and set(get_mg(obj)) & set(get_mg(bn))
+            if args.bottlenecks and 'area' in obj.__dict__ and obj.area == "Bottleneck":
+                return True
+            # XXX handle more explicit options like metrics?
+            if 'forced' in obj.__dict__ and obj.forced:
+                return True
         elif obj.metric:
             if args.node_metrics and 'group_select' in obj.__dict__ and not (get_mg(obj) & thresh_mg):
                 return False
@@ -3508,6 +3512,10 @@ class Runner(object):
             if args.node_metrics and want and not obj.metric:
                 mgroups |= set(mg) - tma_mgroups
             return want
+
+        for x in self.olist:
+            if 'forced' in x.__dict__:
+                x.forced = False
 
         # this updates sibmatch
         fmatch = [want_node(x, mgroups, tma_mgroups) for x in self.olist]
