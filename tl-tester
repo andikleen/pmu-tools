@@ -289,10 +289,10 @@ if ! grep -q hypervisor /proc/cpuinfo ; then
 if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
 case "$j" in
 adl*|mtl*)
-FORCECOUNTERS=8 FORCEHT=1 $WRAP ./toplev.py --perf --force-cpu $j --force-topology topology --force-events -l1 --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
+FORCECOUNTERS=8 FORCEHT=1 $WRAP ./toplev.py --perf --force-cpu $j --force-topology topology --force-events --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
 	;;
 *)
-FORCEHT=1 $WRAP ./toplev.py --perf --force-cpu $j --force-topology topology --force-events -l1 --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
+FORCEHT=1 $WRAP ./toplev.py --perf --force-cpu $j --force-topology topology --force-events --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
 esac
 [ $j != "knl" ] && onegroup log$$.$j
 checklog log$$.$j
@@ -301,7 +301,7 @@ fi
 fi
 case "$j" in
 adl*|mtl*)
-FORCECOUNTERS=8 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events -l1 --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
+FORCECOUNTERS=8 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
 ;;
 *)
 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events -l1 --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
