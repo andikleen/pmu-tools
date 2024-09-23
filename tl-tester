@@ -106,6 +106,10 @@ EOL
 
 run() {
 	set +x
+	times > times$$
+	tail -1 times$$ | sed "s/^/times ${CUR:-init} /"
+	rm times$$
+	date +%s | sed "s/^/abstime ${CUR:-init} /"
 	if [ -n "$RUN" ] ; then
 		case "$1" in $RUN) ;; *) set -x ; return 1 ; esac
 	fi
@@ -795,6 +799,11 @@ notfound $cpu
 done
 
 fi # cpu2
+
+# just for accounting
+if run final ; then
+	echo final
+fi # final
 
 trap "" ERR 0
 
