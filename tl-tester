@@ -380,6 +380,23 @@ grep topdown- log$$
 grep :D log$$
 rm log$$
 
+if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+
+HYPERVISOR=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
+checklog log$$.$j
+notfound $j
+
+case "$OPT" in
+*--exclusive*) ;;
+*)
+FORCE_NMI_WATCHDOG=1 \
+$WRAP ./toplev.py --reserved-counters=1 --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
+checklog log$$.$j
+notfound $j
+rm log$$.$j
+esac
+fi
+
 ;;
 esac
 
