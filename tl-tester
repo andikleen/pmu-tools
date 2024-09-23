@@ -247,7 +247,7 @@ grep :W log$$
 
 $WRAP ./toplev $NATIVE_ARGS -h > /dev/null
 
-fi
+fi # nodes
 
 # test L1 uses a single group
 onegroup() {
