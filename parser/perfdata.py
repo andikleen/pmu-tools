@@ -532,6 +532,12 @@ def group_desc():
                                        UNInt32("leader_idx"),
                                        UNInt32("nr_members"))))
 
+def feature_bytes(name):
+    return Struct(name,
+                  UNInt64("offset"),
+                  UNInt64("size"),
+                  Pointer(lambda ctx: ctx.offset, Bytes("data", lambda ctx: ctx.size)))
+
 def build_id():
     return Struct("build_id",
                   Anchor("start"),
@@ -614,7 +620,35 @@ def perf_features():
                                        pmu_mappings())),
                   If(lambda ctx: ctx._.group_desc,
                      perf_file_section("group_desc",
-                                       group_desc())))
+                                       group_desc())),
+                  If(lambda ctx: ctx._.auxtrace,
+                     feature_bytes("auxtrace")),
+                  If(lambda ctx: ctx._.stat,
+                     feature_bytes("stat")),
+                  If(lambda ctx: ctx._.cache,
+                     feature_bytes("cache")),
+                  If(lambda ctx: ctx._.sample_time,
+                     feature_bytes("sample_time")),
+                  If(lambda ctx: ctx._.mem_tpology,
+                     feature_bytes("mem_tpology")),
+                  If(lambda ctx: ctx._.clock_id,
+                     feature_bytes("clock_id")),
+                  If(lambda ctx: ctx._.dir_format,
+                     feature_bytes("dir_format")),
+                  If(lambda ctx: ctx._.bpf_prog_info,
+                     feature_bytes("bpf_prog_info")),
+                  If(lambda ctx: ctx._.bpf_btf,
+                     feature_bytes("bpf_btf")),
+                  If(lambda ctx: ctx._.compressed,
+                     feature_bytes("compressed")),
+                  If(lambda ctx: ctx._.pmu_caps,
+                     feature_bytes("pmu_caps")),
+                  If(lambda ctx: ctx._.clock_data,
+                     feature_bytes("clock_data")),
+                  If(lambda ctx: ctx._.hybrid_topology,
+                     feature_bytes("hybrid_topology")),
+                  If(lambda ctx: ctx._.cpu_pmu_caps,
+                     feature_bytes("cpu_pmu_caps")),)
 
 def perf_file_section(name, target):
     return Struct(name,
@@ -671,14 +705,28 @@ perf_file = Struct("perf_file_header",
                              Flag("cpuid"),
                              Flag("cpudesc"),
 
-                             Padding(6),
+                             Flag("clock_id"),
+                             Flag("mem_tpology"),
+                             Flag("sample_time"),
+                             Flag("cache"),
+                             Flag("stat"),
+                             Flag("auxtrace"),
                              Flag("group_desc"),
                              Flag("pmu_mappings"),
 
-                             Padding(256 - 3*8))),
+                             Flag("pmu_caps"),
+                             Flag("hybrid_topology"),
+                             Flag("clock_data"),
+                             Flag("cpu_pmu_caps"),
+                             Flag("compressed"),
+                             Flag("bpf_btf"),
+                             Flag("bpf_prog_info"),
+                             Flag("dir_format"),
+
+                             Padding(256 - 4*8))),
                    Pointer(lambda ctx: ctx.data.offset + ctx.data.size,
                            perf_features()),
-                   Padding(3 * 8))
+)
 
 def get_events(h):
     return h.data.perf_data
