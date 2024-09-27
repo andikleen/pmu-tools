@@ -140,6 +140,7 @@ NOSMTCPUS="${NOSMTCPUS:-slm simple ehl adl-grt srf lnl}"
 ALLCPUS="${ALLCPUS:-$SMTCPUS $NOSMTCPUS}"
 fi
 METRICCPUS='icl|tgl|mtl-rwc|spr|sprmax|adl-glc|icx|gnr|lnl'
+GENRETLATCPUS='mtl lnl gnr'
 
 ALL=--all
 
@@ -816,6 +817,14 @@ notfound $cpu
 done
 
 fi # cpu2
+
+if run genretlat ; then
+
+for j in $GENRETLATCPUS ; do
+$WRAP ./genretlat.py --cpu $j $LOAD
+done
+
+fi #genretlat
 
 # just for accounting
 if run final ; then
