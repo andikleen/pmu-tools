@@ -165,8 +165,8 @@ def event():
                                ABI_64 = 2),
                           Array(lambda ctx: hweight64(ctx),
                                 UNInt64("reg")))),
-                Anchor("end_event"),
-                Padding(lambda ctx: max(0, ctx.size - ctx.end_event))))
+                Anchor("anchor_end_event"),
+                Padding(lambda ctx: max(0, ctx.size - ctx.anchor_end_event))))
 
 def get_attr_list(ctx):
     return ctx._._.attrs.perf_file_attr.f_attr
@@ -182,8 +182,8 @@ def has_sample_id_all(ctx):
 # when sample_id_all is not supported, we may
 # not look up the right one (perf.data limitation)
 def lookup_event_attr(ctx):
-    if "end_id" in ctx and ctx.end_id:
-        idx = ctx.end_id
+    if "anchor_end_id" in ctx and ctx.anchor_end_id:
+        idx = ctx.anchor_end_id
     elif 'id' in ctx and ctx['id']:
         idx = ctx['id']
     else:
@@ -251,8 +251,8 @@ def perf_event_header():
                                               Padding(5))),
                            UNInt16("size"),
                            If(has_sample_id_all,
-                                 Pointer(lambda ctx: ctx.start + ctx.size - 8,
-                                   UNInt64("end_id"))),
+                                 Pointer(lambda ctx: ctx.anchor_start + ctx.size - 8,
+                                   UNInt64("anchor_end_id"))),
                            Value("attr", lookup_event_attr)))
 
 def mmap():
@@ -262,13 +262,13 @@ def mmap():
                   UNInt64("addr"),
                   UNInt64("len"),
                   UNInt64("pgoff"),
-                  Anchor("start_of_filename"),
+                  Anchor("anchor_start_of_filename"),
                   CString("filename"),
-                  Anchor("end_of_filename"),
+                  Anchor("anchor_end_of_filename"),
                   # hack for now. this shouldn't be needed.
                   If(lambda ctx: True, # XXX
                      Embedded(Pointer(lambda ctx:
-                                      ctx.size + ctx.start -
+                                      ctx.size + ctx.anchor_start -
                                       sample_id_size(ctx),
                                       sample_id()))))
 def mmap2():
@@ -324,9 +324,8 @@ def time_conv():
 
 def perf_event():
     return Struct("perf_event",
-                  Anchor("start"),
+                  Anchor("anchor_start"),
                   perf_event_header(),
-                  Anchor("header_end"),
                   Switch("data",
                            lambda ctx: ctx.type,
                            {
@@ -385,9 +384,9 @@ def perf_event():
                               "COMPRESSED": as_is(),
                               "FINISHED_INIT": as_is(),
                            }),
-                        Anchor("end"),
+                        Anchor("anchor_end"),
                         Padding(lambda ctx:
-                                    ctx.size - (ctx.end - ctx.start)))
+                                    ctx.size - (ctx.anchor_end - ctx.anchor_start)))
 
 def perf_event_seq(attr):
     return GreedyRange(perf_event(attr))
@@ -395,7 +394,7 @@ def perf_event_seq(attr):
 perf_event_attr_sizes = (64, 72, 80, 96, 104, 112, 120, 128, 136)
 
 perf_event_attr = Struct("perf_event_attr",
-                         Anchor("start"),
+                         Anchor("anchor_start"),
                          Enum(UNInt32("type"),
                               HARDWARE = 0,
                               SOFTWARE = 1,
@@ -486,20 +485,18 @@ perf_event_attr = Struct("perf_event_attr",
                             UNInt64("sig_data")),
                          If(lambda ctx: ctx.size >= perf_event_attr_sizes[8],
                             UNInt64("config3")),
-                         Anchor("end"),
-                         Value("perf_event_attr_size",
-                               lambda ctx: ctx.end - ctx.start),
-                         Padding(lambda ctx: ctx.size - ctx.perf_event_attr_size))
+                         Anchor("anchor_end"),
+                         Padding(lambda ctx: ctx.size - ctx.anchor_end + ctx.anchor_start))
 
 def pad(l = "len"):
-    return Padding(lambda ctx: ctx[l] - (ctx.offset - ctx.start))
+    return Padding(lambda ctx: ctx[l] - (ctx.anchor_offset - ctx.anchor_start))
 
 def str_with_len(name):
     return Struct(name,
                   UNInt32("len"),
-                  Anchor("start"),
+                  Anchor("anchor_start"),
                   CString(name),
-                  Anchor("offset"),
+                  Anchor("anchor_offset"),
                   pad())
 
 def feature_string(name):
@@ -512,9 +509,9 @@ def feature_string(name):
 def string_list(name, extra = Pass):
     return PrefixedArray(Struct(name,
                                UNInt32("len"),
-                               Anchor("start"),
+                               Anchor("anchor_start"),
                                CString(name),
-                               Anchor("offset"),
+                               Anchor("anchor_offset"),
                                pad(),
                                extra), UNInt32("nr"))
 
@@ -540,14 +537,14 @@ def feature_bytes(name):
 
 def build_id():
     return Struct("build_id",
-                  Anchor("start"),
+                  Anchor("anchor_start"),
                   UNInt32("type"),
                   UNInt16("misc"),
                   UNInt16("size"),
                   SNInt32("pid"),
                   HexDumpAdapter(String("build_id", 24)),
                   CString("filename"),
-                  Anchor("offset"),
+                  Anchor("anchor_offset"),
                   pad("size"))
 
 def section_adapter(name, target):
@@ -669,7 +666,7 @@ perf_file_attr = Struct("perf_file_attr",
                                      perf_file_section("ids", id_array))))
 
 perf_event_types = Struct("perf_file_attr",
-                          Anchor("here"),
+                          Anchor("anchor_here"),
                           Padding(lambda ctx: ctx._.size))
 
 perf_data = TunnelAdapter(Bytes("perf_data", lambda ctx: ctx.size),
