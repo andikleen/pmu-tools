@@ -559,7 +559,7 @@ for row in csvf:
         continue
     if r.pname == "SW info":
         r.pname = l[2]
-    r.name = r.pname.replace(" ","").replace("+", "PLUS")
+    r.name = r.pname.replace(" ","").replace("+", "PLUS").replace("%", "PCT")
     if r.desc is None:
         r.desc = r.name.replace("_", " ")
     if re.match(r"[0-9]", r.name):
