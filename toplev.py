@@ -1222,7 +1222,7 @@ def update_args_cpu(args, pversion):
         sys.exit(0)
     desired_cpu = args.force_cpu if args.force_cpu else cpu.model # type: ignore
     if desired_cpu in eventlist_alias:
-        r = eventlist_alias[desired_cpu]
+        r = eventlist_alias[desired_cpu] # type: ignore
         if not os.getenv("EVENTMAP"):
             os.environ["EVENTMAP"] = r
         if not os.getenv("UNCORE"):
