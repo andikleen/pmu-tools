@@ -189,6 +189,7 @@ qualval_map = (
     (r"u" + number, "umask=%#x", 0),
     (r"c(?:mask=)?" + number, "cmask=%d", 24),
     (r"e(?:dge=)?" + number, "edge=%d", 18),
+    (r"ocr_msr_val=" + number, "config1=%#x", 0),
     (r"(?:sa|sample-after|period)=" + number, "period=%d", 0))
 
 uncore_map = (
