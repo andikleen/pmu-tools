@@ -1006,7 +1006,8 @@ def remove_unref():
             ref.update(tokenize(r.maxval))
 
     for r in copy(aux):
-        if r.name not in ref and "#" + r.name not in ref:
+        # Keep _Width constants for external tools
+        if r.name not in ref and "#" + r.name not in ref and not r.name.endswith("_Width"):
             print("Removed unreferenced", r.name, file=sys.stderr)
             aux.remove(r)
 
