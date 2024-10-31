@@ -1220,7 +1220,7 @@ def update_args_cpu(args, pversion):
     if args.show_cpu:
         print("%s %s %s" % (cpu.true_name, cpu.pmu_name, cpu.name))
         sys.exit(0)
-    desired_cpu = args.force_cpu if args.force_cpu else cpu.model # type: str
+    desired_cpu = args.force_cpu if args.force_cpu else cpu.model # type: ignore
     if desired_cpu in eventlist_alias:
         r = eventlist_alias[desired_cpu]
         if not os.getenv("EVENTMAP"):
