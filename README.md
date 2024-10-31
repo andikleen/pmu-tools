@@ -121,6 +121,7 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev updated the newer E-core models to E-core TMA 4.0
 * toplev supports the Sierra Forest (Xeon 6) E-core based server CPU.
 * toplev supports --host, --guest filters.
 * toplev supports generating weak groups, mostly to work around issues during
