@@ -121,6 +121,7 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* toplev supports the Sierra Forest (Xeon 6) E-core based server CPU.
 * toplev supports --host, --guest filters.
 * toplev supports generating weak groups, mostly to work around issues during
 testing.

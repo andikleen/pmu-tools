@@ -93,6 +93,7 @@ known_cpus = (
     ("adl-grt", (154, )),
     ("spr", (143, )),
     ("ehl", (150, )),
+    ("srf", (175, 206 )),
     ("sprmax", ()),
     ("mtl", (170, 186, )),
     ("mtl-cmt", (170, 186, )),
@@ -4190,6 +4191,9 @@ def model_setup(runner, cpuname, pe, kernel_version):
         import mtl_cmt_ratios
         model = mtl_cmt_ratios
         model.use_aux = args.aux
+    elif cpuname == "srf":
+        import srf_ratios
+        model = srf_ratios
     elif cpuname == "slm":
         import slm_ratios
         model = slm_ratios
