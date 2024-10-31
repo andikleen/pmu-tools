@@ -97,6 +97,8 @@ known_cpus = (
     ("sprmax", ()),
     ("gnr", (173, 174)),
     ("lnl", (189, )),
+    ("lnl-lnc", (189, )),
+    ("lnl-skt", (189, )),
     ("mtl", (170, 186, )),
     ("mtl-cmt", (170, 186, )),
     ("mtl-rwc", (170, 186, )),
@@ -4089,6 +4091,8 @@ def load_default_retlat():
 
 def model_setup(runner, cpuname, pe, kernel_version):
     global smt_mode
+    atom_pmu = runner.pmu == "cpu_atom"
+    core_pmu = not atom_pmu
     if cpuname == "ivb":
         import ivb_client_ratios
         model = ivb_client_ratios
@@ -4181,7 +4185,7 @@ def model_setup(runner, cpuname, pe, kernel_version):
         if kernel_version < 510:
             ectx.constraint_fixes["CYCLE_ACTIVITY.STALLS_MEM_ANY"] = "0,1,2,3"
         smt_mode = cpu.ht
-    elif (cpuname == "adl" and runner.pmu in ("cpu_core", "cpu")) or cpuname == "adl-glc":
+    elif (cpuname == "adl" and core_pmu) or cpuname == "adl-glc":
         import adl_glc_ratios
         setup_metrics(adl_glc_ratios, runner.pmu)
         adl_glc_ratios.smt_enabled = cpu.ht
@@ -4190,27 +4194,30 @@ def model_setup(runner, cpuname, pe, kernel_version):
         if kernel_version < 670: # expect to be fixed in 6.7
             # kernel incorrectly schedules ocr on 0-3 only
             ectx.constraint_patterns.append(("OCR.", "0,1,2,3", ))
-    elif (cpuname == "adl" and runner.pmu == "cpu_atom") or cpuname == "adl-grt":
+    elif (cpuname == "adl" and atom_pmu) or cpuname == "adl-grt":
         import adl_grt_ratios
         model = adl_grt_ratios
         model.use_aux = args.aux
-    elif (cpuname == "mtl" and runner.pmu in ("cpu_core", "cpu")) or cpuname == "mtl-rwc":
+    elif (cpuname == "mtl" and core_pmu) or cpuname == "mtl-rwc":
         import mtl_rwc_ratios
         setup_metrics(mtl_rwc_ratios, runner.pmu)
         mtl_rwc_ratios.smt_enabled = cpu.ht
         model = mtl_rwc_ratios
         ectx.constraint_patterns.append(("OCR.", "0,1,2,3", ))
-    elif (cpuname == "mtl" and runner.pmu == "cpu_atom") or cpuname == "mtl-cmt":
+    elif (cpuname == "mtl" and atom_pmu) or cpuname == "mtl-cmt":
         import mtl_cmt_ratios
         model = mtl_cmt_ratios
         model.use_aux = args.aux
     elif cpuname == "srf":
         import srf_ratios
         model = srf_ratios
-    # XXX Update for hybrid
-    elif cpuname == "lnl":
+    elif (cpuname == "lnl" and core_pmu) or cpuname == "lnl-lnc":
         import lnl_lnc_ratios
         model = lnl_lnc_ratios
+        setup_metrics(model, runner.pmu)
+    elif (cpuname == "lnl" and atom_pmu) or cpuname == "lnl-skt":
+        import lnl_skt_ratios
+        model = lnl_skt_ratios
         setup_metrics(model, runner.pmu)
     elif cpuname == "slm":
         import slm_ratios
