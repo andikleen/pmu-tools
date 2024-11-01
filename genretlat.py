@@ -247,10 +247,13 @@ def main():
     perf = os.getenv("PERF")
     if perf is None:
         perf = "perf"
-    s.execute(perf, pevents, events, rest)
-    samples = defaultdict(list)
-    for ev, weight in s.handle_samples():
-        samples[ev].append(weight)
+    try:
+        s.execute(perf, pevents, events, rest)
+        samples = defaultdict(list)
+        for ev, weight in s.handle_samples():
+            samples[ev].append(weight)
+    except KeyboardInterrupt:
+        pass
     data = { "Data": { ev.upper().replace("CPU_CORE","").replace("/","").replace(":","").replace("RETIRED_", "RETIRED."): gen_stat(s)
                        for ev, s in samples.items()
                        if "/" not in ev or any([x in ev for x in args.pmu]) } }
