@@ -121,6 +121,28 @@ on newer Linux kernels.
 
 # Recent new features:
 
+## TMA 5.01 release
+* toplev updated to TMA 5.01:
+  * Bottlenecks View tops the spreadsheet of a highly detailed TMA tree with over 120 nodes; GNR & LNL models
+  * New Models
+  * GNR for Granite Rapids - the 6th gen Xeon Scalable server processors
+  * LNL for P-core in Arrow Lake and Lunar Lake processors - incl support for the 3-level cache
+  * Bottlenecks View:
+    * The Bottlenecks View opens the metrics list starting the 5.0 release. It has been placed above the TMA tree as it serves as an abstraction of it.
+    * Cache_Memory_Latency now accounts for Split_Loads/Stores and Lock_Latency (were under Other_Bottlenecks) [SKL onwards]
+    * Improved Memory_Cache_Latency accuracy through L1_Latency_Dependency [LNL]
+  * New Tree Nodes
+    * 25 new nodes detailing next levels under Branch_Mispredicts, Divider, ICache_Misses, L1/L2 d-cache latencies and STLB Misses
+  * New Informative Metrics
+  * Cond_TK_Fwd: Taken conditionals are split into Cond_TK_Fwd and Cond_TK_Bwd in the Info.Branches group [LNL]
+  * DSB_Switches_Ret, MS_Latency_Ret, Unknown_Branches_Ret in Info.Frontend group [MTL onwards]
+  * L1DL0_MPKI, L1DL0_Cache_Fill_BW in Info.Memory group [LNL]
+  * Load_STLB_Miss_Ret, Store_STLB_Miss_Ret in Info.Memory.TLB group [MTL onwards]
+  * Useless_HWPF in Info.Memory.Prefetches group [ICL onwards]
+  * Enhancements & fixes
+    * Fixed Ports_Utilized_0 error in 4.8 [MTL]
+    * Memory related bottlenecks were miss-calculated [MTL only]
+    * Memory_Synchronization has a typo in its tag [all]
 * toplev updated the newer E-core models to E-core TMA 4.0
 * toplev supports the Sierra Forest (Xeon 6) E-core based server CPU.
 * toplev supports --host, --guest filters.
