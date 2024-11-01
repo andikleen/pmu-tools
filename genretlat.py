@@ -21,6 +21,7 @@ import json
 import argparse
 import random
 import glob
+import re
 from dummyarith import DummyArith
 from collections import Counter, defaultdict
 from copy import copy
@@ -263,7 +264,7 @@ def main():
             samples[ev].append(weight)
     except KeyboardInterrupt:
         pass
-    data = { "Data": { ev.upper().replace("CPU_CORE","").replace("/","").replace(":","").replace("RETIRED_", "RETIRED."): gen_stat(s)
+    data = { "Data": { re.sub(r"[:/][uU]?", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED."): gen_stat(s)
                        for ev, s in samples.items()
                        if "/" not in ev or any([x in ev for x in args.pmu]) } }
     json.dump(data, args.output, indent=2, sort_keys=True)
