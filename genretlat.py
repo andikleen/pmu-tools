@@ -234,7 +234,7 @@ def init_args():
     ap.add_argument('--pmu', '-p', nargs='*', default=["cpu", "cpu_core"], help="for which PMUs to collect")
     ap.add_argument('--quiet', '-q', action='store_true')
     ap.add_argument('--csv', '-c', type=argparse.FileType('w'), help="Generate CSV file with pushout latencies", default=None)
-    ap.add_argument('--cpu', help="Set CPU type (gnr, mtl)")
+    ap.add_argument('--cpu', help="Set CPU type (gnr, mtl, lnl)")
     args, rest = ap.parse_known_args()
     if args.csv:
         args.csvplot = csv.writer(args.csv)

@@ -99,6 +99,7 @@ known_cpus = (
     ("lnl", (189, )),
     ("lnl-lnc", (189, )),
     ("lnl-skt", (189, )),
+    ("arl", (198, )),
     ("mtl", (170, 186, )),
     ("mtl-cmt", (170, 186, )),
     ("mtl-rwc", (170, 186, )),
@@ -110,8 +111,8 @@ eventlist_alias = {
 tsx_cpus = ("hsw", "hsx", "bdw", "skl", "skx", "clx", "icl", "icx",
             "spr", "sprmax", "gnr")
 
-hybrid_cpus = ("adl", "mtl")
-atom_hybrid_cpus = ("adl-grt", "mtl-cmt", )
+hybrid_cpus = ("adl", "mtl", "lnl", "arl")
+atom_hybrid_cpus = ("adl-grt", "mtl-cmt", "lnl-skt", "arl-skt")
 
 non_json_events = set(("dummy", "duration_time"))
 
@@ -4211,11 +4212,12 @@ def model_setup(runner, cpuname, pe, kernel_version):
     elif cpuname == "srf":
         import srf_ratios
         model = srf_ratios
-    elif (cpuname == "lnl" and core_pmu) or cpuname == "lnl-lnc":
+    # ARL uses LNL models, but own retlat file.
+    elif (cpuname in ("lnl", "arl") and core_pmu) or cpuname == "lnl-lnc":
         import lnl_lnc_ratios
         model = lnl_lnc_ratios
         setup_metrics(model, runner.pmu)
-    elif (cpuname == "lnl" and atom_pmu) or cpuname == "lnl-skt":
+    elif (cpuname in ("lnl", "arl") and atom_pmu) or cpuname == "lnl-skt":
         import lnl_skt_ratios
         model = lnl_skt_ratios
         setup_metrics(model, runner.pmu)
