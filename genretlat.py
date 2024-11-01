@@ -221,7 +221,7 @@ def init_args():
                     help="")
     ap.add_argument('--verbose', '-v', action='store_true', help='be verbose')
     ap.add_argument('--fake', action='store_true', help=argparse.SUPPRESS)
-    ap.add_argument('--interval', '-i', type=int, default=103, help="Interval for sampling")
+    ap.add_argument('--interval', '-i', type=int, default=1003, help="Interval for sampling")
     ap.add_argument('--pmu', '-p', nargs='*', default=["cpu", "cpu_core"], help="for which PMUs to collect")
     ap.add_argument('--quiet', '-q', action='store_true')
     ap.add_argument('--csv', '-c', type=argparse.FileType('w'), help="Generate CSV file with pushout latencies", default=None)
