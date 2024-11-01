@@ -1058,7 +1058,7 @@ def process_events(event, print_only, period, noexplode):
             res = [x.getevent(i) for x in emap_list]
             res = [x for x in res if x]
             if res:
-                if len(res) > 1:
+                if len(res) > 1 and not i.lower().startswith("unc_"):
                     print("Event %s is not unique on hybrid CPUs. Add cpu_*// prefixes" % i, file=sys.stderr)
                 ev = res[0]
                 i = ev.output(period=period, noexplode=noexplode)
