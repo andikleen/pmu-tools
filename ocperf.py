@@ -109,6 +109,17 @@ def has_format(s, pmu):
 def has_format_any(f, pmu):
     return has_format(f, pmu) or has_format(f, pmu + "_0")
 
+cached_vals = dict()
+
+def cached_read(fn):
+    if fn not in cached_vals:
+        try:
+            with open(fn) as f:
+                cached_vals[fn] = f.read()
+        except OSError:
+            cached_vals[fn] = "?"
+    return cached_vals[fn]
+
 warned = set()
 
 def warn_once(s):
@@ -287,7 +298,8 @@ class Event(object):
         if self.pname:
             e = self.pname
         else:
-            e = "event=0x%x,umask=0x%x" % (val & 0xff, (val >> 8) & 0xff)
+            e = "event=0x%x,umask=0x%x" % (val & 0xff, 
+                                           ((val >> 8) & 0xff) | (((val >> 40) & 0xff) << 8))
         e += extra
         if version.has_name:
             if name:
@@ -323,6 +335,9 @@ class Event(object):
         return ename
 
     def filter_qual(self):
+        if cached_read("/sys/devices/%s/format/umask") == "config:8-15":
+            self.val &= ~EVENTSEL_UMASK2
+
         def check_qual(q):
             if q == "":
                 return True
@@ -624,6 +639,8 @@ class EmapNativeJSON(object):
             try:
                 code = gethex(u'EventCode')
                 umask = gethex(u'UMask')
+                if 'UMaskExt' in row:
+                    umask |= gethex(u'UMaskExt') << (40 - 8)
             except ValueError:
                 if ocverbose:
                     print("cannot parse event", name)
