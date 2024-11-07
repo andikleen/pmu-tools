@@ -83,8 +83,8 @@ def Fetched_Uops(self, EV, level):
     return (EV("IDQ.DSB_UOPS", level) + EV("LSD.UOPS", level) + EV("IDQ.MITE_UOPS", level) + EV("IDQ.MS_UOPS", level))
 
 def Few_Uops_Executed_Threshold(self, EV, level):
-    EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
     EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level)
+    EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
     return EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level) if (IPC(self, EV, level)> 1.8) else EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
 
 # Floating Point computational (arithmetic) Operations Count
@@ -3697,30 +3697,30 @@ class Setup:
         o["Branch_Mispredicts"].Bad_Speculation = o["Bad_Speculation"]
         o["Machine_Clears"].Bad_Speculation = o["Bad_Speculation"]
         o["Machine_Clears"].Branch_Mispredicts = o["Branch_Mispredicts"]
-        o["Backend_Bound"].Retiring = o["Retiring"]
         o["Backend_Bound"].Bad_Speculation = o["Bad_Speculation"]
+        o["Backend_Bound"].Retiring = o["Retiring"]
         o["Backend_Bound"].Frontend_Bound = o["Frontend_Bound"]
-        o["Memory_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Memory_Bound"].Backend_Bound = o["Backend_Bound"]
         o["Memory_Bound"].Fetch_Latency = o["Fetch_Latency"]
         o["Memory_Bound"].Frontend_Bound = o["Frontend_Bound"]
+        o["Memory_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Memory_Bound"].Retiring = o["Retiring"]
         o["MEM_Latency"].MEM_Bandwidth = o["MEM_Bandwidth"]
+        o["Core_Bound"].Fetch_Latency = o["Fetch_Latency"]
+        o["Core_Bound"].Frontend_Bound = o["Frontend_Bound"]
         o["Core_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Core_Bound"].Backend_Bound = o["Backend_Bound"]
-        o["Core_Bound"].Frontend_Bound = o["Frontend_Bound"]
-        o["Core_Bound"].Fetch_Latency = o["Fetch_Latency"]
         o["Core_Bound"].Retiring = o["Retiring"]
         o["Core_Bound"].Memory_Bound = o["Memory_Bound"]
         o["Ports_Utilization"].Fetch_Latency = o["Fetch_Latency"]
         o["Ports_Utilized_0"].Fetch_Latency = o["Fetch_Latency"]
         o["Retiring"].Heavy_Operations = o["Heavy_Operations"]
+        o["Light_Operations"].Heavy_Operations = o["Heavy_Operations"]
         o["Light_Operations"].Retiring = o["Retiring"]
         o["Light_Operations"].Microcode_Sequencer = o["Microcode_Sequencer"]
-        o["Light_Operations"].Heavy_Operations = o["Heavy_Operations"]
         o["FP_Arith"].FP_Scalar = o["FP_Scalar"]
-        o["FP_Arith"].X87_Use = o["X87_Use"]
         o["FP_Arith"].FP_Vector = o["FP_Vector"]
+        o["FP_Arith"].X87_Use = o["X87_Use"]
         o["Heavy_Operations"].Microcode_Sequencer = o["Microcode_Sequencer"]
         o["CISC"].Assists = o["Assists"]
         o["CISC"].Microcode_Sequencer = o["Microcode_Sequencer"]

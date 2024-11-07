@@ -83,8 +83,8 @@ def Fetched_Uops(self, EV, level):
     return (EV("IDQ.DSB_UOPS", level) + EV("LSD.UOPS", level) + EV("IDQ.MITE_UOPS", level) + EV("IDQ.MS_UOPS", level))
 
 def Few_Uops_Executed_Threshold(self, EV, level):
-    EV("UOPS_EXECUTED.CORE:c3", level)
     EV("UOPS_EXECUTED.CORE:c2", level)
+    EV("UOPS_EXECUTED.CORE:c3", level)
     return EV("UOPS_EXECUTED.CORE:c3", level) if (IPC(self, EV, level)> 1.8) else EV("UOPS_EXECUTED.CORE:c2", level)
 
 def Frontend_RS_Empty_Cycles(self, EV, level):
@@ -3289,29 +3289,29 @@ class Setup:
         o["Machine_Clears"].Branch_Mispredicts = o["Branch_Mispredicts"]
         o["Machine_Clears"].Bad_Speculation = o["Bad_Speculation"]
         o["Backend_Bound"].Frontend_Bound = o["Frontend_Bound"]
-        o["Backend_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Backend_Bound"].Retiring = o["Retiring"]
+        o["Backend_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Memory_Bound"].Fetch_Latency = o["Fetch_Latency"]
-        o["Memory_Bound"].Frontend_Bound = o["Frontend_Bound"]
-        o["Memory_Bound"].Bad_Speculation = o["Bad_Speculation"]
-        o["Memory_Bound"].Retiring = o["Retiring"]
         o["Memory_Bound"].Backend_Bound = o["Backend_Bound"]
+        o["Memory_Bound"].Retiring = o["Retiring"]
+        o["Memory_Bound"].Bad_Speculation = o["Bad_Speculation"]
+        o["Memory_Bound"].Frontend_Bound = o["Frontend_Bound"]
         o["MEM_Latency"].MEM_Bandwidth = o["MEM_Bandwidth"]
-        o["Core_Bound"].Frontend_Bound = o["Frontend_Bound"]
         o["Core_Bound"].Backend_Bound = o["Backend_Bound"]
         o["Core_Bound"].Memory_Bound = o["Memory_Bound"]
+        o["Core_Bound"].Frontend_Bound = o["Frontend_Bound"]
         o["Core_Bound"].Fetch_Latency = o["Fetch_Latency"]
-        o["Core_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Core_Bound"].Retiring = o["Retiring"]
+        o["Core_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Ports_Utilization"].Fetch_Latency = o["Fetch_Latency"]
         o["Ports_Utilized_0"].Fetch_Latency = o["Fetch_Latency"]
         o["Retiring"].Heavy_Operations = o["Heavy_Operations"]
-        o["Light_Operations"].Heavy_Operations = o["Heavy_Operations"]
         o["Light_Operations"].Microcode_Sequencer = o["Microcode_Sequencer"]
         o["Light_Operations"].Retiring = o["Retiring"]
+        o["Light_Operations"].Heavy_Operations = o["Heavy_Operations"]
         o["Heavy_Operations"].Microcode_Sequencer = o["Microcode_Sequencer"]
-        o["CISC"].Assists = o["Assists"]
         o["CISC"].Microcode_Sequencer = o["Microcode_Sequencer"]
+        o["CISC"].Assists = o["Assists"]
 
         # siblings cross-tree
 
