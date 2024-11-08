@@ -363,7 +363,7 @@ def remove_qual(ev):
             return prefix + m.group(1)
         return prefix
 
-    return re.sub(r':(p?)[ku]+', lambda m: get_group("", m), re.sub(r'/(p?)[ku]+', lambda m: get_group("/", m), ev))
+    return re.sub(r':(p?)[kuhgHeD]+$', lambda m: get_group("", m), re.sub(r'/(p?)[kuhgHeD]+$', lambda m: get_group("/", m), ev))
 
 def limited_overflow(evlist, num):
     class GenericCounters:
@@ -2248,6 +2248,7 @@ def check_event(rlist, event, off, title, prev_interval, l, revnum, linenum, las
         revnum = r.sched.evnum
     if event.startswith("uncore"):
         event = re.sub(r'_[0-9]+', '', event)
+        event = re.sub(r'/uncore_[a-z]+,', '/', event)
     try:
         expected_ev = remove_qual(revnum[off])
     except IndexError:
@@ -2435,8 +2436,8 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         title = title.replace("CPU", "")
 
         # code later relies on stripping ku flags
-        event = remove_qual(event)
         event = re.sub(r'\s+\[.*\]', '', event)
+        event = remove_qual(event)
         m = re.match(r"tool/(.*)/", event)
         if m:
             event = m.group(1)
