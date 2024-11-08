@@ -1588,7 +1588,7 @@ class ValidEvents(object):
         self.string = "|".join(self.valid_events)
 
     def __init__(self):
-        self.valid_events = [r"cpu(_core|_atom)?/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*",
+        self.valid_events = [r"cpu(_core|_atom)?/.*?/", "uncore.*?/.*?/", "ref-cycles", "power.*", "tool/.*",
                              r"msr.*", "emulation-faults",
                              r"r[0-9a-fA-F]+", "cycles", "instructions", "dummy",
                              "slots", r"topdown-(fe-bound|be-bound|retiring|bad-spec|heavy-ops|br-mispredict|fetch-lat|mem-bound)"]
@@ -2437,6 +2437,9 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         # code later relies on stripping ku flags
         event = remove_qual(event)
         event = re.sub(r'\s+\[.*\]', '', event)
+        m = re.match(r"tool/(.*)/", event)
+        if m:
+            event = m.group(1)
 
         # duplicated duration_time in perf ~6.5. was already added from the first.
         if event == "duration_time" and count == "<not counted>":
