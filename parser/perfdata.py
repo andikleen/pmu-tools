@@ -74,6 +74,16 @@ def thread_map():
                                        UNInt64("pid"),
                                        String("comm", 16))))
 
+def id_index():
+    return Struct("id_index",
+                  UNInt64("nr"),
+                  Array(lambda ctx: ctx.nr,
+                     Struct("id_index_entry",
+                        UNInt64("id"),
+                        UNInt64("idx"),
+                        UNInt64("cpu"),
+                        UNInt64("tid"))))
+
 def as_is():
     return Embedded(Struct("data", Bytes("data", lambda ctx: ctx.size - 8)))
 
@@ -372,7 +382,7 @@ def perf_event():
                               "HEADER_EVENT_TYPE": as_is(),
                               "TRACING_DATA": as_is(),
                               "HEADER_BUILD_ID": as_is(),
-                              "ID_INDEX":as_is(),
+                              "ID_INDEX":id_index(),
                               "AUXTRACE_INFO": as_is(),
                               "AUXTRACE": as_is(),
                               "AUXTRACE_ERROR": as_is(),
