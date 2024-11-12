@@ -66,7 +66,7 @@ else:
     from shlex import quote
 import itertools
 import glob
-from pmudef import EVENTSEL_ANY, EVENTSEL_INV, EVMASK, extra_flags
+from pmudef import EVENTSEL_ANY, EVENTSEL_INV, EVMASK, extra_flags, EVENTSEL_UMASK2
 if sys.version_info.major == 3:
     import typing # noqa
     from typing import Set, List, Dict, Any, Tuple, DefaultDict # noqa
