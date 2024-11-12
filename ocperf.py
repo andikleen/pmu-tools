@@ -298,7 +298,7 @@ class Event(object):
         if self.pname:
             e = self.pname
         else:
-            e = "event=0x%x,umask=0x%x" % (val & 0xff, 
+            e = "event=0x%x,umask=0x%x" % (val & 0xff,
                                            ((val >> 8) & 0xff) | (((val >> 40) & 0xff) << 8))
         e += extra
         if version.has_name:
