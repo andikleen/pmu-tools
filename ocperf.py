@@ -116,7 +116,7 @@ def cached_read(fn):
         try:
             with open(fn) as f:
                 cached_vals[fn] = f.read()
-        except OSError:
+        except (OSError, IOError):
             cached_vals[fn] = "?"
     return cached_vals[fn]
 
