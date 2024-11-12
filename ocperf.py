@@ -1045,7 +1045,7 @@ def process_events(event, print_only, period, noexplode):
             if ev:
                 qual = "".join(sorted(merge_extra(extra_set(ev.extra), extra_set(m.group(4)))))
                 end += qual
-                i = ev.output_newstyle(period=period, noexplode=noexplode)
+                i = ev.output(period=period, noexplode=noexplode)
                 if i.count("/") > 2: # was it exploded?
                     start = ""
                     end = ""
