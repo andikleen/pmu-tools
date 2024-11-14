@@ -453,7 +453,7 @@ class UncoreEvent(object):
     # XXX cannot separate sockets
     # extra: perf flags
     # flags: emon flags
-    def output(self, newextra="", noname=False, period=False, name="", flags="", noexplode=False):
+    def output_newstyle(self, newextra="", noname=False, period=False, name="", flags="", noexplode=False):
         e = self
         o = "/event=%#x" % e.code
         if e.umask:
@@ -514,6 +514,7 @@ class UncoreEvent(object):
             return False
 
         self.newextra = ",".join(filter(check_qual, convert_uncore(self.newextra, ()).split(",")))
+    output = output_newstyle
 
 def ffs(flag):
     assert flag != 0
