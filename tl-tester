@@ -720,6 +720,7 @@ if run fuzzy ; then
 # test INAME, FUZZYINPUT
 # FIXME: --all still fails
 ARG="-l4 --no-uncore"
+if [ `ls -d /sys/devices/cpu_* | wc -l` -le 1 ] ; then
 $WRAP ./toplev $NATIVE_ARGS $ARG --tune INAME=True -- $LOAD
 $WRAP ./toplev $NATIVE_ARGS $ARG --tune FUZZYINPUT=True -- $LOAD
 $WRAP ./toplev $NATIVE_ARGS --perf-output perfo$$.csv $ARG --tune INAME=True FUZZYINPUT=True -- $LOAD
@@ -746,7 +747,7 @@ $WRAP ./toplev $NATIVE_ARGS --import perfo$$.csv $ARG --tune FUZZYINPUT=True
 #$WRAP ./toplev $NATIVE_ARGS --import perfo$$.2.csv -l1 --tune FUZZYINPUT=True
 rm perfo$$.csv
 rm perfo$$.2.csv
-
+fi # hybrid
 fi # fuzzy
 
 if run parallel ; then
