@@ -376,8 +376,8 @@ def perf_event():
                               "KSYMBOL": as_is(),
                               "BPF_EVENT": as_is(),
                               "CGROUP": as_is(),
-                              "TEXT_POKE" : as_is(),
-                              "AUX_OUTPUT_HW_ID" : as_is(),
+                              "TEXT_POKE": as_is(),
+                              "AUX_OUTPUT_HW_ID": as_is(),
                               "HEADER_ATTR": as_is(),
                               "HEADER_EVENT_TYPE": as_is(),
                               "TRACING_DATA": as_is(),
@@ -732,8 +732,7 @@ perf_file = Struct("perf_file_header",
 
                              Padding(256 - 4*8))),
                    Pointer(lambda ctx: ctx.data.offset + ctx.data.size,
-                           perf_features()),
-)
+                           perf_features()),)
 
 def get_events(h):
     return h.data.perf_data
