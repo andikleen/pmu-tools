@@ -149,21 +149,6 @@ checklog0() {
 	grep -v unparseable log$$
 }
 
-if [ ! -r mtl-retlat.json ] ; then
-	if $PERF report -h 2>&1 | grep -q retire_lat ; then
-		case $(./toplev --show-cpu) in
-		mtl*) $WRAP ./genretlat.py -o mtl-retlat.json ./workloads/BC1s ;;
-		esac
-	fi
-	if [ ! -r mtl-retlat.json ] ; then
-		(
-		echo '{ "Data": { '
-		grep -E -o '"[^"]+", 999' mtl_rwc_ratios.py  | tr -d '"' | sed -e s/,.*// -e 's/\(.*\)/"\1": { "MEAN": 5 },/'
-		echo '"": {} } }'
-		) > mtl-retlat.json
-	fi
-fi
-
 if run basic ; then
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
