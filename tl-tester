@@ -806,10 +806,15 @@ fi # cpu2
 
 if run genretlat ; then
 
+if perf script -h 2>&1 | grep -q retire_lat ; then
+
 for j in $GENRETLATCPUS ; do
-$WRAP ./genretlat.py --cpu $j $LOAD
+$WRAP ./genretlat.py -o tretlat$$.json  --cpu $j $LOAD
+$WRAP ./toplev.py --force-cpu $j --ret-latency tretlat$$.json --all $LOAD
+rm tretlat$$.json
 done
 
+fi #retire_lat support
 fi #genretlat
 
 # just for accounting
