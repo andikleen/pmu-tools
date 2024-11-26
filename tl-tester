@@ -140,7 +140,7 @@ NOSMTCPUS="${NOSMTCPUS:-slm simple ehl adl-grt srf lnl lnl-lnc lnl-skt}"
 ALLCPUS="${ALLCPUS:-$SMTCPUS $NOSMTCPUS}"
 fi
 METRICCPUS='icl|tgl|mtl-rwc|spr|sprmax|adl-glc|icx|gnr|lnl'
-GENRETLATCPUS='mtl lnl gnr'
+GENRETLATCPUS='mtl lnl gnr arl'
 
 ALL=--all
 
