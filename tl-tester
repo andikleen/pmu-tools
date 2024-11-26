@@ -278,7 +278,7 @@ for j in $SMTCPUS ; do
 if ! grep -q hypervisor /proc/cpuinfo ; then
 if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
 case "$j" in
-adl*|mtl*)
+adl*|mtl*|arl*|lnl*)
 FORCECOUNTERS=8 FORCEHT=1 $WRAP ./toplev.py --perf --force-cpu $j --force-topology topology --force-events --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
 	;;
 *)
@@ -290,7 +290,7 @@ notfound $j
 fi
 fi
 case "$j" in
-adl*|mtl*)
+adl*|mtl*|arl*|lnl*)
 FORCECOUNTERS=8 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
 ;;
 *)
@@ -599,7 +599,7 @@ checklog0
 rm log$$
 $WRAP ./toplev.py $NATIVE_ARGS $OPT > log$$ true
 # assumes that true is backend_bound. If not would need some parsing
-[ -z "$NORES" ] && grep -E "Add --nodes.*(Back|Front)end" log$$
+[ -z "$NORES" ] && grep -E "Add --nodes.*(Backend|Frontend|Fetch_Latency)" log$$
 rm log$$
 $WRAP ./toplev.py  -v $OPT $NATIVE_ARGS --nodes Backend*/3 -o log$$ true
 echo >> log$$
