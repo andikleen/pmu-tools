@@ -3808,7 +3808,7 @@ def do_sample(sample_obj, rest, count, ret, kernel_version):
         nnopebs = {x[0] for x in nsamp if force_pebs(x[0])}
         if nnopebs and not args.quiet:
             for o in nnopebs:
-                warn_no_assert("sample event %s not (currently) supported in virtualization" % o[0])
+                warn_no_assert("sample event %s not (currently) supported in virtualization" % o)
         nsamp = [x for x in nsamp if x[0] not in nnopebs]
 
     sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True) for s in nsamp]
