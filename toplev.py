@@ -1264,8 +1264,6 @@ def print_perf(r):
     i = l.index('--log-fd')
     del l[i:i+2]
     s = " ".join(l)
-    if len(l) > 2:
-        s = s.replace("},", "},\n")
     print(s)
     sys.stdout.flush()
 
