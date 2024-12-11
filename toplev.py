@@ -3503,8 +3503,8 @@ class Runner(object):
         mgroups = set() # type: Set[str]
 
         def want_node(obj, mgroups, tma_mgroups):
-            area = safe_ref(obj, 'area')
-            if args.no_uncore and area == "Info.System":
+            mg = safe_ref(obj, 'metricgroup')
+            if args.no_uncore and mg and "SoC" in mg:
                 return False
             if args.areas and area and any([fnmatch(area, p) for p in args.areas.split(",")]):
                 return True
