@@ -6376,7 +6376,7 @@ class Metric_R2C_Offcore_BW:
     maxval = 0
     errcount = 0
     area = "Info.Memory.SoC"
-    metricgroup = frozenset(['HPC', 'Mem', 'MemoryBW', 'SoC'])
+    metricgroup = frozenset(['HPC', 'Mem', 'MemoryBW'])
     sibling = None
 
     def compute(self, EV):
@@ -6397,7 +6397,7 @@ class Metric_R2C_L3M_BW:
     maxval = 0
     errcount = 0
     area = "Info.Memory.SoC"
-    metricgroup = frozenset(['HPC', 'Mem', 'MemoryBW', 'SoC'])
+    metricgroup = frozenset(['HPC', 'Mem', 'MemoryBW'])
     sibling = None
 
     def compute(self, EV):
@@ -6418,7 +6418,7 @@ class Metric_R2C_DRAM_BW:
     maxval = 0
     errcount = 0
     area = "Info.Memory.SoC"
-    metricgroup = frozenset(['HPC', 'Mem', 'MemoryBW', 'SoC'])
+    metricgroup = frozenset(['HPC', 'Mem', 'MemoryBW'])
     sibling = None
 
     def compute(self, EV):
