@@ -32,8 +32,8 @@ checklist()
 
 	# see if all events are visible
 	R=$(EVENTMAP=${cpus[$1]} $WRAP ./ocperf.py list | wc -l)
-	if [ $[$R - $BASELEN] -lt $2 ]; then
-		echo $1 list mismatch $[$R - $BASELEN]
+	if [ $((R - BASELEN)) -lt $2 ]; then
+		echo $1 list mismatch $((R - BASELEN))
 		exit 1
 	fi
 }
@@ -201,7 +201,7 @@ cat >top2$$ <<EOL
 /sys/devices/uncore_r2pcie/format/umask
 /sys/devices/uncore_r2pcie/format/cmask
 EOL
-TOPOLOGY=top2$$ UNCORE=Jaketown* checkp 'unc_r2_iio_credits_acquired.ncb:state=0x123' 'filter_state=0x123'
+TOPOLOGY=top2$$ UNCORE="Jaketown*" checkp 'unc_r2_iio_credits_acquired.ncb:state=0x123' 'filter_state=0x123'
 
 cat >top2$$ <<EOL
 /sys/devices/uncore_cbox_0
@@ -209,11 +209,11 @@ cat >top2$$ <<EOL
 /sys/devices/uncore_cbox_1
 /sys/devices/uncore_cbox_1/format/umask
 EOL
-TOPOLOGY=top2$$ UNCORE=haswell_uncore* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1'
-TOPOLOGY=top2$$ UNCORE=haswell_uncore* checkp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_0'
-TOPOLOGY=top2$$ UNCORE=haswell_uncore* checknotp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_1'
-TOPOLOGY=top2$$ UNCORE=haswell_uncore* checknotp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1' --noexplode
-TOPOLOGY=top2$$ UNCORE=haswell_uncore* checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox[^_]' --noexplode
+TOPOLOGY=top2$$ UNCORE="haswell_uncore*" checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1'
+TOPOLOGY=top2$$ UNCORE="haswell_uncore*" checkp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_0'
+TOPOLOGY=top2$$ UNCORE="haswell_uncore*" checknotp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_1'
+TOPOLOGY=top2$$ UNCORE="haswell_uncore*" checknotp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1' --noexplode
+TOPOLOGY=top2$$ UNCORE="haswell_uncore*" checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox[^_]' --noexplode
 
 TOPOLOGY=top2$$ EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
 

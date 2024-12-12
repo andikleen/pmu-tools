@@ -11,7 +11,7 @@ $WRAP ./sanity-run.py $EXTRA "PCU.CLOCKTICKS / KILO" sleep 3
 
 $WRAP ./sanity-run.py $EXTRA -S0 "PCU.*" sleep 3
 
-if [ $(lscpu | awk '/Socket/ { print $2 }' ) -gt 1 ] ; then
+if [ "$(lscpu | awk '/Socket/ { print $2 }' )" -gt 1 ] ; then
 
 $WRAP ./sanity-run.py $EXTRA -S1 "PCU.*" sleep 3
 

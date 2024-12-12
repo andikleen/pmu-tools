@@ -12,30 +12,30 @@ trap failed ERR 0
 PATH=.:./examples:$PATH
 
 
-$V listevents > l
-[ $(wc -l < l) -gt 50 ] 
-grep -q offcore_response l
+$V listevents > l$$
+[ "$(wc -l < l$$)" -gt 50 ]
+grep -q offcore_response l$$
 
-if grep -q br_misp_retired.taken l ; then
+if grep -q br_misp_retired.taken l$$ ; then
 	E=br_misp_retired.taken
-elif grep -q br_misp_retired.near_taken l ; then
+elif grep -q br_misp_retired.near_taken l$$ ; then
 	E=br_misp_retired.near_taken
 else
 	E=instructions
 fi
 
-if [ -r /sys/devices/cpu*/events/instructions ] ; then
+if [ "$(ls /sys/devices/cpu*/events/instructions | wc -l)" -gt 0 ] ; then
 $V jestat true
 $V jestat -e cpu-cycles,cpu_clk_unhalted.ref_tsc,$E true
 $V jestat -e "{cpu-cycles,cpu_clk_unhalted.ref_tsc},{$E,cache-references}" -a sleep 1
 $V jestat -a sleep 1
 $V jestat -a -e "uops_executed.thread:k" sleep 1
-OCR=$(grep -E '^(offcore_response|ocr)\.' l | head -1  | cut -d ' ' -f 1)
+OCR=$(grep -E '^(offcore_response|ocr)\.' l$$ | head -1  | cut -d ' ' -f 1)
 $V jestat -a -e "$OCR:config1=0x1" sleep 1
 $V jestat -A -a -I 500 cycles sleep 2
 
 # test all events
-LEN=$(wc -l l | awk ' { print $1 }')
+LEN=$(wc -l l$$ | awk ' { print $1 }')
 INC=20
 
 # skip i915/vcs-* which often returns ENODEV for no good reason
@@ -45,7 +45,8 @@ if [ ! -d /sys/devices/uncore_upi_0 ] ; then
 fi
 
 for ((i = 1; i <= LEN; i += INC)) ; do
-	$V jestat $(nl l |
+	# shellcheck disable=SC2046
+	$V jestat $(nl l$$ |
 		    grep -E -v "$SKIP" |
 		    awk -v v=$i -v inc=$INC '$1 >= v && $1 <= v+inc { print "-e " $2 } ') -a true
 done
@@ -56,11 +57,13 @@ fi
 
 $V event-rmap $E
 
-if [ -r /sys/devices/cpu*/events/instructions ] ; then
+if [ "$(ls /sys/devices/cpu*/events/instructions | wc -l)" -gt 0 ] ; then
 $V examples/addr
 examples/rtest
 examples/rtest2
 fi
+
+rm l$$
 
 trap "" ERR 0
 

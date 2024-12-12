@@ -50,7 +50,7 @@ else
 fi
 
 if [ "$ONLYCPU" = "cur" ] ; then
-	ONLYCPU=`./toplev $NATIVE_ARGS --show-cpu | cut -d ' ' -f 1`
+	ONLYCPU=$(./toplev $NATIVE_ARGS --show-cpu | cut -d ' ' -f 1)
 fi
 
 OPT="${OPT:-}"
@@ -60,7 +60,7 @@ case "$PERF" in
 esac
 
 FOURCOUNTERS=""
-if `$PERF stat -e '{branches,branches,branches,branches,branches}' -x, true | grep -q "not supported"` ; then
+if $PERF stat -e '{branches,branches,branches,branches,branches}' -x, true | grep -q "not supported" ; then
 	FOURCOUNTERS=1
 fi
 
@@ -87,6 +87,7 @@ rm -f nflog$$
 (
 echo '#include <stdio.h>'
 for ((i=0;i<500;i++)) ; do
+	# shellcheck disable=SC2028
 	echo "void func$i(void) { int i; for(i=0;i<10;i++) printf(\"Hello $i\n\"); }"
 done
 echo 'int main(void) {'
@@ -111,6 +112,7 @@ run() {
 	rm times$$
 	date +%s | sed "s/^/abstime ${CUR:-init} /"
 	if [ -n "$RUN" ] ; then
+		# shellcheck disable=SC2254
 		case "$1" in $RUN) ;; *) set -x ; return 1 ; esac
 	fi
 	echo -e "\n=== RUN $1 ===\n"
@@ -144,6 +146,8 @@ GENRETLATCPUS='mtl lnl gnr arl'
 
 ALL=--all
 
+PARANOID="$(< /proc/sys/kernel/perf_event_paranoid)"
+
 checklog0() {
 	echo >> log$$
 	grep -v unparseable log$$
@@ -163,7 +167,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 --single-thread $LOAD | t
 checklog0
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 --single-thread --columns $LOAD | tee log$$
 checklog0
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 1 ] ; then
+if [ $PARANOID -lt 1 ] ; then
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --all --core S0-C0-T0 $LOAD0 | tee log$$
 #checklog0
 fi
@@ -173,8 +177,9 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -x, -v -l4 $LOAD | tee log$$
 checklog0
 set +e
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -r2 -l4 $LOAD
+E=$?
 # ignore perf segfault with -r, which happens in some versions
-if [ $? != 0 -a $? != 245 ] ; then failed ; fi
+if [ $E != 0 ] && [ $E != 245 ] ; then failed ; fi
 set -e
 KERNEL_VERSION=2.1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc --all $LOAD | tee log$$
 checklog0
@@ -201,7 +206,7 @@ $WRAP ./toplev.py --force-cpu skl $OPT --filterquals --nodes '!+Bad_Speculation.
 [ -z "$NORES" ] && grep IpMispredict log$$
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
 if [ -d /sys/devices/cpu_atom ] ; then
-$WRAP ./toplev $NATIVE_ARGS --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $(./cputop 'type=="core"' taskset) $LOADLONG
+$WRAP ./toplev $NATIVE_ARGS --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ "$(./cputop 'type=="core"' taskset)" $LOADLONG
 else
 $WRAP ./toplev --force-cpu skl --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $LOADLONG
 fi
@@ -241,7 +246,7 @@ fi # nodes
 
 # test L1 uses a single group
 onegroup() {
-	if [ `cat /proc/sys/kernel/nmi_watchdog` = 1 ] ; then return ; fi
+	if [ "$(cat /proc/sys/kernel/nmi_watchdog)" = 1 ] ; then return ; fi
 	if [ -n "$NOGROUP" ] ; then return ; fi
 	if grep -q dummy $1 ; then return ; fi
 	if [ -n "$FOURCOUNTERS" ] ; then return ; fi
@@ -260,7 +265,7 @@ checklog() {
 	grep -v unparseable $1
 	if grep "not supported 100.00%" $1 ; then
 		echo "WARNING unsupported schedule in $1"
-		badschedules=$[$badschedules + 1]
+		badschedules="$((badschedules + 1))"
 		badschedlist="$badschedlist $1"
 	fi
 }
@@ -274,34 +279,33 @@ if run cpus ; then
 
 if [ -z "$NOCPUS" ] ; then
 for j in $SMTCPUS ; do
-	[ "$MATCH" != "" -a "$MATCH" != "$j" ] && continue
+	[ "$MATCH" != "" ] && [ "$MATCH" != "$j" ] && continue
 if ! grep -q hypervisor /proc/cpuinfo ; then
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 case "$j" in
 adl*|mtl*|arl*|lnl*)
 FORCECOUNTERS=8 FORCEHT=1 $WRAP ./toplev.py --perf --force-cpu $j --force-topology topology --force-events --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
 	;;
 *)
 FORCEHT=1 $WRAP ./toplev.py --perf --force-cpu $j --force-topology topology --force-events --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
-esac
-[ $j != "knl" ] && onegroup log$$.$j
+esac # j
 checklog log$$.$j
 notfound $j
-fi
-fi
+fi # paranoid
+fi # hypervisor
 case "$j" in
 adl*|mtl*|arl*|lnl*)
-FORCECOUNTERS=8 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
+FORCECOUNTERS=8 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology -l1 --force-cpu $j --force-events --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
 ;;
 *)
 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology --force-cpu $j --force-events -l1 --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
 ;;
-esac
+esac # j
 [ $j != "knl" ] && onegroup log$$.$j
 checklog log$$.$j
 notfound $j
 
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 if ! grep -q hypervisor /proc/cpuinfo ; then
 FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
@@ -311,8 +315,8 @@ checklog log$$.$j
 notfound $j
 FORCEHT=1 $WRAP ./toplev.py --force-topology topology --thread --force-cpu $j --force-events $ALL --filterquals $OPT --user $LOAD 2>&1
 checklog log$$.$j
-fi
-fi
+fi # hypervisor
+fi # paranoid
 FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
@@ -321,7 +325,7 @@ FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-topology topology --force-cp
 checklog log$$.$j
 notfound $j
 
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 case "$OPT" in
 *--exclusive*) ;;
 *)
@@ -329,8 +333,8 @@ FORCEHT=1 FORCE_NMI_WATCHDOG=1 \
 $WRAP ./toplev.py --reserved-counters=1 --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
-esac
-fi
+esac # OPT
+fi # paranoid
 
 FORCEHT=0 FORCECOUNTERS=4 \
 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
@@ -341,7 +345,7 @@ HYPERVISOR=1 FORCEHT=0 FORCECOUNTERS=4 \
 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 HYPERVISOR=1 FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
@@ -374,7 +378,7 @@ grep topdown- log$$
 grep :D log$$
 rm log$$
 
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 
 HYPERVISOR=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
@@ -389,19 +393,17 @@ checklog log$$.$j
 notfound $j
 rm log$$.$j
 esac
-fi
+fi # paranoid
 
-;;
-esac
-
+fi # incase
 
 done
 
 for j in $NOSMTCPUS ; do
-	[ "$MATCH" != "" -a "$MATCH" != "$j" ] && continue
+	[ "$MATCH" != "" ] && [ "$MATCH" != "$j" ] && continue
 $WRAP ./toplev.py --perf --filterquals --force-cpu $j $OPT -l1 $LOAD 2>&1 | tee log$$.$j
 # SLM now needs two groups
-[ $j != "slm" -a $j != "ehl" ] && onegroup log$$.$j
+[ $j != "slm" ] && [ $j != "ehl" ] && onegroup log$$.$j
 checklog log$$.$j
 $WRAP ./toplev.py --filterquals --force-cpu $j $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
@@ -430,7 +432,7 @@ $WRAP ./toplev.py $NATIVE_ARGS --all --valcsv val$$.csv --perf-output perfo$$.cs
 [ -z "$NORES" ] && grep -v "not " val$$.csv
 rm val$$.csv perfo$$.csv log$$
 
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --raw -v -l3 --no-desc -a $LOAD
 $WRAP ./toplev.py -g --force-cpu $DCPU $OPT -o log$$ --valcsv val$$.csv --perf-output perfo$$.csv --all --fast $LOADLONG
 [ -z "$NORES" ] && grep Turbo_Utilization log$$
@@ -533,7 +535,7 @@ diff -uw log$$ log2.$$
 $WRAP ./toplev $COMMON $MODE --import perfo$$.csv --perf-output perfo.2.$$.csv --valcsv val.3.$$.csv -o log3.$$
 diff -uw log$$ log3.$$
 rm log{,2.,3.}$$ perf{s,o}$$.csv perfo.{1,2}.$$.csv val.{1,2,3}.$$.csv
-done
+done # MODE
 
 fi # import
 
@@ -559,7 +561,7 @@ cat j$$.json | $PYTHON -m json.tool
 rm j$$.json
 
 FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global --per-core -x, --columns -l4 $LOAD
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics --global -x, --columns -l4 $LOAD
 fi
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics  --per-thread --per-core --per-socket --summary -a -l4 --filterquals $LOAD
@@ -567,7 +569,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --split-output -o out$$ --metri
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics  --per-thread --per-core --per-socket --global --summary --filterquals -x, -a -l4 $LOAD
 FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --split-output -o out$$ --metrics  --per-thread --per-core --per-socket --global --summary --columns --filterquals -x, -a -l4 $LOAD
 FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics  --per-thread --per-core --per-socket --global --summary --columns --filterquals -x, -a -l4 $LOAD
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --split-output -o out$$ --metrics  --per-thread --per-core --per-socket --global --summary --filterquals --columns -x, -a -l4 $LOAD
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics  --per-thread --per-core --per-socket --global --summary --filterquals --columns -x, -a -l4 $LOAD
 rm out$$-*
@@ -616,7 +618,7 @@ echo >> log$$
 rm log$$
 if $PYTHON -c 'import matplotlib.pyplot' ; then
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --graph -o x$$.png --all $LOAD
-[ `stat -c %s x$$.png` -gt 1000 ]
+[ "$(stat -c %s x$$.png)" -gt 1000 ]
 fi
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -l4 -I 100 $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ -m -l4 -I 100 $LOAD
@@ -652,8 +654,10 @@ $WRAP ./toplev.py $NATIVE_ARGS $OPT -v -o log$$ --single-thread -r3 $LOAD
 [ -z "$NORES" ] && grep 'Backend_Bound.*[0-9][0-9]' log$$
 
 if [ -f /sys/devices/cpu_core ] ; then
-$WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype atom `$WRAP ./cputop 'type=="core"' taskset` true
-$WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype core `$WRAP ./cputop 'type=="atom"' taskset` true
+# shellcheck disable=SC2046
+$WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype atom $($WRAP ./cputop 'type=="core"' taskset) true
+# shellcheck disable=SC2046
+$WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype core $($WRAP ./cputop 'type=="atom"' taskset) true
 $WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype atom --all $LOAD
 $WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype core --all $LOAD
 fi
@@ -665,7 +669,7 @@ fi # misc4
 if run output ; then
 
 # test other perf output formats
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -v -I 1000 -a --per-core $LOAD
 checklog0
 fi
@@ -673,7 +677,7 @@ FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --al
 checklog0
 FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --per-socket $LOAD
 checklog0
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --per-socket --filterquals $LOAD
 checklog0
 fi
@@ -681,7 +685,7 @@ FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --no
 checklog0
 FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --summary --no-desc --no-area --all -I 1000 -a -A $LOAD
 checklog0
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --per-thread --filterquals $LOAD
 checklog0
 FORCEHT=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT -o log$$ --all -I 1000 -a --no-output $LOAD
@@ -728,7 +732,8 @@ if run fuzzy ; then
 # test INAME, FUZZYINPUT
 # FIXME: --all still fails
 ARG="-l4 --no-uncore"
-if [ `ls -d /sys/devices/cpu_* | wc -l` -le 1 ] ; then
+# shellcheck disable=SC2012
+if [ "$(ls -d /sys/devices/cpu_* | wc -l)" -le 1 ] ; then
 $WRAP ./toplev $NATIVE_ARGS $ARG --tune INAME=True -- $LOAD
 $WRAP ./toplev $NATIVE_ARGS $ARG --tune FUZZYINPUT=True -- $LOAD
 $WRAP ./toplev $NATIVE_ARGS --perf-output perfo$$.csv $ARG --tune INAME=True FUZZYINPUT=True -- $LOAD
@@ -788,27 +793,29 @@ if run cpu2 ; then
 $WRAP ./toplev.py $NATIVE_ARGS -o /dev/null $OPT --no-desc -v --all --run-sample $LOAD
 HYPERVISOR=1 $WRAP ./toplev.py $NATIVE_ARGS $OPT -o /dev/null --no-desc -v -l5 --run-sample $LOAD
 for cpu in $SMTCPUS ; do
-	[ "$MATCH" != "" -a "$MATCH" != "$cpu" ] && continue
+	[ "$MATCH" != "" ] && [ "$MATCH" != "$cpu" ] && continue
 
-if [ $(< /proc/sys/kernel/perf_event_paranoid) -lt 0 ] ; then
+if [ $PARANOID -lt 0 ] ; then
 FORCEHT=1 \
 $WRAP ./toplev.py --force-cpu $cpu $OPT --force-topology topology -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log$$
 cat log$$
 # need to ignore errors for now to allow testing on laptop for uncore events
 notfound $cpu
-fi
+fi # paranoid
 
 if ! grep -q hypervisor /proc/cpuinfo ; then
-[ "$cpu" != knl ] && grep [/:]p log$$
-[ "$cpu" = hsw -o "$cpu" = bdw -o "$cpu" = skl ] && grep [:/]pp log$$
-fi
-done
+[ "$cpu" != knl ] && grep "[/:]p" log$$
+if [ "$cpu" = hsw ] || [ "$cpu" = bdw ] || [ "$cpu" = skl ] ; then grep "[:/]pp" log$$ ; fi
+fi # hypervisor
+
+done # cpu
+
 for cpu in $NOSMTCPUS ; do
-	[ "$MATCH" != "" -a "$MATCH" != "$cpu" ] && continue
+	[ "$MATCH" != "" ] && [ "$MATCH" != "$cpu" ] && continue
 $WRAP ./toplev.py --force-cpu $cpu $OPT -o /dev/null --force-events --no-desc -v --all --filterqual --show-sample $LOAD >&log$$
 cat log$$
 notfound $cpu
-done
+done # cpu
 
 fi # cpu2
 
@@ -820,7 +827,7 @@ for j in $GENRETLATCPUS ; do
 $WRAP ./genretlat.py -o tretlat$$.json  --cpu $j $LOAD
 $WRAP ./toplev.py --force-cpu $j --ret-latency tretlat$$.json --all $LOAD
 rm tretlat$$.json
-done
+done # j
 
 fi #retire_lat support
 fi #genretlat
@@ -837,7 +844,7 @@ echo
 echo "$badschedules bad schedules: $badschedlist"
 if [ -z "$NOCPUS" ] ; then
 for i in $ALLCPUS ; do
-	[ "$MATCH" != "" -a "$MATCH" != "$cpu" ] && continue
+	[ "$MATCH" != "" ] && [ "$MATCH" != "$cpu" ] && continue
 	rm log$$.$i ;
 done
 fi

@@ -115,12 +115,12 @@ $WRAP cputop.py "socket == 0"
 $WRAP cputop.py "thread == 0 and socket == 0"
 $WRAP cputop.py "thread == 1" offline
 $WRAP cputop.py offline online
-[ $($WRAP cputop.py True | wc -l | cut -d ' ' -f 1) -eq $(getconf _NPROCESSORS_ONLN) ]
+[ "$($WRAP cputop.py True | wc -l | cut -d ' ' -f 1)" -eq "$(getconf _NPROCESSORS_ONLN)" ]
 
 # list-events.py
 
 EVENTMAP=${cpus[hsw]} $WRAP list-events.py > x$$.lst
-[ $(wc -l x$$.lst | cut -d ' ' -f 1) -gt 20 ]
+[ "$(wc -l x$$.lst | cut -d ' ' -f 1)" -gt 20 ]
 grep -qi rtm_retired.aborted x$$.lst
 rm x$$.lst
 
