@@ -354,8 +354,16 @@ checklog log$$.$j
 notfound $j
 fi # paranoid
 
-case "$j" in
-$METRICCPUS)
+function incase {
+    for o in $2 ; do
+	if [ $1 = $o ] ; then
+	   return 0
+	fi
+    done
+    return 1
+}
+
+if incase $j "$METRICCPUS" ; then
 
 FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $j --filterquals --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
 grep topdown- log$$
