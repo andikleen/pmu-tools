@@ -241,7 +241,7 @@ def verify_event(t, what):
         t = m.group(1)
         extra = m.group(2)
     e = findevent(t)
-    if e is None:
+    if not e:
         if t.startswith("UNC"):
             print("not found", t, file=sys.stderr)
         if t.endswith("_ANY"):
