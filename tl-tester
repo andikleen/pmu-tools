@@ -733,7 +733,7 @@ if run fuzzy ; then
 # FIXME: --all still fails
 ARG="-l4 --no-uncore"
 # shellcheck disable=SC2012
-if [ "$(ls -d /sys/devices/cpu_* | wc -l)" -le 1 ] ; then
+if [ "$(ls -d /sys/devices/cpu* | wc -l)" -le 1 ] ; then
 $WRAP ./toplev $NATIVE_ARGS $ARG --tune INAME=True -- $LOAD
 $WRAP ./toplev $NATIVE_ARGS $ARG --tune FUZZYINPUT=True -- $LOAD
 $WRAP ./toplev $NATIVE_ARGS --perf-output perfo$$.csv $ARG --tune INAME=True FUZZYINPUT=True -- $LOAD
