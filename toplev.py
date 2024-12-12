@@ -3506,6 +3506,7 @@ class Runner(object):
             mg = safe_ref(obj, 'metricgroup')
             if args.no_uncore and mg and "SoC" in mg:
                 return False
+            area = safe_ref(obj, 'area')
             if args.areas and area and any([fnmatch(area, p) for p in args.areas.split(",")]):
                 return True
             if args.bottlenecks and area == "Bottleneck":
