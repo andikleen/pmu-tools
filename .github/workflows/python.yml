@@ -27,7 +27,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest mypy
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-	sudo apt install -y shellcheck
+        sudo apt install -y shellcheck
     - name: Lint with flake8
       run: |
         ./FLAKE8
@@ -36,7 +36,7 @@ jobs:
         ./MYPY
     - name: Run shell check
       run: |
-	shellcheck  -e SC2086,SC2012 -x tl-tester tester other-tester parallel-tester all-tester jevents/tester  ucevent/uctester
+        shellcheck  -e SC2086,SC2012 -x tl-tester tester other-tester parallel-tester all-tester jevents/tester  ucevent/uctester
     - name: Run toplev tests
       run: |
         if ! grep -q GenuineIntel /proc/cpuinfo ; then export NATIVE_ARGS="--force-cpu skl" ; fi
