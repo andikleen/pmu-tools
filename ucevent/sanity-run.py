@@ -5,12 +5,15 @@
 from __future__ import print_function
 import sys
 import os
-import pipes
+# thanks python 3.13!
+try:
+    from shlex import quote as cmd_quote
+except ImportError:
+    from pipes import quote as cmd_quote
 
 logfile = "slog.%d" % (os.getpid())
 
-
-s = "./ucevent.py -x, -o " + logfile + " " + " ".join(map(pipes.quote, sys.argv[1:]))
+s = "./ucevent.py -x, -o " + logfile + " " + " ".join(map(cmd_quote, sys.argv[1:]))
 w = os.getenv("WRAP")
 if w:
     s = w + " " + s
