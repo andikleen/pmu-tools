@@ -16,7 +16,7 @@
 print_error = lambda msg: False
 smt_enabled = False
 ebs_mode = False
-version = "5.01-full-perf"
+version = "5.02-full-perf"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
