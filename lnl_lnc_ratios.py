@@ -1223,7 +1223,7 @@ class MITE:
     maxval = None
     def compute(self, EV):
         try:
-            self.val = (EV("IDQ.MITE_UOPS:c8:i1:eq1", 3) / CLKS(self, EV, 3) + EV("IDQ.MITE_UOPS", 3) / (EV("IDQ.DSB_UOPS", 3) + EV("IDQ.MITE_UOPS", 3)) * (EV("IDQ_BUBBLES.CYCLES_0_UOPS_DELIV.CORE", 3) - EV("IDQ_BUBBLES.FETCH_LATENCY", 3))) / CLKS(self, EV, 3)
+            self.val = (EV("IDQ.MITE_UOPS:c8:i1:eq1", 3) / 2 + EV("IDQ.MITE_UOPS", 3) / (EV("IDQ.DSB_UOPS", 3) + EV("IDQ.MITE_UOPS", 3)) * (EV("IDQ_BUBBLES.CYCLES_0_UOPS_DELIV.CORE", 3) - EV("IDQ_BUBBLES.FETCH_LATENCY", 3))) / CLKS(self, EV, 3)
             self.thresh = (self.val > 0.1) and self.parent.thresh
         except ZeroDivisionError:
             handle_error(self, "MITE zero division")
