@@ -226,11 +226,11 @@ static int parse_terms(char *pmu, char *config, struct perf_event_attr *attr, in
 		if (special_attr(name, val, attr, extra, term))
 			continue;
 		free(format);
-		if (read_file(&format, "/sys/devices/%s/format/%s", pmu, name) < 0) {
+		if (read_file(&format, "/sys/bus/event_source/devices/%s/format/%s", pmu, name) < 0) {
 			char *alias = NULL;
 
 			if (recur == 0 &&
-			    read_file(&alias, "/sys/devices/%s/events/%s", pmu, name) == 0) {
+			    read_file(&alias, "/sys/bus/event_source/devices/%s/events/%s", pmu, name) == 0) {
 				if (parse_terms(pmu, alias, attr, 1, NULL) < 0) {
 					free(alias);
 					fprintf(stderr, "Cannot parse kernel event alias %s for %s\n", name,
@@ -269,12 +269,12 @@ static int try_pmu_type(char **type, char *fmt, char *pmu, struct jevent_extra *
 {
 	char newpmu[50];
 	snprintf(newpmu, 50, fmt, pmu);
-	int ret = read_file(type, "/sys/devices/%s/type", newpmu);
+	int ret = read_file(type, "/sys/bus/event_source/devices/%s/type", newpmu);
 	if (ret >= 0) {
 		strcpy(pmu, newpmu);
 		if (extra && extra->pmus.gl_pathc == 0) {
 			char *fn;
-			asprintf(&fn, "/sys/devices/%s", newpmu);
+			asprintf(&fn, "/sys/bus/event_source/devices/%s", newpmu);
 			/* Fill in pmus so that the pmu name is available to users */
 			ret = glob(fn, 0, NULL, &extra->pmus);
 			free(fn);
@@ -332,13 +332,13 @@ bool jevent_pmu_uncore(const char *str)
 		return false;
 	if (sscanf(str, "%30[^/]", pmu) < 1)
 		return false;
-	int ret = read_file(&cpumask, "/sys/devices/%s/cpumask", pmu);
+	int ret = read_file(&cpumask, "/sys/bus/event_source/devices/%s/cpumask", pmu);
 	if (ret < 0)
-		ret = read_file(&cpumask, "/sys/devices/uncore_%s/cpumask", pmu);
+		ret = read_file(&cpumask, "/sys/bus/event_source/devices/uncore_%s/cpumask", pmu);
 	if (ret < 0)
-		ret = read_file(&cpumask, "/sys/devices/uncore_%s_0/cpumask", pmu);
+		ret = read_file(&cpumask, "/sys/bus/event_source/devices/uncore_%s_0/cpumask", pmu);
 	if (ret < 0)
-		ret = read_file(&cpumask, "/sys/devices/uncore_%s_1/cpumask", pmu);
+		ret = read_file(&cpumask, "/sys/bus/event_source/devices/uncore_%s_1/cpumask", pmu);
 	if (ret < 0)
 		return false;
 	bool isuncore = sscanf(cpumask, "%d", &cpus) == 1 && cpus == 0;
@@ -431,7 +431,7 @@ int check_valid_hex(char *str)
 }
 
 /* is_valid_cpu_event - Checks if the given string is a valid
-   cpu event by checking /sys/devices/cpu/events. Assumes that
+   cpu event by checking /sys/bus/event_source/devices/cpu/events. Assumes that
    aliases have already been applied. Returns 1 if so, 0 if not,
    -1 on error. */
 int check_cpu_event(char *event)
@@ -446,7 +446,7 @@ int check_cpu_event(char *event)
 	if (event[0] == '/')
 		memmove(event, event + 1, strlen(event + 1) + 1);
 
-	if (glob("/sys/devices/cpu/events/*", GLOB_NOSORT, NULL, &globbuf) != 0)
+	if (glob("/sys/bus/event_source/devices/cpu/events/*", GLOB_NOSORT, NULL, &globbuf) != 0)
 		goto err_free;
 	for (i = 0; i < globbuf.gl_pathc; i++) {
 		cur_event = basename(globbuf.gl_pathv[i]);
@@ -536,7 +536,7 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 	if ((sscanf(str, "r%200[^:]%n", config, &qual_off) == 1) && (check_valid_hex(config) == 1)) {
 		sscanf(config, "%llx", &attr->config);
 		assert(qual_off != -1);
-		glob("/sys/devices/cpu", 0, NULL, &extra->pmus);
+		glob("/sys/bus/event_source/devices", 0, NULL, &extra->pmus);
 		if (str[qual_off] == 0)
 			return 0;
 		if (str[qual_off] == ':' && jevents_update_qual(str + qual_off + 1, attr, str) == 0)
@@ -552,7 +552,7 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 		/* We found the event, so it's valid. */
 		if (parse_terms("cpu", config, attr, 0, extra) < 0)
 			goto err_free;
-		glob("/sys/devices/cpu", 0, NULL, &extra->pmus);
+		glob("/sys/bus/event_source/devices/cpu", 0, NULL, &extra->pmus);
 		if (str[qual_off] == 0)
 			return 0;
 		if (str[qual_off] == ':' && jevents_update_qual(str + qual_off + 1, attr, str) == 0)
@@ -573,7 +573,7 @@ int jevent_name_to_attr_extra(const char *str, struct perf_event_attr *attr,
 			int ret;
 
 			/* Glob the uncore PMUs that match this pattern */
-			asprintf(&gs, "/sys/devices/uncore_%s_[0-9]*", pmu);
+			asprintf(&gs, "/sys/bus/event_source/devices/uncore_%s_[0-9]*", pmu);
 			ret = glob(gs, 0, NULL, &extra->pmus);
 			free(gs);
 			if (ret)
@@ -650,13 +650,13 @@ int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc
 {
 	int ret = 0;
 	glob_t g;
-	if (glob("/sys/devices/*/events/*", 0, NULL, &g) != 0)
+	if (glob("/sys/bus/event_source/devices/*/events/*", 0, NULL, &g) != 0)
 		return -1;
 	int i;
 	for (i = 0; i < g.gl_pathc; i++) {
 		char pmu[32], event[32];
 
-		if (sscanf(g.gl_pathv[i], "/sys/devices/%30[^/]/events/%30s",
+		if (sscanf(g.gl_pathv[i], "/sys/bus/event_source/devices/%30[^/]/events/%30s",
 			   pmu, event) != 2) {
 			fprintf(stderr, "No match on %s\n", g.gl_pathv[i]);
 			continue;
@@ -695,13 +695,13 @@ int walk_perf_events(int (*func)(void *data, char *name, char *event, char *desc
 char *resolve_pmu(int type)
 {
 	glob_t g;
-	if (glob("/sys/devices/*/type", 0, NULL, &g))
+	if (glob("/sys/bus/event_source/devices/*/type", 0, NULL, &g))
 		return NULL;
 	int i;
 	char *pmun = NULL;
 	for (i = 0; i < g.gl_pathc; i++) {
 		char pmu[30];
-		if (sscanf(g.gl_pathv[i], "/sys/devices/%30[^/]/type", pmu) != 1)
+		if (sscanf(g.gl_pathv[i], "/sys/bus/event_source/devices/%30[^/]/type", pmu) != 1)
 			continue;
 		char *numbuf;
 		int num;
