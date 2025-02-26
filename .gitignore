@@ -12,3 +12,5 @@ jevents/listevents
 jevents/showevent
 perf.data
 perf.data.old
+dist/
+.venv/
