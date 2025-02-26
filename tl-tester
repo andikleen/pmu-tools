@@ -24,9 +24,9 @@ set -o pipefail
 set -u
 
 DEFAULTCPU=skl
-[ ! -d /sys/devices/cpu/format/frontend ] && DEFAULTCPU=bdw
-[ ! -r /sys/devices/cpu/format/any ] && DEFAULTCPU=icl
-[ -d /sys/devices/cpu_atom ] && DEFAULTCPU=adl
+[ ! -d /sys/bus/event_source/devices/cpu/format/frontend ] && DEFAULTCPU=bdw
+[ ! -r /sys/bus/event_source/devices/cpu/format/any ] && DEFAULTCPU=icl
+[ -d /sys/bus/event_source/devices/cpu_atom ] && DEFAULTCPU=adl
 
 WRAP=${WRAP:-}
 DCPU=${DCPU:-$DEFAULTCPU}
@@ -160,7 +160,7 @@ $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 # test with a locale that outputs FP numbers with , (github issue #43)
 LC_ALL=pl_PL.utf8 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 
-# [ -r /sys/devices/cpu ] && DIRECT_MSR=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
+# [ -r /sys/bus/event_source/devices/cpu ] && DIRECT_MSR=1 $WRAP ./toplev.py --force-cpu $DCPU $OPT $LOAD
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 $LOAD | tee log$$
 checklog0
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --no-desc -l4 --single-thread $LOAD | tee log$$
@@ -205,7 +205,7 @@ $WRAP ./toplev.py --force-cpu skl $OPT --filterquals --nodes '!+Bad_Speculation.
 [ -z "$NORES" ] && grep Branch_Misprediction_Cost log$$
 [ -z "$NORES" ] && grep IpMispredict log$$
 [ -z "$NORES" ] && grep Mispredicts_Resteers log$$
-if [ -d /sys/devices/cpu_atom ] ; then
+if [ -d /sys/bus/event_source/devices/cpu_atom ] ; then
 $WRAP ./toplev $NATIVE_ARGS --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ "$(./cputop 'type=="core"' taskset)" $LOADLONG
 else
 $WRAP ./toplev --force-cpu skl --filterquals $OPT --force-bn=Mispredicts_Resteers --force-bn=Frontend_Bound --force-bn=Fetch_Latency --force-bn Branch_Resteers --no-desc --drilldown -o log$$ $LOADLONG
@@ -481,7 +481,7 @@ fi # parallel
 if run misc2 ; then
 
 $WRAP ./toplev.py --force-cpu $DCPU $OPT --stats --metrics $NOMULTIPLEX --columns -l4 $LOADQUICK
-if [ -d /sys/devices/cpu_atom ] ; then
+if [ -d /sys/bus/event_source/devices/cpu_atom ] ; then
 [ -z "$ONLYCPU" ] && $WRAP ./toplev.py --force-cpu adl $OPT --cpu 0,1,2,3 --stats --metrics --per-core --columns -l4 $LOAD
 else
 [ -z "$ONLYCPU" ] && $WRAP ./toplev.py --force-cpu bdw $OPT --cpu 0,1,2,3 --force-cpuinfo bdw-cpuinfo --stats --metrics --per-core --columns --filterquals -l4 $LOAD
@@ -653,7 +653,7 @@ fi
 $WRAP ./toplev.py $NATIVE_ARGS $OPT -v -o log$$ --single-thread -r3 $LOAD
 [ -z "$NORES" ] && grep 'Backend_Bound.*[0-9][0-9]' log$$
 
-if [ -f /sys/devices/cpu_core ] ; then
+if [ -f /sys/bus/event_source/devices/cpu_core ] ; then
 # shellcheck disable=SC2046
 $WRAP ./toplev.py $NATIVE_ARGS $OPT --cputype atom $($WRAP ./cputop 'type=="core"' taskset) true
 # shellcheck disable=SC2046
@@ -733,7 +733,7 @@ if run fuzzy ; then
 # FIXME: --all still fails
 ARG="-l4 --no-uncore"
 # shellcheck disable=SC2012
-if [ "$(ls -d /sys/devices/cpu* | wc -l)" -le 1 ] ; then
+if [ "$(ls -d /sys/bus/event_source/devices/cpu* | wc -l)" -le 1 ] ; then
 $WRAP ./toplev $NATIVE_ARGS $ARG --tune INAME=True -- $LOAD
 $WRAP ./toplev $NATIVE_ARGS $ARG --tune FUZZYINPUT=True -- $LOAD
 $WRAP ./toplev $NATIVE_ARGS --perf-output perfo$$.csv $ARG --tune INAME=True FUZZYINPUT=True -- $LOAD

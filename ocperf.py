@@ -94,7 +94,9 @@ def file_exists(s):
         topology = set()
         if top:
             try:
-                topology = {x.strip() for x in open(top).readlines()}
+                topology = {x.strip()
+                             .replace("/sys/devices", "/sys/bus/event_source/devices")
+                            for x in open(top).readlines()}
             except OSError:
                 print("Cannot open topology", top, file=sys.stderr)
     if s in topology:
@@ -104,7 +106,7 @@ def file_exists(s):
     return found
 
 def has_format(s, pmu):
-    return file_exists("/sys/devices/%s/format/%s" % (pmu, s))
+    return file_exists("/sys/bus/event_source/devices/%s/format/%s" % (pmu, s))
 
 def has_format_any(f, pmu):
     return has_format(f, pmu) or has_format(f, pmu + "_0")
@@ -148,7 +150,7 @@ class PerfVersion(object):
             minor = int(m.group(2))
             version = major * 100 + minor
 
-        pmu = "cpu_core" if os.path.exists("/sys/devices/cpu_core") else "cpu"
+        pmu = "cpu_core" if os.path.exists("/sys/bus/event_source/devices/cpu_core") else "cpu"
 
         self.direct = os.getenv("DIRECT_MSR") or version < 400
         self.offcore = has_format("offcore_rsp", pmu) and not self.direct
@@ -335,7 +337,7 @@ class Event(object):
         return ename
 
     def filter_qual(self):
-        if cached_read("/sys/devices/%s/format/umask") == "config:8-15":
+        if cached_read("/sys/bus/event_source/devices/%s/format/umask") == "config:8-15":
             self.val &= ~EVENTSEL_UMASK2
 
         def check_qual(q):
@@ -356,7 +358,7 @@ box_to_perf = {
 }
 
 def box_exists(box):
-    return file_exists("/sys/devices/uncore_%s" % (box))
+    return file_exists("/sys/bus/event_source/devices/uncore_%s" % (box))
 
 def int_or_zero(row, name):
     if name in row:
@@ -551,9 +553,9 @@ def print_event(name, desc, f, human, wrap, pmu=""):
         print(" [%s]" % (desc,), file=f)
 
 def uncore_exists(box, postfix=""):
-    if file_exists("/sys/devices/uncore_" + box + postfix):
+    if file_exists("/sys/bus/event_source/devices/uncore_" + box + postfix):
         return True
-    if file_exists("/sys/devices/uncore_" + box + "_0" + postfix):
+    if file_exists("/sys/bus/event_source/devices/uncore_" + box + "_0" + postfix):
         return True
     return False
 
@@ -1206,10 +1208,10 @@ def perf_cmd(cmd):
         sys.exit(subprocess.call(cmd))
 
 def find_pmus():
-    g = glob.glob("/sys/devices/cpu*")
+    g = glob.glob("/sys/bus/event_source/devices/cpu*")
     if len(g) == 0:
-        g = ["/sys/devices/cpu"]
-    return [i.replace("/sys/devices/", "") for i in g]
+        g = ["/sys/bus/event_source/devices/cpu"]
+    return [i.replace("/sys/bus/event_source/devices/", "") for i in g]
 
 if __name__ == '__main__':
     for j in sys.argv:

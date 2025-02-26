@@ -85,7 +85,7 @@ if args.fmt in special:
     args.fmt = special[args.fmt]
 
 types = dict()
-for fn in glob.glob("/sys/devices/cpu_*/cpus"):
+for fn in glob.glob("/sys/bus/event_source/devices/cpu_*/cpus"):
     typ = os.path.basename(fn.replace("/cpus", "")).replace("cpu_","")
     cpus = open(fn).read()
     for j in cpus.split(","):

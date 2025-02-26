@@ -95,12 +95,12 @@ checkev ivt uops_issued.core_stall_cycles r1a0010e
 checkev icx imc/unc_m_hclockticks/,cpu/cpu_clk_unhalted.thread/ "" # XXX
 
 cat >topology <<EOL
-/sys/devices/uncore_ha
-/sys/devices/uncore_ha/format/umask
+/sys/bus/event_source/devices/uncore_ha
+/sys/bus/event_source/devices/uncore_ha/format/umask
 EOL
 
 cat >cputopology <<EOL
-/sys/devices/cpu/format/offcore_rsp
+/sys/bus/event_source/devices/cpu/format/offcore_rsp
 EOL
 
 checkuc()
@@ -197,17 +197,17 @@ checkr '{cpu/cpu-cycles/,instructions}:S'
 checkr '{cpu/instructions,period=1000000/u,cpu_clk_unhalted.thread}:S'
 checkp 'cpu_clk_unhalted:period=123' 'period=123'
 cat >top2$$ <<EOL
-/sys/devices/uncore_r2pcie
-/sys/devices/uncore_r2pcie/format/umask
-/sys/devices/uncore_r2pcie/format/cmask
+/sys/bus/event_source/devices/uncore_r2pcie
+/sys/bus/event_source/devices/uncore_r2pcie/format/umask
+/sys/bus/event_source/devices/uncore_r2pcie/format/cmask
 EOL
 TOPOLOGY=top2$$ UNCORE="Jaketown*" checkp 'unc_r2_iio_credits_acquired.ncb:state=0x123' 'filter_state=0x123'
 
 cat >top2$$ <<EOL
-/sys/devices/uncore_cbox_0
-/sys/devices/uncore_cbox_0/format/umask
-/sys/devices/uncore_cbox_1
-/sys/devices/uncore_cbox_1/format/umask
+/sys/bus/event_source/devices/uncore_cbox_0
+/sys/bus/event_source/devices/uncore_cbox_0/format/umask
+/sys/bus/event_source/devices/uncore_cbox_1
+/sys/bus/event_source/devices/uncore_cbox_1/format/umask
 EOL
 TOPOLOGY=top2$$ UNCORE="haswell_uncore*" checkp 'unc_cbo_xsnp_response.hit_xcore' 'uncore_cbox_1'
 TOPOLOGY=top2$$ UNCORE="haswell_uncore*" checkp 'unc_cbo_xsnp_response.hit_xcore:one_unit' 'uncore_cbox_0'

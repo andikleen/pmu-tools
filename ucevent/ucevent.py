@@ -211,7 +211,7 @@ def get_qualifiers(box):
         box += "_0"
         if not box_exists(box):
             return set()
-    d = os.listdir("/sys/devices/uncore_%s/format" % (box))
+    d = os.listdir("/sys/bus/event_source/devices/uncore_%s/format" % (box))
     q = set()
     for j in d:
         if j not in ["event", "umask"]:
@@ -292,14 +292,14 @@ def find_boxes(prefix):
         prefix = prefix[6:]
     global box_dir_cache
     if len(box_dir_cache) == 0:
-        box_dir_cache += [x for x in os.listdir("/sys/devices/") if x.startswith("uncore")]
+        box_dir_cache += [x for x in os.listdir("/sys/bus/event_source/devices/") if x.startswith("uncore")]
     l = [x.replace("uncore_", "") for x in box_dir_cache if x.startswith("uncore_" + prefix)]
     return sorted(l)
 
 box_cache = dict()
 
 def box_exists(box):
-    n = "/sys/devices/uncore_%s" % (box)
+    n = "/sys/bus/event_source/devices/uncore_%s" % (box)
     if n not in box_cache:
         box_cache[n] = os.path.exists(n)
     return box_cache[n]
@@ -995,7 +995,7 @@ def check_multiplex():
     if args.quiet:
         return
     found = False
-    for j in glob.iglob("/sys/devices/uncore_*/perf_event_mux_interval_ms"):
+    for j in glob.iglob("/sys/bus/event_source/devices/uncore_*/perf_event_mux_interval_ms"):
         found = True
         break
     if not found:

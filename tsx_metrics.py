@@ -78,7 +78,7 @@ When low consider increasing the size of the critical sections to lower overhead
 class Setup:
     def __init__(self, r):
         # XXX allow override
-        if os.path.exists("/sys/devices/cpu/events/cycles-t"):
+        if os.path.exists("/sys/bus/event_source/devices/cpu/events/cycles-t"):
             r.force_metric(TransactionalCycles())
             r.force_metric(AbortedCycles())
             r.force_metric(AverageRTM())

@@ -1,2 +1,2 @@
-/sys/devices/uncore_ha
-/sys/devices/uncore_ha/format/umask
+/sys/bus/event_source/devices/uncore_ha
+/sys/bus/event_source/devices/uncore_ha/format/umask

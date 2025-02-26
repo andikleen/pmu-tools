@@ -165,7 +165,7 @@ def get_model_number():
 def find_model(args):
     if not args.cpu:
         cpu = "?"
-        cl = glob.glob("/sys/devices/cpu*/caps/pmu_name")
+        cl = glob.glob("/sys/bus/event_source/devices/cpu*/caps/pmu_name")
         for fn in cl:
             cpu = open(fn).read().strip()
             if cpu == "meteorlake_hybrid":

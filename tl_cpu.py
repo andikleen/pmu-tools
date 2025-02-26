@@ -52,7 +52,7 @@ def reduced_counters():
     if rc:
         return int(rc)
     val = 1
-    fn = "/sys/devices/cpu/allow_tsx_force_abort"
+    fn = "/sys/bus/event_source/devices/cpu/allow_tsx_force_abort"
     if os.path.exists(fn):
         with open(fn, "r") as f:
             val = int(f.read())
@@ -235,7 +235,7 @@ class CPU(object):
             self.cpu = "sprmax"
 
         try:
-            self.pmu_name = open("/sys/devices/cpu/caps/pmu_name").read().strip()
+            self.pmu_name = open("/sys/bus/event_source/devices/cpu/caps/pmu_name").read().strip()
         except IOError:
             self.pmu_name = ""
 

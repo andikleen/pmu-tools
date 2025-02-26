@@ -47,9 +47,9 @@ should show output similar to this:
 	ff:13.6 System peripheral: Intel Corporation Sandy Bridge Ring to QuickPath Interconnect Link 1 Performance Monitor (rev 07)
 
 The uncore driver is active if a number of uncore files show up
-in /sys/devices/
+in /sys/bus/event_source/devices/
 
-	# ls -d /sys/devices/uncore_*
+	# ls -d /sys/bus/event_source/devices/uncore_*
 
 The monitoring works best with a 3.10+ kernel with the patches in
 patches-3.10 applied. Later kernels include some/all of
@@ -331,7 +331,7 @@ Multiplexing works best when the workload is very "steady", and does not fluctua
 The multiplexing frequency can be configured in sysfs. For example to switch
 to 10ms
 
-	echo 10 > /sys/devices/uncore_name/perf_event_mux_interval_ms
+	echo 10 > /sys/bus/event_source/devices/uncore_name/perf_event_mux_interval_ms
 
 The default is 4ms. Different multiplexing values may affect the results.
 

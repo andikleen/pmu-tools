@@ -296,7 +296,7 @@ class PerfFeatures(object):
     """Adapt to the quirks of various perf versions."""
     def __init__(self, args):
         pmu = "cpu"
-        if os.path.exists("/sys/devices/cpu_core"):
+        if os.path.exists("/sys/bus/event_source/devices/cpu_core"):
             pmu = "cpu_core"
         p = os.getenv("PERF")
         self.perf = p if p else "perf"
@@ -318,7 +318,7 @@ class PerfFeatures(object):
         self.supports_power = (
                 not args.no_uncore
                 and not args.force_hypervisor
-                and os.path.exists("/sys/devices/power/events/energy-cores"))
+                and os.path.exists("/sys/bus/event_source/devices/power/events/energy-cores"))
         with os.popen(self.perf + " --version") as f:
             v = f.readline().split()
             perf_version = tuple(map(safe_int, v[2].split(".")[:2])) if len(v) >= 3 else (0,0)
@@ -336,9 +336,9 @@ class PerfFeatures(object):
             self.has_max_precise = True
             self.max_precise = 3
         else:
-            self.has_max_precise = os.path.exists("/sys/devices/%s/caps/max_precise" % pmu)
+            self.has_max_precise = os.path.exists("/sys/bus/event_source/devices/%s/caps/max_precise" % pmu)
             if self.has_max_precise:
-                self.max_precise = int(open("/sys/devices/%s/caps/max_precise" % pmu).read())
+                self.max_precise = int(open("/sys/bus/event_source/devices/%s/caps/max_precise" % pmu).read())
         if args.exclusive and not args.print and not (perf_version >= (5,10) or works(self.perf + " stat -e '{branches,branches,branches,branches}:e' true")):
             sys.exit("perf binary does not support :e exclusive modifier")
 
@@ -735,7 +735,7 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
 
     g = p.add_argument_group('Environment')
     g.add_argument('--force-cpu', help='Force CPU type', choices=[x[0] for x in known_cpus])
-    g.add_argument('--force-topology', metavar='findsysoutput', help='Use specified topology file (find /sys/devices)')
+    g.add_argument('--force-topology', metavar='findsysoutput', help='Use specified topology file (find /sys/bus/event_source/devices/)')
     g.add_argument('--force-cpuinfo', metavar='cpuinfo', help='Use specified cpuinfo file (/proc/cpuinfo)')
     g.add_argument('--force-hypervisor', help='Assume running under hypervisor (no uncore, no offcore, no PEBS)',
                    action='store_true')
@@ -1280,7 +1280,7 @@ def gen_script(r):
         print("# enable compression with POSTFIX=.xz script")
     print("OUT=${OUT:-toplev}")
     print("PERF=${PERF:-perf}")
-    print("find /sys/devices > ${OUT}_topology")
+    print("find /sys/bus/event_source/devices/ > ${OUT}_topology")
     print("cat /proc/cpuinfo > ${OUT}_cpuinfo")
     r[0] = "$PERF"
     i = r.index('--log-fd')
@@ -1497,7 +1497,7 @@ def initialize_event(name, i, e):
 def raw_event(i, name="", period=False, initialize=False):
     e = None
     orig_i = i
-    if i == "cycles" and (cpu.cpu in hybrid_cpus or cached_exists("/sys/devices/cpu_core")):
+    if i == "cycles" and (cpu.cpu in hybrid_cpus or cached_exists("/sys/bus/event_source/devices/cpu_core")):
         i = "cpu_clk_unhalted.thread"
     if "." in i or "_" in i and i not in non_json_events:
         if not cpu.ht:
@@ -1510,7 +1510,7 @@ def raw_event(i, name="", period=False, initialize=False):
                 if not args.quiet:
                     print("%s %s" % (i, extramsg[0]), file=sys.stderr)
             return "dummy"
-        if has(e, 'perfqual') and not cached_exists("/sys/devices/%s/format/%s"  % (ectx.emap.pmu, e.perfqual)):
+        if has(e, 'perfqual') and not cached_exists("/sys/bus/event_source/devices/%s/format/%s"  % (ectx.emap.pmu, e.perfqual)):
             if not args.quiet:
                 print("%s event not supported in hypervisor or architectural mode" % i, file=sys.stderr)
             return "dummy"
@@ -1522,7 +1522,7 @@ def raw_event(i, name="", period=False, initialize=False):
         i = e.output(noname=not INAME, name=name, period=period, noexplode=True)
         if not ectx.force_metrics:
             m = re.search(r'(topdown-[a-z-]+)', i)
-            if m and not cached_exists("/sys/devices/%s/events/%s" % (ectx.emap.pmu, m.group(1))):
+            if m and not cached_exists("/sys/bus/event_source/devices/%s/events/%s" % (ectx.emap.pmu, m.group(1))):
                 if not args.quiet:
                     print("%s event not supported in sysfs" % m.group(1))
                 i = "dummy"
@@ -2684,8 +2684,9 @@ def compare_event(aname, bname):
     fields = ('val','event','cmask','edge','inv')
     return map_fields(a, fields) == map_fields(b, fields)
 
+# XXX check does not match the function name
 def is_hybrid():
-    return ocperf.file_exists("/sys/devices/cpu/format/any")
+    return ocperf.file_exists("/sys/bus/event_source/devices/cpu/format/any")
 
 def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, runner_list):
     """get measurement result, possibly wrapping in UVal"""
@@ -2953,7 +2954,7 @@ def missing_pmu(e):
         pmu = m.group(1)
         if pmu in pmu_does_not_exist:
             return True
-        if not os.path.isdir("/sys/devices/%s" % pmu):
+        if not os.path.isdir("/sys/bus/event_source/devices/%s" % pmu):
             pmu_does_not_exist.add(pmu)
             return True
     return False
@@ -3945,14 +3946,14 @@ def setup_metrics(model, pmu):
     if ectx.force_metrics:
         model.topdown_use_fixed = ectx.metrics_override
     else:
-        model.topdown_use_fixed = os.path.exists("/sys/devices/%s/events/topdown-fe-bound" % pmu)
+        model.topdown_use_fixed = os.path.exists("/sys/bus/event_source/devices/%s/events/topdown-fe-bound" % pmu)
     if args.no_group:
         model.topdown_use_fixed = False
     ectx.core_domains = ectx.core_domains - set(["Slots"])
     if ectx.force_metrics:
         ectx.slots_available = ectx.metrics_override
     else:
-        ectx.slots_available = os.path.exists("/sys/devices/%s/events/slots" % pmu)
+        ectx.slots_available = os.path.exists("/sys/bus/event_source/devices/%s/events/slots" % pmu)
 
 def parse_cpu_list(s):
     l = []
@@ -3986,7 +3987,7 @@ def init_runner_list(kernel_version):
     idle_threshold = init_idle_threshold(args)
     runner_list = []
     hybrid_pmus = []
-    hybrid_pmus = glob.glob("/sys/devices/cpu_*")
+    hybrid_pmus = glob.glob("/sys/bus/event_source/devices/cpu_*")
     if args.force_cpu and args.force_cpu not in hybrid_cpus:
         hybrid_pmus = hybrid_pmus[:1]
     # real hybrid
@@ -4005,7 +4006,7 @@ def init_runner_list(kernel_version):
     elif hybrid_pmus:
         runner_list = [Runner(args.level, idle_threshold, kernel_version,
             pmu= "cpu_atom" if cpu.cpu in atom_hybrid_cpus else "cpu_core")]
-        runner_list[0].cpu_list = get_cpu_list("/sys/devices/cpu_core")
+        runner_list[0].cpu_list = get_cpu_list("/sys/bus/event_source/devices/cpu_core")
         if len(runner_list[0].cpu_list) == 0:
             sys.exit("cpu_core fallback has no cpus")
     # no hybrid
