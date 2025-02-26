@@ -422,6 +422,7 @@ def num_generic_counters(evset):
     return len(evset - set(add_filter(ectx.fixed_events)) - ectx.fixed_events - ectx.outgroup_events - ectx.sched_ignore_events)
 
 FORCE_SPLIT = 100
+FORCE_SPLIT_LIMIT4 = 101
 
 # Force metrics into own group
 metrics_own_group = True
@@ -461,7 +462,7 @@ def needed_counters(evlist):
 
     if limit4_overflow(evlist):
         debug_print("split for limit4 overflow %s" % evlist)
-        return FORCE_SPLIT
+        return FORCE_SPLIT_LIMIT4
 
     return num + numg
 
@@ -3081,7 +3082,7 @@ def grab_group(l):
     if needed_counters(l) <= ectx.counters:
         return len(l)
     n = 1
-    while needed_counters(l[:n]) < ectx.counters and n < len(l):
+    while needed_counters(l[:n]) <= ectx.counters and n < len(l):
         n += 1
     if needed_counters(l[:n]) > ectx.counters and n > 0:
         n -= 1
@@ -3772,6 +3773,20 @@ def remove_pp(s):
 def clean_event(e):
     return remove_pp(e).replace(".", "_").replace(":", "_").replace('=','')
 
+def sample_groups(sl):
+    s = ""
+    while sl:
+        # may generate inefficient groups depending on order
+        n = grab_group(sl)
+        if s:
+            s += ","
+        g = ",".join(add_filter(sl[:n]))
+        if n > 1:
+            g = "{%s}" % g
+        s += g
+        sl = sl[n:]
+    return s
+
 def do_sample(sample_obj, rest, count, ret, kernel_version):
     samples = [("cycles:pp", "Precise cycles", )]
 
@@ -3812,8 +3827,7 @@ def do_sample(sample_obj, rest, count, ret, kernel_version):
         nsamp = [x for x in nsamp if x[0] not in nnopebs]
 
     sl = [raw_event(s[0], s[1] + "_" + clean_event(s[0]), period=True) for s in nsamp]
-    sl = add_filter(sl)
-    sample = ",".join([x for x in sl if x])
+    sample = sample_groups(sl)
     if no_pebs:
         sample = re.sub(r'/p+', '/', sample)
         sample = re.sub(r':p+', '', sample)
@@ -3825,7 +3839,7 @@ def do_sample(sample_obj, rest, count, ret, kernel_version):
         perf_data += ".%d" % count
     sperf = ([feat.perf, "record"] +
              extra_args +
-             ["-e", sample, "-o", perf_data] +
+             ["-e", "'" + sample + "'", "-o", perf_data] +
              [x for x in rest if x not in ("-A", "--percore-show-thread")])
     cmd = " ".join(sperf)
     if not (args.run_sample and args.quiet):
