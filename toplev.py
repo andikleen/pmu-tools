@@ -4646,8 +4646,6 @@ def main(args, rest, feat, env, cpu):
     global KEEP_UNREF
     if len(runner_list) > 1 and isinstance(KEEP_UNREF, bool):
         KEEP_UNREF = True # for now -- dummy can get assigned to wrong runner
-    global INAME
-    global FUZZYINPUT
     if len(runner_list) > 1 and (INAME or FUZZYINPUT):
         sys.exit("INAME and FUZZYINPUT do not support hybrid")
     handle_more_options(args)

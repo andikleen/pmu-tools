@@ -102,7 +102,6 @@ def resolve_sym(fn, ip):
     elffile = find_elf_file(fn)
     if elffile is None:
         return "?", 0
-    global last_sym
 
     try:
         if fn not in symtables:
