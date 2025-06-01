@@ -1,0 +1,61 @@
+[project]
+name = "pmu_tools"
+version = "2025.6.2"
+authors = [
+  { name="Andi Kleen", email="ak@linux.intel.com" },
+]
+description = "pmu tools is a collection of tools and libraries for profile collection and performance analysis on Intel CPUs on top of Linux perf. This uses performance counters in the CPU."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+]
+license = "GPL-2.0-only"
+license-files = ["COPYING"]
+
+[project.urls]
+Homepage = "https://github.com/andikleen/pmu-tools/"
+Issues = "https://github.com/andikleen/pmu-tools/issues"
+
+[build-system]
+requires = [
+    "hatchling >= 1.26",
+]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/*",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["/"]
+
+
+[bumpver.file_patterns]
+"pyproject.toml" = [
+    'version = "{version}"',
+]
+
+[tool.bumpver]
+current_version = "2025.6.2"
+# Choose a PEP 440 compatible regex
+version_pattern = "YYYY.MM.INC0"
+tag_message = "{new_version}"
+tag_scope = "default"
+pre_commit_hook = ""
+post_commit_hook = ""
+commit = false
+tag = false
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'version = "{version}"',
+]
+"README.md" = [
+    "{version}",
+    "{pep440_version}",
+]
