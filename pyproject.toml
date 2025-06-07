@@ -1,6 +1,6 @@
 [project]
 name = "pmu_tools"
-version = "2025.6.2"
+version = "2025.6.7.0"
 authors = [
   { name="Andi Kleen", email="pmu-tools@halobates.de" },
 ]
@@ -40,11 +40,9 @@ packages = ["/"]
 ]
 
 [tool.bumpver]
-current_version = "{version}"
+current_version = "2025.6.7.0"
 # Choose a PEP 440 compatible regex
 version_pattern = "YYYY.MM.DD.PATCH"
-tag_message = "{new_version}"
-tag_scope = "default"
 pre_commit_hook = ""
 post_commit_hook = ""
 commit = false
@@ -54,8 +52,4 @@ push = false
 [tool.bumpver.file_patterns]
 "pyproject.toml" = [
     'version = "{version}"',
-]
-"README.md" = [
-    "{version}",
-    "{pep440_version}",
 ]
