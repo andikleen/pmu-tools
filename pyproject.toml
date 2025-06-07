@@ -42,7 +42,7 @@ packages = ["/"]
 [tool.bumpver]
 #current_version = "2025.6.2"
 # Choose a PEP 440 compatible regex
-version_pattern = "YYYY.MM.INC0"
+version_pattern = "YYYY.MM[-TAGNUM]"
 tag_message = "{new_version}"
 tag_scope = "default"
 pre_commit_hook = ""
