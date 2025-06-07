@@ -1,9 +1,8 @@
 [project]
 name = "pmu_tools"
-#version = "2025.6.2"
-dynamic = ["version"]
+version = "2025.6.2"
 authors = [
-  { name="Andi Kleen", email="pmu-tools@halobates.de" },
+  { name="Andi Kleen", email="ak@linux.intel.com" },
 ]
 description = "pmu tools is a collection of tools and libraries for profile collection and performance analysis on Intel CPUs on top of Linux perf. This uses performance counters in the CPU."
 readme = "README.md"
@@ -23,7 +22,6 @@ Issues = "https://github.com/andikleen/pmu-tools/issues"
 [build-system]
 requires = [
     "hatchling >= 1.26",
-    "hatch-vcs"
 ]
 build-backend = "hatchling.build"
 
@@ -35,8 +33,6 @@ include = [
 [tool.hatch.build.targets.wheel]
 packages = ["/"]
 
-[tool.hatch.version]
-source = "vcs"
 
 [bumpver.file_patterns]
 "pyproject.toml" = [
