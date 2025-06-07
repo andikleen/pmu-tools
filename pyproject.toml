@@ -2,7 +2,7 @@
 name = "pmu_tools"
 version = "2025.6.2"
 authors = [
-  { name="Andi Kleen", email="ak@linux.intel.com" },
+  { name="Andi Kleen", email="pmu-tools@halobates.de" },
 ]
 description = "pmu tools is a collection of tools and libraries for profile collection and performance analysis on Intel CPUs on top of Linux perf. This uses performance counters in the CPU."
 readme = "README.md"
