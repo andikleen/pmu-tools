@@ -1213,7 +1213,10 @@ def find_pmus():
         g = ["/sys/bus/event_source/devices/cpu"]
     return [i.replace("/sys/bus/event_source/devices/", "") for i in g]
 
-if __name__ == '__main__':
+
+def main():
+    global force_download, experimental, noexplode
+    global msr
     for j in sys.argv:
         if j == "--force-download":
             force_download = True
@@ -1234,3 +1237,7 @@ if __name__ == '__main__':
         perf_cmd(cmd)
     except KeyboardInterrupt:
         pass
+
+
+if __name__ == '__main__':
+    main()
