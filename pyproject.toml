@@ -40,7 +40,7 @@ packages = ["/"]
 ]
 
 [tool.bumpver]
-#current_version = "2025.6.2"
+current_version = "{version}"
 # Choose a PEP 440 compatible regex
 version_pattern = "YYYY.MM.PATCH"
 tag_message = "{new_version}"
