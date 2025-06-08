@@ -4643,12 +4643,11 @@ def finish_graph(graphp):
 def main():
     global args
     global rest_
-    global features
     global ectx
     global env_
     global cpu
     global feat
-    
+
     args, rest_ = init_args()
     feat = PerfFeatures(args)
     ectx = EventContextBase() # only for type checker

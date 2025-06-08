@@ -42,6 +42,10 @@ jevents is a C library. It has no dependencies other than gcc/make and can be bu
 	cd jevents
 	make
 
+# Install via pip
+pip install pmu-tools
+
+
 # Quick examples
 
 	toplev -l2 program
