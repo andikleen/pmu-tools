@@ -56,3 +56,12 @@ push = false
 
 [project.scripts]
 ocperf = "ocperf:main"
+toplev = "toplev:main"
+
+[project.optional-dependencies]
+plots = [
+"matplotlib",
+"brewer2mpl",
+"pandas",
+"xlsxwriter",
+]

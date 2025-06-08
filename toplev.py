@@ -222,6 +222,13 @@ global output_numcpus
 global metrics_own_group
 global run_l1_parallel
 
+# Globals that get initialized via main
+args = None
+cpu = None
+feat = None
+ectx = None
+env_ = None
+
 class EventContextBase(object):
     def __init__(self):
         self.constraint_fixes = {}
@@ -786,7 +793,9 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
     p.add_argument('--no-csv-header', action='store_true', help=argparse.SUPPRESS) # no header/version for CSV
     p.add_argument('--no-csv-footer', action='store_true', help=argparse.SUPPRESS) # no version for CSV
     p.add_argument('--no-version', action='store_true', help="Don't print version")
+    global args
     args, rest = p.parse_known_args()
+
     io_set_args(args)
     if args.setvar:
         for j in args.setvar:
@@ -4630,7 +4639,30 @@ def finish_graph(graphp):
         args.output.close()
         graphp.wait()
 
-def main(args, rest, feat, env, cpu):
+
+def main():
+    global args
+    global rest_
+    global features
+    global ectx
+    global env_
+    global cpu
+    global feat
+    
+    args, rest_ = init_args()
+    feat = PerfFeatures(args)
+    ectx = EventContextBase() # only for type checker
+    # allow tune to override toplevel without global
+    if args.tune:
+        for t in args.tune:
+            a, b = t.split("=")
+            globals()[a] = b
+    env_ = tl_cpu.Env()
+    env = env_
+    rest = rest_
+    update_args(args, env_)
+    # XXX move into ectx
+    cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck(), env=env_)
     pversion = ocperf.PerfVersion()
     handle_parallel(args, env)
     rest = handle_rest(args, rest)
@@ -4684,15 +4716,4 @@ def main(args, rest, feat, env, cpu):
 if __name__ == '__main__':
     # these are top level to avoid globals, which break the type checker
     # alternative would be to pass them everywhere, but that would be tedious
-    args, rest_ = init_args()
-    feat = PerfFeatures(args)
-    ectx = EventContextBase() # only for type checker
-    # allow tune to override toplevel without global
-    if args.tune:
-        for t in args.tune:
-            exec(t)
-    env_ = tl_cpu.Env()
-    update_args(args, env_)
-    # XXX move into ectx
-    cpu = tl_cpu.CPU(known_cpus, nocheck=event_nocheck(), env=env_)
-    main(args, rest_, feat, env_, cpu)
+    main()
