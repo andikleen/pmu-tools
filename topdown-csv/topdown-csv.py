@@ -300,7 +300,7 @@ class ParseError(BaseException):
     pass
 
 def parse_error(x, l=""):
-    print("PARSE-ERROR", x, "%s %s" % (toknames[l[0]], l[1]) if l else "", file=sys.stderr)
+    print("PARSE-ERROR", x, "got %s %s" % (toknames[l[0]], l[1]) if l else "", file=sys.stderr)
     raise ParseError()
 
 def is_op(tok, m):
