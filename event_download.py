@@ -158,7 +158,8 @@ def parse_map_file(match, key=None, link=True, onlyprint=False,
                 continue
             if key is not None and typ not in key:
                 continue
-            if hybridkey and len(n) >= 7 and n[6] != hybridkey:
+            hkey = n[6] if len(n) >= 7 else None
+            if hybridkey and hkey and hkey != hybridkey:
                 continue
             cpu = sanitize(cpu, allowed_chars)
             url = urlpath + name
@@ -166,8 +167,8 @@ def parse_map_file(match, key=None, link=True, onlyprint=False,
             if matchfn == "*":
                 matchfn = cpu
             if ".json" not in matchfn:
-                if hybridkey:
-                    fn = "%s-%s-%s.json" % (matchfn, sanitize(typ, allowed_chars), hybridkey)
+                if hkey:
+                    fn = "%s-%s-%s.json" % (matchfn, sanitize(typ, allowed_chars), hkey)
                 else:
                     fn = "%s-%s.json" % (matchfn, sanitize(typ, allowed_chars))
             path = os.path.join(dirfn, fn)
