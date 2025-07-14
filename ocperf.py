@@ -763,7 +763,7 @@ class EmapNativeJSON(object):
         elif e in self.pevents:
             return self.pevents[e]
 
-        extramsg.append("event not found for %s" % self.pmu)
+        extramsg.append("event not found for %s for %s" % (self.pmu, self.name))
         return None
 
     # XXX need to handle exploded events
