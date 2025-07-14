@@ -2019,9 +2019,6 @@ def print_summary(summary, out, runner_list, full_system):
                          summary.valstats, out,
                              float('nan'), summary.env, runner_list)
 
-def is_outgroup(x):
-    return set(x) - ectx.outgroup_events == set()
-
 class SaveContext(object):
     """Save (some) environment context, in this case stdin seek offset to make < file work
        when we reexecute the workload multiple times."""
