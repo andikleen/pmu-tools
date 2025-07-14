@@ -4258,7 +4258,11 @@ def runner_emaps(pe, runner_list):
     version = ""
     for runner in runner_list:
         runner.set_ectx()
-        emap = ocperf.find_emap(pmu=runner.pmu if runner.pmu else "cpu")
+        if cpu.cpu in atom_hybrid_cpus:
+            typ = "Atom"
+        else:
+            typ = None
+        emap = ocperf.find_emap(pmu=runner.pmu if runner.pmu else "cpu", typ=typ)
         if not emap:
             ocperf.ocverbose = True
             ocperf.find_emap()

@@ -617,6 +617,7 @@ class EmapNativeJSON(object):
         self.uncore_events = {}
         self.error = False
         self.pmu = pmu
+        self.name = name
         self.read_events(name)
 
     def add_event(self, e):
@@ -888,14 +889,13 @@ pmu_to_type = {
     "cpu": ("core", None),
 }
 
-def json_with_extra(el, eventmap_is_file, pmu):
+def json_with_extra(el, eventmap_is_file, pmu, typ_key):
     typ = pmu_to_type[pmu]
+    if typ_key:
+        typ = (typ[0], typ_key)
     name = event_download.eventlist_name(el, key=typ[0], hybridkey=typ[1])
     if not os.path.exists(name):
-        if pmu == "cpu_core":
-            name = event_download.eventlist_name(el, "core")
-        else:
-            name = event_download.eventlist_name(el, "hybridcore", hybridkey="Core")
+        name = event_download.eventlist_name(el, "hybridcore", hybridkey=typ[1])
     emap = EmapNativeJSON(name, pmu)
     if not emap or emap.error:
         print("parsing", name, "failed", file=sys.stderr)
@@ -966,14 +966,15 @@ def canon_emapvar(el, typ):
                 el = l[0]
     return el
 
-def find_emap(eventvar="EVENTMAP", pmu="cpu"):
+def find_emap(eventvar="EVENTMAP", pmu="cpu", typ=None):
     """Search and read a perfmon event map.
        When the EVENTMAP environment variable is set read that, otherwise
        read the map for the current CPU. EVENTMAP can be a CPU specifier
        in the map file or a path name.
        Dito for the OFFCORE and UNCORE environment variables.
 
-       Optionally pass the name of the EVENTMAP variable, and the cpu pmu name.
+       Optionally pass the name of the EVENTMAP variable, and the cpu pmu name,
+       and the cpu hybrid type in the map file.
 
        Return an emap object that contains the events and can be queried
        or None if nothing is found or the current CPU is unknown."""
@@ -995,7 +996,7 @@ def find_emap(eventvar="EVENTMAP", pmu="cpu"):
             return None
     try:
         if not force_download:
-            return json_with_extra(el, eventmap_is_file, pmu)
+            return json_with_extra(el, eventmap_is_file, pmu, typ)
     except IOError:
         pass
     try:
@@ -1007,7 +1008,7 @@ def find_emap(eventvar="EVENTMAP", pmu="cpu"):
         if experimental:
             toget += [x + " experimental" for x in toget]
         event_download.download(el, toget)
-        return json_with_extra(el, eventmap_is_file, pmu)
+        return json_with_extra(el, eventmap_is_file, pmu, typ)
     except IOError:
         pass
     return None
