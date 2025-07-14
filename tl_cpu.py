@@ -186,7 +186,7 @@ class CPU(object):
             }
             self.standard_counters = {
                 "cpu_core": ("0,1,2,3,4,5,6,7,8,9", ),
-                "cpu": ("0,1,2,3,4,5,6,7,8,9", ),
+                "cpu": ("0,1,2,3,4,5,6,7,8,9", "0,1,2,3,4,5,6,7" ),
                 "cpu_atom": ("0,1,2,3,4,5,6,7", )
             }
             self.limit4_counters = { "cpu_core": "0,1,2,3", "cpu_atom": "none",
@@ -200,7 +200,7 @@ class CPU(object):
             }
             self.standard_counters = {
                 "cpu_core": ("0,1,2,3,4,5,6,7", "0,1,2,3", ),
-                "cpu": ("0,1,2,3,4,5,6,7", "0,1,2,3", ),
+                "cpu": ("0,1,2,3,4,5,6,7", "0,1,2,3", "0,1,2,3,4,5" ),
                 "cpu_atom": ("0,1,2,3,4,5", ) if atom_counters == 6 else ("0,1,2,3,4,5,6,7,", )
             }
             self.limit4_counters = { "cpu_core": "0,1,2,3", "cpu_atom": "none",
@@ -228,7 +228,8 @@ class CPU(object):
                 if j in self.counters:
                     self.counters[j] -= reduced_counters()
         if self.cpu in cpus_8gpc:
-            self.standard_counters = { "cpu": ("0,1,2,3,4,5,6,7", "0,1,2,3", ) }
+            self.standard_counters = { "cpu": ("0,1,2,3,4,5,6,7", "0,1,2,3",
+                                               "0,1,2,3,4,5,6,7", "0,1,2,3,4,5,6,7,8,9") }
             self.limit4_counters = { "cpu": "0,1,2,3" }
 
         if self.cpu == "spr" and "Max" in self.name:
