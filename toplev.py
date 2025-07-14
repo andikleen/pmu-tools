@@ -2445,9 +2445,9 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         # code later relies on stripping ku flags
         event = re.sub(r'\s+\[.*\]', '', event)
         event = remove_qual(event)
-        m = re.match(r"tool/(.*)/", event)
+        m = re.match(r'(cpu_core|cpu_atom|cpu|tool)/(cycles|duration_time)/', event)
         if m:
-            event = m.group(1)
+            event = m.group(2)
 
         # duplicated duration_time in perf ~6.5. was already added from the first.
         if event == "duration_time" and count == "<not counted>":
