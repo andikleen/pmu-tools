@@ -156,7 +156,7 @@ def parse_map_file(match, key=None, link=True, onlyprint=False,
             if not (fnmatch(cpu, match) or fnmatch(cpu, match2) or
                     fnmatch(match2, cpu) or fnmatch(match, cpu)):
                 continue
-            if key is not None and typ not in key:
+            if key is not None and typ != key:
                 continue
             hkey = n[6] if len(n) >= 7 else None
             if hybridkey and hkey and hkey != hybridkey:
