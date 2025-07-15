@@ -4257,14 +4257,16 @@ def runner_emaps(pe, runner_list):
         runner.set_ectx()
         if cpu.cpu in atom_hybrid_cpus:
             typ = "Atom"
+        elif cpu.cpu in hybrid_cpus and runner.pmu in ("cpu", None):
+            typ = "Core"
         else:
             typ = None
         emap = ocperf.find_emap(pmu=runner.pmu if runner.pmu else "cpu", typ=typ)
         if not emap:
             ocperf.ocverbose = True
             ocperf.find_emap()
-            sys.exit("Unknown CPU or CPU event map not found (EVENTMAP:%s, model:%d)" %
-                     (os.environ["EVENTMAP"] if "EVENTMAP" in os.environ else "?", cpu.model))
+            sys.exit("Unknown CPU or CPU event map not found (EVENTMAP:%s, model:%d, cpu:%s, typ:%s)" %
+                     (os.environ["EVENTMAP"] if "EVENTMAP" in os.environ else "?", cpu.model, cpu.cpu, typ))
         runner.ectx.init_emap(emap)
         runner.printer.init_emap(emap)
         if version:

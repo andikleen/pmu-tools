@@ -234,6 +234,14 @@ def download_current(link=False, onlyprint=False):
        Returns >0 when a event list is found"""
     return download(get_cpustr(), link=link, onlyprint=onlyprint, )
 
+def qualify_fn(cache, fn):
+    if os.path.exists(fn):
+        return fn
+    nfn = "%s/%s" % (cache, fn)
+    if os.path.exists(nfn):
+        return nfn
+    return fn
+
 def eventlist_name(name=None, key="core", hybridkey=None):
     if not name:
         name = get_cpustr()
@@ -251,7 +259,7 @@ def eventlist_name(name=None, key="core", hybridkey=None):
     if not os.path.exists(fn):
         files = parse_map_file(name, key, acceptfile=True, hybridkey=hybridkey)
         if files:
-            return files[0]
+            return qualify_fn(cache, files[0])
         name = cpu_without_step(name)
         if "*" in fn:
             fn = "%s/%s" % (cache, name)
@@ -262,7 +270,7 @@ def eventlist_name(name=None, key="core", hybridkey=None):
         files = parse_map_file(name, key, acceptfile=True, hybridkey=hybridkey)
         if files:
             fn = files[0]
-    return fn
+    return qualify_fn(cache, fn)
 
 if __name__ == '__main__':
     # only import argparse when actually called from command line
