@@ -4646,6 +4646,8 @@ def main(args, rest, feat, env, cpu):
     kernel_version = get_kernel()
     check_exclusive(args, kernel_version)
     runner_list = init_runner_list(kernel_version)
+    if len(runner_list) == 0:
+        sys.exit("No PMUs with matching CPUs found")
     global KEEP_UNREF
     if len(runner_list) > 1 and isinstance(KEEP_UNREF, bool):
         KEEP_UNREF = True # for now -- dummy can get assigned to wrong runner
