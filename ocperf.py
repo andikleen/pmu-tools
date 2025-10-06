@@ -632,6 +632,8 @@ class EmapNativeJSON(object):
     def read_table(self, r):
         for row in r:
             def get(x):
+                if isinstance(row[x], bool):
+                    return "1" if row[x] else "0"
                 return row[x]
             def gethex(x):
                 return int(get(x).split(",")[0], 16)
