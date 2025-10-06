@@ -660,7 +660,10 @@ class EmapNativeJSON(object):
             other |= gethex(u'EdgeDetect') << 18
             if u'AnyThread' in row:
                 other |= (gethex(u'AnyThread') | anyf) << 21
-            other |= getdec(u'CounterMask') << 24
+            if u'CounterMask' in row:
+                other |= getdec(u'CounterMask') << 24
+            elif u'CMask' in row:
+                other |= getdec(u'CMask') << 24
             other |= gethex(u'Invert') << 23
             val = code | (umask << 8) | other
             val &= EVMASK
