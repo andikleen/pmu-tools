@@ -91,7 +91,8 @@ known_cpus = (
              183, 186, 191, )), # RPL as ADL
     ("adl-glc", (154, )),
     ("adl-grt", (154, )),
-    ("spr", (143, )),
+    ("spr", (143, 
+             207, )), # EMR as SPR
     ("ehl", (150, )),
     ("srf", (175, 206 )),
     ("sprmax", ()),
