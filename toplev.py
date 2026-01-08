@@ -2469,7 +2469,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
         multiplex = float('nan')
         event = event.rstrip()
         if re.match(r"\s*[0-9.]+", count):
-            val = float(count)
+            val = float(count.replace(",", "."))
         elif re.match(r"\s*<", count):
             account[event].errors[count.replace("<","").replace(">","")] += 1
             multiplex = 0.
