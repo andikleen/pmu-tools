@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+if [ ! -f smallpt.cpp ] ; then
+	echo "Downloading smallpt and building"
+	curl https://www.kevinbeason.com/smallpt/smallpt.txt > smallpt.cpp
+fi
+if [ ! -x smallpt ] ; then
+	# single threaded version w/o openmp
+	g++ -O3 -g smallpt.cpp -march=native -mtune=native -o smallpt -lm
+fi
+./smallpt

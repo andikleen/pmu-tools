@@ -1,0 +1,3 @@
+#!/bin/sh
+
+echo "create table t (a integer, b integer) ; insert into t select value, value*10 from generate_series(1,10000000); select a from t where b == 10000;" | sqlite3
