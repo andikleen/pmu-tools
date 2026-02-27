@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # rerun last toplev line from tl-tester log, optionally with a prefix (like python -mpdb)
 # tl-tester >& log
 # RERUN log python -mpdb
@@ -9,6 +9,6 @@ else
 fi
 L="$1"
 shift
-T=$(grep Line.*toplev "$L"  | tail -1 | sed 's/Line [0-9]* //')
+T=$(awk '/Line.*FORCE/ { e = e " " $3 } ; /Line.*toplev/ { gsub(/Line [0-9]+ /, ""); print e " " $0; e="" } ' $L | tail -n1)
 echo "$@" $T
 eval "$@" $T
