@@ -966,6 +966,7 @@ Average_Frequency = 0.0
 num_cores = 1
 num_threads = 1
 num_sockets = 1
+smt_enabled = False
 $topdown$aux
 
 def handle_error(obj, msg):
@@ -981,7 +982,6 @@ def handle_error_metric(obj, msg):
 
 """).substitute(long_name=long_name, tdversion=tdversion, memory=args.memory, topdown="topdown_use_fixed = False" if topdown_use_fixed else "",
     SMT="""
-smt_enabled = False
 ebs_mode = False""" if not args.nosmt else "",
     aux="use_aux = False" if aux_names else ""))
 
