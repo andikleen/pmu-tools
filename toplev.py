@@ -1713,7 +1713,8 @@ def find_idle_keys(res, rev, idle_thresh):
         return set()
     idle_ev = find_cycles(rev)
     if idle_ev == "":
-        warn_once("no idle detection because no cycle event found")
+        if not not all((x == ["dummy"] for x in rev.values())):
+            warn_once("no idle detection because no cycle event found")
         return set()
     cycles = { k: max([0] + [val for val, ev in zip(res[k], rev[k]) if ev == idle_ev])
                for k in res.keys() }
