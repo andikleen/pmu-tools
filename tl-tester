@@ -283,7 +283,7 @@ for j in $SMTCPUS ; do
 if ! grep -q hypervisor /proc/cpuinfo ; then
 if [ $PARANOID -lt 0 ] ; then
 case "$j" in
-adl*|mtl*|arl*|lnl*)
+adl*|mtl*)
 FORCECOUNTERS=8 FORCEHT=1 $WRAP ./toplev.py --perf --force-cpu $j --force-topology topology --force-events --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
 	;;
 *)
@@ -294,7 +294,7 @@ notfound $j
 fi # paranoid
 fi # hypervisor
 case "$j" in
-adl*|mtl*|arl*|lnl*)
+adl*|mtl*)
 FORCECOUNTERS=8 FORCEHT=0 $WRAP ./toplev.py --perf --force-topology topology -l1 --force-cpu $j --force-events --filterquals --aux $OPT $LOAD 2>&1 | tee log$$.$j
 ;;
 *)
