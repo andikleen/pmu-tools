@@ -16,11 +16,8 @@
 #
 # somewhat of a mess. should really use a real parser.
 #
-# TOFIX:
-# use count domain number for sanity checks
-# special case leaking events with option? (l3 bound to memory bound)
-# figure out Cycles_False_Sharing_Client on HSX
-# uncore handle arb events directly
+# Notebook:
+# use count domain number for sanity checks?
 #
 
 from __future__ import print_function
@@ -51,7 +48,9 @@ ap.add_argument('-v', '--verbose', action='store_true')
 ap.add_argument('-j', '--json', type=argparse.FileType('w'), help="Output formulas and events in flat JSON format")
 ap.add_argument('--eventcsv', type=argparse.FileType('r'), help="Use CSV to convert events instead of JSON")
 ap.add_argument('--nosmt', action='store_true', help="Set default for EBS mode in model")
+ap.add_argument('--ignoresmt', action='store_true', help="Remove all SMT support")
 ap.add_argument('--ignore-missing', action='store_true', help="Ignore missing events")
+ap.add_argument('--use-missing', action='store_true', help="Use events if missing in event file")
 args = ap.parse_args()
 
 if args.product:
@@ -232,6 +231,9 @@ def find_replacement(t, what):
             return nt
     return None
 
+missing_events = set()
+missing_nodes = set()
+
 def verify_event(t, what):
     #for e, r in event_replace:
     #    t = t.replace(e, r)
@@ -249,9 +251,13 @@ def verify_event(t, what):
         nt = find_replacement(t, what)
         if not nt:
             print("WARNING ",product_match,extra,"cannot find %s event %s" % (what, t), file=sys.stderr)
-            if args.ignore_missing:
-                return "0"
-            raise BadEvent()
+            if args.use_missing:
+                nt = t
+                missing_events.add(t)
+            else:
+                if args.ignore_missing:
+                    return "0"
+                raise BadEvent()
         t = nt
     if isinstance(e, str):
         t = e
@@ -759,10 +765,15 @@ def compile_extra(tokens, indent, levelstr, nname):
     if any([t in runtime_ids for t in tokens]):
         return ""
 
-    if "if" in tokens:
+    nr = tokens.count("if")
+    if nr > 0:
+        if nr > 1:
+            print("WARNING", "multiple ifs, only first processed for extra", " ".join(tokens), file=sys.stderr)
+
         idx = tokens.index("if")
         if args.verbose:
             print("if", tokens[idx+1], tokens[idx+2], tokens[idx+1] not in runtime_ids, file=sys.stderr)
+
         if tokens[idx + 1] not in runtime_ids:
             try:
                 events = set([x for x in tokens if change_token(x, set(), "0", "extra " + nname).count("EV") > 0 and "." in x])
@@ -830,9 +841,15 @@ def compile_list(tokens):
 def compile_ratio_if(tokens):
     # handle #PMM_App_Direct in [...] if. The expression needs to be split because the events are not in older CPUs.
     # these expressions can only be outter expessions, nesting is not supported
+    # same for #SMT_on with --nosmt
     start = 0
     while "if" in tokens[start:]:
         ifind = tokens.index("if", start)
+        if tokens[ifind+1] == "#SMT_on" and args.nosmt:
+            if tokens[ifind+2] != "else":
+                print("ERROR expected else in", tokens, file=sys.stderr)
+            tokens = tokens[ifind+3:]
+            break
         if tokens[ifind+1] == "#PMM_App_direct":
             if tokens[ifind+2] != "else":
                 print("ERROR expected else in", tokens, file=sys.stderr)
@@ -916,6 +933,7 @@ def kill(l, r, parents):
     if r.name not in names:
         return
     print("WARNING: removed %s (ratio %s)" % (r.name, r.ratio), file=sys.stderr)
+    missing_nodes.add(r.name)
     del l[l.index(r)]
     del names[r.name]
     deleted.append(r.name)
@@ -934,7 +952,7 @@ print(T("""\
 # http://bit.ly/tma-ispass14
 # http://halobates.de/blog/p/262
 # https://sites.google.com/site/analysismethods/yasin-pubs
-# https://download.01.org/perfmon/
+# https://github.com/intel/perfmon
 # https://github.com/andikleen/pmu-tools/wiki/toplev-manual
 #
 
@@ -1200,5 +1218,11 @@ for r in groups + info:
     else:
         continue
         #print T("""        o["$rname"].sibling = None""").substitute(rname=r.name)
+
+# should be on top, but we don't have the information yet
+if missing_events:
+    print("# possibly missing events: " + " ".join(missing_events))
+if missing_nodes:
+    print("# missing nodes: " + " ".join(missing_nodes))
 
 print("SKIPPED %d lines, %d events" % (skipped, skipped_event), file=sys.stderr)
