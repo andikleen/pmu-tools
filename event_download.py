@@ -242,6 +242,13 @@ def qualify_fn(cache, fn):
         return nfn
     return fn
 
+def prefer_file(files):
+    # prefer -Core for now
+    n = [x for x in files if "-Core" in x]
+    if n:
+        return n[0]
+    return files[0]
+
 def eventlist_name(name=None, key="core", hybridkey=None):
     if not name:
         name = get_cpustr()
@@ -259,7 +266,7 @@ def eventlist_name(name=None, key="core", hybridkey=None):
     if not os.path.exists(fn):
         files = parse_map_file(name, key, acceptfile=True, hybridkey=hybridkey)
         if files:
-            return qualify_fn(cache, files[0])
+            return qualify_fn(cache, prefer_file(files))
         name = cpu_without_step(name)
         if "*" in fn:
             fn = "%s/%s" % (cache, name)
@@ -269,7 +276,7 @@ def eventlist_name(name=None, key="core", hybridkey=None):
             fn = "%s/%s-%s.json" % (cache, name, key)
         files = parse_map_file(name, key, acceptfile=True, hybridkey=hybridkey)
         if files:
-            fn = files[0]
+            fn = prefer_file(files)
     return qualify_fn(cache, fn)
 
 if __name__ == '__main__':
