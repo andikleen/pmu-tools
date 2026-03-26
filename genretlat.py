@@ -240,7 +240,7 @@ def init_args():
     ap.add_argument('--pmu', '-p', nargs='*', default=["cpu", "cpu_core"], help="for which PMUs to collect")
     ap.add_argument('--quiet', '-q', action='store_true')
     ap.add_argument('--csv', '-c', type=argparse.FileType('w'), help="Generate CSV file with pushout latencies", default=None)
-    ap.add_argument('--cpu', help="Set CPU type (gnr, mtl, lnl)")
+    ap.add_argument('--cpu', help="Set CPU type (gnr, mtl, lnl, ptl)")
     args, rest = ap.parse_known_args()
     if args.csv:
         args.csvplot = csv.writer(args.csv)
@@ -269,10 +269,18 @@ def main():
             samples[ev].append(weight)
     except KeyboardInterrupt:
         pass
-    data = { "Data": { re.sub(r"[:/][uU]?", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED."): gen_stat(s)
+
+    def clean_event(e):
+        return re.sub(r"[:/][uU]?", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED.")
+    data = { "Data": { clean_event(ev): gen_stat(s)
                        for ev, s in samples.items()
                        if "/" not in ev or any([x in ev for x in args.pmu]) } }
     json.dump(data, args.output, indent=2, sort_keys=True)
+    evset = set([clean_event(e) for e in events])
+    dataset = set(data["Data"].keys())
+    delta = evset - dataset
+    if delta:
+        sys.exit("ERROR: Some events not sampled: " + ",".join(delta))
     if not args.quiet:
         human_output(data)
 
