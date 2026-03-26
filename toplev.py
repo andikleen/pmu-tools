@@ -301,7 +301,7 @@ class PerfFeatures(object):
             pmu = "cpu_core"
         p = os.getenv("PERF")
         self.perf = p if p else "perf"
-        ret = os.system(self.perf + " stat --log-fd 3 3>/dev/null true")
+        ret = os.system(self.perf + " stat --log-fd 3 3>/dev/null >/dev/null 2>/dev/null true")
         if ret:
             # work around the insane perf setup on Debian derivates
             # it fails if the perf isn't the same as the kernel
