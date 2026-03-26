@@ -123,7 +123,7 @@ on newer Linux kernels.
 
 ## TMA 5.01 release
 * toplev updated to TMA 5.1
-  * Support for Pantherlake P-core (PTL E-core is using SKT model for now)
+  * Support for Pantherlake P-core (PTL E-core is using SKT model for now, and using ARL latencies)
   * New Tree Nodes
   * Store_Early_Blk - This metric estimates clocks wasted due to loads blocked due to unknown store address (did not do memory disambiguation) or due to unknown store data
   * New Informative Metrics
