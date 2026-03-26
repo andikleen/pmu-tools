@@ -122,6 +122,19 @@ on newer Linux kernels.
 # Recent new features:
 
 ## TMA 5.01 release
+* toplev updated to TMA 5.1
+  * Support for Pantherlake P-core (PTL E-core is using SKT model for now)
+  * New Tree Nodes
+  * Store_Early_Blk - This metric estimates clocks wasted due to loads blocked due to unknown store address (did not do memory disambiguation) or due to unknown store data
+  * New Informative Metrics
+  * Fetch_MS - Average number of uops fetched from MS per cycle
+  * L1DL0_Cache_Fill_BW
+  * Enhancements & fixes
+  * Enhance L1_Latency_Dependency
+  * Rename Bottleneck view Cache_Memory_* to Data_Cache_Memory_*
+  * Rename PMM Metrics to CXL_Mem and fix formulas for servers
+  * Uncore Frequency Support for ADL+ client
+  * Fix multiple events name/alias
 * toplev updated to TMA 5.01:
   * Bottlenecks View tops the spreadsheet of a highly detailed TMA tree with over 120 nodes; GNR & LNL models
   * New Models

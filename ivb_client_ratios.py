@@ -1,28 +1,28 @@
 # -*- coding: latin-1 -*-
 #
-# auto generated TopDown/TMA 5.01-full-perf description for Intel 3rd gen Core (code named IvyBridge)
+# auto generated TopDown/TMA 5.1-full description for Intel 3rd gen Core (code named IvyBridge)
 # Please see http://ark.intel.com for more details on these CPUs.
 #
 # References:
 # http://bit.ly/tma-ispass14
 # http://halobates.de/blog/p/262
 # https://sites.google.com/site/analysismethods/yasin-pubs
-# https://download.01.org/perfmon/
+# https://github.com/intel/perfmon
 # https://github.com/andikleen/pmu-tools/wiki/toplev-manual
 #
 
 # Helpers
 
 print_error = lambda msg: False
-smt_enabled = False
 ebs_mode = False
-version = "5.01-full-perf"
+version = "5.1-full"
 base_frequency = -1.0
 Memory = 0
 Average_Frequency = 0.0
 num_cores = 1
 num_threads = 1
 num_sockets = 1
+smt_enabled = False
 
 
 def handle_error(obj, msg):
@@ -83,8 +83,8 @@ def Fetched_Uops(self, EV, level):
     return (EV("IDQ.DSB_UOPS", level) + EV("LSD.UOPS", level) + EV("IDQ.MITE_UOPS", level) + EV("IDQ.MS_UOPS", level))
 
 def Few_Uops_Executed_Threshold(self, EV, level):
-    EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
     EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level)
+    EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
     return EV("UOPS_EXECUTED.CYCLES_GE_3_UOPS_EXEC", level) if (IPC(self, EV, level)> 1.8) else EV("UOPS_EXECUTED.CYCLES_GE_2_UOPS_EXEC", level)
 
 # Floating Point computational (arithmetic) Operations Count
@@ -280,7 +280,7 @@ def Instructions(self, EV, level):
 def Retire(self, EV, level):
     return Retired_Slots(self, EV, level) / EV("UOPS_RETIRED.RETIRE_SLOTS:c1", level)
 
-# Instruction-Level-Parallelism (average number of uops executed when there is execution) per physical core
+# Mem;Backend;CacheHits
 def Execute(self, EV, level):
     return EV("UOPS_EXECUTED.THREAD", level) / Execute_Cycles(self, EV, level)
 
@@ -413,10 +413,6 @@ def Kernel_CPI(self, EV, level):
 # Average external Memory Bandwidth Use for reads and writes [GB / sec]
 def DRAM_BW_Use(self, EV, level):
     return 64 *(EV("UNC_ARB_TRK_REQUESTS.ALL", level) + EV("UNC_ARB_COH_TRK_REQUESTS.ALL", level)) / OneMillion / Time(self, EV, level) / 1000
-
-# Total package Power in Watts
-def Power(self, EV, level):
-    return EV("UNC_PKG_ENERGY_STATUS", level) * Energy_Unit /(Time(self, EV, level) * OneMillion )
 
 # Run duration time in seconds
 def Time(self, EV, level):
@@ -591,7 +587,7 @@ class MS_Switches:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['FetchLat', 'MicroSeq'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = MS_Switches_Cost * EV("IDQ.MS_SWITCHES", 3) / CLKS(self, EV, 3)
@@ -949,7 +945,7 @@ class DTLB_Load:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['BvMT', 'MemoryTLB'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (Mem_STLB_Hit_Cost * EV("DTLB_LOAD_MISSES.STLB_HIT", 4) + EV("DTLB_LOAD_MISSES.WALK_DURATION", 4)) / CLKS(self, EV, 4)
@@ -980,7 +976,7 @@ class Store_Fwd_Blk:
     errcount = 0
     sibling = None
     metricgroup = frozenset([])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = 13 * EV("LD_BLOCKS.STORE_FORWARD", 4) / CLKS(self, EV, 4)
@@ -1011,7 +1007,7 @@ class Lock_Latency:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['LockCont', 'Offcore'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = Mem_Lock_St_Fraction(self, EV, 4) * ORO_Demand_RFO_C1(self, EV, 4) / CLKS(self, EV, 4)
@@ -1036,7 +1032,7 @@ class Split_Loads:
     errcount = 0
     sibling = None
     metricgroup = frozenset([])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = 13 * EV("LD_BLOCKS.NO_SR", 4) / CLKS(self, EV, 4)
@@ -1171,7 +1167,7 @@ class Contested_Accesses:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['BvMS', 'DataSharing', 'LockCont', 'Offcore', 'Snoop'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (Mem_XSNP_HitM_Cost(self, EV, 4) * LOAD_XSNP_HITM(self, EV, 4) + Mem_XSNP_Hit_Cost(self, EV, 4) * LOAD_XSNP_MISS(self, EV, 4)) / CLKS(self, EV, 4)
@@ -1199,7 +1195,7 @@ class Data_Sharing:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['BvMS', 'Offcore', 'Snoop'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = Mem_XSNP_Hit_Cost(self, EV, 4) * LOAD_XSNP_HIT(self, EV, 4) / CLKS(self, EV, 4)
@@ -1226,7 +1222,7 @@ class L3_Hit_Latency:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['BvML', 'MemoryLat'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = Mem_XSNP_None_Cost(self, EV, 4) * LOAD_L3_HIT(self, EV, 4) / CLKS(self, EV, 4)
@@ -1278,7 +1274,7 @@ class DRAM_Bound:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['MemoryBound', 'TmaL3mem'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (1 - Mem_L3_Hit_Fraction(self, EV, 3)) * EV("CYCLE_ACTIVITY.STALLS_L2_PENDING", 3) / CLKS(self, EV, 3)
@@ -1396,7 +1392,7 @@ class Store_Latency:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['BvML', 'LockCont', 'MemoryLat', 'Offcore'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (Store_L2_Hit_Cycles(self, EV, 4) + (1 - Mem_Lock_St_Fraction(self, EV, 4)) * ORO_Demand_RFO_C1(self, EV, 4)) / CLKS(self, EV, 4)
@@ -1424,7 +1420,7 @@ class False_Sharing:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['BvMS', 'DataSharing', 'LockCont', 'Offcore', 'Snoop'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = Mem_XSNP_HitM_Cost(self, EV, 4) * EV("OFFCORE_RESPONSE.DEMAND_RFO.LLC_HIT.HITM_OTHER_CORE", 4) / CLKS(self, EV, 4)
@@ -1475,7 +1471,7 @@ class DTLB_Store:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['BvMT', 'MemoryTLB'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (Mem_STLB_Hit_Cost * EV("DTLB_STORE_MISSES.STLB_HIT", 4) + EV("DTLB_STORE_MISSES.WALK_DURATION", 4)) / CLKS(self, EV, 4)
@@ -1535,7 +1531,7 @@ class Divider:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['BvCB'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = EV("ARITH.FPU_DIV_ACTIVE", 3) / CORE_CLKS(self, EV, 3)
@@ -2065,7 +2061,7 @@ class FP_Vector:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['Compute', 'Flops'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = FP_Arith_Vector(self, EV, 4) / EV("UOPS_EXECUTED.THREAD", 4)
@@ -2090,7 +2086,7 @@ class FP_Vector_128b:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['Compute', 'Flops'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (EV("FP_COMP_OPS_EXE.SSE_SCALAR_DOUBLE", 5) + EV("FP_COMP_OPS_EXE.SSE_PACKED_DOUBLE", 5)) / EV("UOPS_EXECUTED.THREAD", 5)
@@ -2115,7 +2111,7 @@ class FP_Vector_256b:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['Compute', 'Flops'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = (EV("SIMD_FP_256.PACKED_DOUBLE", 5) + EV("SIMD_FP_256.PACKED_SINGLE", 5)) / EV("UOPS_EXECUTED.THREAD", 5)
@@ -2194,7 +2190,7 @@ class Assists:
     errcount = 0
     sibling = None
     metricgroup = frozenset(['BvIO'])
-    maxval = 1
+    maxval = 1.0
     def compute(self, EV):
         try:
             self.val = Avg_Assist_Cost * EV("OTHER_ASSISTS.ANY_WB_ASSIST", 4) / SLOTS(self, EV, 4)
@@ -2267,7 +2263,7 @@ Instructions Per Cycle (per Logical Processor)"""
 class Metric_UopPI:
     name = "UopPI"
     domain = "Metric"
-    maxval = 2
+    maxval = 2.0
     errcount = 0
     area = "Info.Thread"
     metricgroup = frozenset(['Pipeline', 'Ret', 'Retire'])
@@ -2405,7 +2401,7 @@ core)"""
 class Metric_FLOPc:
     name = "FLOPc"
     domain = "Core_Metric"
-    maxval = 10
+    maxval = 10.0
     errcount = 0
     area = "Info.Core"
     metricgroup = frozenset(['Ret', 'Flops'])
@@ -2658,14 +2654,13 @@ class Metric_Execute:
         except ZeroDivisionError:
             handle_error_metric(self, "Execute zero division")
     desc = """
-Instruction-Level-Parallelism (average number of uops
-executed when there is execution) per physical core"""
+Mem;Backend;CacheHits"""
 
 
 class Metric_DSB_Coverage:
     name = "DSB_Coverage"
     domain = "Metric"
-    maxval = 1
+    maxval = 1.0
     errcount = 0
     area = "Info.Frontend"
     metricgroup = frozenset(['DSB', 'Fed', 'FetchBW'])
@@ -2788,7 +2783,7 @@ operations (in core cycles)"""
 class Metric_MLP:
     name = "MLP"
     domain = "Metric"
-    maxval = 10
+    maxval = 10.0
     errcount = 0
     area = "Info.Memory"
     metricgroup = frozenset(['Mem', 'MemoryBound', 'MemoryBW'])
@@ -2949,7 +2944,7 @@ sec]"""
 class Metric_Page_Walks_Utilization:
     name = "Page_Walks_Utilization"
     domain = "Core_Metric"
-    maxval = 1
+    maxval = 1.0
     errcount = 0
     area = "Info.Memory.TLB"
     metricgroup = frozenset(['Mem', 'MemoryTLB'])
@@ -3165,7 +3160,7 @@ instructions, vector-width"""
 class Metric_Turbo_Utilization:
     name = "Turbo_Utilization"
     domain = "Core_Metric"
-    maxval = 10
+    maxval = 10.0
     errcount = 0
     area = "Info.System"
     metricgroup = frozenset(['Power'])
@@ -3184,7 +3179,7 @@ Average Frequency Utilization relative nominal frequency"""
 class Metric_SMT_2T_Utilization:
     name = "SMT_2T_Utilization"
     domain = "Core_Metric"
-    maxval = 1
+    maxval = 1.0
     errcount = 0
     area = "Info.System"
     metricgroup = frozenset(['SMT'])
@@ -3204,7 +3199,7 @@ were active"""
 class Metric_Kernel_Utilization:
     name = "Kernel_Utilization"
     domain = "Metric"
-    maxval = 1
+    maxval = 1.0
     errcount = 0
     area = "Info.System"
     metricgroup = frozenset(['OS'])
@@ -3259,25 +3254,6 @@ class Metric_DRAM_BW_Use:
     desc = """
 Average external Memory Bandwidth Use for reads and writes
 [GB / sec]"""
-
-
-class Metric_Power:
-    name = "Power"
-    domain = "System_Metric"
-    maxval = 200
-    errcount = 0
-    area = "Info.System"
-    metricgroup = frozenset(['Power', 'SoC'])
-    sibling = None
-
-    def compute(self, EV):
-        try:
-            self.val = Power(self, EV, 0)
-            self.thresh = True
-        except ZeroDivisionError:
-            handle_error_metric(self, "Power zero division")
-    desc = """
-Total package Power in Watts"""
 
 
 class Metric_Time:
@@ -3530,7 +3506,6 @@ class Setup:
         n = Metric_Kernel_Utilization() ; r.metric(n) ; o["Kernel_Utilization"] = n
         n = Metric_Kernel_CPI() ; r.metric(n) ; o["Kernel_CPI"] = n
         n = Metric_DRAM_BW_Use() ; r.metric(n) ; o["DRAM_BW_Use"] = n
-        n = Metric_Power() ; r.metric(n) ; o["Power"] = n
         n = Metric_Time() ; r.metric(n) ; o["Time"] = n
         n = Metric_Socket_CLKS() ; r.metric(n) ; o["Socket_CLKS"] = n
         n = Metric_IpFarBranch() ; r.metric(n) ; o["IpFarBranch"] = n
@@ -3543,33 +3518,33 @@ class Setup:
         o["Branch_Mispredicts"].Bad_Speculation = o["Bad_Speculation"]
         o["Machine_Clears"].Branch_Mispredicts = o["Branch_Mispredicts"]
         o["Machine_Clears"].Bad_Speculation = o["Bad_Speculation"]
-        o["Backend_Bound"].Frontend_Bound = o["Frontend_Bound"]
-        o["Backend_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Backend_Bound"].Retiring = o["Retiring"]
-        o["Memory_Bound"].Fetch_Latency = o["Fetch_Latency"]
-        o["Memory_Bound"].Backend_Bound = o["Backend_Bound"]
-        o["Memory_Bound"].Frontend_Bound = o["Frontend_Bound"]
-        o["Memory_Bound"].Bad_Speculation = o["Bad_Speculation"]
+        o["Backend_Bound"].Bad_Speculation = o["Bad_Speculation"]
+        o["Backend_Bound"].Frontend_Bound = o["Frontend_Bound"]
         o["Memory_Bound"].Retiring = o["Retiring"]
+        o["Memory_Bound"].Bad_Speculation = o["Bad_Speculation"]
+        o["Memory_Bound"].Backend_Bound = o["Backend_Bound"]
+        o["Memory_Bound"].Fetch_Latency = o["Fetch_Latency"]
+        o["Memory_Bound"].Frontend_Bound = o["Frontend_Bound"]
         o["MEM_Latency"].MEM_Bandwidth = o["MEM_Bandwidth"]
+        o["Core_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Core_Bound"].Backend_Bound = o["Backend_Bound"]
         o["Core_Bound"].Frontend_Bound = o["Frontend_Bound"]
-        o["Core_Bound"].Bad_Speculation = o["Bad_Speculation"]
         o["Core_Bound"].Retiring = o["Retiring"]
-        o["Core_Bound"].Fetch_Latency = o["Fetch_Latency"]
         o["Core_Bound"].Memory_Bound = o["Memory_Bound"]
+        o["Core_Bound"].Fetch_Latency = o["Fetch_Latency"]
         o["Ports_Utilization"].Fetch_Latency = o["Fetch_Latency"]
         o["Ports_Utilized_0"].Fetch_Latency = o["Fetch_Latency"]
         o["Retiring"].Heavy_Operations = o["Heavy_Operations"]
         o["Light_Operations"].Microcode_Sequencer = o["Microcode_Sequencer"]
-        o["Light_Operations"].Heavy_Operations = o["Heavy_Operations"]
         o["Light_Operations"].Retiring = o["Retiring"]
+        o["Light_Operations"].Heavy_Operations = o["Heavy_Operations"]
         o["FP_Arith"].FP_Scalar = o["FP_Scalar"]
         o["FP_Arith"].FP_Vector = o["FP_Vector"]
         o["FP_Arith"].X87_Use = o["X87_Use"]
         o["Heavy_Operations"].Microcode_Sequencer = o["Microcode_Sequencer"]
-        o["CISC"].Assists = o["Assists"]
         o["CISC"].Microcode_Sequencer = o["Microcode_Sequencer"]
+        o["CISC"].Assists = o["Assists"]
         o["IpArith"].FP_Scalar = o["FP_Scalar"]
         o["IpArith"].FP_Vector = o["FP_Vector"]
 
@@ -3610,3 +3585,4 @@ class Setup:
         o["IpTB"].sibling = (o["LCP"], o["DSB_Switches"], o["Fetch_Bandwidth"],)
         o["DSB_Coverage"].sibling = (o["LCP"], o["DSB_Switches"], o["Fetch_Bandwidth"],)
         o["DRAM_BW_Use"].sibling = (o["FB_Full"], o["SQ_Full"], o["MEM_Bandwidth"],)
+# missing nodes: Power

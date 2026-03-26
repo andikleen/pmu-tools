@@ -180,6 +180,8 @@ def find_model(args):
                 args.cpu = "gnr"
             elif cpu == "lunarlake_hybrid":
                 args.cpu = "lnl"
+            elif cpu == "pantherlake_hybrid":
+                args.cpu = "ptl"
     if not args.cpu:
         sys.exit("Unsupported CPU %s" % cpu)
     if args.cpu == "mtl":
@@ -191,6 +193,9 @@ def find_model(args):
     elif args.cpu == "lnl":
         import lnl_lnc_ratios
         return lnl_lnc_ratios
+    elif args.cpu == "ptl":
+        import ptl_cgc_ratios
+        return ptl_cgc_ratios
     sys.exit("Unknown cpu %s" % args.cpu)
 
 def gen_events(args):

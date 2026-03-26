@@ -104,6 +104,8 @@ known_cpus = (
     ("mtl", (170, 186, )),
     ("mtl-cmt", (170, 186, )),
     ("mtl-rwc", (170, 186, )),
+    ("ptl", (204, )),
+    ("ptl-cgc", (204, )),
 )
 
 eventlist_alias = {
@@ -4231,6 +4233,15 @@ def model_setup(runner, cpuname, pe, kernel_version):
         model = lnl_lnc_ratios
         setup_metrics(model, runner.pmu)
     elif (cpuname in ("lnl", "arl") and atom_pmu) or cpuname == "lnl-skt":
+        import lnl_skt_ratios
+        model = lnl_skt_ratios
+        setup_metrics(model, runner.pmu)
+    elif (cpuname == "ptl" and core_pmu) or cpuname == "ptl-cgc":
+        import ptl_cgc_ratios
+        model = ptl_cgc_ratios
+        setup_metrics(model, runner.pmu)
+    elif (cpuname == "ptl" and atom_pmu) or cpuname == "ptl-dkt":
+        # for now only using SKT model
         import lnl_skt_ratios
         model = lnl_skt_ratios
         setup_metrics(model, runner.pmu)
