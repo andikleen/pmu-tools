@@ -65,7 +65,7 @@ if not args.eventcsv:
 # From "for tools developers" in TMA spreadsheet
 
 server_products = "JKT;IVT;HSX;BDX;SKX;CLX;CPX;ICX;SPR/EMR;SPR-HBM;EMR;GNR".split(";")
-client_products = "SNB;IVB;HSW;BDW;SKL;KBL;KBLR;CFL;CNL;ICL;RKL;RKL;TGL;ADL;MTL;LNL".split(";")
+client_products = "SNB;IVB;HSW;BDW;SKL;KBL;KBLR;CFL;CNL;ICL;RKL;RKL;TGL;ADL;MTL;LNL;PTL".split(";")
 
 server_products.reverse()
 client_products.reverse()
