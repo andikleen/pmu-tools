@@ -4235,7 +4235,6 @@ def model_setup(runner, cpuname, pe, kernel_version):
     elif (cpuname in ("lnl", "arl") and atom_pmu) or cpuname == "lnl-skt":
         import lnl_skt_ratios
         model = lnl_skt_ratios
-        setup_metrics(model, runner.pmu)
     elif (cpuname == "ptl" and core_pmu) or cpuname == "ptl-cgc":
         import ptl_cgc_ratios
         model = ptl_cgc_ratios
@@ -4244,7 +4243,6 @@ def model_setup(runner, cpuname, pe, kernel_version):
         # for now only using SKT model
         import lnl_skt_ratios
         model = lnl_skt_ratios
-        setup_metrics(model, runner.pmu)
     elif cpuname == "slm":
         import slm_ratios
         model = slm_ratios
