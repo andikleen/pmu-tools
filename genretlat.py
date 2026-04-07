@@ -65,7 +65,7 @@ class SamplePerfRun(object):
         for l in self.ps.stdout:
             l = l.decode()
             n = l.split()
-            ts, event, weight = float(n[0].replace(":","")), n[1].replace(":",""), int(n[2])
+            ts, event, weight = float(n[0].replace(":","")), re.sub(r':.*', '', n[1]), int(n[2])
             if self.args.csvplot:
                 self.args.csvplot.writerow([ts, self.rmap[event] if event in self.rmap else event, weight])
             if self.args.fake:
@@ -247,6 +247,9 @@ def init_args():
     else:
         args.csvplot = None
     return args, rest
+
+def cleanevent(ev):
+    return re.sub(r"[:/][uU]?", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED.")
 
 def main():
     args, rest = init_args()
