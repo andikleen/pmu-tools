@@ -2,7 +2,7 @@
 
 awk 'BEGIN {
 	print "extern int f2(void); int func(void) { int i; "
-	for(i = 0; i < 11500; i++) {
+	for(i = 0; i < 15500; i++) {
 		print "i += f2();" 
 	}
 	print "return i;"
