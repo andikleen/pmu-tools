@@ -1043,8 +1043,10 @@ def init_idle_threshold(args):
     return idle_threshold
 
 ret_latency = None
+default_ret_latency = None
 
 def setup_retlatency(args):
+    load_default_retlat()
     global ret_latency
     if args.ret_latency:
         try:
@@ -1054,11 +1056,11 @@ def setup_retlatency(args):
             sys.exit("Cannot open %s" % l[0])
         except KeyError:
             sys.exit("retlat file has unparseable format")
-    else:
-        load_default_retlat()
 
 def lookup_retlat(event):
     if ret_latency is None:
+        if default_ret_latency and event in default_ret_latency:
+            return default_ret_latency[event]["MEAN"]
         warn_once("No --ret-latency for %s" % event)
         return 1.0
     try:
@@ -1078,6 +1080,8 @@ def lookup_retlat(event):
             o = o[0]["MEAN"]
         return o
     except KeyError as e:
+        if default_ret_latency and event in default_ret_latency:
+            return default_ret_latency[event]["MEAN"]
         warn_once("bad ret latency key %s" % e)
         return 1.0 # XXX
 
@@ -4095,15 +4099,15 @@ def legacy_smt_setup(model):
     smt_mode |= cpu.ht
 
 def load_default_retlat():
-    global ret_latency
+    global default_ret_latency
     if ret_latency is None:
         name = cpu.cpu.split("-")[0]
         fn = os.path.dirname(os.path.realpath(__file__)) + ("/%s-retlat.json" % name)
         try:
-            ret_latency = json.load(open(fn))["Data"]
+            default_ret_latency = json.load(open(fn))["Data"]
         except IOError:
-            sys.exit("Cannot find default ret latency file %s\n" % fn +
-                     "Please generate with representative workload using genretlat -o %s workload" % fn)
+            print("Cannot find default ret latency file %s\n" % fn +
+                  "Please generate with representative workload using genretlat -o %s workload" % fn)
 
 def model_setup(runner, cpuname, pe, kernel_version):
     global smt_mode
