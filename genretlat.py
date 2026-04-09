@@ -99,7 +99,7 @@ def lookup(s, i, fb):
 def gen_spark(buckets, min_, f):
     return "".join([lookup("▁▂▃▄▅▆▇█", int((int((x - min_)) << SPARK_SHIFT) / f), " ") for x in buckets])
 
-def gen_stat(samples):
+def gen_stat(samples, args):
     # {
     #     "COUNT": 5358917,
     #     "MIN": 0,
@@ -120,7 +120,7 @@ def gen_stat(samples):
         del nz_buckets[0]
     spark, min_, f = gen_spark_buckets(samples)
     spark_nz, min_nz, f_nz = gen_spark_buckets(nz)
-    return {
+    r = {
         "COUNT": len(samples),
         "MIN": min(samples),
         "MAX": max(samples),
@@ -138,6 +138,10 @@ def gen_stat(samples):
         "SPARK_BUCKETS": ",".join(["%d" % x for x in spark]),
         "SPARK_BUCKETS_NZ": ",".join(["%d" % x for x in spark_nz]),
     }
+    if args.full:
+        for a, b in buckets.items():
+            r["Values[%d]" % a] = b
+    return r
 
 def human_output(data):
     d = data["Data"]
@@ -150,6 +154,8 @@ def human_output(data):
                 l = [(int(x) if x.isdecimal() else 0) for x in d[ev][m].split(",")]
                 s = gen_spark(l, d[ev]["MIN"], d[ev]["F_NZ" if m.endswith("_NZ") else "F"])
                 print("%s %s " % (m.lower(), s), end="")
+            elif m.startswith("Value"):
+                continue
             else:
                 print("%s %s " % (m.lower(), d[ev][m]), end="")
         print()
@@ -231,7 +237,7 @@ def getevent(emap, e):
     return ev.output()
 
 def init_args():
-    ap = argparse.ArgumentParser('Generate JSON of retirement latencies to tune toplev')
+    ap = argparse.ArgumentParser('Generate JSON of retirement latencies to tune toplev. Add workload to run.')
     ap.add_argument('--output', '-o', type=argparse.FileType('w'), default=sys.stdout,
                     help="")
     ap.add_argument('--verbose', '-v', action='store_true', help='be verbose')
@@ -239,14 +245,40 @@ def init_args():
     ap.add_argument('--interval', '-i', type=int, default=1003, help="Interval for sampling")
     ap.add_argument('--pmu', '-p', nargs='*', default=["cpu", "cpu_core"], help="for which PMUs to collect")
     ap.add_argument('--quiet', '-q', action='store_true')
-    ap.add_argument('--csv', '-c', type=argparse.FileType('w'), help="Generate CSV file with pushout latencies", default=None)
+    ap.add_argument('--csv', '-c', type=argparse.FileType('w'), help="Generate CSV file with pushout latencies",
+                    default=None)
     ap.add_argument('--cpu', help="Set CPU type (gnr, mtl, lnl, ptl)")
+    ap.add_argument('--fallback', type=argparse.FileType('r'), help="Use json file to fill in not sampled events")
+    ap.add_argument('--full', action='store_true', help="Add all value counts in output (as input for later merging)")
+    ap.add_argument('--merge', nargs='*', type=argparse.FileType('r'),
+                    help="Merge with existing json files (must have used --full). Can be multiple.")
     args, rest = ap.parse_known_args()
     if args.csv:
         args.csvplot = csv.writer(args.csv)
     else:
         args.csvplot = None
     return args, rest
+
+def cleanevent(ev):
+    return re.sub(r"[:/][uU]?", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED.")
+
+def merge(samples, merge):
+    for f in merge:
+        print("merging", f.name)
+        md = json.load(f)["Data"]
+        for ev, mdd in md.items():
+            for k, num in mdd.items():
+                m = re.match(r'Values\[(\d+)\]', k)
+                if m:
+                    val = int(m.group(1))
+                    for j in range(num):
+                        samples[ev].append(val)
+
+def fallback(data, fb, missing):
+    fb = json.load(fb)["Data"]
+    for ev in missing:
+        if ev in fb:
+            data["Data"][ev] = fbd[ev]
 
 def cleanevent(ev):
     return re.sub(r"[:/][uU]?", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED.")
@@ -265,25 +297,34 @@ def main():
     perf = os.getenv("PERF")
     if perf is None:
         perf = "perf"
-    try:
-        s.execute(perf, pevents, events, rest)
-        samples = defaultdict(list)
-        for ev, weight in s.handle_samples():
-            samples[ev].append(weight)
-    except KeyboardInterrupt:
-        pass
+    samples = defaultdict(list)
+    if rest:
+        try:
+            s.execute(perf, pevents, events, rest)
+            for ev, weight in s.handle_samples():
+                samples[ev].append(weight)
+        except KeyboardInterrupt:
+            pass
+    if args.merge:
+        merge(samples, args.merge)
 
-    def clean_event(e):
+    def clean_event(ev):
         return re.sub(r"[:/][uU]?", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED.")
-    data = { "Data": { clean_event(ev): gen_stat(s)
+
+    data = { "Data": { clean_event(ev): gen_stat(s, args)
                        for ev, s in samples.items()
                        if "/" not in ev or any([x in ev for x in args.pmu]) } }
+    es = set([ev.replace(":pp", "") for ev in events])
+    ms = set([ev for ev in data["Data"].keys() if data["Data"][ev]["MEAN"] > 0.0])
+    if args.fallback:
+        fallback(data, args.fallback, es - ms)
+
     json.dump(data, args.output, indent=2, sort_keys=True)
     evset = set([clean_event(e) for e in events])
     dataset = set(data["Data"].keys())
     delta = evset - dataset
     if delta:
-        sys.exit("ERROR: Some events not sampled: " + ",".join(delta))
+        print("WARNING: Some events not sampled: " + ",".join(delta))
     if not args.quiet:
         human_output(data)
 

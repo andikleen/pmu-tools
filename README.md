@@ -121,6 +121,7 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* genretlat can now merge multiple workloads and warns about not sampled events
 ## TMA 5.01 release
 * toplev updated to TMA 5.1
   * Support for Pantherlake P-core (PTL E-core is using SKT model for now, and using ARL latencies)
