@@ -278,7 +278,7 @@ def fallback(data, fb, missing):
     fb = json.load(fb)["Data"]
     for ev in missing:
         if ev in fb:
-            data["Data"][ev] = fbd[ev]
+            data["Data"][ev] = fb[ev]
 
 def cleanevent(ev):
     return re.sub(r"[:/][uU]?", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED.")
