@@ -1,0 +1,20 @@
+#!/bin/sh
+# minimal tester for genretlat
+# ARG=... extra arguments for genretlat
+# ARG="--cpu ptl --fake" for older CPUs
+set -e
+set -x
+
+./genretlat $ARG true
+./genretlat $ARG -o x --csv x.csv ./workloads/BC1s
+./genretlat $ARG -o x ./workloads/BC1s
+./genretlat $ARG -o a --full ./workloads/COMPILE10s
+./genretlat $ARG -o b --full ./workloads/CLTRAMP3D
+./genretlat $ARG -o c ./workloads/BC1s
+./genretlat $ARG --merge  a --merge b -o x.json
+echo '{ "Data": {} }'  > d
+# XXX check that bucket counts match
+python3 -mjson < x.json
+./genretlat $ARG --fallback a --merge d -o x.json
+rm x x.json a b c f
+echo PASSED
