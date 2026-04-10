@@ -57,6 +57,8 @@ class SamplePerfRun(object):
                                    "-F", "time,retire_lat,event"]),
                                    stdin=pi.stdout,
                                    stdout=subp.PIPE)
+        if pr is None or pi is None or ps is None:
+            sys.exit("Cannot runnot perf")
         pi.stdout.close()
         pr.stdout.close()
         self.pr, self.pi, self.ps = pr, pi, ps
