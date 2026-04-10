@@ -261,9 +261,6 @@ def init_args():
         args.csvplot = None
     return args, rest
 
-def cleanevent(ev):
-    return re.sub(r"[:/][uU]?", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED.")
-
 def merge(samples, merge):
     for f in merge:
         print("merging", f.name)
