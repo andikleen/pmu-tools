@@ -1043,7 +1043,7 @@ def init_idle_threshold(args):
     return idle_threshold
 
 ret_latency = None
-default_ret_latency = None
+default_ret_latency = None # type: Any
 
 def setup_retlatency(args):
     load_default_retlat()
