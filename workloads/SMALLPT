@@ -2,7 +2,7 @@
 set -e
 if [ ! -f smallpt.cpp ] ; then
 	echo "Downloading smallpt and building"
-	curl https://www.kevinbeason.com/smallpt/smallpt.txt > smallpt.cpp
+	curl https://www.kevinbeason.com/smallpt/smallpt.txt | grep -v Rendering > smallpt.cpp
 fi
 if [ ! -x smallpt ] ; then
 	# single threaded version w/o openmp
