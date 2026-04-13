@@ -2,6 +2,7 @@
 # print bottlenecks for all tests in workloads/*
 # arguments: to pass to toplev
 for i in workloads/* ; do
-	echo "`basename $i`:"
-	./toplev "$@" --quiet --single-thread --no-version $i
+	[ ! -x "$i" ] && continue
+	printf "%-15s " "`basename $i`"
+	./toplev "$@" --quiet --single-thread --only-bottleneck -- "$i"
 done
