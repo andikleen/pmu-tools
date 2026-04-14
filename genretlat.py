@@ -249,7 +249,7 @@ def init_args():
     ap.add_argument('--quiet', '-q', action='store_true')
     ap.add_argument('--csv', '-c', type=argparse.FileType('w'), help="Generate CSV file with pushout latencies",
                     default=None)
-    ap.add_argument('--cpu', help="Set CPU type (gnr, mtl, lnl, ptl)")
+    ap.add_argument('--cpu', help="Set CPU type", choices=("gnr", "mtl", "lnl", "ptl"))
     ap.add_argument('--fallback', type=argparse.FileType('r'), help="Use json file to fill in not sampled events")
     ap.add_argument('--full', action='store_true', help="Add all value counts in output (as input for later merging)")
     ap.add_argument('--merge', nargs='*', type=argparse.FileType('r'),
