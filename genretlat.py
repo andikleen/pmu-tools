@@ -35,7 +35,6 @@ def cmd(args, l):
 class SamplePerfRun(object):
     """Run perf record to collect Timed PEBS information and generate averages for event weights."""
     def __init__(self, args):
-        self.pi = self.pr = self.ps = None
         self.args = args
 
     def execute(self, perf, evsamples, origevents, pargs):
@@ -59,12 +58,15 @@ class SamplePerfRun(object):
                                    stdout=subp.PIPE)
         if pr is None or pi is None or ps is None:
             sys.exit("Cannot runnot perf")
+        assert pi.stdout is not None
+        assert pr.stdout is not None
+        assert ps.stdout is not None
         pi.stdout.close()
         pr.stdout.close()
         self.pr, self.pi, self.ps = pr, pi, ps
 
     def handle_samples(self):
-        for l in self.ps.stdout:
+        for l in self.ps.stdout: # type: ignore
             l = l.decode()
             n = l.split()
             ts, event, weight = float(n[0].replace(":","")), re.sub(r':.*', '', n[1]), int(n[2])
