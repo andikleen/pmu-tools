@@ -323,6 +323,7 @@ def main():
         fallback(data, args.fallback, es - ms)
 
     json.dump(data, args.output, indent=2, sort_keys=True)
+    args.output.write("\n")
     evset = set([clean_event(e) for e in events])
     dataset = set(data["Data"].keys())
     delta = evset - dataset
