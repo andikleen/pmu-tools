@@ -312,7 +312,7 @@ def main():
         merge(samples, args.merge)
 
     def clean_event(ev):
-        return re.sub(r"[:/][uU]?", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED.")
+        return re.sub(r"[:/][UP]+", "", ev.upper()).replace("CPU_CORE","").replace("RETIRED_", "RETIRED.")
 
     data = { "Data": { clean_event(ev): gen_stat(s, args)
                        for ev, s in samples.items()
