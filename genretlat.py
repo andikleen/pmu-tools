@@ -264,6 +264,7 @@ def init_args():
 def merge(samples, merge):
     for f in merge:
         print("merging", f.name)
+        found = 0
         md = json.load(f)["Data"]
         for ev, mdd in md.items():
             for k, num in mdd.items():
@@ -272,6 +273,9 @@ def merge(samples, merge):
                     val = int(m.group(1))
                     for j in range(num):
                         samples[ev].append(val)
+                    found += 1
+        if found == 0:
+            print(f"JSON file {f} has no values. Not collected with --full?")
 
 def fallback(data, fb, missing):
     fb = json.load(fb)["Data"]
