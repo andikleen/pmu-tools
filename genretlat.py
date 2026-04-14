@@ -277,7 +277,7 @@ def merge(samples, merge):
                         samples[ev].append(val)
                     found += 1
         if found == 0:
-            print(f"JSON file {f} has no values. Not collected with --full?")
+            print("JSON file %s has no values. Not collected with --full?" % f)
 
 def fallback(data, fb, missing):
     fb = json.load(fb)["Data"]
