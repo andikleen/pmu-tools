@@ -7,9 +7,11 @@
 # or "atom" or "core" to select core types
 # type can be "atom" or "core"
 # cpu is the cpu number
-# format is a printf format with %d
-# %d will be replaced with the cpu number
-# format can be offline to offline the cpu or online to online
+# valid format syntax:
+# offline    shell code to offline (one per line)
+# online     shell code to online (one per line)
+# taskset    taskset command line prefix (single line)
+# printf format    %d is replaced with cpu number (single line)
 # Author: Andi Kleen
 from __future__ import print_function
 import sys
@@ -50,7 +52,8 @@ cpu is the cpu number
 or "offline" to query all offline cpus
 format is a printf format with %d
 %d will be replaced with the cpu number, or online/offline
-to generate online/offline commands, or taskset to generate taskset command line''',
+to generate online/offline commands, or taskset to generate taskset command line.
+When no format is specified just print the CPU numbers''',
 epilog='''
 Examples:
 print all cores on socket 0
@@ -60,10 +63,16 @@ print all first threads in each core on socket 0
 cputop "thread == 0 and socket == 0"
 
 disable all second threads (disable hyper threading)
-cputop "thread == 1" offline
+cputop "thread == 1" offline | sh
 
-reenable all offlined cpus
+reenable all offlined cpus | sh
 cputop offline online
+
+offline all atom cpus
+cputop atom offline | sh
+
+run program bound only to core cpus
+`cputop core taskset` program
 
 print all online cpus
 cputop True ''', formatter_class=argparse.RawTextHelpFormatter)
