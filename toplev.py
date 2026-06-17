@@ -2949,7 +2949,7 @@ def find_bn(olist, match):
         return None
     return _find_bn(bn, 0)
 
-pmu_does_not_exist = set()
+pmu_does_not_exist = set() # type: set[str]
 
 # XXX check if PMU can be accessed from current user
 def missing_pmu(e):
