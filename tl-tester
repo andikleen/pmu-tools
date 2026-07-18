@@ -442,7 +442,6 @@ fi
 
 fi #misc
 
-if run parallel ; then
 
 test_subset() {
 # XXX remove --no-mux by fixing multiplexing for summaries
@@ -461,6 +460,9 @@ TLSEED=1 \
 $WRAP ./toplev.py $SHOPT --subset 'sample:10%' --import x$$.csv
 }
 
+if run subset ; then
+
+
 test_subset ""
 # note this may fail if there are so many CPUs that perf stat takes longer than the interval
 # time configured above in SHOPT, because the time for the border intervals will be wrong.
@@ -476,7 +478,7 @@ $WRAP ./toplev.py $SHOPT --import x$$.csv.gz -o y$$.out.gz
 [ -z "$NORES" ] && zgrep IPC y$$.out.gz
 rm x$$.csv.gz y$$.out.gz
 
-fi # parallel
+fi # subset
 
 if run misc2 ; then
 
@@ -714,7 +716,7 @@ rm tltest$$_perf.csv tltest$$_topology tltest$$_cpuinfo script$$
 #
 fi # script
 
-if run xlsx ; then
+if run xlsx-script ; then
 
 if $PYTHON -c 'import xlsxwriter' ; then
 $WRAP ./toplev.py $NATIVE_ARGS --xlsx dummy.xlsx --all --gen-script > script$$
