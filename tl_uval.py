@@ -18,7 +18,7 @@ from tl_io import warn
 log = logging.getLogger(__name__)
 TEMPVAL = 'anon'
 
-div_op = operator.div if 'div' in operator.__dict__ else None # type: ignore
+div_op = operator.div if 'div' in operator.__dict__ else operator.truediv # type: ignore
 
 def combine_uval(ulist):
     """
@@ -152,12 +152,12 @@ class UVal:
     def __div__(self, other):
         if isinstance(other, UVal):
             if self.stddev == 0 and other.stddev == 0 and self.multiplex == 100.0 and other.multiplex == 100.0:
-                return operator.div(self.value, other.value)
-            return UVal._calc(operator.div, self, other)
+                return div_op(self.value, other.value)
+            return UVal._calc(div_op, self, other)
         elif isinstance(other, (float, int)):
             if self.stddev == 0 and self.multiplex == 100.0:
-                return operator.div(self.value, other)
-            return UVal._calc(operator.div, self, UVal(TEMPVAL, value=other, stddev=0))
+                return div_op(self.value, other)
+            return UVal._calc(div_op, self, UVal(TEMPVAL, value=other, stddev=0))
         return NotImplemented
 
     def __truediv__(self, other):
@@ -236,8 +236,8 @@ class UVal:
     def __rdiv__(self, other):
         if isinstance(other, (float, int)):
             if self.stddev == 0 and self.multiplex == 100.0:
-                return operator.div(other, self.value)
-            return UVal._calc(operator.div, UVal(TEMPVAL, value=other, stddev=0), self)
+                return div_op(other, self.value)
+            return UVal._calc(div_op, UVal(TEMPVAL, value=other, stddev=0), self)
         return NotImplemented
 
     def __rtruediv__(self, other):
