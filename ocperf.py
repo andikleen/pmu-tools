@@ -176,6 +176,8 @@ class MSR(object):
         self.writemsr(msr, val, print_only)
         self.reg[msr] = 1
 
+msr = MSR()
+
 qual_map = (
     ("amt1", "any=1", EVENTSEL_ANY, ""),
     ("percore", "percore=1", 0, ""),
@@ -337,7 +339,7 @@ class Event(object):
         return ename
 
     def filter_qual(self):
-        if cached_read("/sys/bus/event_source/devices/%s/format/umask") == "config:8-15":
+        if cached_read("/sys/bus/event_source/devices/%s/format/umask" % self.pmu) == "config:8-15":
             self.val &= ~EVENTSEL_UMASK2
 
         def check_qual(q):
