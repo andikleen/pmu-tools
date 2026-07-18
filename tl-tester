@@ -251,8 +251,9 @@ onegroup() {
 	if grep -q dummy $1 ; then return ; fi
 	if [ -n "$FOURCOUNTERS" ] ; then return ; fi
 	case "$OPT" in *--drilldown*) return ;; esac
+	if [ -n "$PERF" ] && echo "$PERF" | grep -q fake-perf ; then return ; fi
 	grep perf $1 |
-		sed -E -e 's/cpu.//g;s/cpu_core.//g;s/topdown-retiring\/?,?//;s/topdown-be-bound\/?,?//;s/topdown-fe-bound\/?,?//;s/slots,?//;s/topdown-bad-spec\/?,?//;s/\{\/?,?\}//;s/\/?u,?//g;s/\{\},?//g' |
+		sed -E -e 's/cpu_core.//g;s/cpu_atom.//g;s/cpu.//g;s/topdown-retiring\/?,?//;s/topdown-be-bound\/?,?//;s/topdown-fe-bound\/?,?//;s/slots,?//;s/topdown-bad-spec\/?,?//;s/\{\/?,?\}//;s/\/?u,?//g;s/\{\},?//g' |
 		tr -cd '{}' |
 		awk ' { if ($1 != "{}") { print "more than one group for L1" ; exit(1); } } '
 }
