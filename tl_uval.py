@@ -104,93 +104,148 @@ class UVal:
         res = (1. / n) * (self.samples * self + other.samples * other)
         # apply 'res' to this
         self.samples = n
-        self.value = res.value
-        self.stddev = res.stddev
+        if isinstance(res, UVal):
+            self.value = res.value
+            self.stddev = res.stddev
+        else:
+            self.value = res
+            self.stddev = 0.
         self.multiplex = UVal._merge_mux(self, other)
 
     ######################
     # operators
     ######################
 
-    def ensure_uval(binop): # type: ignore
-        """decorator to ensure binary operators are both UVals"""
-        def wrapper(self, v): # type: ignore
-            if isinstance(v, UVal):
-                return binop(self, v) # type: ignore
-            elif isinstance(v, (float, int)):
-                return binop(self, UVal(TEMPVAL, value=v, stddev=0)) # type: ignore
-            else:
-                return NotImplemented
-        return wrapper
-
-    @ensure_uval # type: ignore
     def __sub__(self, other):
-        return UVal._calc(operator.sub, self, other)
+        if isinstance(other, UVal):
+            if self.stddev == 0 and other.stddev == 0 and self.multiplex == 100.0 and other.multiplex == 100.0:
+                return self.value - other.value
+            return UVal._calc(operator.sub, self, other)
+        elif isinstance(other, (float, int)):
+            if self.stddev == 0 and self.multiplex == 100.0:
+                return self.value - other
+            return UVal._calc(operator.sub, self, UVal(TEMPVAL, value=other, stddev=0))
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __add__(self, other):
-        return UVal._calc(operator.add, self, other)
+        if isinstance(other, UVal):
+            if self.stddev == 0 and other.stddev == 0 and self.multiplex == 100.0 and other.multiplex == 100.0:
+                return self.value + other.value
+            return UVal._calc(operator.add, self, other)
+        elif isinstance(other, (float, int)):
+            if self.stddev == 0 and self.multiplex == 100.0:
+                return self.value + other
+            return UVal._calc(operator.add, self, UVal(TEMPVAL, value=other, stddev=0))
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __mul__(self, other):
-        return UVal._calc(operator.mul, self, other)
+        if isinstance(other, UVal):
+            if self.stddev == 0 and other.stddev == 0 and self.multiplex == 100.0 and other.multiplex == 100.0:
+                return self.value * other.value
+            return UVal._calc(operator.mul, self, other)
+        elif isinstance(other, (float, int)):
+            if self.stddev == 0 and self.multiplex == 100.0:
+                return self.value * other
+            return UVal._calc(operator.mul, self, UVal(TEMPVAL, value=other, stddev=0))
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __div__(self, other):
-        return UVal._calc(operator.div, self, other) # type: ignore
+        if isinstance(other, UVal):
+            if self.stddev == 0 and other.stddev == 0 and self.multiplex == 100.0 and other.multiplex == 100.0:
+                return operator.div(self.value, other.value)
+            return UVal._calc(operator.div, self, other)
+        elif isinstance(other, (float, int)):
+            if self.stddev == 0 and self.multiplex == 100.0:
+                return operator.div(self.value, other)
+            return UVal._calc(operator.div, self, UVal(TEMPVAL, value=other, stddev=0))
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __truediv__(self, other):
-        return UVal._calc(operator.truediv, self, other)
+        if isinstance(other, UVal):
+            if self.stddev == 0 and other.stddev == 0 and self.multiplex == 100.0 and other.multiplex == 100.0:
+                return self.value / other.value
+            return UVal._calc(operator.truediv, self, other)
+        elif isinstance(other, (float, int)):
+            if self.stddev == 0 and self.multiplex == 100.0:
+                return self.value / other
+            return UVal._calc(operator.truediv, self, UVal(TEMPVAL, value=other, stddev=0))
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __lt__(self, other):
-        return self.value < other.value
+        if isinstance(other, UVal):
+            return self.value < other.value
+        elif isinstance(other, (float, int)):
+            return self.value < other
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __le__(self, other):
-        return self.value <= other.value
+        if isinstance(other, UVal):
+            return self.value <= other.value
+        elif isinstance(other, (float, int)):
+            return self.value <= other
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __eq__(self, other):
-        return self.value == other.value
+        if isinstance(other, UVal):
+            return self.value == other.value
+        elif isinstance(other, (float, int)):
+            return self.value == other
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __ne__(self, other):
-        return not self.__eq__(other)
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return result
+        return not result
 
-    @ensure_uval # type: ignore
     def __ge__(self, other):
-        return self.value >= other.value
+        if isinstance(other, UVal):
+            return self.value >= other.value
+        elif isinstance(other, (float, int)):
+            return self.value >= other
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __gt__(self, other):
-        return self.value > other.value
+        if isinstance(other, UVal):
+            return self.value > other.value
+        elif isinstance(other, (float, int)):
+            return self.value > other
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __rsub__(self, other):
-        """other - self"""
-        return UVal._calc(operator.sub, other, self)
+        if isinstance(other, (float, int)):
+            if self.stddev == 0 and self.multiplex == 100.0:
+                return other - self.value
+            return UVal._calc(operator.sub, UVal(TEMPVAL, value=other, stddev=0), self)
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __radd__(self, other):
-        """other + self"""
-        return UVal._calc(operator.add, other, self)
+        if isinstance(other, (float, int)):
+            if self.stddev == 0 and self.multiplex == 100.0:
+                return other + self.value
+            return UVal._calc(operator.add, UVal(TEMPVAL, value=other, stddev=0), self)
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __rmul__(self, other):
-        """other * self"""
-        return UVal._calc(operator.mul, other, self)
+        if isinstance(other, (float, int)):
+            if self.stddev == 0 and self.multiplex == 100.0:
+                return other * self.value
+            return UVal._calc(operator.mul, UVal(TEMPVAL, value=other, stddev=0), self)
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __rdiv__(self, other):
-        """other / self"""
-        return UVal._calc(operator.div, other, self) # type: ignore
+        if isinstance(other, (float, int)):
+            if self.stddev == 0 and self.multiplex == 100.0:
+                return operator.div(other, self.value)
+            return UVal._calc(operator.div, UVal(TEMPVAL, value=other, stddev=0), self)
+        return NotImplemented
 
-    @ensure_uval # type: ignore
     def __rtruediv__(self, other):
-        """other / self"""
-        return UVal._calc(operator.truediv, other, self)
+        if isinstance(other, (float, int)):
+            if self.stddev == 0 and self.multiplex == 100.0:
+                return other / self.value
+            return UVal._calc(operator.truediv, UVal(TEMPVAL, value=other, stddev=0), self)
+        return NotImplemented
 
     def __nonzero__(self): # python 2
         return self.value != 0.0
