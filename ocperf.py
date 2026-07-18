@@ -903,6 +903,8 @@ def json_with_extra(el, eventmap_is_file, pmu, typ_key):
     name = event_download.eventlist_name(el, key=typ[0], hybridkey=typ[1])
     if not os.path.exists(name):
         name = event_download.eventlist_name(el, "hybridcore", hybridkey=typ[1])
+    if not os.path.exists(name):
+        name = event_download.eventlist_name(el, "core")
     emap = EmapNativeJSON(name, pmu)
     if not emap or emap.error:
         print("parsing", name, "failed", file=sys.stderr)
