@@ -621,7 +621,7 @@ the kernel. See http://github.com/andikleen/pmu-tools/wiki/toplev-kernel-support
                    action='store_true')
     g.add_argument('--single-thread', '-S', help='Measure workload as single thread. Workload must run single threaded. '
                    'In SMT mode other thread must be idle.', action='store_true')
-    g.add_argument('--fast', '-F', help='Skip sanity checks to optimize CPU consumption', action='store_true')
+    g.add_argument('--fast', '-F', help=argparse.SUPPRESS, action='store_true') # obsolete
     g.add_argument('--import', help='Import specified perf stat output file instead of running perf. '
                    'Must be for same cpu, same arguments, same /proc/cpuinfo, same topology, unless overriden',
                     dest='import_')
@@ -2741,20 +2741,22 @@ def lookup_res(res, rev, ev, obj, env, level, referenced, cpuoff, st, runner_lis
 
     index = obj.res_map[(ev, level, obj.name)]
     referenced.add(index)
-    #print((ev, level, obj.name), "->", index)
     if not args.fast:
-        try:
-            r = rev[index]
-        except IndexError:
-            warn_once_no_assert("Not enough lines in perf output for rev (%d vs %d for %s) at %s, event %s" %
-                    (index, len(rev), obj.name, env['interval'], ev))
-            return 0
-        rmap_ev = event_rmap(r, runner_list).lower()
         ev = ev.lower()
-        assert (rmap_ev == canon_event(ev).replace("/k", "/") or
-                compare_event(rmap_ev, ev) or
-                rmap_ev == "dummy" or
-                (rmap_ev.endswith("_any") and not is_hybrid())), "event rmap mismatch %s vs %s" % (rmap_ev, ev)
+        cache_key = (index, ev)
+        if cache_key not in _lookup_validate_cache:
+            try:
+                r = rev[index]
+            except IndexError:
+                warn_once_no_assert("Not enough lines in perf output for rev (%d vs %d for %s) at %s, event %s" %
+                        (index, len(rev), obj.name, env['interval'], ev))
+                return 0
+            rmap_ev = event_rmap(r, runner_list).lower()
+            assert (rmap_ev == canon_event(ev).replace("/k", "/") or
+                    compare_event(rmap_ev, ev) or
+                    rmap_ev == "dummy" or
+                    (rmap_ev.endswith("_any") and not is_hybrid())), "event rmap mismatch %s vs %s" % (rmap_ev, ev)
+            _lookup_validate_cache.add(cache_key)
 
     try:
         vv = res[index]
@@ -3122,6 +3124,8 @@ def do_distribute_uncore(evgroups):
     return [x for x in chain(*zip_longest(cg, og)) if x is not None]
 
 def gen_res_map(solist):
+    global _lookup_validate_cache
+    _lookup_validate_cache = set()
     for obj in solist:
         for k in obj.group_map.keys():
             gr = obj.group_map[k]
