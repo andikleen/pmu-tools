@@ -160,6 +160,9 @@ checkp INST_RETIRED.PREC_DIST "/p"
 
 # following tests need new enough perf
 
+PMU=`( cd /sys/devices ; ls -d cpu* | head -1 )`
+if [ "$PMU" = "" ] ; then PMU=cpu ; fi
+
 checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/$'
 checkp cpu/BR_INST_RETIRED.CONDITIONAL/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional/$'
 checkp cpu/br_inst_retired.conditional/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional/$'
@@ -174,7 +177,7 @@ export EVENTMAP=${cpus[hsx]}
 # check :request :response syntax
 TOPOLOGY=cputopology \
 checkp OFFCORE_RESPONSE:request=DEMAND_RFO:response=LLC_MISS.REMOTE_HITM  \
-	cpu/event=0xb7,umask=0x1,offcore_rsp=0x10[37]fc00002,name=offcore_response_request_demand_rfo_response_llc_miss_remote_hitm/
+	'cpu(_core)?/event=0xb7,umask=0x1,offcore_rsp=0x10[37]fc00002,name=offcore_response_request_demand_rfo_response_llc_miss_remote_hitm/'
 
 checks()
 {
@@ -187,14 +190,15 @@ checkr()
 }
 
 checks '{cycles,cpu_clk_unhalted.thread,instructions}'
-checks '{cycles,cpu/cpu_clk_unhalted.thread,cmask=1/}'
-checks '{cpu/cpu_clk_unhalted.thread,cmask=1/u}'
-checkr '{cpu/cpu_clk_unhalted.thread,period=10000/u,instructions}:S'
-checkr '{cpu/cpu_clk_unhalted.thread,period=10000/u,cpu/cpu-cycles/,instructions}:S'
-checks '{cpu/cpu-cycles/,instructions}'
-checkr '{node-stores,instructions}:S'
-checkr '{cpu/cpu-cycles/,instructions}:S'
-checkr '{cpu/instructions,period=1000000/u,cpu_clk_unhalted.thread}:S'
+checks "{cycles,${PMU}/cpu_clk_unhalted.thread,cmask=1/}"
+checks "{${PMU}/cpu_clk_unhalted.thread,cmask=1/u}"
+checkr "{${PMU}/cpu_clk_unhalted.thread,period=10000/u,instructions}:S"
+checkr "{${PMU}/cpu_clk_unhalted.thread,period=10000/u,${PMU}/cpu-cycles/,instructions}:S"
+checks "{${PMU}/cpu-cycles/,instructions}"
+# does not work on hybrid
+#checkr "{node-stores,${PMU}/instructions/}:S"
+checkr "{${PMU}/cpu-cycles/,instructions}:S"
+checkr "{${PMU}/instructions,period=1000000/u,cpu_clk_unhalted.thread}:S"
 checkp 'cpu_clk_unhalted:period=123' 'period=123'
 cat >top2$$ <<EOL
 /sys/bus/event_source/devices/uncore_r2pcie
@@ -217,8 +221,8 @@ TOPOLOGY=top2$$ UNCORE="haswell_uncore*" checkp 'unc_cbo_xsnp_response.hit_xcore
 
 TOPOLOGY=top2$$ EVENTMAP=${cpus[jkt]} checkp 'UNC_C_TOR_INSERTS.MISS_OPCODE:opc=0x1c8:tid=0x3e' 'filter_opc=0x1c8,filter_tid=0x3e'
 
-checkp_record '{cpu/cpu_clk_unhalted.thread/,cpu/br_inst_retired.all_branches/}:S'  \
-	'{cpu/event=0x3c,umask=0x0,name=cpu_clk_unhalted_thread,period=2000003/,cpu/event=0xc4,umask=0x0,name=br_inst_retired_all_branches/}:S'
+checkp_record "{${PMU}/cpu_clk_unhalted.thread/,${PMU}/br_inst_retired.all_branches/}:S"  \
+	"{${PMU}/event=0x3c,umask=0x0,name=cpu_clk_unhalted_thread,period=2000003/,${PMU}/event=0xc4,umask=0x0,name=br_inst_retired_all_branches/}:S"
 
 export EVENTMAP=${cpus[skl]}
 checkp cpu_clk_unhalted.thread_p:os=yes /k
