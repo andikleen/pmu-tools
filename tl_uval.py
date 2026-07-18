@@ -253,6 +253,14 @@ class UVal:
     def __bool__(self): # python 3
         return self.value != 0.0
 
+    @staticmethod
+    def hashable_thresh(t):
+        if t is True:
+            return 1
+        if t is False:
+            return 2
+        return 0   # Undef or any other UVal
+
     #########################
     # uncertainty propagator
     #########################

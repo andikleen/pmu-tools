@@ -48,7 +48,7 @@ from dummyarith import DummyArith
 from copy import copy
 from fnmatch import fnmatch
 from math import isnan
-from collections import defaultdict, Counter, OrderedDict
+from collections import defaultdict, Counter, OrderedDict, namedtuple
 from itertools import compress, groupby, chain
 from listutils import cat_unique, dedup, filternot, not_list, append_dict, \
         zip_longest, flatten, findprefix, dummy_dict
@@ -120,7 +120,7 @@ atom_hybrid_cpus = ("adl-grt", "mtl-cmt", "lnl-skt", "arl-skt")
 non_json_events = set(("dummy", "duration_time"))
 
 tma_mgroups = set() # type: Set[str]
-_lookup_validate_cache = set()
+_lookup_validate_cache = set() # type: Set[Tuple[int, str]]
 _re_digits = re.compile(r'\d+$')
 _re_tsv_header = re.compile(r'^(Timestamp|Value|Location)')
 _re_interval_header = re.compile(r"\s*([0-9.]{9,}|SUMMARY);(.*)")
@@ -146,6 +146,10 @@ PERF_SKIP_WINDOW = 15
 KEEP_UNREF = False
 INAME = False
 FUZZYINPUT = False
+DISABLE_COMPUTE_CACHE = False
+
+ComputeCacheEntry = namedtuple('ComputeCacheEntry',
+    ['val', 'thresh', 'errcount', 'ref', 'bad_ratio', 'not_measured'])
 
 # handle kernels that don't support all events
 unsup_pebs = (
@@ -3465,6 +3469,8 @@ class Runner(object):
         self.idle_keys = set()
         self.sched = Scheduler()
         self.printer = Printer(self.metricgroups)
+        self._compute_cache = OrderedDict()
+        self._compute_cache_capacity = 1024
 
     def __init__(self, max_level, idle_threshold, kernel_version, pmu=None):
         # always needs to be filtered by olist:
@@ -3561,6 +3567,8 @@ class Runner(object):
         # now keep what is both in fmatch and sibmatch and mgroups
         # assume that mgroups matches do not need propagation
         self.olist = [obj for obj, fil in zip(self.olist, fmatch) if fil or select_node(obj)]
+        self._compute_cache_clear()
+        self._update_compute_cache_capacity()
 
     def setup_children(self):
         for obj in self.olist:
@@ -3644,6 +3652,8 @@ class Runner(object):
         if errata_warn_nodes and not args.ignore_errata:
             pwrap_not_quiet("Nodes " + " ".join(x.name for x in errata_warn_nodes) + " have errata " +
                         " ".join(errata_warn_names))
+        self._compute_cache_clear()
+        self._update_compute_cache_capacity()
         self.clear_ectx()
 
     def propagate_siblings(self):
@@ -3667,9 +3677,56 @@ class Runner(object):
                     propagate(obj.sibling, changed, obj)
         return changed[0]
 
+    def _compute_digest(self, res, rev, valstats, env):
+        if not isinstance(res, dict) or not isinstance(rev, dict) or not isinstance(valstats, dict):
+            return None
+        try:
+            env_key = tuple(sorted(env.items()))
+        except TypeError:
+            return None
+        return (tuple((k, tuple(v)) for k, v in sorted(res.items())),
+                tuple((k, tuple(v)) for k, v in sorted(rev.items())),
+                tuple((k, tuple(v)) for k, v in sorted(valstats.items())),
+                env_key)
+
+    def _compute_cache_put(self, key, entry):
+        self._compute_cache[key] = entry
+        self._compute_cache.move_to_end(key)
+        if len(self._compute_cache) > self._compute_cache_capacity:
+            self._compute_cache.popitem(last=False)
+
+    def _compute_cache_clear(self):
+        self._compute_cache.clear()
+
+    def _update_compute_cache_capacity(self):
+        self._compute_cache_capacity = max(1024, len(self.olist) * 8)
+
+    def _restore_cached(self, obj, cache_key, stat):
+        oldthresh = obj.thresh
+        e = self._compute_cache[cache_key]
+        obj.val = e.val
+        obj.thresh = e.thresh
+        obj.errcount = e.errcount
+
+        if obj.thresh != oldthresh and oldthresh != Undef:
+            changed = 1
+        else:
+            changed = 0
+
+        if stat:
+            stat.referenced |= e.ref
+            if e.bad_ratio:
+                stat.mismeasured.add(obj.name)
+            if obj.errcount > 0 and obj.name not in stat.errors:
+                stat.errcount += obj.errcount
+                stat.errors.add(obj.name)
+                stat.referenced |= set(obj.res_map.values())
+        return changed
+
     def compute(self, res, rev, valstats, env, match, stat, runner_list):
         self.set_ectx()
         changed = 0
+        digest = self._compute_digest(res, rev, valstats, env)
 
         # step 1: compute
         for obj in self.olist:
@@ -3677,10 +3734,21 @@ class Runner(object):
 
             if not match(obj):
                 continue
-            ref = set() # type: Set[int]
-            oldthresh = obj.thresh
+
+            # parent-missing behavior must be applied before any key or compute
             if 'parent' in obj.__dict__ and obj.parent and obj.parent not in self.olist:
                 obj.parent.thresh = True
+
+            parent = safe_ref(obj, 'parent')
+            parent_thresh = UVal.hashable_thresh(parent.thresh) if parent else 0
+            cache_key = (id(obj), digest, parent_thresh)
+            if not DISABLE_COMPUTE_CACHE and digest is not None and cache_key in self._compute_cache:
+                self._compute_cache.move_to_end(cache_key)
+                changed += self._restore_cached(obj, cache_key, stat)
+                continue
+
+            ref = set() # type: Set[int]
+            oldthresh = obj.thresh
             obj.compute(lambda e, level:
                             lookup_res(res, rev, e, obj, env, level, ref, -1, valstats, runner_list))
             # compatibility for models that don't set thresh for metrics
@@ -3688,21 +3756,34 @@ class Runner(object):
                 obj.thresh = True
             if args.force_bn and obj.name in args.force_bn:
                 obj.thresh = True
+
+            bad_ratio = False
+            if not obj.metric and not check_ratio(obj.val):
+                obj.thresh = False
+                bad_ratio = True
+                if stat:
+                    stat.mismeasured.add(obj.name)
+
+            not_measured = False
+            if not obj.res_map and not all([x in env for x in obj.evnum]) and not args.quiet:
+                print("%s not measured" % (obj.__class__.__name__,), file=sys.stderr)
+                not_measured = True
+
             if obj.thresh != oldthresh and oldthresh != Undef:
                 changed += 1
             if stat:
                 stat.referenced |= ref
-            if not obj.res_map and not all([x in env for x in obj.evnum]) and not args.quiet:
-                print("%s not measured" % (obj.__class__.__name__,), file=sys.stderr)
-            if not obj.metric and not check_ratio(obj.val):
-                obj.thresh = False
-                if stat:
-                    stat.mismeasured.add(obj.name)
             if stat and has(obj, 'errcount') and obj.errcount > 0:
                 if obj.name not in stat.errors:
                     stat.errcount += obj.errcount
                 stat.errors.add(obj.name)
                 stat.referenced |= set(obj.res_map.values())
+
+            if not DISABLE_COMPUTE_CACHE and digest is not None:
+                self._compute_cache_put(
+                    cache_key,
+                    ComputeCacheEntry(obj.val, obj.thresh, obj.errcount,
+                                      frozenset(ref), bad_ratio, not_measured))
 
         # step 2: propagate siblings
         changed += self.propagate_siblings()
@@ -3750,6 +3831,8 @@ class Runner(object):
                 self.olist = filternot(lambda obj:
                         safe_ref(obj, 'domain') in self.ectx.core_domains,
                         self.olist)
+                self._compute_cache_clear()
+                self._update_compute_cache_capacity()
             else:
                 rest = add_args(rest, "--percore-show-thread")
         return rest
