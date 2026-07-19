@@ -129,6 +129,7 @@ on newer Linux kernels.
 
 # Recent new features:
 
+* Significant performance optimizations in toplev
 * Pantherlake model updated to TMA 5.2
 * genretlat can now merge multiple workloads and warns about not sampled events
 ## TMA 5.01 release
