@@ -3,7 +3,9 @@
 # verify plog.* output from toplev by running event one by one
 # this can be used to estimate multiplexing measurement errors
 from __future__ import print_function
-import sys, os, shlex, subprocess
+import sys
+import os
+import shlex
 
 def run(x):
     print(x)
