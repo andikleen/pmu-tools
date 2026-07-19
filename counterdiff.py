@@ -3,7 +3,7 @@
 # verify plog.* output from toplev by running event one by one
 # this can be used to estimate multiplexing measurement errors
 from __future__ import print_function
-import sys, os
+import sys, os, shlex, subprocess
 
 def run(x):
     print(x)
@@ -14,7 +14,7 @@ for l in sys.stdin:
         continue
     n = l.strip().split(",")
     run("perf stat --output l -x, -e %s %s" %
-        (n[1], " ".join(sys.argv[1:])))
+        (shlex.quote(n[1]), " ".join(shlex.quote(x) for x in sys.argv[1:])))
     f = open("l", "r")
     for i in f:
         if i.find(",") < 0:
