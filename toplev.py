@@ -3108,12 +3108,19 @@ def grab_group(l):
     return n
 
 def update_group_map(evnum, obj, group):
+    taken = set()
     for lev in obj.evlevels:
         r = raw_event(lev[0])
         # can happen during splitting
         # the update of the other level will fix it
         if r in evnum and lev not in obj.group_map:
-            obj.group_map[lev] = (group, evnum.index(r))
+            for i, e in enumerate(evnum):
+                if e == r and i not in taken:
+                    obj.group_map[lev] = (group, i)
+                    taken.add(i)
+                    break
+            else:
+                obj.group_map[lev] = (group, evnum.index(r))
 
 def do_distribute_uncore(evgroups):
     cg = [g for g in evgroups if not g.outgroup]
@@ -3271,13 +3278,15 @@ class Scheduler(object):
             if ev in self.og_groups:
                 g = self.og_groups[ev]
                 g.objl.add(obj)
+                if ev == "dummy":
+                    g.evnum.append(ev)
             else:
                 g = Group([ev], [obj], self.nextgnum, True)
                 self.nextgnum += 1
                 self.og_groups[ev] = g
                 self.evgroups.append(g)
                 self.evgroups_nf.append(g)
-            update_group_map([ev], obj, g)
+            update_group_map(g.evnum, obj, g)
 
     def allocate_bases(self):
         base = 0
