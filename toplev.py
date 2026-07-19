@@ -2424,7 +2424,7 @@ def do_execute(rlist, summary, evstr, flat_rmap, out, rest, resoff, revnum):
 
         if prun.skip_input():
             continue
-        if args.perf_output:
+        if args.perf_output and not skip:
             args.perf_output.write(origl.rstrip() + "\n")
 
         n = l.split(";")
