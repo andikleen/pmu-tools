@@ -160,7 +160,7 @@ checkp INST_RETIRED.PREC_DIST "/p"
 
 # following tests need new enough perf
 
-PMU=$(( cd /sys/devices ; ls -d cpu* | head -1 ))
+PMU="$(cd /sys/devices ; ls -d cpu* | head -1 )"
 if [ "$PMU" = "" ] ; then PMU=cpu ; fi
 
 checkp cpu/BR_INST_RETIRED.CONDITIONAL,foo=bar/  'event=0xc4,umask=0x1,name=br_inst_retired_conditional,foo=bar/$'
