@@ -40,7 +40,7 @@ jobs:
     - name: Run toplev tests
       run: |
         if ! grep -q GenuineIntel /proc/cpuinfo ; then export NATIVE_ARGS="--force-cpu skl" ; fi
-        WRAP=python PERF=./fake-perf.py NORES=1 FULL=1 ./tl-tester
+        WRAP=python PERF=./fake-perf.py NORES=1 ./tl-tester
     - name: Run ocperf tests
       run: |
         python ./event_download.py -a

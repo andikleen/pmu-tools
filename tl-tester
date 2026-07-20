@@ -18,7 +18,6 @@
 # NOMULTIPLEX=" " Disable no multiplex
 # NATIVE_ARGS="" Pass argument to toplevs without --force-cpu (to override on unsupported hosts)
 # RUN=pattern limit tests to match pattern
-# FULL=1  run all combinations in scheduler (increases runtime significantly)
 
 set -e
 set -o pipefail
@@ -42,8 +41,6 @@ ONLYCPU="${ONLYCPU:-}"
 PJOBS=${PJOBS:-0}
 NATIVE_ARGS="${NATIVE_ARGS:-}"
 RUN="${RUN:-}"
-FULL=${FULL:-}
-REPCPUS=${REPCPUS:-"icl skx adl"}
 cpu="?"
 
 if [ -n "$WRAP" ] ; then
@@ -140,13 +137,8 @@ ALLCPUS="$ONLYCPU"
 NOSMTCPUS=" "
 DCPU=$ONLYCPU
 else
-if [ -n "$FULL" ] ; then
-    SMTCPUS="${SMTCPUS:-snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl icx adl adl-glc spr sprmax mtl mtl-rwc gnr}"
-    NOSMTCPUS="${NOSMTCPUS:-slm simple ehl adl-grt srf lnl lnl-lnc lnl-skt ptl ptl-cgc}"
-else
-    SMTCPUS="${SMTCPUS:-snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl icx adl spr sprmax mtl gnr}"
-    NOSMTCPUS="${NOSMTCPUS:-slm simple ehl adl-grt srf lnl ptl}"
-fi
+SMTCPUS="${SMTCPUS:-snb jkt ivb ivt hsw hsx bdw skl bdx knl skx clx icl tgl icx adl adl-glc spr sprmax mtl mtl-rwc gnr}"
+NOSMTCPUS="${NOSMTCPUS:-slm simple ehl adl-grt srf lnl lnl-lnc lnl-skt ptl ptl-cgc}"
 ALLCPUS="${ALLCPUS:-$SMTCPUS $NOSMTCPUS}"
 fi
 METRICCPUS='icl|tgl|mtl-rwc|spr|sprmax|adl-glc|icx|gnr|lnl'
@@ -297,14 +289,6 @@ notfound() {
 
 if run cpus ; then
 
-incase() {
-    for o in $2 ; do
-	if [ $1 = $o ] ; then
-	   return 0
-	fi
-    done
-    return 1
-}
 if [ -z "$NOCPUS" ] ; then
 for j in $SMTCPUS ; do
 	[ "$MATCH" != "" ] && [ "$MATCH" != "$j" ] && continue
@@ -338,16 +322,13 @@ if ! grep -q hypervisor /proc/cpuinfo ; then
 FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
-if [ -n "$FULL" ] || incase $j "$REPCPUS" ; then
 FORCEHT=1 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events $ALL --filterquals $OPT --user $LOAD 2>&1
 checklog log$$.$j
 notfound $j
 FORCEHT=1 $WRAP ./toplev.py --force-topology topology --thread --force-cpu $j --force-events $ALL --filterquals $OPT --user $LOAD 2>&1
 checklog log$$.$j
-fi
 fi # hypervisor
 fi # paranoid
-if [ -n "$FULL" ] || incase $j "$REPCPUS" ; then
 FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-topology topology --force-cpu $j --force-events --filterquals $ALL $OPT $LOAD 2>&1 | tee log$$.$j
 checklog log$$.$j
 notfound $j
@@ -388,10 +369,17 @@ REDUCED_COUNTERS=1 FORCEHT=0 FORCECOUNTERS=4 $WRAP ./toplev.py --force-topology 
 checklog log$$.$j
 notfound $j
 fi # paranoid
-fi
 
+function incase {
+    for o in $2 ; do
+	if [ $1 = $o ] ; then
+	   return 0
+	fi
+    done
+    return 1
+}
 
-if ( [ -n "$FULL" ] || incase $j "$REPCPUS" ) && incase $j "$METRICCPUS" ; then
+if incase $j "$METRICCPUS" ; then
 
 FORCEMETRICS=1 $WRAP ./toplev.py --force-cpu $j --filterquals --force-topology topology --force-events --print $ALL $OPT $LOAD | tee log$$
 grep topdown- log$$
