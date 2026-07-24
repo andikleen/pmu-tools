@@ -1,12 +1,13 @@
 #!/bin/sh
 # parallel tl-tester run 
+# requires GNU parallel
 
-eval `egrep 'SMTCPUS|NOSMTCPUS' tl-tester | egrep 'sprmax|lnl-skt'`
+eval `grep -E 'SMTCPUS|NOSMTCPUS' tl-tester | grep -E 'sprmax|lnl-skt'`
 
 ( 
 echo "RUN='^cpus' ./tl-tester"
 for i in $SMTCPUS $NOSMTCPUS ; do
 	echo "MATCH=$i RUN=cpus ./tl-tester" 
 done
-) 
+)  | parallel
 
