@@ -17,7 +17,7 @@
 # ONLYCPU=cpu  Only test cpu type. cur for current CPU (makes test suite run much faster)
 # NOMULTIPLEX=" " Disable no multiplex
 # NATIVE_ARGS="" Pass argument to toplevs without --force-cpu (to override on unsupported hosts)
-# RUN=pattern limit tests to match pattern
+# RUN=area limit tests to specific area, prepend ^ to negate
 
 set -e
 set -o pipefail
@@ -112,8 +112,13 @@ run() {
 	rm times$$
 	date +%s | sed "s/^/abstime ${CUR:-init} /"
 	if [ -n "$RUN" ] ; then
-		# shellcheck disable=SC2254
-		case "$1" in $RUN) ;; *) set -x ; return 1 ; esac
+		if [ ${RUN:0:1} = '^' ] ; then
+			# shellcheck disable=SC2254
+			case "$1" in ${RUN:1}) set -x ; return 1 ; esac
+		else
+			# shellcheck disable=SC2254
+			case "$1" in $RUN) ;; *) set -x ; return 1 ; esac
+		fi
 	fi
 	echo -e "\n=== RUN $1 ===\n"
 	CUR=$1

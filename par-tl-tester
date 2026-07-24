@@ -1,0 +1,12 @@
+#!/bin/sh
+# parallel tl-tester run 
+
+eval `egrep 'SMTCPUS|NOSMTCPUS' tl-tester | egrep 'sprmax|lnl-skt'`
+
+( 
+echo "RUN='^cpus' ./tl-tester"
+for i in $SMTCPUS $NOSMTCPUS ; do
+	echo "MATCH=$i RUN=cpus ./tl-tester" 
+done
+) 
+
