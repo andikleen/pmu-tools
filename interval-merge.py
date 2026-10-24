@@ -39,7 +39,7 @@ for fh in args.csvfiles:
             if key in d:
                 o = d[key]
                 o[hdr['Run-Time']] += float(c[hdr['Run-Time']])
-                o[hdr['Enabled']] = (float(o[hdr['Enabled']]) + o[hdr['Enabled']]) / 2
+                o[hdr['Enabled']] = (float(o[hdr['Enabled']]) + float(c[hdr['Enabled']])) / 2
                 o[hdr['Value']] += float(c[hdr['Value']])
             else:
                 d[key] = c
