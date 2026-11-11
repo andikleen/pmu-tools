@@ -922,7 +922,7 @@ def add_extra_env(emap, el, eventmap_is_file):
         oc = os.getenv("OFFCORE")
         if oc:
             oc = canon_emapvar(oc, "matrix")
-            oc = event_download.eventlist_name(el, "offcore")
+            oc = event_download.eventlist_name(oc, "offcore")
             emap.add_offcore(oc)
         elif not eventmap_is_file:
             oc = event_download.eventlist_name(el, "offcore")
