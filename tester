@@ -234,6 +234,8 @@ checkp cpu_clk_unhalted.thread_any:anythr=yes any=1
 checkp cpu_clk_unhalted.thread_any:pdir /ppp
 checkp cpu_clk_unhalted.thread_any:precise=yes /pp
 
+$WRAP ./test-qualifiers.py
+
 trap "" ERR 0
 rm -f tlog$$ top2$$
 

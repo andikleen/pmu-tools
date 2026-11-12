@@ -202,8 +202,9 @@ number = "(0x[0-9a-fA-F]+|[0-9]+)"
 qualval_map = (
     (r"event_select=" + number, "event=%#x", 0),
     (r"u" + number, "umask=%#x", 0),
-    (r"c(?:mask=)?" + number, "cmask=%d", 24),
-    (r"e(?:dge=)?" + number, "edge=%d", 18),
+    (r"c(?:mask=?)?" + number, "cmask=%d", 24, 0xff),
+    (r"e(?:dge=)?" + number, "edge=%d", 18, 1),
+    (r"i(?:nv=?)?" + number, "inv=%d", 23, 1),
     (r"ocr_msr_val=" + number, "config1=%#x", 0),
     (r"(?:sa|sample-after|period)=" + number, "period=%d", 0))
 
@@ -238,7 +239,7 @@ def convert_extra(extra, val, newe):
             m = re.match(j[0], extra, re.I)
             if m:
                 if j[2]:
-                    val |= int(m.group(1), 0) << j[2]
+                    val = (val & ~(j[3] << j[2])) | (int(m.group(1), 0) << j[2])
                 newe.append(j[1] % (int(m.group(1), 0)))
                 extra = extra[len(m.group(0)):]
                 found = True
@@ -296,7 +297,12 @@ class Event(object):
            Always uses new style (cpu/.../)."""
         val = self.val
         if extra:
-            extra = self.newextra + "," + extra
+            overridden = set(item.split("=")[0] for item in extra.split(",")
+                             if item)
+            defaults = [item for item in self.newextra.split(",")
+                        if item and item.split("=")[0] not in overridden]
+            extra = "," + ",".join(defaults + [item for item in extra.split(",")
+                                              if item])
         else:
             extra = self.newextra
         if self.pname:
@@ -739,6 +745,8 @@ class EmapNativeJSON(object):
             extra = m.group(2)
             edelim = ":"
             e = m.group(1)
+        if e not in self.events and e in self.perf_events:
+            e = self.perf_events[e].name
         if e in self.events:
             # hack for now. Avoid ambiguity with :p
             # Should handle qualmap properly here
@@ -765,8 +773,6 @@ class EmapNativeJSON(object):
                 ev = copy.deepcopy(ev)
                 ev.newextra = extra
             return ev
-        elif e in self.perf_events:
-            return self.perf_events[e]
         elif e in self.pevents:
             return self.pevents[e]
 
