@@ -297,10 +297,12 @@ class Event(object):
            Always uses new style (cpu/.../)."""
         val = self.val
         if extra:
-            overridden = set(item.split("=")[0] for item in extra.split(","))
-            defaults = ",".join(item for item in self.newextra.split(",")
-                                if item.split("=")[0] not in overridden)
-            extra = defaults + "," + extra
+            overridden = set(item.split("=")[0] for item in extra.split(",")
+                             if item)
+            defaults = [item for item in self.newextra.split(",")
+                        if item and item.split("=")[0] not in overridden]
+            extra = "," + ",".join(defaults + [item for item in extra.split(",")
+                                              if item])
         else:
             extra = self.newextra
         if self.pname:

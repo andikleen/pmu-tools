@@ -50,6 +50,13 @@ class EventQualifierTest(unittest.TestCase):
         if flags in ('u', 'pp'):
             self.assertTrue(re.search((r':' if raw else r'/') + flags +
                                       r"(?:[ ',]|$)", text), text)
+        for flag, suffix in (('usr=yes', 'u'), ('usr=no', 'k'),
+                             ('os=yes', 'k'), ('os=no', 'u'),
+                             ('precise=yes', 'pp'), ('pdir', 'ppp'),
+                             ('sup', 'k')):
+            if flag in flags.split(':'):
+                self.assertTrue(re.search((r':' if raw else r'/') + suffix +
+                                          r"(?:[ ',]|$)", text), text)
         if raw:
             events = re.findall(r'\br([0-9a-f]+)\b', text)
         else:
@@ -68,6 +75,10 @@ class EventQualifierTest(unittest.TestCase):
                 self.assertEqual((value >> 23) & 1, values[1])
                 self.assertEqual((value >> 18) & 1, values[2])
             else:
+                fields = event.split(',')
+                self.assertEqual(fields[0], 'event=0x%x' % event_code, event)
+                self.assertEqual(fields[1], 'umask=0x1', event)
+                self.assertNotIn('', fields, event)
                 for key, value in zip(('cmask', 'inv', 'edge'), values):
                     matches = re.findall(r'(?:^|,)' + key + r'=(\d+)', event)
                     self.assertEqual(matches, [str(value)], event)
@@ -95,6 +106,10 @@ cases = [('', (1, 1, 1)), ('inv0', (1, 0, 1)), ('i0', (1, 0, 1)),
          ('cmask10', (10, 1, 1)), ('cmask=10', (10, 1, 1)),
          ('e0', (1, 1, 0)), ('edge=0', (1, 1, 0)),
          ('c0:i0:e0', (0, 0, 0)), ('u', (1, 1, 1)), ('pp', (1, 1, 1))]
+for flag in ('usr=yes', 'usr=no', 'os=yes', 'os=no', 'precise=yes',
+             'pdir', 'sup', 'perf_metrics'):
+    cases.extend([('c4:' + flag, (4, 1, 1)),
+                  (flag + ':e0', (1, 1, 0))])
 for case_index, (qualifiers, expected) in enumerate(cases):
     for is_raw in (False, True):
         for is_alias in (False, True):
